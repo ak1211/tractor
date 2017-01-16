@@ -1,0 +1,88 @@
+name:                tractor
+version:             0.1.1
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            https://github.com/githubuser/tractor#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2016 Author name here
+category:            Web
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Conf WebBot Scraper DataBase SlackBot
+  build-depends:       base >= 4.7 && < 5
+                     , safe
+                     , mtl
+                     , resourcet
+                     , containers
+                     , text
+                     , bytestring
+                     , utf8-string
+                     , iconv
+                     , time
+                     , split
+                     , aeson
+                     , conduit
+                     , conduit-extra
+                     , tagsoup
+                     , connection
+                     , network-uri
+                     , http-types
+                     , http-conduit
+                     , html-conduit
+                     , xml-conduit
+                     , persistent
+                     , persistent-template
+                     , persistent-sqlite
+  default-language:    Haskell2010
+
+executable tractor
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , unix
+                     , mtl
+                     , safe
+                     , text
+                     , time
+                     , utf8-string
+                     , resourcet
+                     , conduit
+                     , network-uri
+                     , http-conduit
+                     , http-types
+                     , tractor
+  default-language:    Haskell2010
+
+test-suite tractor-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , mtl
+                     , resourcet
+                     , conduit
+                     , tractor
+                     , hspec
+                     , time
+                     , text
+                     , text
+                     , bytestring
+                     , utf8-string
+                     , network-uri
+                     , connection
+                     , http-types
+                     , http-conduit
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/ak1211/tractor
