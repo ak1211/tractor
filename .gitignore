@@ -1,0 +1,5 @@
+/.stack-work/
+conf.json
+assets.sqlite3
+loghttp.sqlite3
+
