@@ -68,11 +68,11 @@ import qualified System.Posix.Signals as S
 greetingsMessage = T.unlines
     [ "tractorが起動しました"
     , "以降一定時間で通知します。"
-    , " *tractor* is an assets observation application."
-    , " *tractor* Copyright (C) 2016, 2017 Akihiro Yamamoto"
+    , "tractor is an Assets observation application."
+    , "*tractor © 2016, 2017 Akihiro Yamamoto.*"
     , "このプログラムは *全くの無保証* で提供されます。"
     , "これはフリーソフトウェアであり、ある条件の下で再頒布することが奨励されています。"
-    , "詳しくは https://github.com/ak1211 をご覧ください。"
+    , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
     ]
 
 {-
@@ -462,5 +462,5 @@ applicationBody confFilePath = do
  -}
 main :: IO ()
 main =
-    applicationBody "/home/ak/.tractor/conf.json"
+    applicationBody "conf.json"
 
