@@ -109,13 +109,14 @@ isDuringWorkingTime ztm =
  - 証券会社のサイトにログインする関数
  -}
 loginToSecuritiesSite :: Conf.Info -> IO WebBot.HTTPSession
-loginToSecuritiesSite conf =
-    let str = Conf.loginURL conf in
-    case N.parseURI str of
-        Nothing -> throwIO $ userError $ str ++ "は有効なURLではありません"
-        Just uri -> WebBot.login conf uri
-    >>= \case
-        Nothing -> throwIO $ userError $ str ++ "にログインできません"
+loginToSecuritiesSite conf = do
+    let str = Conf.loginURL conf
+    justUri <- case N.parseURI str of
+        Nothing -> throwIO $ userError $ str ++ " は有効なURLではありません"
+        Just uri -> return uri
+    resp <- WebBot.login conf justUri
+    case resp of
+        Nothing -> throwIO $ userError $ str ++ " にログインできません"
         Just sess -> return sess
 
 {-
@@ -241,34 +242,42 @@ sendMsgSig mBox message =
  - Slackへお知らせを送るスレッド
  -}
 sendAnnounceThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
-sendAnnounceThread conf parentThId msgBox = do
-    -- readMVarによって指示があるまで待機する
-    msg <- readMVar msgBox
-    case msg of
-        {-
-         - 作業開始指示が来た
-         -}
-        Run -> do
-            -- Slackへお知らせを送る
-            catch (sendAnnounce conf) $
-                -- 例外は親スレッドに再送出
-                \(SomeException e) -> do
-                    sendMsgSig msgBox Donothing
-                    throwTo parentThId e
-            -- このスレッドの実行時間は必ず１分以上かかるようにする
-            doSleep 1
-         {-
-         - 作業開始指示以外ならスレッドを終了する
-         -}
-        _ -> return ()
+sendAnnounceThread conf parentThId msgBox =
+    do
+        -- readMVarによって指示があるまで待機する
+        msg <- readMVar msgBox
+        case msg of
+            {-
+             - 作業開始指示が来た
+             -}
+            Run -> do
+                -- Slackへお知らせを送る
+                sendAnnounce conf
+                -- このスレッドの実行時間は必ず１分以上かかるようにする
+                doSleep 1
+             {-
+             - 作業開始指示以外ならスレッドを終了する
+             -}
+            _ -> return ()
+    `catch`
+        -- 例外は親スレッドに再送出
+        \(SomeException e) -> do
+            sendMsgSig msgBox Donothing
+            throwTo parentThId e
 
 {-
  - Slackへレポートを送るスレッド
  -}
 sendReportThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
 sendReportThread conf parentThId msgBox =
-    -- readMVarによって指示があるまで待機する
-    loop 0 =<< readMVar msgBox
+    do
+        -- readMVarによって指示があるまで待機する
+        loop 0 =<< readMVar msgBox
+    `catch`
+        -- 例外は親スレッドに再送出
+        \(SomeException e) -> do
+            sendMsgSig msgBox Donothing
+            throwTo parentThId e
     where
     loop :: Int -> ThMsgSig -> IO ()
     {-
@@ -278,11 +287,7 @@ sendReportThread conf parentThId msgBox =
         if remain <= 0
         then do
             -- Slackへレポートを送る
-            catch (reportOnCurrentCondition conf) $
-                -- 例外は親スレッドに再送出
-                \(SomeException e) -> do
-                    sendMsgSig msgBox Donothing
-                    throwTo parentThId e
+            reportOnCurrentCondition conf
             -- ループ
             loop (Conf.sendReportInterval conf) =<< readMVar msgBox
         else do
@@ -302,16 +307,22 @@ sendReportThread conf parentThId msgBox =
  - 現在資産評価をDBへ格納するスレッド
  -}
 recordAssetsThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
-recordAssetsThread conf parentThId msgBox = do
-    -- readMVarによって指示があるまで待機する
-    msg <- readMVar msgBox
-    -- 証券会社のサイトにログイン
-    session <- loginToSecuritiesSite conf
-    --
-    loop 0 msg session
-    -- 証券会社のサイトからログアウト
-    WebBot.logout session
-    where
+recordAssetsThread conf parentThId msgBox =
+    do
+        -- readMVarによって指示があるまで待機する
+        msg <- readMVar msgBox
+        -- 証券会社のサイトにログイン
+        session <- loginToSecuritiesSite conf
+        --
+        loop 0 msg session
+        -- 証券会社のサイトからログアウト
+        WebBot.logout session
+    `catch`
+        -- 例外は親スレッドに再送出
+        \(SomeException e) -> do
+            sendMsgSig msgBox Donothing
+            throwTo parentThId e
+     where
     loop :: Int -> ThMsgSig -> WebBot.HTTPSession -> IO ()
     {-
      - 作業開始指示が来た
@@ -320,11 +331,7 @@ recordAssetsThread conf parentThId msgBox = do
         if remain <= 0
         then do
             -- 現在資産評価を取得してDBへ
-            catch (M.runReaderT recordCurrentCondition session) $
-                -- 例外は親スレッドに再送出
-                \(SomeException e) -> do
-                    sendMsgSig msgBox Donothing
-                    throwTo parentThId e
+            M.runReaderT recordCurrentCondition session
             -- メッセージの確認をする
             msg <- readMVar msgBox
             -- ループ

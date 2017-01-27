@@ -45,9 +45,11 @@ module Scraper
     , FraStkSell (..)
     , FraAstSpare (..)
     , Contents (..)
+    , OrderConfirmed (..)
     , scrapingFraHomeAnnounce
     , scrapingFraStkSell
     , scrapingFraAstSpare
+    , scrapingOrderConfirmed
     ) where
 
 import qualified Conf
@@ -195,6 +197,18 @@ instance Show FraAstSpare where
         ++ Printf.printf "使用可能現金 %d" cas
 
 {-
+ - 注文発注後の"ご注文を受付けました"の内容
+ -}
+data OrderConfirmed = OrderConfirmed {
+    contents            :: T.Text
+} deriving (Eq)
+
+-- 型クラスShowのインスタンス
+instance Show OrderConfirmed where
+    show (OrderConfirmed co) =
+        T.unpack co
+
+{-
  - nmタグの子タグのリストを取り出す関数
  -}
 taglist :: T.Text -> [TS.TagTree T.Text] -> [[TS.TagTree T.Text]]
@@ -271,7 +285,7 @@ toDouble (Just t) note =
 scrapingFraHomeAnnounce :: [T.Text] -> Either T.Text FraHomeAnnounce
 scrapingFraHomeAnnounce htmls = do
     html <- case htmls of
-        []  -> Left "スクレイピング対象のページがありません。"
+        []  -> Left "お知らせページを受け取れていません。"
         -- お知らせには次のページが無いので先頭のみを取り出す
         x:_ -> Right x
     let tree = TS.tagTree $ TS.parseTags html
@@ -293,7 +307,7 @@ scrapingFraHomeAnnounce htmls = do
 scrapingFraStkSell :: [T.Text] -> Either T.Text FraStkSell
 scrapingFraStkSell htmls = do
     html <- case htmls of
-        []  -> Left "スクレイピング対象のページがありません。"
+        []  -> Left "現物売ページを受け取れていません。"
         {-
          - 現物売ページの次のページを確認したことが無いのでいまは後続ページを無視する
          -}
@@ -343,7 +357,7 @@ scrapingFraStkSell htmls = do
 scrapingFraAstSpare :: [T.Text] -> Either T.Text FraAstSpare
 scrapingFraAstSpare htmls = do
     html <- case htmls of
-        []  -> Left "スクレイピング対象のページがありません。"
+        []  -> Left "余力情報ページを受け取れていません。"
         -- 余力情報には次のページが無いので先頭のみを取り出す
         x:_ -> Right x
     let tree = TS.tagTree $ TS.parseTags html
@@ -364,5 +378,19 @@ scrapingFraAstSpare htmls = do
         faRestraintFee = rfe,
         faRestraintTax = rta,
         faCash = cas
+    }
+
+{-
+ - "ご注文を受け付けました"のページをスクレイピングする関数
+ -}
+scrapingOrderConfirmed :: [T.Text] -> Either T.Text OrderConfirmed
+scrapingOrderConfirmed htmls = do
+    html <- case htmls of
+        []  -> Left "注文終了ページを受け取れていません。"
+        -- 注文終了ページには次のページが無いので先頭のみを取り出す
+        x:_ -> Right x
+    -- 返値
+    Right OrderConfirmed {
+        contents = html
     }
 
