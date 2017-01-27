@@ -45,6 +45,8 @@ module WebBot
     , fetchFraHomeAnnounce
     , fetchFraStkSell
     , fetchFraAstSpare
+    , SellOrderSet (..)
+    , sellStock
     ) where
 
 import qualified Scraper
@@ -56,8 +58,11 @@ import Control.Exception hiding (throw)
 import Safe
 import qualified Conf
 
---import qualified Control.Applicative
-import Control.Applicative ((<$>), (<*>))
+import Control.Applicative ((<$>), (<*>), (<*))
+import Text.Parsec ((<|>))
+import qualified Text.Parsec as P
+import qualified Text.Parsec.ByteString.Lazy as P
+
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as M
 import qualified Control.Monad.Reader as M
@@ -73,7 +78,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Map as Map
 import qualified Data.List as List
 import qualified Data.List.Split as List.Split
-import qualified Data.Char
+import qualified Data.Char as Char
 import qualified Data.ByteString.Char8 as B8
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as BL8
@@ -105,6 +110,8 @@ import Text.HTML.TagSoup ((~==), (~/=))
 import qualified Text.HTML.TagSoup as TS
 import qualified Text.HTML.TagSoup.Tree as TS
 import qualified Text.HTML.TagSoup.Match as TS
+
+import qualified Control.Concurrent as CC
 
 import Data.Time (Day(..), TimeOfDay, UTCTime, parseTime, getCurrentTime)
 
@@ -188,9 +195,13 @@ storeLogDB log = M.liftIO $
 {-
  - urlに接続して結果を得るついでにDBに記録する
  -}
-fetchPage :: M.MonadIO m => N.Manager
-            -> N.RequestHeaders -> Maybe N.CookieJar -> [(B8.ByteString, B8.ByteString)]
-            -> N.URI -> m (N.Response BL8.ByteString)
+fetchPage   :: M.MonadIO m
+            => N.Manager
+            -> N.RequestHeaders
+            -> Maybe N.CookieJar
+            -> [(B8.ByteString, B8.ByteString)]
+            -> N.URI
+            -> m (N.Response BL8.ByteString)
 fetchPage manager header cookie reqBody url = M.liftIO $
     -- HTTPリクエストを作る
     N.parseRequest (show url)
@@ -230,46 +241,132 @@ fetchPage manager header cookie reqBody url = M.liftIO $
         -- HTTPレスポンスを返却
         return resp
 
+type HtmlCharset = String
 {-
  - HTTP ResponseからUtf8 HTMLを取り出す関数
  -}
 takeBodyFromResponse :: N.Response BL8.ByteString -> T.Text
 takeBodyFromResponse resp =
-    -- HTTPレスポンスヘッダから"Content-Type"を得る
-    let contentType =   [ T.pack $ B8.unpack v
-                        | ("Content-Type", v) <- N.responseHeaders resp
-                        ]
+    let bodyHtml = N.responseBody resp in
+    -- 先頭より1024バイトまでで
+    -- <meta http-equiv="Content-Type" content="text/html; charset=shift_jis"> とか
+    -- <meta charset="shift_jis">とかが
+    -- 無いか探してみる
+    let htmlHead1024B = BL8.take 1024 bodyHtml in
+    let htmlCS = case (P.parse html "(html header)" htmlHead1024B) of
+                    Left   _ -> Nothing
+                    Right "" -> Nothing
+                    Right  r -> Just r
     in
-    {-
-     - RFC2616による定義
-     - "https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7"
-     - media-type     = type "/" subtype *( ";" parameter )
-     - type           = token
-     - subtype        = token
-     -}
-    let chunks = List.concat $ map (T.toLower . T.strip) . T.split (== ';') <$> contentType in
-    -- "Content-Type"から"charset"を取り出すついでに全て小文字に
-    let param = [ (T.toLower k, T.toLower v)
-                | k : v : _ <- [T.split (== '=') v | v <- chunks]
-                ]
-    in
-    let charset = T.unpack <$> List.lookup "charset" param in
-    -- UTF-8へ
-    (\str -> case convToUtf8 charset str of
-        Right utf8text -> utf8text
-        -- デコードの失敗は無視する
-        -- たぶんこれはただのバイナリ
-        Left msg -> withTrace msg $ T.pack $ BL8.unpack str
-    ) $ N.responseBody resp
+    -- HTTPレスポンスヘッダからエンコードを得る
+    let respCS = takeCharset $ N.responseHeaders resp in
+    -- 本文中の指定 -> HTTPレスポンスヘッダの指定の順番でエンコードを得る
+    case Maybe.listToMaybe $ Maybe.catMaybes [htmlCS, respCS] of
+        -- エンコード指定がないので文字化けで返す
+        Nothing -> forcedConvUtf8 bodyHtml
+        -- UTF-8へ
+        Just cs ->
+            let u = TE.decodeUtf8' $ IConv.convert cs "UTF-8" bodyHtml in
+            -- デコードの失敗はおそらくバイナリなので文字化けで返す
+            Either.either (\_ -> forcedConvUtf8 bodyHtml) id u
     where
+    -- 文字化けでも無理やり返す
+    forcedConvUtf8 :: BL8.ByteString -> T.Text
+    forcedConvUtf8 = T.pack . BL8.unpack
+    -- htmlをパースする関数
+    html :: P.Parser HtmlCharset
+    html =
+        P.try (P.spaces >> tag)
+        <|>
+        P.try (next >> html)
+        <|>
+        return ""
+    -- 次のタグまで読み飛ばす関数
+    next :: P.Parser ()
+    next =
+        P.skipMany1 (P.noneOf ">") <* P.char '>'
+    -- タグをパースする関数
+    tag :: P.Parser HtmlCharset
+    tag =
+        P.char '<' >> meta
+    -- metaタグをパースする関数
+    meta :: P.Parser HtmlCharset
+    meta = do
+        P.string "meta"
+        P.spaces
+        P.try (metaCharset) <|> P.try (metaHttpEquiv)
+    -- meta http-equivタグをパースする関数
+    metaHttpEquiv :: P.Parser HtmlCharset
+    metaHttpEquiv = do
+        {-
+            例 : http-equiv="Content-Type" content="text/html; charset=shift_jis"
+            https://www.w3.org/TR/html5/document-metadata.html#meta
+        -}
+        P.string "http-equiv="
+        contentType
     {-
-     - 文字コード変換関数
-     -}
-    convToUtf8 :: Maybe IConv.EncodingName
-                    -> BL8.ByteString
-                    -> Either Encoding.Error.UnicodeException T.Text
-    convToUtf8 Nothing = TE.decodeUtf8'
-    convToUtf8 (Just cs) = TE.decodeUtf8' . IConv.convert cs "UTF-8"
+    -}
+    contentType :: P.Parser HtmlCharset
+    contentType = do
+        P.string "\"Content-Type\""
+        P.spaces
+        P.string "content="
+        P.many (P.char '\"')
+        c <- content
+        P.many (P.char '\"')
+        return c
+    {-
+        例 : "text/html; charset=shift_jis"
+        RFC2616 - 3.7 Media Typesによる定義
+        "https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7"
+        media-type     = type "/" subtype *( ";" parameter )
+        type           = token
+        subtype        = token
+    -}
+    content :: P.Parser HtmlCharset
+    content = do
+        _ <- P.many P.alphaNum
+        P.char '/'
+        _ <- P.many P.alphaNum
+        parameter <|> return ""
+    --
+    parameter :: P.Parser HtmlCharset
+    parameter = do
+        P.char ';'
+        P.spaces
+        charset <|> P.many P.alphaNum
+    --
+    charset :: P.Parser HtmlCharset
+    charset = do
+        P.string "charset="
+        P.many (P.char '\"')
+        cs <- P.many (P.alphaNum <|> P.char '_' <|> P.char '-')
+        P.many (P.char '\"')
+        return cs
+    -- meta charsetタグをパースする関数
+    metaCharset :: P.Parser HtmlCharset
+    metaCharset = do
+        {-
+            例 : charset="utf-8"
+            https://www.w3.org/TR/html5/document-metadata.html#meta
+        -}
+        P.string "charset="
+        P.many (P.char '\"')
+        cs <- P.many (P.alphaNum <|> P.char '_' <|> P.char '-')
+        P.many (P.char '\"')
+        return cs
+    -- HTTPレスポンスヘッダからcharsetを得る
+    takeCharset :: N.ResponseHeaders -> Maybe String
+    takeCharset headers =
+        -- HTTPレスポンスヘッダから"Content-Type"を得る
+        List.find (\kv -> "Content-Type"==fst kv) headers
+        -- "Content-Type"からcontentを得る
+        >>= Just . BL8.fromStrict . snd
+        >>= Just . (P.parse content "(resp header)")
+        >>= \case
+            Left   _ -> Nothing
+            Right "" -> Nothing
+            Right  r -> Just r
 
 {-
  - 絶対リンクへ変換する関数
@@ -279,24 +376,110 @@ toAbsURI baseURI href =
     fmap (`N.relativeTo` baseURI) (N.parseURIReference $ T.unpack href)
 
 {-
- - 属性を取り出す関数
+ - formのactionを実行する関数
  -}
-takeAttr :: Eq str => (str -> Bool) -> Maybe (TS.TagTree str) -> Maybe str
-takeAttr predicade tag =
-    tag
-    >>= \(TS.TagBranch _ as _) -> Maybe.listToMaybe [v | (k, v) <- as, predicade k]
+doPostAction :: N.Manager
+                -> N.RequestHeaders
+                -> Maybe N.CookieJar
+                -> [(B8.ByteString, B8.ByteString)]
+                -> N.URI
+                -> T.Text
+                -> IO (Maybe (N.Response BL8.ByteString))
+doPostAction manager reqHeader cookie customPostReq pageURI html = do
+    let uTree = TS.universeTree $ TS.tagTree $ TS.parseTags html
+    let formTags = [all | all@(TS.TagBranch nm _ _) <- uTree, "form"==T.toLower nm]
+    case formTags of
+        -- ページ唯一のformタグを取り出す
+        x : _ -> action x
+        _ -> return Nothing
+    where
+    action :: TS.TagTree T.Text -> IO (Maybe (N.Response BL8.ByteString))
+    action = \case
+        form@(TS.TagBranch _  attrs childNodes) -> do
+            let defaultPostReqBody = defaultRequest form
+            -- formタグの属性を取り出す
+            let fmAction = Maybe.listToMaybe $ [v | (k,v)<-attrs, "action"==T.toLower k]
+            let postReqBody = Maybe.catMaybes
+                                $ (\(ks,vs) -> List.zipWith chooseDefaultOrCustomReq ks vs)
+                                $ List.unzip defaultPostReqBody
+            -- POSTリクエストを送信するURL
+            let postActionURL = toAbsURI pageURI =<< fmAction
+            -- フォームのaction属性ページへアクセス
+
+    --        T.putStrLn . T.pack . show $ selectTagAttrs
+            T.putStrLn . T.pack . show $ postActionURL
+            T.putStrLn . T.pack . show $ postReqBody
+
+
+            M.mapM (fetchPage manager reqHeader cookie postReqBody) postActionURL
+        _ -> return Nothing
+    --
+    chooseDefaultOrCustomReq :: B8.ByteString -> B8.ByteString -> Maybe (B8.ByteString, B8.ByteString)
+    chooseDefaultOrCustomReq k v =
+        case List.lookup k customPostReq of
+            Just cv -> Just (k, cv)
+            -- x yは指定の物以外削除
+            Nothing | B8.isSuffixOf ".x" k -> Nothing
+            Nothing | B8.isSuffixOf ".y" k -> Nothing
+            _ ->  Just (k, v)
+
+    --
+    takeValue :: [TS.Attribute T.Text] -> T.Text -> Maybe B8.ByteString
+    takeValue attrs name =
+        B8.pack . T.unpack . snd <$> List.find ((==) (T.toCaseFold name) . T.toCaseFold . fst) attrs
+    -- 未入力時のフォームリクエストを得る
+    defaultRequest :: TS.TagTree T.Text -> [(B8.ByteString, B8.ByteString)]
+    defaultRequest (TS.TagBranch _  attrs childNodes) =
+        let sel = [selectTag all | all@(TS.TagBranch nm _ _) <- TS.universeTree childNodes, "select"==T.toLower nm] in
+        let ias = [as | TS.TagOpen nm as <- TS.flattenTree childNodes, "input"==T.toLower nm] in
+        let inp = List.concat $ map inputTag ias in
+        let img = List.concat $ map inputTypeImage ias in
+        Maybe.catMaybes sel ++ inp ++ img
+        where
+        --
+        selectTag :: TS.TagTree T.Text -> Maybe (B8.ByteString, B8.ByteString)
+        selectTag (TS.TagBranch _ attrs children) =
+            -- タグ内のoptionタグを全て取り出す
+            let options = [as | TS.TagOpen nm as <- TS.flattenTree children, "option"==T.toLower nm] in
+            List.find (\as -> Maybe.isJust $ takeValue as "selected") options
+            >>= \as -> (\k v -> (k,v)) <$> takeValue attrs "name" <*> takeValue as "value"
+        --
+        inputTag :: [TS.Attribute T.Text] -> [(B8.ByteString, B8.ByteString)]
+        inputTag attrs =
+            let f = takeValue attrs in
+            -- (name, value)のタプルを作る
+            case f "type" of
+                Just "checkbox" | Maybe.isNothing (f "checked") -> []
+                Just "radio" | Maybe.isNothing (f "checked") -> []
+                _ -> Maybe.maybeToList $ (\a b -> (a,b)) <$> f "name" <*> f "value"
+        --
+        -- input type="image"
+        inputTypeImage :: [TS.Attribute T.Text] -> [(B8.ByteString, B8.ByteString)]
+        inputTypeImage attrs =
+            let f = takeValue attrs in
+            let name = f "name" in
+            -- (name, value)のタプルを作る
+            case f "type" of
+                Just "image" | Maybe.isJust name ->
+                    let nm = Maybe.fromJust name in
+                    [(nm `B8.append` ".x", "0"), (nm `B8.append` ".y", "0")]
+                _ -> []
 
 {-
- - POSTリクエストボディを組み立てる関数
+ - HTTPセッション中にformのactionを実行する関数
  -}
-mkPostReqBody :: [[TS.Attribute T.Text]] -> [(B8.ByteString, B8.ByteString)]
-mkPostReqBody attributes =
-    -- "type"属性は無視して(name, value)のタプルを作る
-    [
-        (B8.pack $ T.unpack $ Maybe.fromMaybe "" $ List.lookup "name" a
-        ,B8.pack $ T.unpack $ Maybe.fromMaybe "" $ List.lookup "value" a
-        )
-    | a <- attributes ]
+doPostActionOnSession :: HTTPSession
+                -> [(B8.ByteString, B8.ByteString)]
+                -> T.Text
+                -> IO (Maybe (N.Response BL8.ByteString))
+doPostActionOnSession sess customPostReq html =
+    doPostAction
+        (sManager sess)
+        (sReqHeaders sess)
+        (Just $ sRespCookies sess)
+        customPostReq
+        (sLoginPageURI sess)
+        html
 
 {-
  - ログインページからログインしてHTTPセッション情報を返す関数
@@ -314,51 +497,32 @@ login conf loginPage = do
     resp <- fetchPage manager reqHeader Nothing [] loginPage
     -- ログインページのHTMLをTextで受け取る
     let html = takeBodyFromResponse resp
-    {-
-     - ログインページの解析をする
-     -}
-    let tagTree = TS.tagTree $ TS.parseTags html
-    -- ログインページ唯一のformタグを取り出す
-    let formTag = Maybe.listToMaybe [all | all@(TS.TagBranch nm as cs) <- TS.universeTree tagTree, "form"==T.toLower nm]
-    -- formタグの属性を取り出す
-    let fmName = takeAttr ((== "name") . T.toLower) formTag
-    let fmMethod = takeAttr ((== "method") . T.toLower) formTag
-    let fmAction = takeAttr ((== "action") . T.toLower) formTag
-    -- formタグ内のinputタグの属性を全て取り出す
-    let inputTagAttrs = formTag
-                        >>= \(TS.TagBranch _ _ cs) ->
-                            return [as | TS.TagOpen nm as <- TS.flattenTree cs, "input"==T.toLower nm]
-    -- POSTリクエストを組み立てる
-    let orgPostReqBody = Maybe.maybe [] mkPostReqBody inputTagAttrs
-    let postReqBody =   [ ("clientCD", B8.pack $ Conf.loginID conf)
-                        , ("passwd", B8.pack $ Conf.loginPassword conf) ]
-                        ++ List.filter (\(k, _) -> (k/="clientCD")&&(k/="passwd")) orgPostReqBody
-    -- POSTリクエストを送信するURL
-    let postActionURL = toAbsURI loginPage =<< fmAction
-    case postActionURL of
-        Nothing -> return Nothing
-        Just url ->
-            -- フォームのaction属性ページへアクセス
-            fetchPage manager reqHeader Nothing postReqBody url
-            -- 返値組み立て
-            >>= \resp -> return $ Just
-                HTTPSession { sLoginPageURI = loginPage
-                            , sManager      = manager
-                            , sReqHeaders   = reqHeader
-                            , sRespCookies  = N.responseCookieJar resp
-                            , sTopPageHTML  = takeBodyFromResponse resp
-                            }
+    let customPostReq = [ ("clientCD", B8.pack $ Conf.loginID conf)
+                        , ("passwd", B8.pack $ Conf.loginPassword conf)
+                        ]
+    resp <- doPostAction manager reqHeader Nothing customPostReq loginPage html
+    return $ mkSession manager reqHeader <$> resp
+    where
+    -- 返値組み立て
+    mkSession manager reqHeader resp =
+        HTTPSession { sLoginPageURI = loginPage
+                    , sManager      = manager
+                    , sReqHeaders   = reqHeader
+                    , sRespCookies  = N.responseCookieJar resp
+                    , sTopPageHTML  = takeBodyFromResponse resp
+                    }
+
 
 {-
  - fetchPage関数の相対リンク版
  -}
-fetchInRelativePath :: M.MonadIO m => HTTPSession -> T.Text -> m (N.Response BL8.ByteString)
-fetchInRelativePath session relPath =
-    let uri = Maybe.fromJust $ toAbsURI (sLoginPageURI session) relPath in
+fetchInRelativePath :: M.MonadIO m => T.Text -> M.ReaderT HTTPSession m (N.Response BL8.ByteString)
+fetchInRelativePath relPath = do
+    session <- M.ask
+    let uri = Maybe.fromJust $ toAbsURI (sLoginPageURI session) relPath
     let cookies = case N.destroyCookieJar $ sRespCookies session of
                     []-> Nothing
                     _ -> Just $ sRespCookies session
-    in
     fetchPage (sManager session) (sReqHeaders session) cookies [] uri
 
 {-
@@ -367,13 +531,12 @@ fetchInRelativePath session relPath =
 type SessionReaderMonadT m = M.ReaderT HTTPSession m [T.Text]
 clickLinkText :: M.MonadIO m => T.Text -> [T.Text] -> SessionReaderMonadT m
 clickLinkText linkText htmls = do
-    --let linkPaths = Maybe.catMaybes $ map (lookup linkText . getPageCaptionAndLink) htmls
     let linkPaths = Maybe.mapMaybe (lookup linkText . getPageCaptionAndLink) htmls
     M.mapM fetch linkPaths
     where
     fetch path = do
         session <- M.ask
-        resp <- fetchInRelativePath session path
+        resp <- fetchInRelativePath path
         return $ takeBodyFromResponse resp
 
 {-
@@ -406,9 +569,8 @@ frameDispacher htmls (targetFrmName, action) =
             case List.lookup targetFrmName frames of
                 Nothing -> return []
                 Just linkPath -> do
-                    session <- M.ask
-                    resp <- fetchInRelativePath session linkPath
-                    r <- action [takeBodyFromResponse resp]
+                    html <- takeBodyFromResponse <$> fetchInRelativePath linkPath
+                    r <- action [html]
                     s <- frameDispacher hs (targetFrmName, action)
                     return (r ++ s)
     where
@@ -442,29 +604,18 @@ failureAtScraping =
     M.liftIO . throwIO . UnexpectedHTMLException . T.unpack
 
 {-
- - トップページからcommandsの指示通りに
- - フレームにアクセスしてスクレイピングした結果を返す関数
- -}
-obeyCommand :: (M.MonadIO m, Scraper.Contents co)
-            => ([T.Text] -> Either T.Text co)
-            -> [(T.Text, [T.Text] -> SessionReaderMonadT m)]
-            -> M.ReaderT HTTPSession m co
-obeyCommand scraper commands =
-    M.ask
-    >>= \sess -> M.foldM frameDispacher [sTopPageHTML sess] commands
-    >>= Either.either (failureAtScraping) (return) . scraper
-
-{-
  - "お知らせ"を得る
  - "ホーム" -> "お知らせ" のページからスクレイピングする関数
  -}
 fetchFraHomeAnnounce :: M.ReaderT HTTPSession IO Scraper.FraHomeAnnounce
 fetchFraHomeAnnounce =
-    let commands =  [("GM", clickLinkText "ホーム")
-                    ,("LM", clickLinkText "お知らせ")
-                    ,("CT", return)]
+    let fM s = M.foldM frameDispacher [sTopPageHTML s]
+                [("GM", clickLinkText "ホーム")
+                ,("LM", clickLinkText "お知らせ")
+                ,("CT", return)]
     in
-    obeyCommand Scraper.scrapingFraHomeAnnounce commands
+    Either.either (failureAtScraping) (pure)
+    <$> Scraper.scrapingFraHomeAnnounce =<< fM =<< M.ask
 
 {-
  - 現在の保有株情報を得る
@@ -472,11 +623,13 @@ fetchFraHomeAnnounce =
  -}
 fetchFraStkSell :: M.ReaderT HTTPSession IO Scraper.FraStkSell
 fetchFraStkSell =
-    let commands =  [("GM", clickLinkText "株式取引")
-                    ,("LM", clickLinkText "現物売")
-                    ,("CT", return)]
+    let fM s = M.foldM frameDispacher [sTopPageHTML s]
+                [("GM", clickLinkText "株式取引")
+                ,("LM", clickLinkText "現物売")
+                ,("CT", return)]
     in
-    obeyCommand Scraper.scrapingFraStkSell commands
+    Either.either (failureAtScraping) (pure)
+    <$> Scraper.scrapingFraStkSell =<< fM =<< M.ask
 
 {-
  - 現在の資産情報を得る
@@ -484,9 +637,106 @@ fetchFraStkSell =
  -}
 fetchFraAstSpare :: M.ReaderT HTTPSession IO Scraper.FraAstSpare
 fetchFraAstSpare =
-    let commands =  [("GM", clickLinkText "資産状況")
-                    ,("LM", clickLinkText "余力情報")
-                    ,("CT", return)]
+    let fM s = M.foldM frameDispacher [sTopPageHTML s]
+                [("GM", clickLinkText "資産状況")
+                ,("LM", clickLinkText "余力情報")
+                ,("CT", return)]
     in
-    obeyCommand Scraper.scrapingFraAstSpare commands
+    Either.either (failureAtScraping) (pure)
+    <$> Scraper.scrapingFraAstSpare =<< fM =<< M.ask
+
+{-
+ - 売り注文を出す関数
+ -}
+{-
+ - 注文情報
+ -}
+data SellOrderSet = SellOrderSet {
+    osPassword  :: String,
+    osCode      :: Int,
+    osNominal   :: Int,
+    osPrice     :: Double
+}
+
+sellStock :: SellOrderSet -> M.ReaderT HTTPSession IO Scraper.OrderConfirmed
+sellStock order =
+    let fM s = M.foldM frameDispacher [sTopPageHTML s]
+                [("GM", clickLinkText "株式取引")
+                ,("LM", clickLinkText "現物売")
+                ,("CT", doSellOrder order)]
+    in
+    Either.either (failureAtScraping) (pure)
+    <$> Scraper.scrapingOrderConfirmed =<< fM =<< M.ask
+    where
+    --
+    doSellOrder :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    doSellOrder os htmls = do
+        a <- clickSellOrderLink order htmls
+        M.liftIO $ CC.threadDelay (300 * 1000)
+        b <- submitSellOrderPage order a
+        M.liftIO $ CC.threadDelay (300 * 1000)
+        submitConfirmPage order b
+    --
+    clickSellOrderLink :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    clickSellOrderLink os htmls = do
+        fss <- Either.either (failureAtScraping) (pure) $ Scraper.scrapingFraStkSell htmls
+
+        -- 所有株の中からcodeで指定された銘柄の売り注文ページリンクを取り出す
+        let eqCode = ((==) (osCode os)) . Scraper.hsCode
+        sellOrderUri <- case List.find eqCode $ Scraper.fsStocks fss of
+            Nothing ->
+                M.liftIO . throwIO . DontHaveStocksToSellException .
+                Printf.printf "証券コード%dの株式を所有してないので売れません" $ osCode os
+            Just stock -> pure (Scraper.hsSellOrderUrl stock)
+        -- 売り注文ページを読み込む
+        sellOrderPage <- case sellOrderUri of
+            Nothing ->
+                M.liftIO . throwIO . UnexpectedHTMLException .
+                Printf.printf "証券コード%dの株式注文ページに行けません" $ osCode os
+            Just uri -> takeBodyFromResponse <$> fetchInRelativePath uri
+        return [sellOrderPage]
+    --
+    submitSellOrderPage :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    submitSellOrderPage os htmls = do
+        html <- case htmls of
+            []  -> failureAtScraping "株式注文ページを受け取れていません。"
+            -- 株式注文ページには次のページが無いので先頭のみを取り出す
+            x:_ -> pure x
+        {-
+         - 売り注文ページのPOSTリクエストを組み立てる
+         - 以下は初期値のまま
+         - name="orderNari" 成行チェックボックス
+         - name="execCondCD" 執行条件ラジオボタン
+         - name="validDt" 有効期間ラジオボタン
+         -}
+        let customPostReq = [("orderNominal", B8.pack . show $ osNominal os)    -- 株数
+                            ,("orderPrc", B8.pack . show $ osPrice os)          -- 値段
+                            ,("tyukakuButton.x", "57")                          -- 注文確認ボタンのクリック位置
+                            ,("tyukakuButton.y", "10")                          -- 注文確認ボタンのクリック位置
+                            ]
+        -- 売り注文ページのフォームを提出する
+        session <- M.ask
+        M.liftIO $ doPostActionOnSession session customPostReq html
+        >>= \case
+            Nothing -> M.liftIO . throwIO . UnexpectedHTMLException $
+                        Printf.printf "証券コード%dの注文確認ページに行けません" (osCode os)
+            Just r -> return [takeBodyFromResponse r]
+    --
+    submitConfirmPage :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    submitConfirmPage os htmls = do
+        html <- case htmls of
+            []  -> failureAtScraping "注文確認ページを受け取れていません。"
+            -- 注文確認ページには次のページが無いので先頭のみを取り出す
+            x:_ -> pure x
+        {-
+         - 注文確認ページのPOSTリクエストを組み立てる
+         -}
+        let customPostReq = [("pinNo", B8.pack $ osPassword os)]    -- 取引暗証番号
+        -- 注文確認ページのフォームを提出する
+        session <- M.ask
+        M.liftIO $ doPostActionOnSession session customPostReq html
+        >>= \case
+            Nothing -> M.liftIO . throwIO . UnexpectedHTMLException $
+                        Printf.printf "証券コード%dの注文終了ページに行けません" (osCode os)
+            Just r -> return [takeBodyFromResponse r]
 

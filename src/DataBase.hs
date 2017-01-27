@@ -254,6 +254,9 @@ storeAssetSpare time fss =
 {-
  - 型クラスScraper.Contentsのインスタンスをここで定義する
  -}
+instance Scraper.Contents Scraper.OrderConfirmed where
+    storeToDB _ _ = undefined
+
 instance Scraper.Contents Scraper.FraHomeAnnounce where
     -- こんなんDBに残しても意味ないんとちゃうか？
     storeToDB _ _ = undefined
