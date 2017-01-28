@@ -1,13 +1,4 @@
-{- |
-Module      :  Conf.hs
-Description :  read configure information from file
-Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
-License     :  AGPLv3
-
-Maintainer  :  https://github.com/ak1211
-Stability   :  unstable
-Portability :  portable
-
+{-
     This file is part of Tractor.
 
     Tractor is free software: you can redistribute it and/or modify
@@ -22,6 +13,18 @@ Portability :  portable
 
     You should have received a copy of the GNU Affero General Public License
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
+-}
+{- |
+Module      :  Conf.hs
+Description :  read configure information from file
+Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
+License     :  AGPLv3
+
+Maintainer  :  https://github.com/ak1211
+Stability   :  unstable
+Portability :  POSIX
+
+アプリケーションの設定情報を管理するモジュールです
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -40,9 +43,9 @@ import qualified Data.Aeson.TH as Aeson
 import qualified Data.ByteString.Lazy as BSL
 import qualified Text.Printf as Printf
 
-{-
- - アプリケーションの設定情報
- -}
+{- |
+    アプリケーションの設定情報
+-}
 data Info = Info
     { recordAssetsInterval  :: Int
     , sendReportInterval    :: Int
@@ -54,14 +57,20 @@ data Info = Info
     , slack                 :: InfoSlack
     } deriving Eq
 
+{- |
+    通知するSlackの設定情報
+-}
 data InfoSlack = InfoSlack
     { webHookURL    :: String
     , channel       :: String
     , userName      :: String
     } deriving Eq
 
+{- |
+    パスワードを*に置き換える
+-}
 hidingPassword :: String -> String
-hidingPassword = map (\_ -> '*')
+hidingPassword = map (const '*')
 
 -- 型クラスShowのインスタンス
 instance Show Info where
@@ -86,9 +95,9 @@ instance Show InfoSlack where
 $(Aeson.deriveJSON Aeson.defaultOptions ''Info)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoSlack)
 
-{-
- - 設定ファイルを読み込む
- -}
+{- |
+    設定ファイル(json)を読み込む
+-}
 readJSONFile :: String -> IO (Either String Info)
 readJSONFile filePath =
     Aeson.eitherDecode <$> BSL.readFile filePath
