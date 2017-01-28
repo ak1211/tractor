@@ -1,13 +1,4 @@
-{- |
-Module      :  Main.hs
-Description :  This file is main module of Application "Tractor"
-Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
-License     :  AGPLv3
-
-Maintainer  :  https://github.com/ak1211
-Stability   :  unstable
-Portability :  portable
-
+{-
     This file is part of Tractor.
 
     Tractor is free software: you can redistribute it and/or modify
@@ -22,6 +13,18 @@ Portability :  portable
 
     You should have received a copy of the GNU Affero General Public License
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
+-}
+{- |
+Module      :  Main.hs
+Description :  This file is main module of Application "Tractor"
+Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
+License     :  AGPLv3
+
+Maintainer  :  https://github.com/ak1211
+Stability   :  unstable
+Portability :  POSIX
+
+アプリケーション「Tractor」のメインモジュールです。
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
@@ -62,9 +65,9 @@ import Control.Concurrent.MVar
 
 import qualified System.Posix.Signals as S
 
-{-
- - 起動時の挨拶文
- -}
+{- |
+    起動時の挨拶文
+-}
 greetingsMessage = T.unlines
     [ "tractorが起動しました"
     , "以降一定時間で通知します。"
@@ -75,15 +78,15 @@ greetingsMessage = T.unlines
     , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
     ]
 
-{-
- - 時間調整でスレッドを停止する関数
- - 停止時間の単位は分
- -}
+{- |
+    時間調整でスレッドを停止する関数
+    停止時間の単位は分
+-}
 doSleep minutes = CC.threadDelay (minutes * 60 * 1000 * 1000)
 
-{-
- - お知らせの配信時間か？
- -}
+{- |
+    お知らせの配信時間か？
+-}
 isDeliverAnnounceTime :: LT.ZonedTime -> Bool
 isDeliverAnnounceTime ztm =
     any (== hm) [ 630, 1140, 1510 ]
@@ -92,9 +95,9 @@ isDeliverAnnounceTime ztm =
         let t = LT.localTimeOfDay $ LT.zonedTimeToLocalTime ztm in
         LT.todHour t*100 + LT.todMin t
 
-{-
- - プログラムの作業時間か？
- -}
+{- |
+    プログラムの作業時間か？
+-}
 isDuringWorkingTime :: LT.ZonedTime -> Bool
 isDuringWorkingTime ztm =
     isMorningSession || isAfternoonSession
@@ -105,32 +108,50 @@ isDuringWorkingTime ztm =
     isMorningSession   =  900 <= hm && hm <= 1130
     isAfternoonSession = 1230 <= hm && hm <= 1500
 
-{-
- - 証券会社のサイトにログインする関数
- -}
+{- |
+    証券会社のサイトにログインする関数
+-}
 loginToSecuritiesSite :: Conf.Info -> IO WebBot.HTTPSession
 loginToSecuritiesSite conf = do
     let str = Conf.loginURL conf
     justUri <- case N.parseURI str of
-        Nothing -> throwIO $ userError $ str ++ " は有効なURLではありません"
+        Nothing -> throwIO . userError $ str ++ " は有効なURLではありません"
         Just uri -> return uri
     resp <- WebBot.login conf justUri
     case resp of
-        Nothing -> throwIO $ userError $ str ++ " にログインできません"
+        Nothing -> throwIO . userError $ str ++ " にログインできません"
         Just sess -> return sess
 
-{-
- - メッセージをslackへ送る関数
- -}
+{- |
+    テキストメッセージをConf.InfoSlackで指定されたslackへ送る関数
+-}
 toSlack :: Conf.InfoSlack -> T.Text -> IO ()
 toSlack conf msg =
     C.yield msg
     $= SlackBot.simpleTextMsg conf
     $$ SlackBot.sinkSlack conf
 
-{-
- - 現在資産評価を証券会社のサイトから取得してDBへ
- -}
+{- |
+    テキストメッセージをsinkSlackで送信する形式に変換する関数
+-}
+simpleTextMsg :: (Monad m, M.MonadIO m) => Conf.Info -> C.Conduit T.Text m SlackBot.WebHook
+simpleTextMsg = SlackBot.simpleTextMsg . Conf.slack
+
+{- |
+    レポートをsinkSlackで送信する形式に変換する関数
+-}
+reportMsg :: (Monad m, M.MonadIO m) => Conf.Info -> C.Conduit SlackBot.Report m SlackBot.WebHook
+reportMsg = SlackBot.reportMsg . Conf.slack
+
+{- |
+    組み立てられたメッセージをConf.Infoで指定されたslackへ送る関数
+-}
+sinkSlack :: Conf.Info -> C.Sink SlackBot.WebHook IO ()
+sinkSlack = SlackBot.sinkSlack . Conf.slack
+
+{- |
+    現在資産評価を証券会社のサイトから取得してDBへ
+-}
 recordCurrentCondition :: M.ReaderT WebBot.HTTPSession IO ()
 recordCurrentCondition = do
     session <- M.ask
@@ -145,9 +166,9 @@ recordCurrentCondition = do
         Scraper.storeToDB tm spare
         Scraper.storeToDB tm sell
 
-{-
- - Slackへお知らせを送るついでに現在資産評価をDBへ
- -}
+{- |
+    Slackへお知らせを送るついでに現在資産評価をDBへ
+-}
 sendAnnounce :: Conf.Info -> IO ()
 sendAnnounce conf = do
     -- 証券会社のサイトにログイン
@@ -157,25 +178,13 @@ sendAnnounce conf = do
     -- 現在資産評価を証券会社のサイトから取得してDBへ
     M.runReaderT recordCurrentCondition session
     -- Slackへお知らせを送る
-    C.yield (T.pack $ show fha) $= simpleTextMsg $$ sinkSlack
+    C.yield (T.pack $ show fha) $= simpleTextMsg conf $$ sinkSlack conf
     -- 証券会社のサイトからログアウト
     WebBot.logout session
-    where
-    {-
-     -
-     -}
-    sinkSlack :: C.Sink SlackBot.WebHook IO ()
-    sinkSlack = SlackBot.sinkSlack (Conf.slack conf)
-    --
-    simpleTextMsg :: (Monad m, M.MonadIO m) => C.Conduit T.Text m SlackBot.WebHook
-    simpleTextMsg = SlackBot.simpleTextMsg (Conf.slack conf)
-    --
-    reportMsg :: (Monad m, M.MonadIO m) => C.Conduit SlackBot.Report m SlackBot.WebHook
-    reportMsg = SlackBot.reportMsg (Conf.slack conf)
 
-{-
- - DBから最新の資産評価を取り出してSlackへレポートを送る
- -}
+{- |
+    DBから最新の資産評価を取り出してSlackへレポートを送る
+-}
 reportOnCurrentCondition :: Conf.Info -> IO ()
 reportOnCurrentCondition conf = do
     -- DBから最新の資産評価を取り出す
@@ -183,25 +192,12 @@ reportOnCurrentCondition conf = do
 
     M.mapM_ toReport currents
     where
-    {-
-     -
-     -}
-    sinkSlack :: C.Sink SlackBot.WebHook IO ()
-    sinkSlack = SlackBot.sinkSlack (Conf.slack conf)
-    --
-    simpleTextMsg :: (Monad m, M.MonadIO m) => C.Conduit T.Text m SlackBot.WebHook
-    simpleTextMsg = SlackBot.simpleTextMsg (Conf.slack conf)
-    --
-    reportMsg :: (Monad m, M.MonadIO m) => C.Conduit SlackBot.Report m SlackBot.WebHook
-    reportMsg = SlackBot.reportMsg (Conf.slack conf)
-    {-
-     - Slackへレポートを送る関数
-     -}
+    {- |
+        Slackへレポートを送る関数
+    -}
     toReport :: DataBase.TotalAssets -> IO ()
     toReport current = do
-        {-
-         - 前営業日終わりの資産評価(立ち会い開始時間以前の情報)を取り出す
-         -}
+        -- 前営業日終わりの資産評価(立ち会い開始時間以前の情報)を取り出す
         (LT.ZonedTime lt tz) <- LT.getZonedTime
         let prevUTCTime = LT.localTimeToUTC tz $
                             lt {LT.localTimeOfDay = LT.TimeOfDay 9 00 00}
@@ -226,21 +222,23 @@ reportOnCurrentCondition conf = do
             SlackBot.rTotalProfit       = DataBase.totalAssetsProfit current,
             SlackBot.rHoldStocks        = holdStocks
         }
-        C.yield report $= reportMsg $$ sinkSlack
+        C.yield report $= reportMsg conf $$ sinkSlack conf
 
--- 作業開始指示 / 作業終了指示 / スレッド終了状態
-data ThMsgSig = Run | RunIsOver | Donothing
+data ThMsgSig
+    = Run           -- ^ 作業開始指示
+    | RunIsOver     -- ^ 作業終了指示
+    | Donothing     -- ^ スレッド終了状態
 
-{-
- - スレッドへ指示を送る
- -}
+{- |
+    スレッドへ指示を送る
+-}
 sendMsgSig :: MVar ThMsgSig -> ThMsgSig -> IO ()
 sendMsgSig mBox message =
     mask_ (takeMVar mBox >> putMVar mBox message)
 
-{-
- - Slackへお知らせを送るスレッド
- -}
+{- |
+    Slackへお知らせを送るスレッド
+-}
 sendAnnounceThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
 sendAnnounceThread conf parentThId msgBox =
     do
@@ -248,16 +246,16 @@ sendAnnounceThread conf parentThId msgBox =
         msg <- readMVar msgBox
         case msg of
             {-
-             - 作業開始指示が来た
-             -}
+                作業開始指示が来た
+            -}
             Run -> do
                 -- Slackへお知らせを送る
                 sendAnnounce conf
                 -- このスレッドの実行時間は必ず１分以上かかるようにする
                 doSleep 1
-             {-
-             - 作業開始指示以外ならスレッドを終了する
-             -}
+            {-
+                作業開始指示以外ならスレッドを終了する
+            -}
             _ -> return ()
     `catch`
         -- 例外は親スレッドに再送出
@@ -265,9 +263,9 @@ sendAnnounceThread conf parentThId msgBox =
             sendMsgSig msgBox Donothing
             throwTo parentThId e
 
-{-
- - Slackへレポートを送るスレッド
- -}
+{- |
+    Slackへレポートを送るスレッド
+-}
 sendReportThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
 sendReportThread conf parentThId msgBox =
     do
@@ -281,8 +279,8 @@ sendReportThread conf parentThId msgBox =
     where
     loop :: Int -> ThMsgSig -> IO ()
     {-
-     - 作業開始指示が来た
-     -}
+        作業開始指示が来た
+    -}
     loop remain Run =
         if remain <= 0
         then do
@@ -295,17 +293,17 @@ sendReportThread conf parentThId msgBox =
             doSleep 1
             loop (remain - 1) =<< readMVar msgBox
     {-
-     - 作業終了指示が来たのでスレッドを終了する
-     -}
+        作業終了指示が来たのでスレッドを終了する
+    -}
     loop _ RunIsOver = sendMsgSig msgBox Donothing
     {-
-     - Donothingは終了状態を表しているのでその通りスレッドを終了する
-     -}
+        Donothingは終了状態を表しているのでその通りスレッドを終了する
+    -}
     loop _ Donothing = return ()
 
-{-
- - 現在資産評価をDBへ格納するスレッド
- -}
+{- |
+    現在資産評価をDBへ格納するスレッド
+-}
 recordAssetsThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
 recordAssetsThread conf parentThId msgBox =
     do
@@ -325,9 +323,9 @@ recordAssetsThread conf parentThId msgBox =
      where
     loop :: Int -> ThMsgSig -> WebBot.HTTPSession -> IO ()
     {-
-     - 作業開始指示が来た
-     -}
-    loop remain Run session = do
+        作業開始指示が来た
+    -}
+    loop remain Run session =
         if remain <= 0
         then do
             -- 現在資産評価を取得してDBへ
@@ -343,17 +341,17 @@ recordAssetsThread conf parentThId msgBox =
             msg <- readMVar msgBox
             loop (remain - 1) msg session
     {-
-     - 作業終了指示が来たのでスレッドを終了する
-     -}
+        作業終了指示が来たのでスレッドを終了する
+    -}
     loop _ RunIsOver _ = sendMsgSig msgBox Donothing
     {-
-     - Donothingは終了状態を表しているのでその通りスレッドを終了する
-     -}
+        Donothingは終了状態を表しているのでその通りスレッドを終了する
+    -}
     loop _ Donothing _ = return ()
 
-{-
- - アプリケーションの本体
- -}
+{- |
+    アプリケーションの本体
+-}
 applicationBody :: String -> IO ()
 applicationBody confFilePath = do
     -- 設定ファイルを読む
@@ -363,33 +361,25 @@ applicationBody confFilePath = do
         Left msg -> T.putStrLn $ T.pack msg
         -- アプリケーションの実行を開始する
         Right conf -> do
-            {-
-             - 起動時の挨拶文をSlackへ送る
-             -}
+            -- 起動時の挨拶文をSlackへ送る
             toSlack (Conf.slack conf) greetingsMessage
             {-
-             - 具体的な処理を担当する関数と
-             - MVarのタプルを用意する
-             -}
+                具体的な処理を担当する関数と
+                MVarのタプルを用意する
+            -}
             myThId <- CC.myThreadId
             threads <- M.mapM
                         (\fn -> do mbox<-newMVar Donothing; return (mbox, fn))
                         [ recordAssetsThread conf myThId
                         , sendReportThread conf myThId ]
-            {-
-             - メインループ
-             -}
+            -- メインループ
             M.forever $ loop conf threads
             `catch`
             \(SomeException ex) -> do
                 let s = Printf.printf "exception caught, \"%s\"" (show ex)
-                {-
-                 - Slackへエラーメッセージを送る
-                 -}
+                -- Slackへエラーメッセージを送る
                 toSlack (Conf.slack conf) (T.pack s)
-                {-
-                 - 一定時間待機後, 実行時例外からの再開
-                 -}
+                -- 一定時間待機後に実行時例外からの再開
                 doSleep 11
                 applicationBody confFilePath
     where
@@ -398,75 +388,80 @@ applicationBody confFilePath = do
         case ztm of
             t| isDeliverAnnounceTime t -> do
                 {-
-                 - お知らせの配信時間
+                    お知らせの配信時間
                  -}
                 myThId <- CC.myThreadId
                 mBox <- newMVar Run
-                CC.forkIO (sendAnnounceThread conf myThId mBox)
-                return ()
+                M.void . CC.forkIO . sendAnnounceThread conf myThId $ mBox
              | isDuringWorkingTime t ->
                 {-
-                 - 立会時間中
-                 - スレッドに作業開始指示を送る
-                 -}
+                    立会時間中
+                    スレッドに作業開始指示を送る
+                -}
                 M.mapM_ sendSigRun threads
             _ ->
                 {-
-                 - 立会時間外
-                 - スレッドに作業終了指示を送る
-                 -}
+                    立会時間外
+                    スレッドに作業終了指示を送る
+                -}
                 M.mapM_ sendSigRunIsOver threads
         {-
-         - このスレッドは作業の担当スレッドに
-         - 指示することしかしないので適当に時間をつぶす
-         -}
+            このスレッドは作業の担当スレッドに
+            指示することしかしないので適当に時間をつぶす
+        -}
         doSleep 1
         `onException`
             -- 子スレッドに作業終了指示を送っておく
             M.mapM_ sendSigRunIsOver threads
-     {-
-     - スレッドに作業開始指示を送る関数
-     - スレッドが終了していたなら起動する
-     -}
+    {- |
+        スレッドに作業開始指示を送る関数
+        スレッドが終了していたなら起動する
+    -}
     sendSigRun (mBox, fnc) =
-        readMVar mBox >>= \case
-            -- スレッドが終了していたなら起動して
-            -- 作業開始指示を送る
+        readMVar mBox
+        >>= \case
+            {-
+                スレッドが終了していたなら起動して
+                作業開始指示を送る
+            -}
             Donothing -> do
                 sendMsgSig mBox Run
                 CC.forkIO (fnc mBox)
                 -- 起動タイミングをずらすために28.657秒待つ
                 CC.threadDelay (28657 * 1000)
-            -- 作業開始指示または
-            -- 作業終了指示が送られている場合はそのままにする
+            {-
+                作業開始指示または
+                作業終了指示が送られている場合はそのままにする
+            -}
             _ -> return ()
 
-    {-
-     - スレッドに作業終了指示を送る関数
-     -}
+    {- |
+        スレッドに作業終了指示を送る関数
+    -}
     sendSigRunIsOver (mBox, fnc) =
-        readMVar mBox >>= \case
+        readMVar mBox
+        >>= \case
             -- スレッドが終了していたなら書き換えずにそのままにする
             Donothing -> return ()
             -- 作業終了指示を送る
             _ -> sendMsgSig mBox RunIsOver
-    {-
-     - 全ての例外ハンドラ
-     -}
+    {- |
+        全ての例外ハンドラ
+    -}
     handleCatchAll :: Conf.Info -> SomeException -> IO ()
     handleCatchAll conf ex =
-        let errmsg = T.pack $ Printf.printf
+        let errmsg = T.pack . Printf.printf
                         "exception caught, \"%s\""
-                        (show ex)
+                        $ show ex
         in
         {-
-         - Slackへエラーメッセージを送る
-         -}
+            Slackへエラーメッセージを送る
+        -}
         toSlack (Conf.slack conf) errmsg
 
-{-
- - エントリポイント
- -}
+{- |
+    エントリポイント
+-}
 main :: IO ()
 main =
     applicationBody "conf.json"

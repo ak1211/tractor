@@ -1,13 +1,4 @@
-{- |
-Module      :  SlackBot.hs
-Description :  Send a message via Slack
-Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
-License     :  AGPLv3
-
-Maintainer  :  https://github.com/ak1211
-Stability   :  unstable
-Portability :  portable
-
+{-
     This file is part of Tractor.
 
     Tractor is free software: you can redistribute it and/or modify
@@ -22,6 +13,18 @@ Portability :  portable
 
     You should have received a copy of the GNU Affero General Public License
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
+-}
+{- |
+Module      :  SlackBot.hs
+Description :  Send a message via Slack
+Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
+License     :  AGPLv3
+
+Maintainer  :  https://github.com/ak1211
+Stability   :  unstable
+Portability :  POSIX
+
+Slackとのやりとりをするモジュールです。
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
@@ -79,14 +82,14 @@ import qualified Data.Time as Tm
 import qualified Data.Time.LocalTime as LT
 
 {-
- - Slack Web API
- - https://api.slack.com/web
- -}
+    Slack Web API
+    https://api.slack.com/web
+-}
 
 {-
- - Slack Web API - Incoming Webhooks
- - https://api.slack.com/incoming-webhooks
- -}
+    Slack Web API - Incoming Webhooks
+    https://api.slack.com/incoming-webhooks
+-}
 data WebHook = WebHook {
     channel         :: String,
     username        :: String,
@@ -96,9 +99,9 @@ data WebHook = WebHook {
 } deriving Show
 
 {-
- - Slack Web API - Attaching content and links to messages
- - https://api.slack.com/docs/message-attachments
- -}
+    Slack Web API - Attaching content and links to messages
+    https://api.slack.com/docs/message-attachments
+-}
 data Attachment = Attachment {
     color           :: String,
     pretext         :: Maybe String,
@@ -114,40 +117,38 @@ $(Aeson.deriveJSON Aeson.defaultOptions {
     } ''WebHook)
 $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 
-{-
- - 定期的に送信するレポート
- -}
+{- |
+    定期的に送信するレポート
+-}
 data Report = Report {
-    rTime           :: UTCTime,             -- DB上の時間
-    rTotalAsset     :: Double,              -- 総資産
-    rAssetDiffByDay :: Maybe Double,        -- 総資産増減(前日比)
-    rTotalProfit    :: Double,              -- 損益合計
-    rHoldStocks     :: [Scraper.HoldStock]  -- 保有株式
+    rTime           :: UTCTime,             -- ^ DB上の時間
+    rTotalAsset     :: Double,              -- ^ 総資産
+    rAssetDiffByDay :: Maybe Double,        -- ^ 総資産増減(前日比)
+    rTotalProfit    :: Double,              -- ^ 損益合計
+    rHoldStocks     :: [Scraper.HoldStock]  -- ^ 保有株式
 } deriving Show
 
-{-
- -  slackへ送信する関数
- -}
+{- |
+    Slackへ送信する関数
+-}
 send :: M.MonadIO m => Conf.InfoSlack -> BS8.ByteString -> m N.Status
 send conf payload =
     let rBody = apiReqBody payload in
     M.liftIO $ do
+        req <- N.urlEncodedBody rBody <$> (N.parseRequest . Conf.webHookURL $ conf)
         manager <- N.newManager N.tlsManagerSettings
-        req <- N.parseRequest $ Conf.webHookURL conf
-        let req' = N.urlEncodedBody rBody req
-        resp <- N.httpLbs req' manager
-        return $ N.responseStatus resp
+        N.responseStatus <$> N.httpLbs req manager
     where
-    -- Slack APIに送るリクエストボディを組み立てる関数
+    -- | Slack APIに送るリクエストボディを組み立てる関数
     apiReqBody :: BS8.ByteString -> [(BS8.ByteString, BS8.ByteString)]
     apiReqBody payload =
         [ ("Content-type", "application/json")
         , ("payload", payload)
         ]
 
-{-
- - Slackへ流す関数
- -}
+{- |
+    Slackへ流す関数
+-}
 sinkSlack :: Conf.InfoSlack -> C.Sink WebHook IO ()
 sinkSlack conf =
     C.await >>= Maybe.maybe (return ()) func
@@ -160,10 +161,9 @@ sinkSlack conf =
         C.await >>= Maybe.maybe (return ()) func
 
 
-{-
- - ただのテキストを
- - SlackAPIに送るJSONを組み立てる関数
- -}
+{- |
+    ただのテキストをSlackに送るJSONを組み立てる関数
+-}
 simpleTextMsg :: (Monad m, M.MonadIO m) => Conf.InfoSlack -> C.Conduit T.Text m WebHook
 simpleTextMsg conf =
     C.await >>= Maybe.maybe (return ()) func
@@ -179,10 +179,9 @@ simpleTextMsg conf =
         }
         C.await >>= Maybe.maybe (return ()) func
 
-{-
- - 資産情報を
- - Slackに送るJSONを組み立てる関数
- -}
+{- |
+    資産情報をSlackに送るJSONを組み立てる関数
+-}
 reportMsg :: (Monad m, M.MonadIO m) => Conf.InfoSlack -> C.Conduit Report m WebHook
 reportMsg conf =
     C.await >>= Maybe.maybe (return ()) func
