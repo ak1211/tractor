@@ -92,7 +92,6 @@ import qualified Data.Text.Lazy.Encoding as TE
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.Encoding.Error as Encoding.Error
 import qualified Data.Typeable
-import qualified Data.Maybe
 
 import qualified Codec.Text.IConv as IConv
 import qualified Text.Printf as Printf
@@ -215,9 +214,9 @@ fetchPage manager header cookie reqBody url = M.liftIO $ do
     storeLogDB
         Loghttp { loghttpUrl            = show url
                 , loghttpScheme         = N.uriScheme url
-                , loghttpUserInfo       = Maybe.maybe "" N.uriUserInfo $ N.uriAuthority url
-                , loghttpHost           = Maybe.maybe "" N.uriRegName $ N.uriAuthority url
-                , loghttpPort           = Maybe.maybe "" N.uriPort $ N.uriAuthority url
+                , loghttpUserInfo       = maybe "" N.uriUserInfo $ N.uriAuthority url
+                , loghttpHost           = maybe "" N.uriRegName $ N.uriAuthority url
+                , loghttpPort           = maybe "" N.uriPort $ N.uriAuthority url
                 , loghttpPath           = N.uriPath url
                 , loghttpQuery          = N.uriQuery url
                 , loghttpFragment       = N.uriFragment url
@@ -267,7 +266,7 @@ takeBodyFromResponse resp =
         Just cs ->
             let u = TE.decodeUtf8' $ IConv.convert cs "UTF-8" bodyHtml in
             -- デコードの失敗はおそらくバイナリなので文字化けで返す
-            Either.either (\_ -> forcedConvUtf8 bodyHtml) id u
+            either (\_ -> forcedConvUtf8 bodyHtml) id u
     where
     -- | 文字化けでも無理やり返す関数
     forcedConvUtf8 :: BL8.ByteString -> T.Text
@@ -477,7 +476,8 @@ login conf loginUri = do
     loginPageBody <- takeBodyFromResponse <$> fetchPage manager reqHeader Nothing [] loginUri
     -- ログインページでID&パスワードをsubmit
     resp <- doPostAction manager reqHeader Nothing customPostReq loginUri loginPageBody
-    return $ mkSession manager reqHeader <$> resp
+    let session = mkSession manager reqHeader <$> resp
+    return session
     where
     -- 返値組み立て
     mkSession manager reqHeader resp =
@@ -494,10 +494,12 @@ login conf loginUri = do
 fetchInRelativePath :: M.MonadIO m => T.Text -> M.ReaderT HTTPSession m (N.Response BL8.ByteString)
 fetchInRelativePath relPath = do
     session <- M.ask
-    let uri = Maybe.fromJust $ toAbsURI (sLoginPageURI session) relPath
+    uri <- case toAbsURI (sLoginPageURI session) relPath of
+        Nothing -> M.liftIO . throwIO $ userError "link url is not valid"
+        Just x -> return x
     let cookies = case N.destroyCookieJar $ sRespCookies session of
                     []-> Nothing
-                    _ -> Just $ sRespCookies session
+                    _ -> Just (sRespCookies session)
     fetchPage (sManager session) (sReqHeaders session) cookies [] uri
 
 type SessionReaderMonadT m = M.ReaderT HTTPSession m [T.Text]
@@ -585,7 +587,7 @@ fetchFraHomeAnnounce =
                 ,("LM", clickLinkText "お知らせ")
                 ,("CT", return)]
     in
-    Either.either failureAtScraping pure
+    either failureAtScraping pure
     <$> Scraper.scrapingFraHomeAnnounce =<< fM =<< M.ask
 
 {- |
@@ -599,7 +601,7 @@ fetchFraStkSell =
                 ,("LM", clickLinkText "現物売")
                 ,("CT", return)]
     in
-    Either.either failureAtScraping pure
+    either failureAtScraping pure
     <$> Scraper.scrapingFraStkSell =<< fM =<< M.ask
 
 {- |
@@ -613,7 +615,7 @@ fetchFraAstSpare =
                 ,("LM", clickLinkText "余力情報")
                 ,("CT", return)]
     in
-    Either.either failureAtScraping pure
+    either failureAtScraping pure
     <$> Scraper.scrapingFraAstSpare =<< fM =<< M.ask
 
 {- |
@@ -636,7 +638,7 @@ sellStock order =
                 ,("LM", clickLinkText "現物売")
                 ,("CT", doSellOrder order)]
     in
-    Either.either failureAtScraping pure
+    either failureAtScraping pure
     <$> Scraper.scrapingOrderConfirmed =<< fM =<< M.ask
     where
     --
@@ -650,7 +652,7 @@ sellStock order =
     --
     clickSellOrderLink :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
     clickSellOrderLink os htmls = do
-        fss <- Either.either failureAtScraping pure $ Scraper.scrapingFraStkSell htmls
+        fss <- either failureAtScraping pure $ Scraper.scrapingFraStkSell htmls
 
         -- 所有株の中からcodeで指定された銘柄の売り注文ページリンクを取り出す
         let eqCode = (==) (osCode os) . Scraper.hsCode

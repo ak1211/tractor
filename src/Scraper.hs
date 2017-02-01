@@ -90,7 +90,6 @@ import qualified Data.Text.Lazy.Encoding as TE
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.Encoding.Error as Encoding.Error
 import qualified Data.Typeable
-import qualified Data.Maybe
 
 import qualified Codec.Text.IConv as IConv
 import qualified Text.Printf as Printf
@@ -190,14 +189,15 @@ data FraAstSpare = FraAstSpare {
 
 -- 型クラスShowのインスタンス
 instance Show FraAstSpare where
-    show (FraAstSpare mts som inc dec rfe rta cas) =
-        Printf.printf "現物買付余力 %d, " mts
-        ++ Printf.printf "現金残高 %d, " som
-        ++ Printf.printf "預り増加額 %d, " inc
-        ++ Printf.printf "預り減少額 %d, " dec
-        ++ Printf.printf "ボックスレート手数料拘束金 %d, " rfe
-        ++ Printf.printf "源泉徴収税拘束金（仮計算） %d, " rta
-        ++ Printf.printf "使用可能現金 %d" cas
+    show (FraAstSpare mts som inc dec rfe rta cas) = unlines
+        [ Printf.printf "現物買付余力 %d," mts
+        , Printf.printf "現金残高 %d," som
+        , Printf.printf "預り増加額 %d," inc
+        , Printf.printf "預り減少額 %d," dec
+        , Printf.printf "ボックスレート手数料拘束金 %d," rfe
+        , Printf.printf "源泉徴収税拘束金（仮計算） %d," rta
+        , Printf.printf "使用可能現金 %d" cas
+        ]
 
 {- |
     注文発注後の"ご注文を受付けました"の内容
@@ -321,7 +321,7 @@ scrapingFraStkSell htmls = do
     -- 株式時価評価額を取り出す
     sumQuantity <- (Just tree >>= table 2 >>= tr 2 >>= td 2 >>= text 0) `toDouble` "株式時価評価額の取得に失敗"
     -- 銘柄リストを取り出す
-    lists <- Maybe.maybe
+    lists <- maybe
             (Left "個別株式リストの取得に失敗")
             (Right . drop 1 . taglist "tr")
             (Just tree >>= table 8)

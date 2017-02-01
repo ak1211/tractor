@@ -84,29 +84,29 @@ iso8601 = formatTime defaultTimeLocale "%FT%T%Q"
 DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateAll"] [DB.persistLowerCase|
 -- | サマリーテーブル
 Summary
-    dateTime        UTCTime -- | 日付時間
-    quantity        Double  -- | 評価合計
-    profit          Double  -- | 損益合計
+    dateTime        UTCTime -- ^ 日付時間
+    quantity        Double  -- ^ 評価合計
+    profit          Double  -- ^ 損益合計
     deriving Show
 -- | 保有株式テーブル
 HoldStock
-    dateTime        UTCTime -- | 日付時間
-    code            Int     -- | 証券コード
-    caption         String  -- | 名前
-    count           Int     -- | 保有数
-    purchase        Double  -- | 取得単価
-    price           Double  -- | 現在値
+    dateTime        UTCTime -- ^ 日付時間
+    code            Int     -- ^ 証券コード
+    caption         String  -- ^ 名前
+    count           Int     -- ^ 保有数
+    purchase        Double  -- ^ 取得単価
+    price           Double  -- ^ 現在値
     deriving Show
 -- | 余力テーブル
 AssetSpare
-    dateTime        UTCTime -- | 日付時間
-    moneySpare      Int64   -- | 現物買付余力
-    stockMoney      Int64   -- | 現金残高
-    incDeposits     Int64   -- | 預り増加額
-    decDeposits     Int64   -- | 預り減少額
-    restraintFee    Int64   -- | ボックスレート手数料拘束金
-    restraintTax    Int64   -- | 源泉徴収税拘束金（仮計算）
-    cash            Int64   -- | 使用可能現金
+    dateTime        UTCTime -- ^ 日付時間
+    moneySpare      Int64   -- ^ 現物買付余力
+    stockMoney      Int64   -- ^ 現金残高
+    incDeposits     Int64   -- ^ 預り増加額
+    decDeposits     Int64   -- ^ 預り減少額
+    restraintFee    Int64   -- ^ ボックスレート手数料拘束金
+    restraintTax    Int64   -- ^ 源泉徴収税拘束金（仮計算）
+    cash            Int64   -- ^ 使用可能現金
     deriving Show
 |]
 
@@ -115,16 +115,16 @@ DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateTotalAssets"] [DB.pe
 --  保有株式テーブルを
 --  結合した総資産テーブル
 TotalAssets
-    dateTime        UTCTime -- | 日付時間
-    quantity        Double  -- | 評価合計
-    profit          Double  -- | 損益合計
-    moneySpare      Int64   -- | 現物買付余力
-    stockMoney      Int64   -- | 現金残高
-    incDeposits     Int64   -- | 預り増加額 (株式売却時受取金)
-    decDeposits     Int64   -- | 預り減少額 (株式買注文時拘束金及び受け渡し金)
-    restraintFee    Int64   -- | ボックスレート手数料拘束金
-    restraintTax    Int64   -- | 源泉徴収税拘束金（仮計算）
-    cash            Int64   -- | 使用可能現金
+    dateTime        UTCTime -- ^ 日付時間
+    quantity        Double  -- ^ 評価合計
+    profit          Double  -- ^ 損益合計
+    moneySpare      Int64   -- ^ 現物買付余力
+    stockMoney      Int64   -- ^ 現金残高
+    incDeposits     Int64   -- ^ 預り増加額 (株式売却時受取金)
+    decDeposits     Int64   -- ^ 預り減少額 (株式買注文時拘束金及び受け渡し金)
+    restraintFee    Int64   -- ^ ボックスレート手数料拘束金
+    restraintTax    Int64   -- ^ 源泉徴収税拘束金（仮計算）
+    cash            Int64   -- ^ 使用可能現金
     deriving Show
 |]
 
@@ -151,8 +151,8 @@ totalAssetsOfCash ta =
 -}
 getTotalAstsDescList :: Maybe (String, UTCTime) -> Int -> Int -> IO [TotalAssets]
 getTotalAstsDescList predicade limit offset =
-    let sql = T.toStrict . T.unwords
-            $   [ "select"
+    let sql = T.toStrict $ T.unwords
+                [ "select"
                 , " summary.id,"
                 , " summary.date_time,"
                 , " summary.quantity,"
@@ -179,19 +179,21 @@ getTotalAstsDescList predicade limit offset =
     where
     has :: T.Text -> Maybe (String, UTCTime) -> T.Text
     has partial Nothing = ""
-    has partial (Just x) =
-        let (op, tm) = x in
-        let op' = T.pack op in
-        let tm' = T.pack $ iso8601 tm in
-        T.concat [partial, op', "\"", tm', "\""]
+    has partial (Just (op, tm)) = T.concat
+        [ partial
+        , T.pack op
+        , "\""
+        , T.pack (iso8601 tm)
+        , "\""
+        ]
 
 {- |
     保有株式テーブルを逆順（最新が先頭）で取り出す関数
 -}
 getHoldStockDescList :: Maybe (String, UTCTime) -> IO [Scraper.HoldStock]
 getHoldStockDescList predicade =
-    let sql = T.toStrict . T.unwords
-            $   [ "select"
+    let sql = T.toStrict $ T.unwords
+                [ "select"
                 , " *"
                 , " from hold_stock"
                 , " where hold_stock.date_time" `has` predicade
@@ -217,8 +219,7 @@ getHoldStockDescList predicade =
 insertDB d =
     DB.runSqlite "assets.sqlite3" $ do
         DB.runMigration migrateAll
-        DB.insert d
-        return ()
+        M.void (DB.insert d)
 
 {-
     型の変換関数

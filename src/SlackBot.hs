@@ -24,7 +24,8 @@ Maintainer  :  https://github.com/ak1211
 Stability   :  unstable
 Portability :  POSIX
 
-Slackとのやりとりをするモジュールです。
+Slack Web API <https://api.slack.com/web>によって
+SlackとAPI接続するモジュールです。
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
@@ -70,7 +71,6 @@ import qualified Network.HTTP.Types.Header as N
 import qualified Network.HTTP.Types.Method as N
 import qualified Network.HTTP.Types.Status as N
 
-import qualified Data.Maybe
 import Data.Aeson ((.:), (.=))
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.TH as Aeson
@@ -81,14 +81,10 @@ import Data.Time (UTCTime)
 import qualified Data.Time as Tm
 import qualified Data.Time.LocalTime as LT
 
-{-
-    Slack Web API
-    https://api.slack.com/web
--}
-
-{-
+{- |
     Slack Web API - Incoming Webhooks
-    https://api.slack.com/incoming-webhooks
+    <https://api.slack.com/incoming-webhooks>
+    によるJSON構造定義
 -}
 data WebHook = WebHook {
     channel         :: String,
@@ -98,9 +94,10 @@ data WebHook = WebHook {
     icon_emoji      :: String
 } deriving Show
 
-{-
+{- |
     Slack Web API - Attaching content and links to messages
-    https://api.slack.com/docs/message-attachments
+    <https://api.slack.com/docs/message-attachments>
+    によるJSON構造定義
 -}
 data Attachment = Attachment {
     color           :: String,
@@ -151,14 +148,14 @@ send conf payload =
 -}
 sinkSlack :: Conf.InfoSlack -> C.Sink WebHook IO ()
 sinkSlack conf =
-    C.await >>= Maybe.maybe (return ()) func
+    C.await >>= maybe (return ()) func
     where
     --
     func webhook = do
         resp <- send conf (BSL8.toStrict $ Aeson.encode webhook)
         -- respに返ってきた結果はログに落とすためだけど
         -- 今は無視する
-        C.await >>= Maybe.maybe (return ()) func
+        C.await >>= maybe (return ()) func
 
 
 {- |
@@ -166,7 +163,7 @@ sinkSlack conf =
 -}
 simpleTextMsg :: (Monad m, M.MonadIO m) => Conf.InfoSlack -> C.Conduit T.Text m WebHook
 simpleTextMsg conf =
-    C.await >>= Maybe.maybe (return ()) func
+    C.await >>= maybe (return ()) func
     where
     --
     func message = do
@@ -177,14 +174,14 @@ simpleTextMsg conf =
             hText         = T.unpack message,
             icon_emoji    = ":tractor:"
         }
-        C.await >>= Maybe.maybe (return ()) func
+        C.await >>= maybe (return ()) func
 
 {- |
     資産情報をSlackに送るJSONを組み立てる関数
 -}
 reportMsg :: (Monad m, M.MonadIO m) => Conf.InfoSlack -> C.Conduit Report m WebHook
 reportMsg conf =
-    C.await >>= Maybe.maybe (return ()) func
+    C.await >>= maybe (return ()) func
     where
     --
     func (Report time total diff profit holdStocks) = do
@@ -194,14 +191,14 @@ reportMsg conf =
                     , Printf.printf "総資産 %f " <$> Just total
                     , Printf.printf "損益合計 %+f" <$> Just profit
                     ] :: [Maybe String])
-        C.yield WebHook {
-            channel       = Conf.channel conf,
-            username      = Conf.userName conf,
-            attachments   = map (mkAtt time) holdStocks,
-            hText         = msg,
-            icon_emoji    = ":tractor:"
-        }
-        C.await >>= Maybe.maybe (return ()) func
+        C.yield WebHook
+            { channel       = Conf.channel conf
+            , username      = Conf.userName conf
+            , attachments   = map (mkAttach time) holdStocks
+            , hText         = msg
+            , icon_emoji    = ":tractor:"
+            }
+        C.await >>= maybe (return ()) func
         where
         --
         updown :: Double -> String
@@ -209,16 +206,15 @@ reportMsg conf =
             | diff < 0  = ":chart_with_downwards_trend:"
             | otherwise = ":chart_with_upwards_trend:"
 
-   --
-    mkAtt :: UTCTime -> Scraper.HoldStock -> Attachment
-    mkAtt time stock =
-        Attachment  {
-            color         = if Scraper.hsGain stock >= 0 then "#F63200" else "#0034FF",
-            pretext       = Nothing,
-            title         = Nothing,
-            text          = show stock,
-            footer        = Conf.userName conf,
-            footer_icon   = "https://platform.slack-edge.com/img/default_application_icon.png",
-            ts            = round $ POSIX.utcTimeToPOSIXSeconds time
+    --
+    mkAttach :: UTCTime -> Scraper.HoldStock -> Attachment
+    mkAttach time stock = Attachment
+        { color         = if Scraper.hsGain stock >= 0 then "#F63200" else "#0034FF"
+        , pretext       = Nothing
+        , title         = Nothing
+        , text          = show stock
+        , footer        = Conf.userName conf
+        , footer_icon   = "https://platform.slack-edge.com/img/default_application_icon.png"
+        , ts            = round $ POSIX.utcTimeToPOSIXSeconds time
         }
 
