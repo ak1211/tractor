@@ -41,6 +41,7 @@ import Prelude hiding (catch)
 import Control.Exception hiding (throw)
 import Control.Monad.Trans.Resource (runResourceT)
 
+import Control.Applicative ((<$>), (<*>), (<*))
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as M
 import qualified Control.Monad.Reader as M
@@ -49,6 +50,7 @@ import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
 import qualified Data.Either as Either
 import qualified Data.Maybe as Maybe
+import qualified Data.List as List
 
 import qualified Network.URI as N
 import qualified Network.HTTP.Types.Status as N
@@ -89,7 +91,7 @@ doSleep minutes = CC.threadDelay (minutes * 60 * 1000 * 1000)
 -}
 isDeliverAnnounceTime :: LT.ZonedTime -> Bool
 isDeliverAnnounceTime ztm =
-    any (== hm) [ 630, 1140, 1510 ]
+    hm `elem` [630, 1140, 1510]
     where
     hm =
         let t = LT.localTimeOfDay $ LT.zonedTimeToLocalTime ztm in
@@ -113,14 +115,15 @@ isDuringWorkingTime ztm =
 -}
 loginToSecuritiesSite :: Conf.Info -> IO WebBot.HTTPSession
 loginToSecuritiesSite conf = do
-    let str = Conf.loginURL conf
-    justUri <- case N.parseURI str of
-        Nothing -> throwIO . userError $ str ++ " は有効なURLではありません"
-        Just uri -> return uri
-    resp <- WebBot.login conf justUri
-    case resp of
-        Nothing -> throwIO . userError $ str ++ " にログインできません"
-        Just sess -> return sess
+    let url = Conf.loginURL conf
+    u <- fail2Throw (url++" は有効なURLではありません") $ N.parseURI url
+    s <- WebBot.login conf u
+    fail2Throw (url++" にログインできませんでした") s
+    where
+    --
+    fail2Throw :: String -> Maybe a -> IO a
+    fail2Throw  _ (Just x) = return x
+    fail2Throw msg Nothing = throwIO (userError msg)
 
 {- |
     テキストメッセージをConf.InfoSlackで指定されたslackへ送る関数
@@ -144,7 +147,7 @@ reportMsg :: (Monad m, M.MonadIO m) => Conf.Info -> C.Conduit SlackBot.Report m 
 reportMsg = SlackBot.reportMsg . Conf.slack
 
 {- |
-    組み立てられたメッセージをConf.Infoで指定されたslackへ送る関数
+    組み立てられたメッセージをConf.Infoで指定されたSlackへ送る関数
 -}
 sinkSlack :: Conf.Info -> C.Sink SlackBot.WebHook IO ()
 sinkSlack = SlackBot.sinkSlack . Conf.slack
@@ -224,6 +227,7 @@ reportOnCurrentCondition conf = do
         }
         C.yield report $= reportMsg conf $$ sinkSlack conf
 
+-- | スレッドへ送る指示
 data ThMsgSig
     = Run           -- ^ 作業開始指示
     | RunIsOver     -- ^ 作業終了指示
@@ -268,9 +272,8 @@ sendAnnounceThread conf parentThId msgBox =
 -}
 sendReportThread :: Conf.Info -> CC.ThreadId -> MVar ThMsgSig -> IO ()
 sendReportThread conf parentThId msgBox =
-    do
-        -- readMVarによって指示があるまで待機する
-        loop 0 =<< readMVar msgBox
+    -- readMVarによって指示があるまで待機する
+    (loop 0 =<< readMVar msgBox)
     `catch`
         -- 例外は親スレッドに再送出
         \(SomeException e) -> do
@@ -320,7 +323,7 @@ recordAssetsThread conf parentThId msgBox =
         \(SomeException e) -> do
             sendMsgSig msgBox Donothing
             throwTo parentThId e
-     where
+    where
     loop :: Int -> ThMsgSig -> WebBot.HTTPSession -> IO ()
     {-
         作業開始指示が来た
@@ -369,11 +372,12 @@ applicationBody confFilePath = do
             -}
             myThId <- CC.myThreadId
             threads <- M.mapM
-                        (\fn -> do mbox<-newMVar Donothing; return (mbox, fn))
+                        -- (MVar, function)のタプルを作る
+                        (\fn -> curry id <$> newMVar Donothing <*> pure fn)
                         [ recordAssetsThread conf myThId
                         , sendReportThread conf myThId ]
             -- メインループ
-            M.forever $ loop conf threads
+            M.forever (loop conf threads)
             `catch`
             \(SomeException ex) -> do
                 let s = Printf.printf "exception caught, \"%s\"" (show ex)
@@ -383,13 +387,14 @@ applicationBody confFilePath = do
                 doSleep 11
                 applicationBody confFilePath
     where
+    loop :: Conf.Info -> [(MVar ThMsgSig, MVar ThMsgSig -> IO ())] -> IO ()
     loop conf threads = do
         ztm <- LT.getZonedTime
         case ztm of
             t| isDeliverAnnounceTime t -> do
                 {-
                     お知らせの配信時間
-                 -}
+                -}
                 myThId <- CC.myThreadId
                 mBox <- newMVar Run
                 M.void . CC.forkIO . sendAnnounceThread conf myThId $ mBox
@@ -417,9 +422,10 @@ applicationBody confFilePath = do
         スレッドに作業開始指示を送る関数
         スレッドが終了していたなら起動する
     -}
-    sendSigRun (mBox, fnc) =
-        readMVar mBox
-        >>= \case
+    sendSigRun :: (MVar ThMsgSig, MVar ThMsgSig -> IO ()) -> IO ()
+    sendSigRun (mBox, fnc) = do
+        msg <- readMVar mBox
+        case msg of
             {-
                 スレッドが終了していたなら起動して
                 作業開始指示を送る
@@ -438,9 +444,10 @@ applicationBody confFilePath = do
     {- |
         スレッドに作業終了指示を送る関数
     -}
-    sendSigRunIsOver (mBox, fnc) =
-        readMVar mBox
-        >>= \case
+    sendSigRunIsOver :: (MVar ThMsgSig, MVar ThMsgSig -> IO ()) -> IO ()
+    sendSigRunIsOver (mBox, fnc) = do
+        msg <- readMVar mBox
+        case msg of
             -- スレッドが終了していたなら書き換えずにそのままにする
             Donothing -> return ()
             -- 作業終了指示を送る
