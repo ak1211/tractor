@@ -149,7 +149,7 @@ data HoldStock = HoldStock {
     hsPrice         :: Double           -- ^ 現在値
 } deriving (Eq)
 
--- | 損益は計算で求める
+-- | 損益を計算する関数
 hsGain (HoldStock sol cod cap cou pup pri) = realToFrac cou * (pri - pup)
 
 -- 型クラスShowのインスタンス
@@ -212,26 +212,23 @@ instance Show OrderConfirmed where
         T.unpack co
 
 {- |
-    nmタグの子タグのリストを取り出す関数
+    タグ名の子をリストで取り出す関数
 -}
 taglist :: T.Text -> [TS.TagTree T.Text] -> [[TS.TagTree T.Text]]
 taglist nm t = [c | TS.TagBranch k _ c <- TS.universeTree t, nm==T.toLower k]
 
 {- |
-    nameタグのidx番の子タグを取り出す関数
+    タグ名の子リストからidx番のタグを取り出す関数
 -}
 tag :: T.Text -> Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 tag name idx = flip Safe.atMay idx . taglist name
 
--- | tableタグ
 table = tag "table"
--- | trタグ
 tr = tag "tr"
--- | tdタグ
 td = tag "td"
 
 {- |
-    idx番のテキストを取り出す関数
+    テキスト要素をリストで取り出す関数
 -}
 textlist :: [TS.TagTree T.Text] -> [T.Text]
 textlist t =
