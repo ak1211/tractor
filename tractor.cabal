@@ -2,7 +2,7 @@ name:                tractor
 version:             0.1.1
 synopsis:            "tractor" is an Assets observation application.
 description:         Please see README.md
-homepage:            https://github.com/ak1211/tractor#readme
+homepage:            https://github.com/ak1211/tractor
 license:             AGPL-3
 license-file:        LICENSE
 author:              Akihiro Yamamoto
