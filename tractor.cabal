@@ -3,7 +3,7 @@ version:             0.1.1
 synopsis:            "tractor" is an Assets observation application.
 description:         Please see README.md
 homepage:            https://github.com/ak1211/tractor#readme
-license:             BSD3
+license:             AGPL-3
 license-file:        LICENSE
 author:              Akihiro Yamamoto
 maintainer:          ak1211@mail.ak1211.com
