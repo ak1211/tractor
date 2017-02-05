@@ -166,9 +166,8 @@ Loghttp
     query           String      -- ^ クエリ
     fragment        String      -- ^ フラグメント
     --
-    reqMethod       String      -- ^ 要求メソッド(GET / POST)
-    reqHeader       String      -- ^ 要求ヘッダ
     reqCookie       String      -- ^ 要求クッキー
+    reqBody         String      -- ^ 要求ボディ
     --
     respDatetime    UTCTime     -- ^ 返答時間
     respStatus      String      -- ^ 返答HTTP status code
@@ -220,9 +219,8 @@ fetchPage manager header cookie reqBody url = M.liftIO $ do
                 , loghttpPath           = N.uriPath url
                 , loghttpQuery          = N.uriQuery url
                 , loghttpFragment       = N.uriFragment url
-                , loghttpReqMethod      = B8.unpack $ N.method req
-                , loghttpReqHeader      = show header
                 , loghttpReqCookie      = show cookie
+                , loghttpReqBody        = show $ customReq
                 , loghttpRespDatetime   = tm
                 , loghttpRespStatus     = show $ N.responseStatus resp
                 , loghttpRespVersion    = show $ N.responseVersion resp
@@ -258,15 +256,15 @@ takeBodyFromResponse resp =
     in
     -- HTTPレスポンスヘッダからエンコードを得る
     let respCS = takeCharset $ N.responseHeaders resp in
-    -- 本文中の指定 -> HTTPレスポンスヘッダの指定の順番でエンコードを得る
-    case Maybe.listToMaybe $ Maybe.catMaybes [htmlCS, respCS] of
+    -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番でエンコードを得る
+    case Maybe.listToMaybe $ Maybe.catMaybes [respCS, htmlCS] of
         -- エンコード指定がないので文字化けで返す
         Nothing -> forcedConvUtf8 bodyHtml
         -- UTF-8へ
         Just cs ->
             let u = TE.decodeUtf8' $ IConv.convert cs "UTF-8" bodyHtml in
             -- デコードの失敗はおそらくバイナリなので文字化けで返す
-            either (\_ -> forcedConvUtf8 bodyHtml) id u
+            either (const $ forcedConvUtf8 bodyHtml) id u
     where
     -- | 文字化けでも無理やり返す関数
     forcedConvUtf8 :: BL8.ByteString -> T.Text
