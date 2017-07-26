@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  DataBase.hs
+Module      :  DataBase
 Description :  store to database of the securities information
 Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
 License     :  AGPLv3
@@ -49,30 +49,15 @@ module DataBase
 
 import qualified Scraper
 
-import Prelude hiding (catch)
-import Control.Exception hiding (throw)
-
 import qualified Control.Monad as M
-import Control.Monad.IO.Class (MonadIO)
-import qualified Control.Monad.IO.Class as M
 
 import Data.Int
-import qualified Data.ByteString.Char8 as BS8
-import qualified Data.ByteString.Lazy.Char8 as BSL8
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.Conduit as C
-import qualified Data.Conduit.List as CL
-import qualified Data.Text.Lazy.IO as T
 import qualified Data.Text.Lazy as T
-import qualified Data.Text.Encoding
 
-import Database.Persist
 import qualified Database.Persist.Sqlite as DB
 import qualified Database.Persist.TH as DB
 
-import qualified Data.Time.LocalTime as LT
-
-import Data.Time (Day(..), TimeOfDay, UTCTime, parseTime, getCurrentTime)
+import Data.Time (UTCTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 
 {- |
@@ -178,7 +163,7 @@ getTotalAstsDescList predicade limit offset =
         >>= return . map DB.entityVal
     where
     has :: T.Text -> Maybe (String, UTCTime) -> T.Text
-    has partial Nothing = ""
+    has _ Nothing = ""
     has partial (Just (op, tm)) = T.concat
         [ partial
         , T.pack op
@@ -206,7 +191,7 @@ getHoldStockDescList predicade =
         >>= return . map (fromHoldStock . DB.entityVal)
     where
     has :: T.Text -> Maybe (String, UTCTime) -> T.Text
-    has partial Nothing = ""
+    has _ Nothing = ""
     has partial (Just x) =
         let (op, tm) = x in
         let op' = T.pack op in
@@ -233,7 +218,7 @@ toHoldStock time (Scraper.HoldStock _ cod cap cou pur pri) =
     HoldStock time cod (T.unpack cap) cou pur pri
 
 fromHoldStock :: HoldStock -> Scraper.HoldStock
-fromHoldStock (HoldStock time cod cap cou pur pri) =
+fromHoldStock (HoldStock _ cod cap cou pur pri) =
     Scraper.HoldStock Nothing cod (T.pack cap) cou pur pri
 
 toAssetSpare :: UTCTime -> Scraper.FraAstSpare -> AssetSpare

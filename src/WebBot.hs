@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  WebBot.hs
+Module      :  WebBot
 Description :  Crawl websites
 Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
 License     :  AGPLv3
@@ -26,21 +26,16 @@ Portability :  POSIX
 
 ウェブサイトを巡回するモジュールです。
 -}
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE QuasiQuotes                #-}
-{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
 module WebBot
     ( UnexpectedHTMLException
     , HTTPSession (..)
-    , Loghttp (..)
     , fetchPage
     , login
     , logout
@@ -52,16 +47,8 @@ module WebBot
     , sellStock
     ) where
 
-import qualified Scraper
-import qualified DataBase
-
-import Debug.Trace (trace)
-import Prelude hiding (catch)
 import Control.Exception hiding (throw)
-import Safe
-import qualified Conf
 
-import Control.Applicative ((<$>), (<*>), (<*))
 import Text.Parsec ((<|>))
 import qualified Text.Parsec as P
 import qualified Text.Parsec.ByteString.Lazy as P
@@ -69,53 +56,34 @@ import qualified Text.Parsec.ByteString.Lazy as P
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as M
 import qualified Control.Monad.Reader as M
-import Control.Monad.Trans.Resource (runResourceT)
-
-import Data.Conduit (Source, ($$), yield)
-import qualified Data.Conduit as C
-import qualified Data.Conduit.Binary as CB
-import qualified Data.Conduit.List as CL
-
-import qualified Data.Either as Either
 import qualified Data.Maybe as Maybe
-import qualified Data.Map as Map
 import qualified Data.List as List
-import qualified Data.List.Split as List.Split
-import qualified Data.Char as Char
 import qualified Data.ByteString.Char8 as B8
-import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as BL8
-import qualified Data.Text.Lazy.Read as Read
-import qualified Data.Text.Lazy.IO as T
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Encoding as TE
-import qualified Data.Text.Encoding as Encoding
-import qualified Data.Text.Encoding.Error as Encoding.Error
 import qualified Data.Typeable
 
 import qualified Codec.Text.IConv as IConv
 import qualified Text.Printf as Printf
 
-import qualified Network.Connection as N
 import qualified Network.URI as N
 import qualified Network.HTTP.Conduit as N
 import qualified Network.HTTP.Types.Header as N
-import qualified Network.HTTP.Types.Method as N
 
-import Database.Persist ((==.), (!=.), (>.), (<=.))
 import qualified Database.Persist as DB
-import qualified Database.Persist.TH as DB
-import qualified Database.Persist.Sql as DB
 import qualified Database.Persist.Sqlite as Sqlite
 
-import Text.HTML.TagSoup ((~==), (~/=))
 import qualified Text.HTML.TagSoup as TS
 import qualified Text.HTML.TagSoup.Tree as TS
-import qualified Text.HTML.TagSoup.Match as TS
 
 import qualified Control.Concurrent as CC
 
-import Data.Time (Day(..), TimeOfDay, UTCTime, parseTime, getCurrentTime)
+import qualified Data.Time as Tm
+
+import qualified Scraper
+import qualified Conf
+import Model
 
 {- |
     実行時例外 : 予想外のHTML
@@ -148,44 +116,17 @@ data HTTPSession = HTTPSession {
 }
 
 instance Show HTTPSession where
-    show (HTTPSession a b c d e) =
+    show (HTTPSession a _ c d e) =
         Printf.printf "%s, %s, %s, %s" (show a) (show c) (show d) (show e)
-
-{- |
-    HTTP通信記録用データーベース
-    urlのページにHTTP通信をした時の返答
--}
-DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateAll"] [DB.persistLowerCase|
-Loghttp
-    url             String      -- ^ ページのURL
-    scheme          String      -- ^ スキーム
-    userInfo        String      -- ^ オーソリティ
-    host            String      -- ^ オーソリティ
-    port            String      -- ^ オーソリティ
-    path            String      -- ^ パス
-    query           String      -- ^ クエリ
-    fragment        String      -- ^ フラグメント
-    --
-    reqCookie       String      -- ^ 要求クッキー
-    reqBody         String      -- ^ 要求ボディ
-    --
-    respDatetime    UTCTime     -- ^ 返答時間
-    respStatus      String      -- ^ 返答HTTP status code
-    respVersion     String      -- ^ 返答HTTP version
-    respHeader      String      -- ^ 返答ヘッダ
-    respCookie      String      -- ^ 返答クッキー
-    respBody        ByteString  -- ^ 返答ボディ(HTML)
-    deriving Show
-|]
 
 {- |
     ログをデーターベースへ格納する
 -}
-storeLogDB :: (Monad m, M.MonadIO m) => Loghttp -> m (DB.Key Loghttp)
-storeLogDB log = M.liftIO $
+storeLogDB :: M.MonadIO m => Loghttp -> m ()
+storeLogDB logMessage = M.liftIO $
     Sqlite.runSqlite "loghttp.sqlite3" $ do
-        Sqlite.runMigration migrateAll
-        DB.insert log
+        Sqlite.runMigration migrateLogTable
+        M.void $ DB.insert logMessage
 
 {- |
     urlに接続して結果を得るついでにDBに記録する
@@ -208,7 +149,7 @@ fetchPage manager header cookie reqBody url = M.liftIO $ do
     -- 組み立てたHTTPリクエストを発行する
     resp <- N.httpLbs customReq manager
     -- 受信時間
-    tm <- getCurrentTime
+    tm <- Tm.getCurrentTime
     -- ログDBへ
     storeLogDB
         Loghttp { loghttpUrl            = show url
@@ -220,7 +161,7 @@ fetchPage manager header cookie reqBody url = M.liftIO $ do
                 , loghttpQuery          = N.uriQuery url
                 , loghttpFragment       = N.uriFragment url
                 , loghttpReqCookie      = show cookie
-                , loghttpReqBody        = show $ customReq
+                , loghttpReqBody        = show customReq
                 , loghttpRespDatetime   = tm
                 , loghttpRespStatus     = show $ N.responseStatus resp
                 , loghttpRespVersion    = show $ N.responseVersion resp
@@ -271,44 +212,38 @@ takeBodyFromResponse resp =
     forcedConvUtf8 = T.pack . BL8.unpack
     -- | htmlをパースする関数
     html :: P.Parser HtmlCharset
-    html =
-        P.try (P.spaces >> tag)
-        <|>
-        P.try (next >> html)
-        <|>
-        return ""
+    html    =   P.try (P.spaces *> tag)
+            <|> P.try (next *> html)
+            <|> return ""
     -- | 次のタグまで読み飛ばす関数
     next :: P.Parser ()
-    next =
-        P.skipMany1 (P.noneOf ">") <* P.char '>'
+    next    =  P.skipMany1 (P.noneOf ">")
+            <* P.char '>'
     -- | タグをパースする関数
     tag :: P.Parser HtmlCharset
-    tag =
-        P.char '<' >> meta
+    tag     =  P.char '<'
+            *> meta
     -- | metaタグをパースする関数
     meta :: P.Parser HtmlCharset
-    meta = do
-        P.string "meta"
-        P.spaces
-        P.try charset <|> P.try metaHttpEquiv
+    meta    =  P.string "meta"
+            *> P.spaces
+            *> P.try charset <|> P.try metaHttpEquiv
     -- | meta http-equivタグをパースする関数
+    {-
+        例 : http-equiv="Content-Type" content="text/html; charset=shift_jis"
+        https://www.w3.org/TR/html5/document-metadata.html#meta
+    -}
     metaHttpEquiv :: P.Parser HtmlCharset
-    metaHttpEquiv = do
-        {-
-            例 : http-equiv="Content-Type" content="text/html; charset=shift_jis"
-            https://www.w3.org/TR/html5/document-metadata.html#meta
-        -}
-        P.string "http-equiv="
-        contentType
+    metaHttpEquiv = P.string "http-equiv=" *> contentType
     -- | meta http-equiv Content-Typeをパースする関数
     contentType :: P.Parser HtmlCharset
     contentType = do
-        P.string "\"Content-Type\""
+        M.void $ P.string "\"Content-Type\""
         P.spaces
-        P.string "content="
-        P.many (P.char '\"')
+        M.void $ P.string "content="
+        M.void $ P.many (P.char '\"')
         c <- content
-        P.many (P.char '\"')
+        M.void $ P.many (P.char '\"')
         return c
     {-
         例 : "text/html; charset=shift_jis"
@@ -320,14 +255,14 @@ takeBodyFromResponse resp =
     -}
     content :: P.Parser HtmlCharset
     content = do
-        _ <- P.many P.alphaNum
-        P.char '/'
-        _ <- P.many P.alphaNum
+        M.void $ P.many P.alphaNum
+        M.void $ P.char '/'
+        M.void $ P.many P.alphaNum
         parameter <|> return ""
     --
     parameter :: P.Parser HtmlCharset
     parameter = do
-        P.char ';'
+        M.void $ P.char ';'
         P.spaces
         charset <|> P.many P.alphaNum
     --
@@ -337,10 +272,10 @@ takeBodyFromResponse resp =
             例 : charset="utf-8"
             https://www.w3.org/TR/html5/document-metadata.html#meta
         -}
-        P.string "charset="
-        P.many (P.char '\"')
+        M.void $ P.string "charset="
+        M.void $ P.many (P.char '\"')
         cs <- P.many (P.alphaNum <|> P.char '_' <|> P.char '-')
-        P.many (P.char '\"')
+        M.void $ P.many (P.char '\"')
         return cs
     -- | HTTPレスポンスヘッダからcharsetを得る
     takeCharset :: N.ResponseHeaders -> Maybe String
@@ -372,7 +307,7 @@ doPostAction :: N.Manager
                 -> IO (Maybe (N.Response BL8.ByteString))
 doPostAction manager reqHeader cookie customPostReq pageURI html = do
     let uTree = TS.universeTree $ TS.tagTree $ TS.parseTags html
-    let formTags = [all | all@(TS.TagBranch nm _ _) <- uTree, "form"==T.toLower nm]
+    let formTags = [formTag | formTag@(TS.TagBranch nm _ _) <- uTree, "form"==T.toLower nm]
     case formTags of
         -- ページ唯一のformタグを取り出す
         x : _ -> action x
@@ -380,7 +315,7 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
     where
     action :: TS.TagTree T.Text -> IO (Maybe (N.Response BL8.ByteString))
     action = \case
-        form@(TS.TagBranch _  attrs childNodes) -> do
+        form@(TS.TagBranch _  attrs _) -> do
             let defaultPostReqBody = defaultRequest form
             -- formタグの属性を取り出す
             let fmAction = Maybe.listToMaybe [v | (k,v)<-attrs, "action"==T.toLower k]
@@ -408,8 +343,9 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
         B8.pack . T.unpack . snd <$> List.find ((==) (T.toCaseFold name) . T.toCaseFold . fst) attrs
     -- | 未入力時のフォームリクエストを得る
     defaultRequest :: TS.TagTree T.Text -> [(B8.ByteString, B8.ByteString)]
-    defaultRequest (TS.TagBranch _  attrs childNodes) =
-        let sel = [selectTag all | all@(TS.TagBranch nm _ _) <- TS.universeTree childNodes, "select"==T.toLower nm] in
+    defaultRequest (TS.TagLeaf _) = undefined
+    defaultRequest (TS.TagBranch _  _ childNodes) =
+        let sel = [selectTag br | br@(TS.TagBranch nm _ _) <- TS.universeTree childNodes, "select"==T.toLower nm] in
         let ias = [as | TS.TagOpen nm as <- TS.flattenTree childNodes, "input"==T.toLower nm] in
         let inp = List.concatMap inputTag ias in
         let img = List.concatMap inputTypeImage ias in
@@ -417,15 +353,16 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
         where
         --
         selectTag :: TS.TagTree T.Text -> Maybe (B8.ByteString, B8.ByteString)
-        selectTag (TS.TagBranch _ attrs children) =
+        selectTag (TS.TagLeaf _) = undefined
+        selectTag (TS.TagBranch _ attrs' children) =
             -- タグ内のoptionタグを全て取り出す
             let options = [as | TS.TagOpen nm as <- TS.flattenTree children, "option"==T.toLower nm] in
             List.find (\as -> Maybe.isJust $ takeValue as "selected") options
-            >>= \as -> (\k v -> (k,v)) <$> takeValue attrs "name" <*> takeValue as "value"
+            >>= \as -> (\k v -> (k,v)) <$> takeValue attrs' "name" <*> takeValue as "value"
         --
         inputTag :: [TS.Attribute T.Text] -> [(B8.ByteString, B8.ByteString)]
-        inputTag attrs =
-            let f = takeValue attrs in
+        inputTag attrs' =
+            let f = takeValue attrs' in
             -- (name, value)のタプルを作る
             case f "type" of
                 Just "checkbox" | Maybe.isNothing (f "checked") -> []
@@ -434,8 +371,8 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
         --
         -- input type="image"
         inputTypeImage :: [TS.Attribute T.Text] -> [(B8.ByteString, B8.ByteString)]
-        inputTypeImage attrs =
-            let f = takeValue attrs in
+        inputTypeImage attrs' =
+            let f = takeValue attrs' in
             let name = f "name" in
             -- (name, value)のタプルを作る
             case f "type" of
@@ -641,7 +578,7 @@ sellStock order =
     where
     --
     doSellOrder :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
-    doSellOrder os htmls = do
+    doSellOrder _ htmls = do
         a <- clickSellOrderLink order htmls
         M.liftIO $ CC.threadDelay (300 * 1000)
         b <- submitSellOrderPage order a

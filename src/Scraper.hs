@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  Scraper.hs
+Module      :  Scraper
 Description :  Scraping a web page
 Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
 License     :  AGPLv3
@@ -55,72 +55,29 @@ module Scraper
     , scrapingOrderConfirmed
     ) where
 
-import qualified Conf
+import qualified Safe
 
-import Debug.Trace (trace)
-import Prelude hiding (catch)
-import Control.Exception
-import Safe
-
-import Control.Applicative ((<$>), (<*>))
 import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as M
-import qualified Control.Monad.Reader as M
-import Control.Monad.Trans.Resource (runResourceT)
-
-import Data.Conduit (Source, ($$), yield)
-import qualified Data.Conduit as C
-import qualified Data.Conduit.Binary as CB
-import qualified Data.Conduit.List as CL
 
 import Data.Int (Int64)
-import qualified Data.Either as Either
 import qualified Data.Maybe as Maybe
-import qualified Data.Map as Map
 import qualified Data.List as List
-import qualified Data.List.Split as List.Split
 import qualified Data.Char
-import qualified Data.ByteString.Char8 as B8
-import Data.ByteString.Char8 (ByteString)
-import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Data.Text.Lazy.Read as Read
-import qualified Data.Text.Lazy.IO as T
 import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as TE
-import qualified Data.Text.Encoding as Encoding
-import qualified Data.Text.Encoding.Error as Encoding.Error
-import qualified Data.Typeable
 
-import qualified Codec.Text.IConv as IConv
 import qualified Text.Printf as Printf
 
-import qualified Network.Connection as N
-import qualified Network.URI as N
-import qualified Network.HTTP.Conduit as N
-import qualified Network.HTTP.Types.Header as N
-import qualified Network.HTTP.Types.Method as N
-
-import Database.Persist ((==.), (!=.), (>.), (<=.))
-import qualified Database.Persist as DB
-import qualified Database.Persist.TH as DB
-import qualified Database.Persist.Sql as DB
-import qualified Database.Persist.Sqlite as Sqlite
-
-import Text.HTML.TagSoup ((~==), (~/=))
 import qualified Text.HTML.TagSoup as TS
 import qualified Text.HTML.TagSoup.Tree as TS
-import qualified Text.HTML.TagSoup.Match as TS
 
-import Data.Time (Day(..), TimeOfDay, UTCTime, parseTime, getCurrentTime)
-import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.MVar (MVar, newEmptyMVar, newMVar, takeMVar, putMVar, readMVar)
-import Control.Concurrent.Chan (Chan, newChan, writeChan, readChan)
+import qualified Data.Time as Tm
 
 {- |
     ページからスクレイピングした情報の型クラス
 -}
 class Contents a where
-    storeToDB :: UTCTime -> a -> IO ()
+    storeToDB :: Tm.UTCTime -> a -> IO ()
 
 {- |
     ホーム -> お知らせの内容
@@ -149,12 +106,15 @@ data HoldStock = HoldStock {
 } deriving (Eq)
 
 -- | 損益を計算する関数
-hsGain (HoldStock sol cod cap cou pup pri) = realToFrac cou * (pri - pup)
+hsGain :: HoldStock -> Double
+hsGain hs =
+    let delta =  hsPrice hs - hsPurchasePrice hs in
+    realToFrac (hsCount hs) * delta
 
 -- 型クラスShowのインスタンス
 instance Show HoldStock where
     show hs =
-       let (HoldStock sol cod cap cou pup pri) = hs in
+       let (HoldStock _ cod cap cou pup pri) = hs in
        Printf.printf "%d %s, 保有 %d, 取得 %f, 現在 %f, 損益 %+f"
            cod cap cou pup pri (hsGain hs)
 
@@ -223,8 +183,14 @@ taglist nm t = [c | TS.TagBranch k _ c <- TS.universeTree t, nm==T.toLower k]
 tag :: T.Text -> Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 tag name idx = flip Safe.atMay idx . taglist name
 
+--
+table :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 table = tag "table"
+--
+tr :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 tr = tag "tr"
+--
+td :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 td = tag "td"
 
 {- |
