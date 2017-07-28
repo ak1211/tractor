@@ -170,7 +170,7 @@ aggregate connInfo tickerSymbol =
     -- | 次の日
     nextDay :: Tm.UTCTime -> Tm.UTCTime
     nextDay (Tm.UTCTime day time) = Tm.UTCTime (Tm.addDays 1 day) time
-    -- | 集計後の値は(00:00:00 JST)をUTCに変換した日付(09:00:00 UTC)にする
+    -- | 集計後の値は(00:00:00 JST)をUTCに変換した日付(15:00:00 UTC)にする
     decisionOfDailyPrices :: Ohlcvt -> Maybe Ohlcvt
     decisionOfDailyPrices val =
         let timeOfJST = Tm.utcToLocalTime jst $ ohlcvtAt val in
