@@ -42,6 +42,7 @@ import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Lazy.Builder.Int as TB
 import Data.Monoid ((<>))
 
+import qualified Control.Arrow as A
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as M
 
@@ -58,6 +59,7 @@ import qualified Data.Time.LocalTime as Tm
 import Data.Conduit (($$), ($=))
 import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
+import Data.Typeable (Typeable)
 
 import TickerSymbol as Import
 import TimeFrame as Import
@@ -66,30 +68,6 @@ import qualified TechnicalIndicators as TI
 import Model
 import Conf
 import Lib
-
--- | 指定の指標を計算する
-calcIndicator :: TechnicalInds -> [DB.Entity Ohlcvt] -> [(DB.Entity Ohlcvt, TechInds)]
-calcIndicator indicator entities =
-    case indicator of
-    TISMA period                -> ohlcvtClose `apply` (TI.sma period)
-    TIEMA period                -> ohlcvtClose `apply` (TI.ema period)
-    TIRSI period                -> ohlcvtClose `apply` (TI.rsi period)
-    TIMACD fastP slowP          -> ohlcvtClose `apply` (TI.macd fastP slowP)
-    TIMACDSIG fastP slowP sigP  -> ohlcvtClose `apply` (TI.macdSignal fastP slowP sigP)
-    TIPSYCHOLO period           -> ohlcvtClose `apply` (TI.psycologicalLine period)
-    where
-    apply :: (Ohlcvt -> Maybe Double) -> ([Double] -> [Maybe Double]) -> [(DB.Entity Ohlcvt, TechInds)]
-    apply price formula =
-        let entAndPrices = [(e,pr) | e<-entities, let (Just pr)=price $ DB.entityVal e] in
-        let (es,ps) = unzip entAndPrices in
-        let entAndValues = zip es $ formula ps in
-        [(e, makeTI e v) | (e, Just v)<-entAndValues]
-    --
-    makeTI e v = TechInds
-                    { techIndsOhlcvt    = DB.entityKey e
-                    , techIndsInd       = indicator
-                    , techIndsVal       = v
-                    }
 
 -- | UTCの日付時間のうち、日本時間の日付のみ比較
 sameDayOfJST :: Ohlcvt -> Ohlcvt -> Bool
@@ -156,7 +134,7 @@ aggregate connInfo tickerSymbol =
                             , OhlcvtTf      ==. TF1h    -- 1時間足
                             ] ++ filtTomorrow
         -- 1時間足を日足に集計する処理
-        timeAndSales <- DB.selectSource (filtHourly :: [DB.Filter Ohlcvt]) [DB.Asc OhlcvtAt]
+        timeAndSales <- DB.selectSource (filtHourly :: [DB.Filter Ohlcvt]) [DB.Desc OhlcvtAt]
                         $= CL.map DB.entityVal
                         $= CL.groupBy sameDayOfJST
                         $= CL.map (aggregateOfOHLCVT decisionOfDailyPrices)
@@ -177,48 +155,160 @@ aggregate connInfo tickerSymbol =
         let timeOfUTC = Tm.localTimeToUTC jst $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
         Just $ val {ohlcvtTf = TF1d, ohlcvtAt = timeOfUTC}
 
+-- データーベースにテクニカル指標を問い合わせる
+queryIndicatorsDesc :: MySQL.ConnectInfo
+                -> TickerSymbol
+                -> TimeFrame
+                -> TechnicalInds
+                -> IO [(DB.Entity Ohlcvt, Double)]
+queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator =
+    runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+        DB.runMigration migrateQuotes
+        E.select $
+            E.from $ \(ohlcvt `E.InnerJoin` ti) -> do
+                E.on
+                        (ohlcvt E.^. OhlcvtId E.==. ti E.^. TechIndsOhlcvt)
+                E.where_ $
+                        ohlcvt E.^. OhlcvtTicker E.==. E.val tickerSymbol
+                        E.&&.
+                        ohlcvt E.^. OhlcvtTf E.==. E.val timeFrame
+                        E.&&.
+                        ti E.^. TechIndsInd E.==. E.val indicator
+                E.orderBy
+                        [E.desc (ohlcvt E.^. OhlcvtAt)]
+                return
+                    ( ohlcvt
+                    , ti        E.^. TechIndsVal
+                    )
+    >>= return . map (A.second E.unValue)
+
 -- | インディケータの計算
 calculate   :: MySQL.ConnectInfo
             -> TickerSymbol
             -> TimeFrame
             -> TechnicalInds
             -> IO ()
+--
 calculate connInfo tickerSymbol timeFrame indicator =
-    runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
-        DB.runMigration migrateQuotes
-        -- どこまで計算を進めたかをデーターベースに問い合わせる
-        latests <- E.select $
-                    E.from $ \(ohlcvt `E.InnerJoin` ti) -> do
-                        E.on
-                                (ohlcvt E.^. OhlcvtId E.==. ti E.^. TechIndsOhlcvt)
-                        E.where_ $
-                                ohlcvt E.^. OhlcvtTicker E.==. E.val tickerSymbol
-                                E.&&.
-                                ohlcvt E.^. OhlcvtTf E.==. E.val timeFrame
-                                E.&&.
-                                ti E.^. TechIndsInd E.==. E.val indicator
-                        E.orderBy
-                                [E.desc (ohlcvt E.^. OhlcvtAt)]
-                        E.limit 1
-                        return (ohlcvt E.^. OhlcvtAt)
-        let latestAt = Mb.listToMaybe [x | (E.Value x) <- latests]
-        -- 計算に必要な値を取り出す
-        let filt =  [ OhlcvtTicker  ==. tickerSymbol
-                    , OhlcvtTf      ==. timeFrame
-                    ]
-        source <- DB.selectList filt [DB.Asc OhlcvtAt]
-        -- インディケータの計算
-        let values = calcIndicator indicator source
-        -- すでにある物はデーターベースに入れない
-        let insertionValues = filter (not . hasAlreadyEntity latestAt . fst) values
-        M.mapM_ (DB.insert . snd) insertionValues
+    case indicator of
+    TIMACD fastP slowP        -> do
+        -- MACDは短期,長期EMAを先に計算してからテクニカル指標テーブルより計算を行なう
+        -- MACDの計算に使う短期,長期EMAの計算をする
+        [fast,slow] <- M.mapM
+                        (\x ->  calculate connInfo tickerSymbol timeFrame x
+                                >> queryIndicatorsDesc connInfo tickerSymbol timeFrame x
+                        )
+                        [TIEMA fastP, TIEMA slowP]
+        -- テクニカル指標テーブルの短期,長期EMAよりMACDの計算
+        let macd = zipWith
+                    (\(a,f) (b,s) ->
+                        if DB.entityKey a /= DB.entityKey b then
+                            error "calculate MACD error"
+                        else
+                            (a, TI.macdFormula f s)
+                    ) fast slow
+        -- データーベースに入れる
+        prevItem <- queryPrevItem
+        let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+            DB.runMigration migrateQuotes
+            M.mapM_ (DB.insert . uncurry packTI) $ takeWhile (isNewEntry prevAt . fst) macd
+    --
+    TIMACDSIG fastP slowP sigP  -> do
+        -- MACDSIGはMACDを先に計算してからテクニカル指標テーブルより計算を行なう
+        -- MACDの計算をする
+        entAndMacd <-   (\x ->  calculate connInfo tickerSymbol timeFrame x
+                                >> queryIndicatorsDesc connInfo tickerSymbol timeFrame x
+                        ) (TIMACD fastP slowP)
+        -- テクニカル指標テーブルのMACDよりMACDSIGの計算
+        let macdSig = uncurry zip . A.second (TI.macdSignalFormula sigP) . unzip $ entAndMacd
+        -- データーベースに入れる
+        prevItem <- queryPrevItem
+        let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+            DB.runMigration migrateQuotes
+            M.mapM_ (DB.insert . uncurry packTI) $ takeWhile (isNewEntry prevAt . fst) macdSig
+    --
+    _ ->
+        -- それ以外の指標は株価テーブルより計算を行なう
+        calculateOfIndicatorsFromOhlcvtTable
     where
-    -- | データーベースにすでにあるか？
-    hasAlreadyEntity :: Maybe Tm.UTCTime -> DB.Entity Ohlcvt -> Bool
-    hasAlreadyEntity Nothing _         = False
-    hasAlreadyEntity (Just latest) ent =
-        let this = ohlcvtAt $ DB.entityVal ent in
-        (latest >= this)
+    --
+    calculateOfIndicatorsFromOhlcvtTable = do
+        prevItem <- queryPrevItem
+        let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        let prevVal = snd <$> prevItem
+        runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+            DB.runMigration migrateQuotes
+            -- 計算に必要な値を取り出す
+            let filt =  [ OhlcvtTicker  ==. tickerSymbol
+                        , OhlcvtTf      ==. timeFrame
+                        ]
+            source <- DB.selectList filt [DB.Desc OhlcvtAt]
+            -- 指定の指標を計算する
+            let values = takeWhile (isNewEntry prevAt . fst) $ calc indicator prevVal source
+            -- データーベースに入れる
+            M.mapM_ (DB.insert . snd) values
+    -- データーベースに前回のEMAがあればそれを種にして計算を始める。
+    calc (TIEMA period) prevVal
+        | Mb.isNothing prevVal  = apply ohlcvtClose $ TI.ema1 period
+        | otherwise             = apply ohlcvtClose $ TI.ema period (Mb.fromJust prevVal)
+    --
+    calc (TISMA period) _       = apply ohlcvtClose $ TI.sma period
+    --
+    calc (TIRSI period) _       = apply ohlcvtClose $ TI.rsi period
+    -- ここのMACD,MACDSIGは最初から全計算する場合のもの
+    -- 通常は使わない
+    calc (TIMACD fa sl) _       = apply ohlcvtClose $ TI.macd fa sl
+    calc (TIMACDSIG fa sl sg) _ = apply ohlcvtClose $ TI.macdSignal fa sl sg
+    --
+    calc (TIBBLOW3 period) _    = apply ohlcvtClose $ map (\(a,_,_,_,_,_,_) -> a) . TI.bollingerBands period
+    calc (TIBBLOW2 period) _    = apply ohlcvtClose $ map (\(_,b,_,_,_,_,_) -> b) . TI.bollingerBands period
+    calc (TIBBLOW1 period) _    = apply ohlcvtClose $ map (\(_,_,c,_,_,_,_) -> c) . TI.bollingerBands period
+    calc (TIBBMIDDLE period) _  = apply ohlcvtClose $ map (\(_,_,_,d,_,_,_) -> d) . TI.bollingerBands period
+    calc (TIBBUP1 period) _     = apply ohlcvtClose $ map (\(_,_,_,_,e,_,_) -> e) . TI.bollingerBands period
+    calc (TIBBUP2 period) _     = apply ohlcvtClose $ map (\(_,_,_,_,_,f,_) -> f) . TI.bollingerBands period
+    calc (TIBBUP3 period) _     = apply ohlcvtClose $ map (\(_,_,_,_,_,_,g) -> g) . TI.bollingerBands period
+    --
+    calc (TIPSYCHOLO period) _  = apply ohlcvtClose $ TI.psycologicalLine period
+    --
+    calc (TIDIPOS period) _     = apply priceHiLoClo $ map (\(a,_,_) -> a) . TI.dmi period
+    calc (TIDINEG period) _     = apply priceHiLoClo $ map (\(_,b,_) -> b) . TI.dmi period
+    calc (TIADX period) _       = apply priceHiLoClo $ map (\(_,_,c) -> c) . TI.dmi period
+    --
+    priceHiLoClo :: Ohlcvt -> Maybe TI.PriceHiLoClo
+    priceHiLoClo val = do
+        hi <- ohlcvtHigh val
+        lo <- ohlcvtLow val
+        clo <- ohlcvtClose val
+        Just (hi,lo,clo)
+    --
+    apply   :: (Typeable t)
+            => (Ohlcvt -> Maybe t)
+            -> ([t] -> [Double])
+            -> [DB.Entity Ohlcvt]
+            -> [(DB.Entity Ohlcvt, TechInds)]
+    apply price formula entities =
+        let ents = filter (Mb.isJust . price . DB.entityVal) entities in
+        let values = formula $ map (Mb.fromJust . price . DB.entityVal) ents in
+        zipWith (\e v -> (e, packTI e v)) ents values
+    --
+    packTI e v =
+        TechInds    { techIndsOhlcvt    = DB.entityKey e
+                    , techIndsInd       = indicator
+                    , techIndsVal       = v
+                    }
+    -- | データーベースに入れるべきか？
+    isNewEntry :: Maybe Tm.UTCTime -> DB.Entity Ohlcvt -> Bool
+    isNewEntry Nothing _                    = True
+    isNewEntry (Just timeOfPrevItem) entity =
+        case ohlcvtAt $ DB.entityVal entity of
+        curTime | timeOfPrevItem < curTime  -> True
+                | otherwise                 -> False
+    -- 前回までの実行でどこまで計算を進めたかをデーターベースに問い合わせる
+    queryPrevItem =
+        Mb.listToMaybe <$> queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator
+
 
 -- | Portfolio上の情報を集計する関数
 runAggregateOfPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
@@ -249,25 +339,36 @@ runAggregateOfPortfolios conf = do
         M.liftIO $ do
             aggregate connInfo ticker
             --
-            let calc = calculate connInfo ticker
-            --
-            calc TF1d (TISMA 5)
-            calc TF1d (TISMA 10)
-            calc TF1d (TISMA 25)
-            calc TF1d (TISMA 75)
-            --
-            calc TF1d (TIEMA 5)
-            calc TF1d (TIEMA 10)
-            calc TF1d (TIEMA 25)
-            calc TF1d (TIEMA 75)
-            --
-            calc TF1d (TIRSI 9)
-            calc TF1d (TIRSI 14)
-            --
-            calc TF1d (TIMACD 12 26)
-            calc TF1d (TIMACDSIG 12 26 9)
-            --
-            calc TF1d (TIPSYCHOLO 12)
+            let indicators =    [ TISMA 5
+                                , TISMA 25
+                                , TISMA 75
+                                --
+                                , TIEMA 5
+                                , TIEMA 25
+                                , TIEMA 75
+                                --
+                                , TIRSI 9
+                                , TIRSI 14
+                                --
+                                , TIMACD 12 26
+                                , TIMACDSIG 12 26 9
+                                --
+                                , TIBBLOW3 25
+                                , TIBBLOW2 25
+                                , TIBBLOW1 25
+                                , TIBBMIDDLE 25
+                                , TIBBUP1 25
+                                , TIBBUP2 25
+                                , TIBBUP3 25
+                                --
+                                , TIPSYCHOLO 12
+                                --
+                                , TIDIPOS 14
+                                , TIDINEG 14
+                                , TIADX 14
+                                ]
+            let timeFrame = [TF1h,TF1d]
+            M.sequence_ [calculate connInfo ticker tf i | tf<-timeFrame, i<-indicators]
 
     C.yield "集計処理を終了します。"
     where
