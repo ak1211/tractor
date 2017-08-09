@@ -101,12 +101,9 @@ ema1 period serialsDesc =
     let (seedEma:_) = mean period [header] in
     ema period seedEma $ reverse body
 
--- | 前との差
-differences     :: [Double] -> [Double]
-differencesDesc :: [Double] -> [Double]
---
-differences     xs = zipWith (-) (drop 1 xs) xs
-differencesDesc xs = zipWith (-) xs $ drop 1 xs
+-- | 今日引く前日(前日比)
+priceChange :: [Double] -> [Double]
+priceChange xs = zipWith (-) xs $ drop 1 xs
 
 -- | 相対力指数(RSI)
 --   最新を先頭にした時系列から計算する
@@ -114,7 +111,7 @@ rsi :: Int -> [Double] -> [Double]
 rsi period _ | period < 1   = error "期間は１以上でね"
 rsi period serialsDesc =
     [ gain / (gain + loss) * 100.0
-    | ps<-rolling period $ differencesDesc serialsDesc
+    | ps<-rolling period $ priceChange serialsDesc
     , let gain = sum [abs v | v<-ps, v >= 0]
     , let loss = sum [abs v | v<-ps, v <  0]
     ]
@@ -125,7 +122,7 @@ psycologicalLine :: Int -> [Double] -> [Double]
 psycologicalLine period _ | period < 1 = error "期間は１以上でね"
 psycologicalLine period serialsDesc =
     [ ascend / realToFrac period * 100.0
-    | window<-rolling period $ differencesDesc serialsDesc
+    | window<-rolling period $ priceChange serialsDesc
     , let ascend = sum [1.0 | n<-window, n >= 0]
     ]
 
@@ -139,15 +136,11 @@ macd :: Int -> Int -> [Double] -> [Double]
 macd fastPeriod slowPeriod serialsDesc =
     zipWith macdFormula (ema1 fastPeriod serialsDesc) (ema1 slowPeriod serialsDesc)
 
---
-macdSignalFormula :: Int -> [Double] -> [Double]
-macdSignalFormula = sma
-
 -- | MACD signal
 --   最新を先頭にした時系列から計算する
 macdSignal :: Int -> Int -> Int -> [Double] -> [Double]
 macdSignal fastPeriod slowPeriod signalPeriod =
-    macdSignalFormula signalPeriod . macd fastPeriod slowPeriod
+    ema1 signalPeriod . macd fastPeriod slowPeriod
 
 type BBand321LowerMiddle123Upper = (Double,Double,Double, Double, Double,Double,Double)
 -- | ボリンジャーバンド
@@ -185,20 +178,17 @@ bollingerBands period serialsDesc =
 
 -- | +-DM
 --   最新を先頭にした時系列から計算する
-pnDM :: [Double] -> [Double] -> [(Double,Double)]
-pnDM serialsDescHi serialsDescLo =
-    zipWith formula diffHi diffLo
+posNegDM :: [Double] -> [Double] -> [(Double,Double)]
+posNegDM serialsDescHi serialsDescLo =
+    zipWith formula moveHi moveLo
     where
-    diffHi = differencesDesc serialsDescHi
-    diffLo = differences serialsDescLo
+    moveHi = priceChange serialsDescHi
+    moveLo = (\xs -> zipWith (-) (drop 1 xs) xs) serialsDescLo
     --
-    formula dHi dLo
-        | dHi == dLo            = (0.0, 0.0)
-        | dHi > 0 && dLo < 0    = (dHi, 0.0)
-        | dHi < 0 && dLo > 0    = (0.0, dLo)
-        | dHi > dLo             = (dHi, 0.0)
-        | dHi < dLo             = (0.0, dLo)
-        | otherwise = error "missing condition"
+    formula hi lo =
+        ( if hi > lo && hi > 0 then hi else 0.0
+        , if hi < lo && lo > 0 then lo else 0.0
+        )
 
 -- | TrueRange
 --   最新を先頭にした時系列から計算する
@@ -218,18 +208,18 @@ type DiPosNegADX = (Double,Double,Double)
 --   最新を先頭にした時系列から計算する
 dmi :: Int -> [PriceHiLoClo] -> [DiPosNegADX]
 dmi period serialsDesc =
-    let pos = rolling period positiveDM in
-    let neg = rolling period negativeDM in
-    let diPos = zipWith (\x y -> sum x / sum y * 100.0) pos tr in
-    let diNeg = zipWith (\x y -> sum x / sum y * 100.0) neg tr in
-    let dx = zipWith (\p n -> abs (p - n) / (p + n) * 100.0) diPos diNeg in
-    let adx = sma period dx in
-    zip3 diPos diNeg adx
+    let (posDM, negDM) = unzip $ posNegDM priceHi priceLo in
+    let atr = sma period $ trueRange serialsDesc in
+    let posDI = zipWith (\x y -> x / y * 100.0) (sma period posDM) atr in
+    let negDI = zipWith (\x y -> x / y * 100.0) (sma period negDM) atr in
+    let adx = sma period $ zipWith dxFormula posDI negDI in
+    zip3 posDI negDI adx
     where
-    priceHi = [a | (a,_,_)<-serialsDesc]
-    priceLo = [b | (_,b,_)<-serialsDesc]
-    positiveDM = map fst $ pnDM priceHi priceLo
-    negativeDM = map snd $ pnDM priceHi priceLo
-    tr = rolling period $ trueRange serialsDesc
+    (priceHi, priceLo, _) = unzip3 serialsDesc
+    dxFormula p n
+        -- 0除算は避けようね
+        | p+n == 0.0    = 0.0
+        | otherwise     = abs (p - n) / (p + n) * 100.0
+
 
 

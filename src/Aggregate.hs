@@ -220,11 +220,15 @@ calculate connInfo tickerSymbol timeFrame indicator =
         entAndMacd <-   (\x ->  calculate connInfo tickerSymbol timeFrame x
                                 >> queryIndicatorsDesc connInfo tickerSymbol timeFrame x
                         ) (TIMACD fastP slowP)
-        -- テクニカル指標テーブルのMACDよりMACDSIGの計算
-        let macdSig = uncurry zip . A.second (TI.macdSignalFormula sigP) . unzip $ entAndMacd
-        -- データーベースに入れる
+        -- テクニカル指標テーブルのMACDSIGを取り出す
         prevItem <- queryPrevItem
         let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        -- テクニカル指標テーブルのMACDよりMACDSIGの計算
+        let formula = case (snd <$> prevItem) of
+                        Nothing -> TI.ema1 sigP
+                        Just sd -> TI.ema sigP sd
+        let macdSig = uncurry zip . A.second formula . unzip $ entAndMacd
+        -- データーベースに入れる
         runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             M.mapM_ (DB.insert . uncurry packTI) $ takeWhile (isNewEntry prevAt . fst) macdSig
@@ -272,9 +276,9 @@ calculate connInfo tickerSymbol timeFrame indicator =
     --
     calc (TIPSYCHOLO period) _  = apply ohlcvtClose $ TI.psycologicalLine period
     --
-    calc (TIDIPOS period) _     = apply priceHiLoClo $ map (\(a,_,_) -> a) . TI.dmi period
-    calc (TIDINEG period) _     = apply priceHiLoClo $ map (\(_,b,_) -> b) . TI.dmi period
-    calc (TIADX period) _       = apply priceHiLoClo $ map (\(_,_,c) -> c) . TI.dmi period
+    calc (TIDIPOS period) _     = apply priceHiLoClo $ (\(a,_,_) -> a) . unzip3 . TI.dmi period
+    calc (TIDINEG period) _     = apply priceHiLoClo $ (\(_,b,_) -> b) . unzip3 . TI.dmi period
+    calc (TIADX period) _       = apply priceHiLoClo $ (\(_,_,c) -> c) . unzip3 . TI.dmi period
     --
     priceHiLoClo :: Ohlcvt -> Maybe TI.PriceHiLoClo
     priceHiLoClo val = do
@@ -366,6 +370,7 @@ runAggregateOfPortfolios conf = do
                                 , TIDIPOS 14
                                 , TIDINEG 14
                                 , TIADX 14
+                                , TIADX 9
                                 ]
             let timeFrame = [TF1h,TF1d]
             M.sequence_ [calculate connInfo ticker tf i | tf<-timeFrame, i<-indicators]
