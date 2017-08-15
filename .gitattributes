@@ -1,4 +1,1 @@
-app/* linguist-vendored
-src/* linguist-vendored
-test/* linguist-vendored
-stock-charts.ipynb linguist-vendored=false
+stock-charts.ipynb linguist-vendored
