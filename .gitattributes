@@ -1,1 +1,4 @@
+src/* linguist-vendored=false
+app/* linguist-vendored=false
+test/* linguist-vendored=false
 stock-charts.ipynb linguist-vendored
