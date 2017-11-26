@@ -27,7 +27,13 @@ Portability :  POSIX
 -}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE LambdaCase                 #-}
-module Lib where
+module Lib
+    ( greetingsMessage
+    , doSleepThread
+    , tzJST
+    , httpRequestHeader
+    , parseJSTDayTimeToUTCTime
+    ) where
 
 import qualified Data.Maybe as M
 
@@ -35,11 +41,32 @@ import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Network.HTTP.Types.Header as N
 import qualified Data.Time as Tm
 
+import qualified Data.Text.Lazy as TL
+
+import qualified Control.Concurrent as CC
+
 import qualified Conf
 
+-- | 起動時の挨拶文
+greetingsMessage :: TL.Text
+greetingsMessage = TL.unlines
+    [ "tractorが起動しました"
+    , "以降一定時間で通知します。"
+    , "tractor is an Assets observation application."
+    , "*tractor © 2016, 2017 Akihiro Yamamoto.*"
+    , "このプログラムは *全くの無保証* で提供されます。"
+    , "これはフリーソフトウェアであり、ある条件の下で再頒布することが奨励されています。"
+    , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
+    ]
+
+-- | 時間調整でスレッドを停止する関数
+--   停止時間の単位は分
+doSleepThread :: Int -> IO ()
+doSleepThread minutes = CC.threadDelay (minutes * 60 * 1000 * 1000)
+
 -- | 日本時間(JST) = UTC+9
-jst :: Tm.TimeZone
-jst = Tm.hoursToTimeZone 9
+tzJST :: Tm.TimeZone
+tzJST = Tm.hoursToTimeZone 9
 
 -- | HTTPリクエストヘッダ
 httpRequestHeader :: Conf.Info -> [N.Header]

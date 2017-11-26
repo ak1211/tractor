@@ -73,7 +73,7 @@ import TickerSymbol as Import
 import TimeFrame as Import
 import Model
 import Conf
-import Lib
+import qualified Lib
 
 -- | スクリーンスクレイピング関数(k-db.com用)
 kdbcomScreenScraper   :: TickerSymbol
@@ -95,7 +95,7 @@ kdbcomScreenScraper ticker tf sourceName html = do
     toOHLCVT :: [Maybe T.Text] -> Either String Ohlcvt
     toOHLCVT (d : tm : vs) = do
         d' <- maybe (Left "Date field can't parsed.") (Right . T.unpack) d
-        let at = parseJSTDayTimeToUTCTime d' $ fmap T.unpack tm
+        let at = Lib.parseJSTDayTimeToUTCTime d' $ fmap T.unpack tm
         case take 6 $ init vs of  -- 最終要素は未使用
             ohlcvt@[_,_,_,_,_,_] -> Right $
                 -- 個別株は6本値
@@ -146,7 +146,7 @@ kdbcomScreenScraper ticker tf sourceName html = do
 fetchStockPrices :: Conf.Info -> TickerSymbol -> TimeFrame -> IO (Maybe T.Text, [Ohlcvt])
 fetchStockPrices conf ticker tf = do
     -- HTTPリクエストヘッダ
-    let customHeader = httpRequestHeader conf
+    let customHeader = Lib.httpRequestHeader conf
     let aUri = accessURI ticker
     manager <- N.newManager N.tlsManagerSettings
     uri <- maybe (throwIO $ userError "access uri parse error") pure $ N.parseURIReference aUri

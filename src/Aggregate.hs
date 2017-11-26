@@ -67,12 +67,12 @@ import TechnicalIndicators (TechnicalInds(..))
 import qualified TechnicalIndicators as TI
 import Model
 import Conf
-import Lib
+import qualified Lib
 
 -- | UTCの日付時間のうち、日本時間の日付のみ比較
 sameDayOfJST :: Ohlcvt -> Ohlcvt -> Bool
 sameDayOfJST a b =
-    let jstDay = Tm.localDay . Tm.utcToLocalTime jst . ohlcvtAt in
+    let jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzJST . ohlcvtAt in
     jstDay a == jstDay b
 
 -- | 始値, 高値, 安値, 終値, 出来高, 売買代金を集計する関数
@@ -151,8 +151,8 @@ aggregate connInfo tickerSymbol =
     -- | 集計後の値は(00:00:00 JST)をUTCに変換した日付(15:00:00 UTC)にする
     decisionOfDailyPrices :: Ohlcvt -> Maybe Ohlcvt
     decisionOfDailyPrices val =
-        let timeOfJST = Tm.utcToLocalTime jst $ ohlcvtAt val in
-        let timeOfUTC = Tm.localTimeToUTC jst $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
+        let timeOfJST = Tm.utcToLocalTime Lib.tzJST $ ohlcvtAt val in
+        let timeOfUTC = Tm.localTimeToUTC Lib.tzJST $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
         Just $ val {ohlcvtTf = TF1d, ohlcvtAt = timeOfUTC}
 
 -- データーベースにテクニカル指標を問い合わせる

@@ -61,23 +61,7 @@ import qualified DataBase
 import qualified SinkSlack as Slack
 import qualified StockQuotesCrawler as Q
 import qualified Aggregate
-
--- | 起動時の挨拶文
-greetingsMessage :: TL.Text
-greetingsMessage = TL.unlines
-    [ "tractorが起動しました"
-    , "以降一定時間で通知します。"
-    , "tractor is an Assets observation application."
-    , "*tractor © 2016, 2017 Akihiro Yamamoto.*"
-    , "このプログラムは *全くの無保証* で提供されます。"
-    , "これはフリーソフトウェアであり、ある条件の下で再頒布することが奨励されています。"
-    , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
-    ]
-
--- | 時間調整でスレッドを停止する関数
---   停止時間の単位は分
-doSleep :: Int -> IO ()
-doSleep minutes = CC.threadDelay (minutes * 60 * 1000 * 1000)
+import qualified Lib
 
 --
 fixedHourMinutes :: Tm.ZonedTime -> Int
@@ -227,7 +211,7 @@ sendAnnounceThread conf parentThId msgBox =
                 -- Slackへお知らせを送る
                 sendAnnounce conf
                 -- このスレッドの実行時間は必ず１分以上かかるようにする
-                doSleep 1
+                Lib.doSleepThread 1
             -- 作業開始指示以外ならスレッドを終了する
             RunIsOver -> return ()
             Donothing -> return ()
@@ -278,7 +262,7 @@ sendReportThread conf parentThId msgBox =
             loop (Conf.sendReportInterval conf) =<< CC.readMVar msgBox
         | otherwise = do
             -- 再開までの時間待ち
-            doSleep 1
+            Lib.doSleepThread 1
             loop (remain - 1) =<< CC.readMVar msgBox
     -- 作業終了指示が来たのでスレッドを終了する
     loop _ RunIsOver = sendMsgSig msgBox Donothing
@@ -315,7 +299,7 @@ recordAssetsThread conf parentThId msgBox =
             loop (Conf.recordAssetsInterval conf) msg session
         | otherwise = do
             -- 再開までの時間待ち
-            doSleep 1
+            Lib.doSleepThread 1
             -- メッセージの確認をする
             msg <- CC.readMVar msgBox
             loop (remain - 1) msg session
@@ -336,7 +320,7 @@ applicationBody cmdLineOpts conf =
     -- 通常処理を開始する
     RunNormal -> do
         -- 起動時の挨拶文をSlackへ送る
-        toSlack (Conf.slack conf) greetingsMessage
+        toSlack (Conf.slack conf) Lib.greetingsMessage
         -- 具体的な処理を担当する関数と
         -- MVarのタプルを用意する
         myThId <- CC.myThreadId
@@ -354,7 +338,7 @@ applicationBody cmdLineOpts conf =
         -- Slackへエラーメッセージを送る
         toSlack (Conf.slack conf) $ TL.toLazyText msg
         -- 一定時間待機後に実行時例外からの再開
-        doSleep 11
+        Lib.doSleepThread 11
         applicationBody cmdLineOpts conf
     where
     loop :: [(CC.MVar ThMsgSig, CC.MVar ThMsgSig -> IO ())] -> IO ()
@@ -380,7 +364,7 @@ applicationBody cmdLineOpts conf =
                     M.mapM_ sendSigRunIsOver threads
         -- このスレッドは作業の担当スレッドに
         -- 指示することしかしないので適当に時間をつぶす
-        doSleep 1
+        Lib.doSleepThread 1
         `onException`
             -- 子スレッドに作業終了指示を送っておく
             M.mapM_ sendSigRunIsOver threads
