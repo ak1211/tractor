@@ -33,6 +33,8 @@ module Lib
     , tzJST
     , httpRequestHeader
     , parseJSTDayTimeToUTCTime
+    , NthOfTotal
+    , packNthOfTotal
     ) where
 
 import qualified Data.Maybe as M
@@ -84,4 +86,14 @@ parseJSTDayTimeToUTCTime date mTime =
     let dtm = date ++ "T" ++ t ++ ":00+0900" in
     let format = Tm.iso8601DateFormat (Just "%H:%M:%S%z") in
     Tm.parseTimeOrError True Tm.defaultTimeLocale format dtm
+
+-- | (nth, total)
+type NthOfTotal = (Int,Int)
+
+-- | リスト中のn番目情報を追加する関数
+packNthOfTotal :: [a] -> [(a, NthOfTotal)]
+packNthOfTotal vs =
+    zip vs nth
+    where
+    nth = [(n, length vs) | n<-[1..]]
 

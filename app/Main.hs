@@ -75,7 +75,7 @@ isDeliverAnnounceTime ztm = fixedHourMinutes ztm `elem` [630, 1135, 1515]
 
 -- | バッチ処理の開始時間か？
 isBatchThreadWorkingTime :: Tm.ZonedTime -> Bool
-isBatchThreadWorkingTime ztm = fixedHourMinutes ztm `elem` [1700]
+isBatchThreadWorkingTime ztm = fixedHourMinutes ztm `elem` [1845]
 
 -- | プログラムの作業時間か？
 isDuringWorkingTime :: Tm.ZonedTime -> Bool

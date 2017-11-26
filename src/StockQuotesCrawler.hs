@@ -67,6 +67,7 @@ import Data.Maybe (listToMaybe)
 import qualified Data.Time.Clock as Tm
 import qualified Data.Conduit as C
 import qualified Control.Concurrent as CC
+import qualified System.Random.MWC as R
 
 import qualified WebBot as WB
 import TickerSymbol as Import
@@ -82,18 +83,19 @@ kdbcomScreenScraper   :: TickerSymbol
                         -> BL.ByteString
                         -> Either String (Maybe T.Text, [Ohlcvt])
 kdbcomScreenScraper ticker tf sourceName html = do
-    let doc = X.fromDocument $ H.parseLBS html
-    vs <- mapM toOHLCVT $ records doc
-    Right (caption doc, vs)
+    vs <- mapM packOHLCVT $ records xdoc
+    Right (caption xdoc, vs)
     where
+    --
+    xdoc = X.fromDocument $ H.parseLBS html
     --
     rational :: Maybe T.Text -> Maybe Double
     rational Nothing = Nothing
     rational (Just t) =
         either (const Nothing) (Just . fst) $ T.rational t
     -- | ohlcvtテーブルに変換する関数
-    toOHLCVT :: [Maybe T.Text] -> Either String Ohlcvt
-    toOHLCVT (d : tm : vs) = do
+    packOHLCVT :: [Maybe T.Text] -> Either String Ohlcvt
+    packOHLCVT (d : tm : vs) = do
         d' <- maybe (Left "Date field can't parsed.") (Right . T.unpack) d
         let at = Lib.parseJSTDayTimeToUTCTime d' $ fmap T.unpack tm
         case take 6 $ init vs of  -- 最終要素は未使用
@@ -128,7 +130,7 @@ kdbcomScreenScraper ticker tf sourceName html = do
             _ ->
                 Left "ohlcvt table can't parsed"
     -- 株価情報ではない何かが表示されている場合
-    toOHLCVT _ = Left "This web page can't parsed"
+    packOHLCVT _ = Left "This web page can't parsed"
     -- | 銘柄名のXPath ---> //*[@id="tablecaption"]
     caption :: X.Cursor -> Maybe T.Text
     caption doc = listToMaybe (doc$//X.attributeIs "id" "tablecaption"&/X.content)
@@ -173,48 +175,40 @@ fetchStockPrices conf ticker tf = do
             TF1h -> "1h"
             TF1d -> ""      -- 何もつけないのが日足
 
+
 -- | ポートフォリオの株価情報を取りに行く関数
 runWebCrawlingOfPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
 runWebCrawlingOfPortfolios conf = do
-    let deltaT = fromInteger (12*60*60)  -- 12時間
-    limitTm <- M.liftIO $ pure . Tm.addUTCTime (-1 * deltaT) =<< Tm.getCurrentTime
-
-    counts <- M.liftIO . runStderrLoggingT . MT.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
-        DB.runMigration migrateQuotes
-        DB.count ([PortfolioUpdateAt ==. Nothing] ||. [PortfolioUpdateAt <=. Just limitTm])
-    --
-    C.yield . TB.toLazyText $ case counts of
-                    0 -> "今回の更新は不要です。"
-                    x -> "更新対象は全部で" <> TB.decimal x  <> "個有ります。"
-
-    -- 前回のアクセスからdeltaT時間以上経過した物のリストを得る
+    limitTm <- M.liftIO $ diffTime <$> Tm.getCurrentTime
+    -- 前回の更新から一定時間以上経過した更新対象のリストを得る
     ws <- M.liftIO . runStderrLoggingT . MT.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         DB.selectList ([PortfolioUpdateAt ==. Nothing] ||. [PortfolioUpdateAt <=. Just limitTm]) []
 
-    -- 更新アクション
-    let actions = concatMap
-                    (\wsnb ->
-                        case portfolioUpdateAt . DB.entityVal . fst $ wsnb of
-                        -- Nothing＝初取得の場合は日足も取得する
-                        Nothing ->
-                            [ updateTimeAndSales counts TF1d wsnb   -- 日足の取得
-                            , updateTimeAndSales counts TF1h wsnb   -- 1時間足の取得
-                            ]
-                        -- 通常は１時間足のみ取得する
-                        Just _ ->
-                            [updateTimeAndSales counts TF1h wsnb]   -- 1時間足の取得
-                    )
-                    $ zip ws [1..]
-
-    -- 271秒(4分31秒)の停止アクション
-    let waitAction = M.liftIO $ CC.threadDelay (271 * 1000 * 1000)
-
-    -- 更新作業毎に停止しながら更新する
-    M.sequence_ $ List.intersperse waitAction actions
-
-    C.yield "以上。更新処理を終了します。"
+    case length ws of
+        0 ->
+            C.yield . TB.toLazyText $ "今回の更新は不要です。"
+        counts -> do
+            C.yield . TB.toLazyText $ "更新対象は全部で" <> TB.decimal counts  <> "個有ります。"
+            rgen <- M.liftIO R.createSystemRandom
+            -- 更新作業毎に停止しながら更新する
+            M.sequence_
+                -- アクセス毎の停止アクションを挟み込む
+                . List.intersperse (randomWait rgen)
+                -- 更新アクションのリスト
+                . concatMap updateActs $ Lib.packNthOfTotal ws
+            C.yield "以上で更新処理を終了します。"
     where
+    -- (-12)時間の足し算は12時間の引き算になる
+    diffTime :: Tm.UTCTime -> Tm.UTCTime
+    diffTime = Tm.addUTCTime $ fromInteger (-12*60*60)
+    -- アクセス毎の停止アクション
+    randomWait rgen = M.liftIO $
+        -- 241秒(4分01秒)から277秒(4分37秒)までの停止アクション
+        CC.threadDelay =<< R.uniformR (lowerBound,upperBound) rgen
+        where
+        lowerBound = 241*1000*1000
+        upperBound = 277*1000*1000
     --
     connInfo :: MySQL.ConnectInfo
     connInfo =
@@ -227,25 +221,29 @@ runWebCrawlingOfPortfolios conf = do
             , MySQL.connectDatabase = Conf.database mdb
             }
     --
+    updateActs  :: M.MonadIO m
+                => (DB.Entity Portfolio, Lib.NthOfTotal)
+                -> [C.Source m TL.Text]
+    updateActs (pf,nth) =
+        -- 初取得(Nothing)の場合はfirstUpdate
+        maybe firstUpdate nextUpdate updateAt
+        where
+        --
+        updateAt = portfolioUpdateAt . DB.entityVal $ pf
+        -- 初取得の場合は日足と1時間足の両方を取得する
+        firstUpdate = [act TF1d pf, act TF1h pf]
+        -- 通常は１時間足のみ取得する
+        nextUpdate = const [act TF1h pf]
+        --
+        act tf e@(DB.Entity _ v) = do
+            putDescription tf v nth     -- 更新処理対象銘柄を説明する
+            updateTimeAndSales tf e     -- 更新処理本体
+    --
     updateTimeAndSales  :: M.MonadIO m
-                        => Int
-                        -> TimeFrame
-                        -> (DB.Entity Portfolio, Int)
+                        => TimeFrame
+                        -> DB.Entity Portfolio
                         -> C.Source m TL.Text
-    updateTimeAndSales total tf (DB.Entity wKey wVal, number) = do
-        let textCaption = Mb.fromMaybe (T.pack . show . portfolioTicker $ wVal) $ portfolioCaption wVal
-        C.yield . TB.toLazyText $
-                    TB.fromText textCaption
-                    <> " の"
-                    <> case tf of
-                        TF1h -> "１時間足"
-                        TF1d -> "日足"
-                    <> "を更新中。"
-                    <> TB.singleton '['
-                    <> TB.decimal number
-                    <> TB.singleton '/'
-                    <> TB.decimal total
-                    <> TB.singleton ']'
+    updateTimeAndSales tf (DB.Entity wKey wVal) =
         M.liftIO . runStderrLoggingT . MT.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             -- インターネットから株価情報を取得する
@@ -273,8 +271,27 @@ runWebCrawlingOfPortfolios conf = do
                         ]
             -- 更新日等をPortfolioテーブルに
             DB.update wKey
-                [ PortfolioCaption  =. (portfolioCaption wVal <|> caption)  -- 以前から有るのを優先的に選択する
+                [ PortfolioCaption  =. (portfolioCaption wVal <|> caption)  -- 以前から有る銘柄名を優先的に選択する
                 , PortfolioUpdateAt =. Just updateAt
                 ]
 
+-- | 更新銘柄の説明を送る関数
+putDescription  :: M.MonadIO m
+                => TimeFrame
+                -> Portfolio
+                -> Lib.NthOfTotal
+                -> C.Source m TL.Text
+putDescription tf pf (current,total) =
+    C.yield $ TB.toLazyText msg
+    where
+    defaultCaption = T.pack . show . portfolioTicker $ pf
+    textCaption = Mb.fromMaybe defaultCaption $ portfolioCaption pf
+    c = TB.fromText textCaption
+    t TF1h = "１時間足"
+    t TF1d = "日足"
+    s = TB.singleton
+    d = TB.decimal
+    body = c <> " の" <> t tf <> "を更新中。"
+    trailer = s '[' <> d current <> s '/' <> d total <> s ']'
+    msg = body <> trailer
 
