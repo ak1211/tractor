@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  TickerSymbol
-Description :  
+Description :
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -25,12 +25,12 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module TickerSymbol where
 
-import Database.Persist.TH
-import Data.Word (Word16)
+import           Data.Word           (Word16)
+import           Database.Persist.TH
 
 data TickerSymbol   = TSTYO Word16  -- ^ 東証:個別株
                     | TSNI225       -- ^ 日経平均株価

@@ -29,12 +29,12 @@ Portability :  POSIX
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE LambdaCase                 #-}
 module DataBase
     ( Summary (..)
     , HoldStock (..)
@@ -47,18 +47,15 @@ module DataBase
     , storeAssetSpare
     ) where
 
-import qualified Scraper
-
-import qualified Control.Monad as M
-
-import Data.Int
-import qualified Data.Text.Lazy as T
-
+import qualified Control.Monad           as M
+import           Data.Int
+import qualified Data.Text.Lazy          as T
+import           Data.Time               (UTCTime)
+import           Data.Time.Format        (defaultTimeLocale, formatTime)
 import qualified Database.Persist.Sqlite as DB
-import qualified Database.Persist.TH as DB
+import qualified Database.Persist.TH     as DB
 
-import Data.Time (UTCTime)
-import Data.Time.Format (formatTime, defaultTimeLocale)
+import qualified Scraper
 
 {- |
     UTCTime時間をISO8601形式にする
@@ -159,8 +156,7 @@ getTotalAstsDescList predicade limit offset =
                 ]
     in
     DB.runSqlite "assets.sqlite3" $
-        DB.rawSql sql []
-        >>= return . map DB.entityVal
+        map DB.entityVal <$> DB.rawSql sql []
     where
     has :: T.Text -> Maybe (String, UTCTime) -> T.Text
     has _ Nothing = ""

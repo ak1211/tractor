@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  TimeFrame
-Description :  
+Description :
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -25,11 +25,11 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module TimeFrame where
 
-import Database.Persist.TH
+import           Database.Persist.TH
 
 data TimeFrame  = TF1h  -- ^ 1時間足
                 | TF1d  -- ^ 日足

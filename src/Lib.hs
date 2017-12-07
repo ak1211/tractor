@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  Lib
-Description :  
+Description :
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -25,27 +25,22 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Lib
     ( greetingsMessage
-    , doSleepThread
     , tzJST
+    , fromLocalTimeJST
     , httpRequestHeader
     , parseJSTDayTimeToUTCTime
     , NthOfTotal
     , packNthOfTotal
     ) where
 
-import qualified Data.Maybe as M
-
 import qualified Data.ByteString.Lazy.Char8 as BL8
-import qualified Network.HTTP.Types.Header as N
-import qualified Data.Time as Tm
-
-import qualified Data.Text.Lazy as TL
-
-import qualified Control.Concurrent as CC
+import qualified Data.Maybe                 as M
+import qualified Data.Text.Lazy             as TL
+import qualified Data.Time                  as Tm
+import qualified Network.HTTP.Types.Header  as N
 
 import qualified Conf
 
@@ -61,14 +56,15 @@ greetingsMessage = TL.unlines
     , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
     ]
 
--- | 時間調整でスレッドを停止する関数
---   停止時間の単位は分
-doSleepThread :: Int -> IO ()
-doSleepThread minutes = CC.threadDelay (minutes * 60 * 1000 * 1000)
-
 -- | 日本時間(JST) = UTC+9
 tzJST :: Tm.TimeZone
-tzJST = Tm.hoursToTimeZone 9
+tzJST =
+    let z = Tm.hoursToTimeZone 9 in
+    z {Tm.timeZoneName = "JST"}
+
+-- | 日本時間(JST)からUTCへ
+fromLocalTimeJST :: Tm.LocalTime -> Tm.UTCTime
+fromLocalTimeJST = Tm.zonedTimeToUTC . flip Tm.ZonedTime Lib.tzJST
 
 -- | HTTPリクエストヘッダ
 httpRequestHeader :: Conf.Info -> [N.Header]

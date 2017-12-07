@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  TechnicalIndicators
-Description :  
+Description :
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -25,13 +25,13 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module TechnicalIndicators where
 
-import qualified Data.List as List
-import Database.Persist.TH
+import qualified Data.List           as List
+import           Database.Persist.TH
 
 data TechnicalInds
     = TISMA             Int         -- ^| 単純移動平均(SMA)

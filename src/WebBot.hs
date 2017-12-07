@@ -26,12 +26,12 @@ Portability :  POSIX
 
 ウェブサイトを巡回するモジュールです。
 -}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module WebBot
     ( UnexpectedHTMLException
@@ -47,48 +47,39 @@ module WebBot
     , sellStock
     ) where
 
-import Control.Exception hiding (throw)
-
-import Text.Parsec ((<|>))
-import qualified Text.Parsec as P
-import qualified Text.Parsec.ByteString.Lazy as P
-
-import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as M
-import qualified Control.Monad.Reader as M
-import qualified Data.Maybe as Maybe
-import qualified Data.List as List
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Lazy.Char8 as BL8
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as TE
+import qualified Codec.Text.IConv            as IConv
+import qualified Control.Concurrent          as CC
+import           Control.Exception
+import qualified Control.Monad               as M
+import qualified Control.Monad.IO.Class      as M
+import qualified Data.ByteString.Char8       as B8
+import qualified Data.ByteString.Lazy.Char8  as BL8
+import qualified Data.List                   as List
+import qualified Data.Maybe                  as Maybe
+import qualified Data.Text.Lazy              as T
+import qualified Data.Text.Lazy.Encoding     as TE
+import qualified Data.Time                   as Tm
 import qualified Data.Typeable
+import qualified Database.Persist            as DB
+import qualified Database.Persist.Sqlite     as Sqlite
+import qualified Network.HTTP.Conduit        as N
+import qualified Network.HTTP.Types.Header   as N
+import qualified Network.URI                 as N
+import qualified Text.HTML.TagSoup           as TS
+import qualified Text.HTML.TagSoup.Tree      as TS
+import           Text.Parsec                 ((<|>))
+import qualified Text.Parsec                 as P
+import qualified Text.Parsec.ByteString.Lazy as P
+import qualified Text.Printf                 as Printf
 
-import qualified Codec.Text.IConv as IConv
-import qualified Text.Printf as Printf
-
-import qualified Network.URI as N
-import qualified Network.HTTP.Conduit as N
-import qualified Network.HTTP.Types.Header as N
-
-import qualified Database.Persist as DB
-import qualified Database.Persist.Sqlite as Sqlite
-
-import qualified Text.HTML.TagSoup as TS
-import qualified Text.HTML.TagSoup.Tree as TS
-
-import qualified Control.Concurrent as CC
-
-import qualified Data.Time as Tm
-
-import qualified Scraper
 import qualified Conf
-import Model
+import           Model
+import qualified Scraper
 
 {- |
     実行時例外 : 予想外のHTML
 -}
-data UnexpectedHTMLException = UnexpectedHTMLException String
+newtype UnexpectedHTMLException = UnexpectedHTMLException String
     deriving (Data.Typeable.Typeable, Eq)
 
 instance Show UnexpectedHTMLException where
@@ -99,7 +90,7 @@ instance Exception UnexpectedHTMLException
 {- |
     実行時例外 : 未保有株の売却指示
 -}
-data DontHaveStocksToSellException = DontHaveStocksToSellException String
+newtype DontHaveStocksToSellException = DontHaveStocksToSellException String
     deriving (Data.Typeable.Typeable, Eq, Show)
 
 instance Exception DontHaveStocksToSellException
@@ -108,11 +99,11 @@ instance Exception DontHaveStocksToSellException
     HTTP / HTTPSセッション情報
 -}
 data HTTPSession = HTTPSession {
-    sLoginPageURI   :: N.URI,
-    sManager        :: N.Manager,
-    sReqHeaders     :: N.RequestHeaders,
-    sRespCookies    :: N.CookieJar,
-    sTopPageHTML    :: T.Text
+    sLoginPageURI :: N.URI,
+    sManager      :: N.Manager,
+    sReqHeaders   :: N.RequestHeaders,
+    sRespCookies  :: N.CookieJar,
+    sTopPageHTML  :: T.Text
 }
 
 instance Show HTTPSession where
@@ -144,7 +135,7 @@ fetchPage manager header cookie reqBody url = M.liftIO $ do
     req <- customHeader <$> N.parseRequest (show url)
     -- HTTPリクエストボディを指定する
     let customReq = case reqBody of
-                [] -> req
+                []   -> req
                 body -> N.urlEncodedBody body req
     -- 組み立てたHTTPリクエストを発行する
     resp <- N.httpLbs customReq manager
@@ -311,7 +302,7 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
     case formTags of
         -- ページ唯一のformタグを取り出す
         x : _ -> action x
-        _ -> return Nothing
+        _     -> return Nothing
     where
     action :: TS.TagTree T.Text -> IO (Maybe (N.Response BL8.ByteString))
     action = \case
@@ -335,7 +326,7 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
             -- x yは指定の物以外削除
             Nothing | B8.isSuffixOf ".x" k -> Nothing
             Nothing | B8.isSuffixOf ".y" k -> Nothing
-            _ ->  Just (k, v)
+            _       ->  Just (k, v)
 
     --
     takeValue :: [TS.Attribute T.Text] -> T.Text -> Maybe B8.ByteString
@@ -426,28 +417,28 @@ login conf loginUri = do
 {- |
     fetchPage関数の相対リンク版
 -}
-fetchInRelativePath :: M.MonadIO m => T.Text -> M.ReaderT HTTPSession m (N.Response BL8.ByteString)
-fetchInRelativePath relPath = do
-    session <- M.ask
-    uri <- case toAbsURI (sLoginPageURI session) relPath of
-        Nothing -> M.liftIO . throwIO $ userError "link url is not valid"
-        Just x -> return x
+fetchInRelativePath :: HTTPSession -> T.Text -> IO (N.Response BL8.ByteString)
+fetchInRelativePath session relativePath = do
+    uri <- case toAbsURI (sLoginPageURI session) relativePath of
+        Nothing -> throwIO $ userError "link url is not valid"
+        Just x  -> return x
     let cookies = case N.destroyCookieJar $ sRespCookies session of
                     []-> Nothing
-                    _ -> Just (sRespCookies session)
+                    _  -> Just (sRespCookies session)
     fetchPage (sManager session) (sReqHeaders session) cookies [] uri
 
-type SessionReaderMonadT m = M.ReaderT HTTPSession m [T.Text]
 {- |
     linkTextをクリックする関数
 -}
-clickLinkText :: M.MonadIO m => T.Text -> [T.Text] -> SessionReaderMonadT m
-clickLinkText linkText htmls =
-    let linkPaths = Maybe.mapMaybe (lookup linkText . getPageCaptionAndLink) htmls in
+clickLinkText :: HTTPSession -> T.Text -> [T.Text] -> IO [T.Text]
+clickLinkText session linkText htmls =
     M.mapM fetch linkPaths
     where
-    fetch :: M.MonadIO m => T.Text -> M.ReaderT HTTPSession m T.Text
-    fetch = fmap takeBodyFromResponse . fetchInRelativePath
+    --
+    linkPaths = Maybe.mapMaybe (lookup linkText . getPageCaptionAndLink) htmls
+    --
+    fetch relativePath =
+        takeBodyFromResponse <$> fetchInRelativePath session relativePath
 
 {- |
     GM / LMページからリンクテキストとリンクのタプルを取り出す関数
@@ -465,10 +456,11 @@ getPageCaptionAndLink html =
 {- |
     targetのフレームを処理する
 -}
-dispatchFrameSet :: M.MonadIO m
-                    => [T.Text] -> (T.Text, [T.Text] -> SessionReaderMonadT m)
-                    -> SessionReaderMonadT m
-dispatchFrameSet htmls (targetFrmName, action) =
+dispatchFrameSet   :: HTTPSession
+                    -> [T.Text]
+                    -> (T.Text, [T.Text] -> IO [T.Text])
+                    -> IO [T.Text]
+dispatchFrameSet session htmls (targetFrmName, action) =
     case htmls of
         [] -> return []
         h : hs -> do
@@ -479,9 +471,9 @@ dispatchFrameSet htmls (targetFrmName, action) =
             case List.lookup targetFrmName frames of
                 Nothing -> return []
                 Just linkPath -> do
-                    html <- takeBodyFromResponse <$> fetchInRelativePath linkPath
+                    html <- takeBodyFromResponse <$> fetchInRelativePath session linkPath
                     r <- action [html]
-                    s <- dispatchFrameSet hs (targetFrmName, action)
+                    s <- dispatchFrameSet session hs (targetFrmName, action)
                     return (r ++ s)
     where
     {- |
@@ -492,17 +484,19 @@ dispatchFrameSet htmls (targetFrmName, action) =
         name <- Maybe.listToMaybe [v | (k, v) <- attrList, "name"==T.toLower k]
         src  <- Maybe.listToMaybe [v | (k, v) <- attrList, "src"==T.toLower k]
         Just (name, src)
- 
+
 {- |
     ログアウトする関数
 -}
 logout :: HTTPSession -> IO ()
 logout session =
-    let fM s = M.foldM dispatchFrameSet [sTopPageHTML s]
-                [ ("GM", clickLinkText "■ログアウト")
-                , ("CT", return)]
-    in
-    M.void (M.runReaderT (fM =<< M.ask) session)
+    M.void $
+        M.foldM
+            (dispatchFrameSet session)
+            [sTopPageHTML session]
+            [ ("GM", clickLinkText session "■ログアウト")
+            , ("CT", return)
+            ]
 
 {- |
     スクレイピングに失敗した場合の例外送出
@@ -515,77 +509,100 @@ failureAtScraping =
     "お知らせ"を得る
     "ホーム" -> "お知らせ" のページからスクレイピングする関数
 -}
-fetchFraHomeAnnounce :: M.ReaderT HTTPSession IO Scraper.FraHomeAnnounce
-fetchFraHomeAnnounce =
-    let fM s = M.foldM dispatchFrameSet [sTopPageHTML s]
-                [("GM", clickLinkText "ホーム")
-                ,("LM", clickLinkText "お知らせ")
-                ,("CT", return)]
-    in
-    either failureAtScraping pure
-    <$> Scraper.scrapingFraHomeAnnounce =<< fM =<< M.ask
+fetchFraHomeAnnounce :: HTTPSession -> IO Scraper.FraHomeAnnounce
+fetchFraHomeAnnounce session = do
+    contents <- Scraper.scrapingFraHomeAnnounce <$> fetchContents
+    case contents of
+        Right r -> return r
+        Left err -> failureAtScraping err
+    where
+    fetchContents =
+        M.foldM
+            (dispatchFrameSet session)
+            [sTopPageHTML session]
+            [ ("GM", clickLinkText session "ホーム")
+            , ("LM", clickLinkText session "お知らせ")
+            , ("CT", return)
+            ]
 
 {- |
     現在の保有株情報を得る
     "株式取引" -> "現物売" のページからスクレイピングする関数
 -}
-fetchFraStkSell :: M.ReaderT HTTPSession IO Scraper.FraStkSell
-fetchFraStkSell =
-    let fM s = M.foldM dispatchFrameSet [sTopPageHTML s]
-                [("GM", clickLinkText "株式取引")
-                ,("LM", clickLinkText "現物売")
-                ,("CT", return)]
-    in
-    either failureAtScraping pure
-    <$> Scraper.scrapingFraStkSell =<< fM =<< M.ask
+fetchFraStkSell :: HTTPSession -> IO Scraper.FraStkSell
+fetchFraStkSell session = do
+    contents <- Scraper.scrapingFraStkSell <$> fetchContents
+    case contents of
+        Right r -> return r
+        Left err -> failureAtScraping err
+    where
+    fetchContents =
+        M.foldM
+            (dispatchFrameSet session)
+            [sTopPageHTML session]
+            [ ("GM", clickLinkText session "株式取引")
+            , ("LM", clickLinkText session "現物売")
+            , ("CT", return)
+            ]
 
 {- |
     現在の資産情報を得る
     "資産状況" -> "余力情報" のページからスクレイピングする関数
 -}
-fetchFraAstSpare :: M.ReaderT HTTPSession IO Scraper.FraAstSpare
-fetchFraAstSpare =
-    let fM s = M.foldM dispatchFrameSet [sTopPageHTML s]
-                [("GM", clickLinkText "資産状況")
-                ,("LM", clickLinkText "余力情報")
-                ,("CT", return)]
-    in
-    either failureAtScraping pure
-    <$> Scraper.scrapingFraAstSpare =<< fM =<< M.ask
+fetchFraAstSpare :: HTTPSession -> IO Scraper.FraAstSpare
+fetchFraAstSpare session = do
+    contents <- Scraper.scrapingFraAstSpare <$> fetchContents
+    case contents of
+        Right r -> return r
+        Left err -> failureAtScraping err
+    where
+    fetchContents =
+        M.foldM
+            (dispatchFrameSet session)
+            [sTopPageHTML session]
+            [ ("GM", clickLinkText session "資産状況")
+            , ("LM", clickLinkText session "余力情報")
+            , ("CT", return)
+            ]
 
 {- |
     注文情報
 -}
-data SellOrderSet = SellOrderSet {
-    osPassword  :: String,
-    osCode      :: Int,
-    osNominal   :: Int,
-    osPrice     :: Double
-}
+data SellOrderSet = SellOrderSet
+    { osPassword :: String
+    , osCode     :: Int
+    , osNominal  :: Int
+    , osPrice    :: Double
+    }
 
 {- |
     売り注文を出す関数
 -}
-sellStock :: SellOrderSet -> M.ReaderT HTTPSession IO Scraper.OrderConfirmed
-sellStock order =
-    let fM s = M.foldM dispatchFrameSet [sTopPageHTML s]
-                [("GM", clickLinkText "株式取引")
-                ,("LM", clickLinkText "現物売")
-                ,("CT", doSellOrder order)]
-    in
-    either failureAtScraping pure
-    <$> Scraper.scrapingOrderConfirmed =<< fM =<< M.ask
+sellStock :: HTTPSession -> SellOrderSet -> IO Scraper.OrderConfirmed
+sellStock session order = do
+    contents <- Scraper.scrapingOrderConfirmed <$> fetchContents
+    case contents of
+        Right r -> return r
+        Left err -> failureAtScraping err
     where
+    fetchContents =
+        M.foldM
+            (dispatchFrameSet session)
+            [sTopPageHTML session]
+            [ ("GM", clickLinkText session "株式取引")
+            , ("LM", clickLinkText session "現物売")
+            , ("CT", doSellOrder order)
+            ]
     --
-    doSellOrder :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    doSellOrder :: SellOrderSet -> [T.Text] -> IO [T.Text]
     doSellOrder _ htmls = do
         a <- clickSellOrderLink order htmls
-        M.liftIO $ CC.threadDelay (300 * 1000)
+        CC.threadDelay (300 * 1000)
         b <- submitSellOrderPage order a
-        M.liftIO $ CC.threadDelay (300 * 1000)
+        CC.threadDelay (300 * 1000)
         submitConfirmPage order b
     --
-    clickSellOrderLink :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    clickSellOrderLink :: SellOrderSet -> [T.Text] -> IO [T.Text]
     clickSellOrderLink os htmls = do
         fss <- either failureAtScraping pure $ Scraper.scrapingFraStkSell htmls
 
@@ -593,18 +610,18 @@ sellStock order =
         let eqCode = (==) (osCode os) . Scraper.hsCode
         sellOrderUri <- case List.find eqCode $ Scraper.fsStocks fss of
             Nothing ->
-                M.liftIO . throwIO . DontHaveStocksToSellException .
+                throwIO . DontHaveStocksToSellException .
                 Printf.printf "証券コード%dの株式を所有してないので売れません" $ osCode os
             Just stock -> pure (Scraper.hsSellOrderUrl stock)
         -- 売り注文ページを読み込む
         sellOrderPage <- case sellOrderUri of
             Nothing ->
-                M.liftIO . throwIO . UnexpectedHTMLException .
+                throwIO . UnexpectedHTMLException .
                 Printf.printf "証券コード%dの株式注文ページに行けません" $ osCode os
-            Just uri -> takeBodyFromResponse <$> fetchInRelativePath uri
+            Just uri -> takeBodyFromResponse <$> fetchInRelativePath session uri
         return [sellOrderPage]
     --
-    submitSellOrderPage :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    submitSellOrderPage :: SellOrderSet -> [T.Text] -> IO [T.Text]
     submitSellOrderPage os htmls = do
         html <- case htmls of
             []  -> failureAtScraping "株式注文ページを受け取れていません。"
@@ -623,14 +640,13 @@ sellStock order =
                             ,("tyukakuButton.y", "10")                          -- 注文確認ボタンのクリック位置
                             ]
         -- 売り注文ページのフォームを提出する
-        session <- M.ask
-        M.liftIO $ doPostActionOnSession session customPostReq html
+        doPostActionOnSession session customPostReq html
         >>= \case
             Nothing -> M.liftIO . throwIO . UnexpectedHTMLException $
                         Printf.printf "証券コード%dの注文確認ページに行けません" (osCode os)
             Just r -> return [takeBodyFromResponse r]
     --
-    submitConfirmPage :: M.MonadIO m => SellOrderSet -> [T.Text] -> SessionReaderMonadT m
+    submitConfirmPage :: SellOrderSet -> [T.Text] -> IO [T.Text]
     submitConfirmPage os htmls = do
         html <- case htmls of
             []  -> failureAtScraping "注文確認ページを受け取れていません。"
@@ -641,8 +657,7 @@ sellStock order =
          -}
         let customPostReq = [("pinNo", B8.pack $ osPassword os)]    -- 取引暗証番号
         -- 注文確認ページのフォームを提出する
-        session <- M.ask
-        M.liftIO $ doPostActionOnSession session customPostReq html
+        doPostActionOnSession session customPostReq html
         >>= \case
             Nothing -> M.liftIO . throwIO . UnexpectedHTMLException $
                         Printf.printf "証券コード%dの注文終了ページに行けません" (osCode os)

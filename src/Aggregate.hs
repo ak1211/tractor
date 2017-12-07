@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  Aggregate
-Description :  
+Description :
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -26,48 +26,45 @@ Portability :  POSIX
 
 データベース上の情報を集計する。
 -}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Aggregate
     (runAggregateOfPortfolios
     ) where
 
-import qualified Safe
-import qualified Data.Maybe as Mb
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Builder as TB
-import qualified Data.Text.Lazy.Builder.Int as TB
-import Data.Monoid ((<>))
-
-import qualified Control.Arrow as A
-import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as M
-
+import qualified Control.Arrow                as A
+import qualified Control.Monad                as M
+import qualified Control.Monad.IO.Class       as M
+import           Control.Monad.Logger
 import qualified Control.Monad.Trans.Resource as MR
-import Control.Monad.Logger
-import Database.Persist ((==.), (>=.))
-import qualified Database.Persist as DB
-import qualified Database.Persist.Sql as DB
-import qualified Database.Persist.MySQL as MySQL
-import qualified Database.Esqueleto as E
-import qualified Data.Time.Calendar as Tm
-import qualified Data.Time.Clock as Tm
-import qualified Data.Time.LocalTime as Tm
-import Data.Conduit (($$), ($=))
-import qualified Data.Conduit as C
-import qualified Data.Conduit.List as CL
-import Data.Typeable (Typeable)
+import           Data.Conduit                 (($$), ($=))
+import qualified Data.Conduit                 as C
+import qualified Data.Conduit.List            as CL
+import qualified Data.Maybe                   as Mb
+import           Data.Monoid                  ((<>))
+import qualified Data.Text                    as T
+import qualified Data.Text.Lazy               as TL
+import qualified Data.Text.Lazy.Builder       as TB
+import qualified Data.Text.Lazy.Builder.Int   as TB
+import qualified Data.Time.Calendar           as Tm
+import qualified Data.Time.Clock              as Tm
+import qualified Data.Time.LocalTime          as Tm
+import           Data.Typeable                (Typeable)
+import qualified Database.Esqueleto           as E
+import           Database.Persist             ((==.), (>=.))
+import qualified Database.Persist             as DB
+import qualified Database.Persist.MySQL       as MySQL
+import qualified Database.Persist.Sql         as DB
+import qualified Safe
 
-import TickerSymbol as Import
-import TimeFrame as Import
-import TechnicalIndicators (TechnicalInds(..))
-import qualified TechnicalIndicators as TI
-import Model
-import Conf
+import           Conf
 import qualified Lib
+import           Model
+import           TechnicalIndicators          (TechnicalInds (..))
+import qualified TechnicalIndicators          as TI
+import           TickerSymbol                 as Import
+import           TimeFrame                    as Import
 
 -- | UTCの日付時間のうち、日本時間の日付のみ比較
 sameDayOfJST :: Ohlcvt -> Ohlcvt -> Bool
@@ -224,7 +221,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
         prevItem <- queryPrevItem
         let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
         -- テクニカル指標テーブルのMACDよりMACDSIGの計算
-        let formula = case (snd <$> prevItem) of
+        let formula = case snd <$> prevItem of
                         Nothing -> TI.ema1 sigP
                         Just sd -> TI.ema sigP sd
         let macdSig = uncurry zip . A.second formula . unzip $ entAndMacd

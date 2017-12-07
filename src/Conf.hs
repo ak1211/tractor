@@ -27,7 +27,7 @@ Portability :  POSIX
 アプリケーションの設定情報を管理するモジュールです
 -}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Conf
     ( readJSONFile
@@ -36,39 +36,39 @@ module Conf
     , InfoMariaDB (..)
     ) where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.TH as Aeson
+import qualified Data.Aeson           as Aeson
+import qualified Data.Aeson.TH        as Aeson
 import qualified Data.ByteString.Lazy as BSL
-import qualified Text.Printf as Printf
-import Data.Word (Word16)
+import           Data.Word            (Word16)
+import qualified Text.Printf          as Printf
 
 -- | アプリケーションの設定情報
 data Info = Info
-    { recordAssetsInterval  :: Int
-    , sendReportInterval    :: Int
-    , loginURL              :: String
-    , loginID               :: String
-    , loginPassword         :: String
-    , dealingsPassword      :: String
-    , userAgent             :: String
-    , slack                 :: InfoSlack
-    , mariaDB               :: InfoMariaDB
+    { recordAssetsInterval :: Int
+    , sendReportInterval   :: Int
+    , loginURL             :: String
+    , loginID              :: String
+    , loginPassword        :: String
+    , dealingsPassword     :: String
+    , userAgent            :: String
+    , slack                :: InfoSlack
+    , mariaDB              :: InfoMariaDB
     } deriving Eq
 
 -- | 通知するSlackの設定情報
 data InfoSlack = InfoSlack
-    { webHookURL    :: String
-    , channel       :: String
-    , userName      :: String
+    { webHookURL :: String
+    , channel    :: String
+    , userName   :: String
     } deriving Eq
 
 -- | MariaDBの設定情報
 data InfoMariaDB = InfoMariaDB
-    { host        :: String
-    , port        :: Word16
-    , user        :: String
-    , password    :: String
-    , database    :: String
+    { host     :: String
+    , port     :: Word16
+    , user     :: String
+    , password :: String
+    , database :: String
     } deriving Eq
 
 -- | パスワードを*に置き換える

@@ -26,12 +26,11 @@ Portability :  POSIX
 
 スクレイピングするモジュールです。
 -}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Scraper
     ( taglist
@@ -55,23 +54,18 @@ module Scraper
     , scrapingOrderConfirmed
     ) where
 
-import qualified Safe
-
-import qualified Control.Monad as M
-
-import Data.Int (Int64)
-import qualified Data.Maybe as Maybe
-import qualified Data.List as List
+import qualified Control.Monad          as M
 import qualified Data.Char
-import qualified Data.Text.Lazy.Read as Read
-import qualified Data.Text.Lazy as T
-
-import qualified Text.Printf as Printf
-
-import qualified Text.HTML.TagSoup as TS
+import           Data.Int               (Int64)
+import qualified Data.List              as List
+import qualified Data.Maybe             as Maybe
+import qualified Data.Text.Lazy         as T
+import qualified Data.Text.Lazy.Read    as Read
+import qualified Data.Time              as Tm
+import qualified Safe
+import qualified Text.HTML.TagSoup      as TS
 import qualified Text.HTML.TagSoup.Tree as TS
-
-import qualified Data.Time as Tm
+import qualified Text.Printf            as Printf
 
 {- |
     ページからスクレイピングした情報の型クラス
@@ -122,9 +116,9 @@ instance Show HoldStock where
     株式取引 -> 現物売の内容
 -}
 data FraStkSell = FraStkSell {
-    fsQuantity  :: Double,      -- ^ 評価合計
-    fsProfit    :: Double,      -- ^ 損益合計
-    fsStocks    :: [HoldStock]  -- ^ 個別銘柄情報
+    fsQuantity :: Double,      -- ^ 評価合計
+    fsProfit   :: Double,      -- ^ 損益合計
+    fsStocks   :: [HoldStock]  -- ^ 個別銘柄情報
  } deriving (Eq)
 
 -- 型クラスShowのインスタンス
@@ -138,13 +132,13 @@ instance Show FraStkSell where
     資産状況 -> 余力情報の内容
 -}
 data FraAstSpare = FraAstSpare {
-    faMoneyToSpare          :: Int64,     -- ^ 現物買付余力
-    faStockOfMoney          :: Int64,     -- ^ 現金残高
-    faIncreaseOfDeposits    :: Int64,     -- ^ 預り増加額
-    faDecreaseOfDeposits    :: Int64,     -- ^ 預り減少額
-    faRestraintFee          :: Int64,     -- ^ ボックスレート手数料拘束金
-    faRestraintTax          :: Int64,     -- ^ 源泉徴収税拘束金（仮計算）
-    faCash                  :: Int64      -- ^ 使用可能現金
+    faMoneyToSpare       :: Int64,     -- ^ 現物買付余力
+    faStockOfMoney       :: Int64,     -- ^ 現金残高
+    faIncreaseOfDeposits :: Int64,     -- ^ 預り増加額
+    faDecreaseOfDeposits :: Int64,     -- ^ 預り減少額
+    faRestraintFee       :: Int64,     -- ^ ボックスレート手数料拘束金
+    faRestraintTax       :: Int64,     -- ^ 源泉徴収税拘束金（仮計算）
+    faCash               :: Int64      -- ^ 使用可能現金
 } deriving (Eq)
 
 -- 型クラスShowのインスタンス
@@ -232,21 +226,21 @@ onlySignDigit = T.filter isSignDigit
 -}
 toText :: Maybe T.Text -> T.Text -> Either T.Text T.Text
 toText Nothing note = Left note
-toText (Just t) _ = Right t
+toText (Just t) _   = Right t
 
 toDecimal :: Integral a => Maybe T.Text -> T.Text -> Either T.Text a
 toDecimal Nothing note = Left note
 toDecimal (Just t) note =
     case Read.signed Read.decimal $ onlySignDigit t of
         Right (v, _) -> Right v
-        Left _ -> Left note
+        Left _       -> Left note
 
 toDouble :: Maybe T.Text -> T.Text -> Either T.Text Double
 toDouble Nothing note = Left note
 toDouble (Just t) note =
     case Read.signed Read.double $ onlySignDigit t of
         Right (v, _) -> Right v
-        Left _ -> Left note
+        Left _       -> Left note
 
 {- |
     "ホーム" -> "お知らせ" のページをスクレイピングする関数

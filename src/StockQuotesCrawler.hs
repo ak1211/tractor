@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  StockQuotesCrawler
-Description :  
+Description :
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -27,54 +27,49 @@ Portability :  POSIX
 WEBスクレイピングしてきた株式情報を
 MariaDBデータベースに入れる
 -}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
 module StockQuotesCrawler
-    (runWebCrawlingOfPortfolios
+    (runWebCrawlingPortfolios
     ) where
 
-import Control.Exception hiding (throw)
-import Control.Applicative ((<|>))
-
-import Text.XML.Cursor (($//), (&/))
-import qualified Text.XML.Cursor as X
-import qualified Text.XML as X
-import qualified Text.HTML.DOM as H
-
-import qualified Data.List as List
-import qualified Data.Maybe as Mb
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T
-import qualified Data.Text.Read as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Builder as TB
-import qualified Data.Text.Lazy.Builder.Int as TB
-import Data.Monoid ((<>))
-
-import qualified Network.URI as N
-import qualified Network.HTTP.Conduit as N
-
-import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as M
-
+import           Control.Applicative          ((<|>))
+import qualified Control.Concurrent           as CC
+import           Control.Exception
+import qualified Control.Monad                as M
+import qualified Control.Monad.IO.Class       as M
+import           Control.Monad.Logger
 import qualified Control.Monad.Trans.Resource as MT
-import Control.Monad.Logger
-import Database.Persist ((=.), (==.), (<=.), (||.))
-import qualified Database.Persist as DB
-import qualified Database.Persist.Sql as DB
-import qualified Database.Persist.MySQL as MySQL
-import Data.Maybe (listToMaybe)
-import qualified Data.Time.Clock as Tm
-import qualified Data.Conduit as C
-import qualified Control.Concurrent as CC
-import qualified System.Random.MWC as R
+import qualified Data.ByteString.Lazy         as BL
+import qualified Data.Conduit                 as C
+import qualified Data.List                    as List
+import           Data.Maybe                   (listToMaybe)
+import qualified Data.Maybe                   as Mb
+import           Data.Monoid                  ((<>))
+import qualified Data.Text                    as T
+import qualified Data.Text.Lazy               as TL
+import qualified Data.Text.Lazy.Builder       as TB
+import qualified Data.Text.Lazy.Builder.Int   as TB
+import qualified Data.Text.Read               as T
+import qualified Data.Time.Clock              as Tm
+import           Database.Persist             ((<=.), (=.), (==.), (||.))
+import qualified Database.Persist             as DB
+import qualified Database.Persist.MySQL       as MySQL
+import qualified Database.Persist.Sql         as DB
+import qualified Network.HTTP.Conduit         as N
+import qualified Network.URI                  as N
+import qualified System.Random.MWC            as R
+import qualified Text.HTML.DOM                as H
+import qualified Text.XML                     as X
+import           Text.XML.Cursor              (($//), (&/))
+import qualified Text.XML.Cursor              as X
 
-import qualified WebBot as WB
-import TickerSymbol as Import
-import TimeFrame as Import
-import Model
-import Conf
+import           Conf
 import qualified Lib
+import           Model
+import           TickerSymbol                 as Import
+import           TimeFrame                    as Import
+import qualified WebBot                       as WB
 
 -- | スクリーンスクレイピング関数(k-db.com用)
 kdbcomScreenScraper   :: TickerSymbol
@@ -164,21 +159,21 @@ fetchStockPrices conf ticker tf = do
         "http://k-db.com/"
         ++ case symbol of
             -- 東証:個別株
-            TSTYO c     -> "stocks/" ++ show c ++  "-T/"
+            TSTYO c    -> "stocks/" ++ show c ++  "-T/"
             -- 日経平均株価
-            TSNI225     -> "indices/I101/"
+            TSNI225    -> "indices/I101/"
             -- TOPIX
-            TSTOPIX     -> "indices/I102/"
+            TSTOPIX    -> "indices/I102/"
             -- JPX日経インデックス400
-            TSJPXNI400  -> "indices/I103/"
+            TSJPXNI400 -> "indices/I103/"
         ++ case tf of
             TF1h -> "1h"
             TF1d -> ""      -- 何もつけないのが日足
 
 
 -- | ポートフォリオの株価情報を取りに行く関数
-runWebCrawlingOfPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
-runWebCrawlingOfPortfolios conf = do
+runWebCrawlingPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
+runWebCrawlingPortfolios conf = do
     limitTm <- M.liftIO $ diffTime <$> Tm.getCurrentTime
     -- 前回の更新から一定時間以上経過した更新対象のリストを得る
     ws <- M.liftIO . runStderrLoggingT . MT.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do

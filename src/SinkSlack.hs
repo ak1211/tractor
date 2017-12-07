@@ -27,9 +27,9 @@ Portability :  POSIX
 Slack Web API <https://api.slack.com/web>によって
 SlackとAPI接続するモジュールです。
 -}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module SinkSlack
     ( WebHook (..)
@@ -41,27 +41,21 @@ module SinkSlack
     ) where
 
 import qualified Conf
-import qualified Scraper
-
-import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as M
-
-import qualified Data.Maybe as Maybe
-import qualified Data.ByteString.Char8 as BS8
+import qualified Control.Monad              as M
+import qualified Control.Monad.IO.Class     as M
+import qualified Data.Aeson                 as Aeson
+import qualified Data.Aeson.TH              as Aeson
+import qualified Data.ByteString.Char8      as BS8
 import qualified Data.ByteString.Lazy.Char8 as BSL8
-import qualified Data.Conduit as C
-import qualified Data.Text.Lazy as TL
-
-import qualified Text.Printf as Printf
-
-import qualified Network.HTTP.Conduit as N
-import qualified Network.HTTP.Types.Status as N
-
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.TH as Aeson
-
-import qualified Data.Time.Clock.POSIX as Tm
-import Data.Time (UTCTime)
+import qualified Data.Conduit               as C
+import qualified Data.Maybe                 as Maybe
+import qualified Data.Text.Lazy             as TL
+import           Data.Time                  (UTCTime)
+import qualified Data.Time.Clock.POSIX      as Tm
+import qualified Network.HTTP.Conduit       as N
+import qualified Network.HTTP.Types.Status  as N
+import qualified Scraper
+import qualified Text.Printf                as Printf
 
 {- |
     Slack Web API - Incoming Webhooks
@@ -69,11 +63,11 @@ import Data.Time (UTCTime)
     によるJSON構造定義
 -}
 data WebHook = WebHook {
-    channel         :: String,
-    username        :: String,
-    attachments     :: [Attachment],
-    hText           :: String,
-    icon_emoji      :: String
+    channel     :: String,
+    username    :: String,
+    attachments :: [Attachment],
+    hText       :: String,
+    icon_emoji  :: String
 } deriving Show
 
 {- |
@@ -82,13 +76,13 @@ data WebHook = WebHook {
     によるJSON構造定義
 -}
 data Attachment = Attachment {
-    color           :: String,
-    pretext         :: Maybe String,
-    title           :: Maybe String,
-    text            :: String,
-    footer          :: String,
-    footer_icon     :: String,
-    ts              :: Integer
+    color       :: String,
+    pretext     :: Maybe String,
+    title       :: Maybe String,
+    text        :: String,
+    footer      :: String,
+    footer_icon :: String,
+    ts          :: Integer
 } deriving Show
 
 $(Aeson.deriveJSON Aeson.defaultOptions {

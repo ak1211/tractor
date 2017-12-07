@@ -29,23 +29,22 @@ Portability :  POSIX
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE LambdaCase                 #-}
 module Model where
 
-import Data.Text (Text)
+import           Data.ByteString.Char8 (ByteString)
+import           Data.Text             (Text)
+import           Data.Time             (UTCTime)
+import qualified Database.Persist.TH   as DB
 
-import qualified Database.Persist.TH as DB
-import Data.ByteString.Char8 (ByteString)
-import Data.Time (UTCTime)
-
-import TickerSymbol as Import
-import TimeFrame as Import
-import TechnicalIndicators as Import
+import           TechnicalIndicators   as Import
+import           TickerSymbol          as Import
+import           TimeFrame             as Import
 
 DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateQuotes"] [DB.persistLowerCase|
 -- | 株式銘柄テーブル
