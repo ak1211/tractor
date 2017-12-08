@@ -31,12 +31,12 @@ module Scheduling
     ( JobFunc
     , Job
     , packZonedTimeJob
+    , packLocalTimeJob
     , execute
-    , toUTCTimeFromJST
-    , morningSessionTSE
-    , afternoonSessionTSE
-    , reportSecuritiesAnnounceTimeFromJST
-    , batchProcessTimeFromJST
+    , tradingTimeOfTSEInJST
+    , announceWeekdayTimeInJST
+    , announceHolidayTimeInJST
+    , batchProcessTimeInJST
     , tomorrowMidnightJST
     ) where
 
@@ -54,6 +54,12 @@ type Job = (Tm.UTCTime, JobFunc)
 --
 packZonedTimeJob :: (Tm.ZonedTime, JobFunc) -> Job
 packZonedTimeJob = A.first Tm.zonedTimeToUTC
+
+--
+packLocalTimeJob :: Tm.TimeZone -> (Tm.LocalTime, JobFunc) -> Job
+packLocalTimeJob tz =
+    packZonedTimeJob
+    . (A.first $ flip Tm.ZonedTime tz)
 
 -- | スケジュール実行関数
 execute :: [Job] -> JobFunc
@@ -73,9 +79,9 @@ execute =
     loop continue@((tm,fn):next) =
         fmap secondsOnly Tm.getSystemTime
         >>= \case
-        now | now <  tm -> wait (distance tm now) >> loop continue
-            | now == tm -> fn >> loop next
-            | otherwise -> loop next
+        now | now <  tm -> wait (distance tm now) >> loop continue  -- まだ実行時間ではない
+            | now == tm -> fn >> loop next                          -- 実行
+            | otherwise -> loop next                                -- すでに過ぎたのでキャンセル
     --
     distance a b = abs (Tm.systemSeconds a - Tm.systemSeconds b)
     --
@@ -89,9 +95,9 @@ execute =
         | s <  60   = delaySec (fromIntegral s - 1)
         | otherwise = delaySec 60
 
---
-toTimeOfDaySequence :: (Tm.TimeOfDay, Tm.TimeOfDay) -> [Tm.TimeOfDay]
-toTimeOfDaySequence =
+-- | (開始時間, 終了時間)から開始より終了まで１秒づつ増やしたリストを作る
+listOfSeconds :: (Tm.TimeOfDay, Tm.TimeOfDay) -> [Tm.TimeOfDay]
+listOfSeconds =
     map (Tm.timeToTimeOfDay . Tm.picosecondsToDiffTime)
     . (\(beg,end) -> [beg, beg+step .. end])
     . (toPicosec A.*** toPicosec)
@@ -101,39 +107,43 @@ toTimeOfDaySequence =
     --
     toPicosec = Tm.diffTimeToPicoseconds . Tm.timeOfDayToTime
 
--- | 明日の午前0時(日本時間)
-tomorrowMidnightJST :: Tm.Day -> Tm.UTCTime
-tomorrowMidnightJST =
-    Tm.zonedTimeToUTC                   -- UTC
-    . flip Tm.ZonedTime Lib.tzJST       -- JST local to zoned
-    . flip Tm.LocalTime Tm.midnight     -- JST Tomorrow 00:00:00
-    . succ                              -- JST Today + 1 (a.k.a Tomorrow)
+-- | 現物株式の立会時間(東京証券取引所,日本時間)
+tradingTimeOfTSEInJST :: Tm.Day -> ([Tm.ZonedTime], [Tm.ZonedTime])
+tradingTimeOfTSEInJST jstDay =
+    (lists morning, lists afternoon)
+    where
+    tol = Tm.LocalTime jstDay
+    lists = map (flip Tm.ZonedTime Lib.tzJST . tol) . listOfSeconds
+    --
+    morning     = (Tm.TimeOfDay  9 00 00, Tm.TimeOfDay 11 30 00)
+    afternoon   = (Tm.TimeOfDay 12 30 00, Tm.TimeOfDay 15 00 00)
 
---
-toUTCTimeFromJST :: Tm.Day -> Tm.TimeOfDay -> Tm.UTCTime
-toUTCTimeFromJST jstDay jstTime =
-    Lib.fromLocalTimeJST $ Tm.LocalTime jstDay jstTime
-
--- | 現物株式の立会時間(東京証券取引所,日本時間,前場)
-morningSessionTSE :: [Tm.TimeOfDay]
-morningSessionTSE = toTimeOfDaySequence
-    (Tm.TimeOfDay  9 00 00, Tm.TimeOfDay 11 30 00)
-
--- | 現物株式の立会時間(東京証券取引所,日本時間,後場)
-afternoonSessionTSE :: [Tm.TimeOfDay]
-afternoonSessionTSE = toTimeOfDaySequence
-    (Tm.TimeOfDay 12 30 00, Tm.TimeOfDay 15 00 00)
-
--- | "お知らせ"の報告時間
-reportSecuritiesAnnounceTimeFromJST :: Tm.Day -> [Tm.UTCTime]
-reportSecuritiesAnnounceTimeFromJST jstDay = map (toUTCTimeFromJST jstDay)
+-- | 平日の報告時間
+announceWeekdayTimeInJST :: Tm.Day -> [Tm.ZonedTime]
+announceWeekdayTimeInJST jstDay =
+    map (flip Tm.ZonedTime Lib.tzJST . Tm.LocalTime jstDay)
     [ Tm.TimeOfDay  6 30 00
     , Tm.TimeOfDay 11 35 00
     , Tm.TimeOfDay 15 05 00
     ]
 
+-- | 休日の報告時間
+announceHolidayTimeInJST :: Tm.Day -> [Tm.ZonedTime]
+announceHolidayTimeInJST jstDay =
+    map (flip Tm.ZonedTime Lib.tzJST . Tm.LocalTime jstDay)
+    [ Tm.TimeOfDay  6 30 00 ]
+
 -- | バッチ作業時間
-batchProcessTimeFromJST :: Tm.Day -> [Tm.UTCTime]
-batchProcessTimeFromJST jstDay = map (toUTCTimeFromJST jstDay)
-    [Tm.TimeOfDay 17 20 00]
+batchProcessTimeInJST :: Tm.Day -> [Tm.ZonedTime]
+batchProcessTimeInJST jstDay =
+    map (flip Tm.ZonedTime Lib.tzJST . Tm.LocalTime jstDay)
+    [ Tm.TimeOfDay 17 20 00 ]
+
+-- | 明日の日本時間午前0時
+tomorrowMidnightJST :: Tm.Day -> Tm.ZonedTime
+tomorrowMidnightJST jstDay =
+    flip Tm.ZonedTime Lib.tzJST         -- JST ZonedTime
+    . flip Tm.LocalTime Tm.midnight     -- JST Tomorrow 00:00:00
+    . succ                              -- JST Today + 1 (a.k.a Tomorrow)
+    $ jstDay
 

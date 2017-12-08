@@ -29,14 +29,15 @@ Portability :  POSIX
 module Lib
     ( greetingsMessage
     , tzJST
-    , fromLocalTimeJST
     , httpRequestHeader
     , parseJSTDayTimeToUTCTime
     , NthOfTotal
     , packNthOfTotal
+    , every
     ) where
 
 import qualified Data.ByteString.Lazy.Char8 as BL8
+import           Data.Maybe                 (catMaybes)
 import qualified Data.Maybe                 as M
 import qualified Data.Text.Lazy             as TL
 import qualified Data.Time                  as Tm
@@ -61,10 +62,6 @@ tzJST :: Tm.TimeZone
 tzJST =
     let z = Tm.hoursToTimeZone 9 in
     z {Tm.timeZoneName = "JST"}
-
--- | 日本時間(JST)からUTCへ
-fromLocalTimeJST :: Tm.LocalTime -> Tm.UTCTime
-fromLocalTimeJST = Tm.zonedTimeToUTC . flip Tm.ZonedTime Lib.tzJST
 
 -- | HTTPリクエストヘッダ
 httpRequestHeader :: Conf.Info -> [N.Header]
@@ -92,4 +89,14 @@ packNthOfTotal vs =
     zip vs nth
     where
     nth = [(n, length vs) | n<-[1..]]
+
+-- | リストからn個毎に取り出す
+every :: Int -> [a] -> [a]
+every n =
+    catMaybes . zipWith
+        (\idx val ->
+            if idx `mod` n == 0
+            then Just val
+            else Nothing)
+        [0..]
 

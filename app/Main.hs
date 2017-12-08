@@ -26,6 +26,7 @@ Portability :  POSIX
 
 アプリケーション「Tractor」のメインモジュールです。
 -}
+{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
@@ -39,13 +40,13 @@ import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as M
 import           Data.Conduit                 (($$), ($=))
 import qualified Data.Conduit                 as C
-import           Data.Maybe                   (catMaybes)
 import           Data.Monoid                  ((<>))
 import qualified Data.Semigroup               as S
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.Builder       as TL
 import qualified Data.Text.Lazy.IO            as TL
 import qualified Data.Time                    as Tm
+import qualified Data.Time.Calendar.WeekDate  as Tm
 import qualified Network.URI                  as N
 import qualified Options.Applicative          as Opt
 import qualified Safe
@@ -78,6 +79,35 @@ toSlack conf msg =
 -- | テキストメッセージをsinkSlackで送信する形式に変換する関数
 simpleTextMsg :: M.MonadIO m => Conf.Info -> C.Conduit TL.Text m Slack.WebHook
 simpleTextMsg = Slack.simpleTextMsg . Conf.slack
+
+-- | runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
+siteConn :: (Monad m, M.MonadTrans t, M.MonadResource (t m)) =>
+              Conf.Info -> (WebBot.HTTPSession -> m b) -> t m b
+siteConn conf f =
+    M.allocate login WebBot.logout
+    >>= (\(_,session) -> M.lift $ f session)
+    where
+    -- | 証券会社のサイトにログインする関数
+    login = do
+        let url = Conf.loginURL conf
+        u <- fail2Throw (url ++ " は有効なURLではありません") $ N.parseURI url
+        s <- WebBot.login conf u
+        fail2Throw (url ++ " にログインできませんでした") s
+    --
+    fail2Throw :: String -> Maybe a -> IO a
+    fail2Throw  _ (Just x) = return x
+    fail2Throw msg Nothing = throwIO (userError msg)
+
+-- | Slackへお知らせを送るついでに現在資産評価をDBへ
+reportSecuritiesAnnounce :: Conf.Info -> IO ()
+reportSecuritiesAnnounce conf =
+    M.runResourceT . siteConn conf $ \session -> do
+        -- ホーム -> お知らせを見に行く
+        fha <- WebBot.fetchFraHomeAnnounce session
+        -- 現在資産評価を証券会社のサイトから取得してDBへ
+        fetchPriceToStore session
+        -- Slackへお知らせを送る
+        C.yield (TL.pack $ show fha) $= simpleTextMsg conf $$ sinkSlack conf
 
 -- | DBから最新の資産評価を取り出してSlackへレポートを送る
 reportCurrentAssets :: Conf.Info -> IO ()
@@ -116,28 +146,6 @@ reportCurrentAssets conf = do
         }
         C.yield report $= reportMsg conf $$ sinkSlack conf
 
--- | runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
-siteConn :: (Monad m, M.MonadTrans t, M.MonadResource (t m)) =>
-              Conf.Info -> (WebBot.HTTPSession -> m b) -> t m b
-siteConn conf f =
-    M.allocate login WebBot.logout
-    >>= (\(_,session) -> M.lift $ f session)
-    where
-    -- | 証券会社のサイトにログインする関数
-    login = do
-        let url = Conf.loginURL conf
-        u <- fail2Throw (url ++ " は有効なURLではありません") $ N.parseURI url
-        s <- WebBot.login conf u
-        fail2Throw (url ++ " にログインできませんでした") s
-    --
-    fail2Throw :: String -> Maybe a -> IO a
-    fail2Throw  _ (Just x) = return x
-    fail2Throw msg Nothing = throwIO (userError msg)
-
-fetchPrice :: Conf.Info -> IO ()
-fetchPrice conf =
-    M.runResourceT . siteConn conf $ fetchPriceToStore
-
 -- | 現在資産評価を証券会社のサイトから取得してDBへ
 fetchPriceToStore :: WebBot.HTTPSession -> IO ()
 fetchPriceToStore session = do
@@ -151,19 +159,6 @@ fetchPriceToStore session = do
         Scraper.storeToDB tm spare
         Scraper.storeToDB tm sell
 
--- | Slackへお知らせを送るついでに現在資産評価をDBへ
-reportSecuritiesAnnounce :: Conf.Info -> IO ()
-reportSecuritiesAnnounce conf =
-    M.runResourceT . siteConn conf $ go
-    where
-    go session = do
-        -- ホーム -> お知らせを見に行く
-        fha <- WebBot.fetchFraHomeAnnounce session
-        -- 現在資産評価を証券会社のサイトから取得してDBへ
-        fetchPriceToStore session
-        -- Slackへお知らせを送る
-        C.yield (TL.pack $ show fha) $= simpleTextMsg conf $$ sinkSlack conf
-
 -- | バッチ処理関数
 batchProcessing :: Conf.Info -> IO ()
 batchProcessing conf = do
@@ -176,7 +171,75 @@ batchProcessing conf = do
         $= Slack.simpleTextMsg (Conf.slack conf)
         $$ Slack.sink (Conf.slack conf)
 
+-- | バッチ処理スレッド
+batchProcessThread :: Conf.Info -> Tm.Day -> IO ()
+batchProcessThread conf jstDay =
+    Scheduling.execute $ map Scheduling.packZonedTimeJob
+        [(t, batchProcessing conf)
+        | t<-Scheduling.batchProcessTimeInJST jstDay
+        ]
 
+-- | 明日になるまでただ待つスレッド
+sleepingTodayThread :: Tm.Day -> IO ()
+sleepingTodayThread jstDay =
+    Scheduling.execute $ map Scheduling.packZonedTimeJob
+        [(Scheduling.tomorrowMidnightJST jstDay, return ())]
+
+-- | 平日の報告スレッド
+announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
+announceWeekdayThread conf jstDay =
+    Scheduling.execute $ map Scheduling.packZonedTimeJob
+        [(t, reportSecuritiesAnnounce conf)
+        | t<-Scheduling.announceWeekdayTimeInJST jstDay
+        ]
+
+-- | 休日の報告スレッド
+announceHolidayThread :: Conf.Info -> Tm.Day -> IO ()
+announceHolidayThread conf jstDay =
+    Scheduling.execute $ map Scheduling.packZonedTimeJob
+        [(t, announce)
+        | t<-Scheduling.announceHolidayTimeInJST jstDay
+        ]
+    where
+    announce =
+        C.yield "本日は休日です。" $= simpleTextMsg conf $$ sinkSlack conf
+
+
+-- | 立会時間中のスレッド
+tradingTimeThread :: Conf.Info -> [Tm.ZonedTime] -> IO ()
+tradingTimeThread conf times =
+    Scheduling.execute
+        -- 3分前にログインする仕掛け
+        $ map (timedelta (-180) . Scheduling.packZonedTimeJob)
+        [ (t, worker)
+        | t<-Lib.every (30*60) times        -- 再復帰は30分間隔
+        ]
+    where
+    -- 実際の作業
+    worker =
+        M.runResourceT . siteConn conf $ \sess ->
+            let js= fetchPriceJobs sess
+                    ++ reportJobs
+            in
+            Scheduling.execute js
+    -- 現在資産取得
+    fetchPriceJobs session =
+        map Scheduling.packZonedTimeJob
+        [ (t, fetchPriceToStore session)    -- 現在資産取得関数
+        | t<-Lib.every (10*60) times
+        ]
+
+    -- | 現在資産評価額報告
+    reportJobs =
+        -- 資産取得の実行より1分遅らせる仕掛け
+        map (timedelta 60 . Scheduling.packZonedTimeJob)
+        [ (t, reportCurrentAssets conf)     -- 現在資産評価額報告関数
+        | t<-Lib.every (10*60) times
+        ]
+
+    -- | UTC時間の加減算
+    timedelta seconds =
+        A.first $ Tm.addUTCTime (fromInteger seconds)
 
 -- | アプリケーションの本体
 applicationBody :: CommandLineOption -> Conf.Info -> IO ()
@@ -192,7 +255,22 @@ applicationBody cmdLineOpts conf =
         -- 起動時の挨拶文をSlackへ送る
         toSlack (Conf.slack conf) Lib.greetingsMessage
         -- 実行
-        M.forever mainThread
+        M.forever $ do
+            -- 今日(日本時間)
+            jstDay <- toLocalDay Lib.tzJST <$> Tm.getCurrentTime
+            -- 今日の作業はスレッドで実行
+            ts <- M.mapM (CCA.async . ($ jstDay))
+                    $ case Tm.toWeekDate jstDay of
+                        (_,_,w) | w == 1 -> weekday     -- Monday
+                                | w == 2 -> weekday     -- Tuesday
+                                | w == 3 -> weekday     -- Wednesday
+                                | w == 4 -> weekday     -- Thursday
+                                | w == 5 -> weekday     -- Friday
+                                | w == 6 -> holiday     -- Saturday
+                                | w == 7 -> holiday     -- Sunday
+                                | otherwise -> holiday  -- ???
+            -- 作業スレッドの終了を待つ
+            M.mapM_ CCA.wait ts
     `catch`
     -- 全ての例外ハンドラ
     \(SomeException ex) -> do
@@ -206,98 +284,32 @@ applicationBody cmdLineOpts conf =
         applicationBody cmdLineOpts conf
     where
     --
-    dayFromUTC :: Tm.TimeZone -> Tm.UTCTime -> Tm.Day
-    dayFromUTC tz = Tm.localDay
+    toLocalDay :: Tm.TimeZone -> Tm.UTCTime -> Tm.Day
+    toLocalDay tz = Tm.localDay
                     . Tm.zonedTimeToLocalTime
                     . Tm.utcToZonedTime tz
 
-    -- | サイトにログインする時間
-    loginTime :: Tm.UTCTime -> Tm.UTCTime
-    loginTime = Tm.addUTCTime $ fromInteger (-180)  -- 3分前
-
-    --
-    mainThread :: IO ()
-    mainThread = do
-        let threads =   [ reportSecuritiesAnnounceThread
-                        , morningSessionThread
-                        , afternoonSessionThread
-                        , batchProcessThread
-                        , sleepingTodayThread
-                        ]
-        -- 今日の作業(日本時間)
-        jstDay <- dayFromUTC Lib.tzJST <$> Tm.getCurrentTime
-        -- 今日の作業はスレッドで実行
-        ts <- M.mapM (CCA.async . ($ jstDay)) threads
-        -- 作業スレッドの終了を待つ
-        M.mapM_ CCA.wait ts
-
-    -- | 明日になるまでただ待つスレッド
-    sleepingTodayThread :: Tm.Day -> IO ()
-    sleepingTodayThread jstDay =
-        Scheduling.execute [(Scheduling.tomorrowMidnightJST jstDay, return ())]
-
-    -- | "お知らせ"の報告スレッド
-    reportSecuritiesAnnounceThread :: Tm.Day -> IO ()
-    reportSecuritiesAnnounceThread jstDay =
-        Scheduling.execute
-            [(t, reportSecuritiesAnnounce conf)
-            | t<-Scheduling.reportSecuritiesAnnounceTimeFromJST jstDay
-            ]
-
-    -- | バッチ処理スレッド
-    batchProcessThread :: Tm.Day -> IO ()
-    batchProcessThread jstDay =
-        Scheduling.execute
-            [(t, batchProcessing conf)
-            | t<-Scheduling.batchProcessTimeFromJST jstDay
-            ]
-
     -- | 前場のスレッド
-    morningSessionThread :: Tm.Day -> IO ()
     morningSessionThread jstDay =
-        tradingTimeThread jstDay Scheduling.morningSessionTSE
+        tradingTimeThread conf . fst $ Scheduling.tradingTimeOfTSEInJST jstDay
 
     -- | 後場のスレッド
-    afternoonSessionThread :: Tm.Day -> IO ()
     afternoonSessionThread jstDay =
-        tradingTimeThread jstDay Scheduling.afternoonSessionTSE
+        tradingTimeThread conf . snd $ Scheduling.tradingTimeOfTSEInJST jstDay
 
-    -- | 立会時間中のスレッド
-    tradingTimeThread :: Tm.Day -> [Tm.TimeOfDay] -> IO ()
-    tradingTimeThread jstDay jstTimes =
-{-
-        print $ map (Tm.utcToLocalTime Lib.tzJST) $ take 10 $ map (Scheduling.toUTCTimeFromJST jstDay) $ every (10*60) jstTimes
-        print $ map (Tm.utcToLocalTime Lib.tzJST) $ take 10 $ map (Tm.addUTCTime $ fromInteger 60) $ map (Scheduling.toUTCTimeFromJST jstDay) $ every (10*60) jstTimes
-        -}
-        -- 作業前にログインする仕掛け
-        Scheduling.execute
-            $ map (A.first (loginTime . Scheduling.toUTCTimeFromJST jstDay))
-            [(t, M.runResourceT $ siteConn conf run) | t<-jstTimes]
-        where
-        -- 実際の作業
-        run session = Scheduling.execute
-                        $ fetchPriceSchedule session ++ reportSchedule
-        -- 現在資産取得スケジュール
-        fetchPriceSchedule session =
-            [ (Scheduling.toUTCTimeFromJST jstDay t, fetchPriceToStore session)
-            | t<-every (10*60) jstTimes
-            ]
-        -- | 現在資産評価額報告スケジュール
-        reportSchedule =
-            -- 資産取得スケジュールより1分遅らせる
-            map (A.first $ Tm.addUTCTime 60)
-            [ (Scheduling.toUTCTimeFromJST jstDay t, reportCurrentAssets conf)
-            | t<-every (10*60) jstTimes
-            ]
-        -- | n個毎
-        every :: Int -> [Tm.TimeOfDay] -> [Tm.TimeOfDay]
-        every n =
-            catMaybes . zipWith
-                (\idx val ->
-                    if idx `mod` n == 0
-                    then Just val
-                    else Nothing)
-                [0..]
+    --
+    weekday =
+        [ announceWeekdayThread conf
+        , morningSessionThread
+        , afternoonSessionThread
+        , batchProcessThread conf
+        , sleepingTodayThread
+        ]
+    --
+    holiday =
+        [ announceHolidayThread conf
+        , sleepingTodayThread
+        ]
 
 --
 data ApplicationRunMode = RunNormal | RunBatch deriving Show
