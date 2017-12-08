@@ -226,7 +226,7 @@ tradingTimeThread conf times =
     fetchPriceJobs session =
         map Scheduling.packZonedTimeJob
         [ (t, fetchPriceToStore session)    -- 現在資産取得関数
-        | t<-Lib.every (10*60) times
+        | t<-Lib.every (Conf.recordAssetsInterval conf * 60) times
         ]
 
     -- | 現在資産評価額報告
@@ -234,7 +234,7 @@ tradingTimeThread conf times =
         -- 資産取得の実行より1分遅らせる仕掛け
         map (timedelta 60 . Scheduling.packZonedTimeJob)
         [ (t, reportCurrentAssets conf)     -- 現在資産評価額報告関数
-        | t<-Lib.every (10*60) times
+        | t<-Lib.every (Conf.sendReportInterval conf * 60) times
         ]
 
     -- | UTC時間の加減算
