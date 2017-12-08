@@ -26,7 +26,6 @@ Portability :  POSIX
 
 アプリケーション「Tractor」のメインモジュールです。
 -}
-{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
@@ -201,8 +200,11 @@ announceHolidayThread conf jstDay =
         | t<-Scheduling.announceHolidayTimeInJST jstDay
         ]
     where
+    msg =
+        "本日 " <> TL.fromString (show jstDay) <> " は休日です。"
+    --
     announce =
-        C.yield "本日は休日です。" $= simpleTextMsg conf $$ sinkSlack conf
+        C.yield (TL.toLazyText msg) $= simpleTextMsg conf $$ sinkSlack conf
 
 
 -- | 立会時間中のスレッド
