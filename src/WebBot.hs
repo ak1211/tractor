@@ -34,7 +34,8 @@ Portability :  POSIX
 {-# LANGUAGE TypeFamilies          #-}
 
 module WebBot
-    ( UnexpectedHTMLException
+    ( UnexpectedHTMLException (..)
+    , DontHaveStocksToSellException (..)
     , HTTPSession (..)
     , fetchPage
     , login
@@ -79,7 +80,8 @@ import qualified Scraper
 {- |
     実行時例外 : 予想外のHTML
 -}
-newtype UnexpectedHTMLException = UnexpectedHTMLException String
+newtype UnexpectedHTMLException
+    = UnexpectedHTMLException String
     deriving (Data.Typeable.Typeable, Eq)
 
 instance Show UnexpectedHTMLException where
@@ -90,7 +92,8 @@ instance Exception UnexpectedHTMLException
 {- |
     実行時例外 : 未保有株の売却指示
 -}
-newtype DontHaveStocksToSellException = DontHaveStocksToSellException String
+newtype DontHaveStocksToSellException
+    = DontHaveStocksToSellException String
     deriving (Data.Typeable.Typeable, Eq, Show)
 
 instance Exception DontHaveStocksToSellException
@@ -513,7 +516,7 @@ fetchFraHomeAnnounce :: HTTPSession -> IO Scraper.FraHomeAnnounce
 fetchFraHomeAnnounce session = do
     contents <- Scraper.scrapingFraHomeAnnounce <$> fetchContents
     case contents of
-        Right r -> return r
+        Right r  -> return r
         Left err -> failureAtScraping err
     where
     fetchContents =
@@ -533,7 +536,7 @@ fetchFraStkSell :: HTTPSession -> IO Scraper.FraStkSell
 fetchFraStkSell session = do
     contents <- Scraper.scrapingFraStkSell <$> fetchContents
     case contents of
-        Right r -> return r
+        Right r  -> return r
         Left err -> failureAtScraping err
     where
     fetchContents =
@@ -553,7 +556,7 @@ fetchFraAstSpare :: HTTPSession -> IO Scraper.FraAstSpare
 fetchFraAstSpare session = do
     contents <- Scraper.scrapingFraAstSpare <$> fetchContents
     case contents of
-        Right r -> return r
+        Right r  -> return r
         Left err -> failureAtScraping err
     where
     fetchContents =
@@ -582,7 +585,7 @@ sellStock :: HTTPSession -> SellOrderSet -> IO Scraper.OrderConfirmed
 sellStock session order = do
     contents <- Scraper.scrapingOrderConfirmed <$> fetchContents
     case contents of
-        Right r -> return r
+        Right r  -> return r
         Left err -> failureAtScraping err
     where
     fetchContents =

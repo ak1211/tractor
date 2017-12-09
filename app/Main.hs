@@ -31,7 +31,7 @@ module Main where
 
 import qualified Control.Arrow                as A
 import qualified Control.Concurrent           as CC
-import qualified Control.Concurrent.Async     as CCA
+import qualified Control.Concurrent.Async     as CC
 import           Control.Exception
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
@@ -178,12 +178,6 @@ batchProcessThread conf jstDay =
         | t<-Scheduling.batchProcessTimeInJST jstDay
         ]
 
--- | 明日になるまでただ待つスレッド
-sleepingTodayThread :: Tm.Day -> IO ()
-sleepingTodayThread jstDay =
-    Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(Scheduling.tomorrowMidnightJST jstDay, return ())]
-
 -- | 平日の報告スレッド
 announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
 announceWeekdayThread conf jstDay =
@@ -200,8 +194,9 @@ announceHolidayThread conf jstDay =
         | t<-Scheduling.announceHolidayTimeInJST jstDay
         ]
     where
+    --
     msg =
-        "本日 " <> TL.fromString (show jstDay) <> " は休日です。"
+        "本日 " <> TL.fromString (show jstDay) <> " は市場の休日です。"
     --
     announce =
         C.yield (TL.toLazyText msg) $= simpleTextMsg conf $$ sinkSlack conf
@@ -213,9 +208,8 @@ tradingTimeThread conf times =
     Scheduling.execute
         -- 3分前にログインする仕掛け
         $ map (timedelta (-180) . Scheduling.packZonedTimeJob)
-        [ (t, worker)
-        | t<-Lib.every (30*60) times        -- 再復帰は30分間隔
-        ]
+        [ (t, worker) | t<-Lib.every (30*60) times ]
+        -- ^ 再復帰は30分間隔
     where
     -- 実際の作業
     worker =
@@ -224,13 +218,34 @@ tradingTimeThread conf times =
                     ++ reportJobs
             in
             Scheduling.execute js
+        `catches`
+        --
+        -- 実行時例外 : 予想外のHTML
+        [ Handler $ \(WebBot.UnexpectedHTMLException ex) ->
+            let msg = "予想外のHTML例外 \""
+                        <> TL.fromString ex
+                        <> "\""
+            in
+            -- Slackへエラーメッセージを送る
+            toSlack (Conf.slack conf) $ TL.toLazyText msg
+        --
+        -- 実行時例外 : 未保有株の売却指示
+        , Handler $ \(WebBot.DontHaveStocksToSellException ex) ->
+            let msg = "未保有株の売却指示 \""
+                        <> TL.fromString ex
+                        <> "\""
+            in
+            -- Slackへエラーメッセージを送る
+            toSlack (Conf.slack conf) $ TL.toLazyText msg
+        ]
+    --
     -- 現在資産取得
     fetchPriceJobs session =
         map Scheduling.packZonedTimeJob
         [ (t, fetchPriceToStore session)    -- 現在資産取得関数
         | t<-Lib.every (Conf.recordAssetsInterval conf * 60) times
         ]
-
+    --
     -- | 現在資産評価額報告
     reportJobs =
         -- 資産取得の実行より1分遅らせる仕掛け
@@ -238,7 +253,7 @@ tradingTimeThread conf times =
         [ (t, reportCurrentAssets conf)     -- 現在資産評価額報告関数
         | t<-Lib.every (Conf.sendReportInterval conf * 60) times
         ]
-
+    --
     -- | UTC時間の加減算
     timedelta seconds =
         A.first $ Tm.addUTCTime (fromInteger seconds)
@@ -256,13 +271,17 @@ applicationBody cmdLineOpts conf =
     RunNormal -> do
         -- 起動時の挨拶文をSlackへ送る
         toSlack (Conf.slack conf) Lib.greetingsMessage
-        -- 実行
+        --
+        -- メインループ
+        --
         M.forever $ do
             -- 今日(日本時間)
-            jstDay <- toLocalDay Lib.tzJST <$> Tm.getCurrentTime
-            -- 今日の作業はスレッドで実行
-            ts <- M.mapM (CCA.async . ($ jstDay))
-                    $ case Tm.toWeekDate jstDay of
+            jstDay <-   Tm.localDay
+                        . Tm.zonedTimeToLocalTime
+                        . Tm.utcToZonedTime Lib.tzJST
+                        <$> Tm.getCurrentTime
+            -- 今日の作業スレッドリスト
+            let works = case Tm.toWeekDate jstDay of
                         (_,_,w) | w == 1 -> weekday     -- Monday
                                 | w == 2 -> weekday     -- Tuesday
                                 | w == 3 -> weekday     -- Wednesday
@@ -271,47 +290,63 @@ applicationBody cmdLineOpts conf =
                                 | w == 6 -> holiday     -- Saturday
                                 | w == 7 -> holiday     -- Sunday
                                 | otherwise -> holiday  -- ???
-            -- 作業スレッドの終了を待つ
-            M.mapM_ CCA.wait ts
-    `catch`
-    -- 全ての例外ハンドラ
-    \(SomeException ex) -> do
-        let msg = "Some exception caught, \""
-                    <> TL.fromString (show ex)
-                    <> "\""
-        -- Slackへエラーメッセージを送る
-        toSlack (Conf.slack conf) $ TL.toLazyText msg
-        -- 一定時間待機後に実行時例外からの再開
-        CC.threadDelay (660 * 1000 * 1000)
-        applicationBody cmdLineOpts conf
+            -- 今日の作業スレッドを実行する
+            ths <- M.mapM (CC.async . (\f -> f jstDay)) works
+            -- 作業スレッドの異常終了を確認したら再起動する
+            (_, result) <- CC.waitAnyCatchCancel ths
+            case result of
+                -- 正常終了
+                Right _ -> return ()
+                -- 失敗
+                Left ex -> do
+                    let msg = "Some exception caught, \""
+                                <> TL.fromString (show ex)
+                                <> "\""
+                    -- Slackへエラーメッセージを送る
+                    toSlack (Conf.slack conf) $ TL.toLazyText msg
+        --
+        -- foreverによって繰り返す
+        --
+    `catches`
+        -- ユーザー例外ハンドラ
+        [ Handler $ \UserInterrupt ->
+            toSlack (Conf.slack conf) "User Interrupt (pressed Ctrl-C) caught"
+        --
+        -- 全ての例外ハンドラ
+        , Handler $ \(SomeException ex) -> do
+            let msg = "Some exception caught, \""
+                        <> TL.fromString (show ex)
+                        <> "\""
+            -- Slackへエラーメッセージを送る
+            toSlack (Conf.slack conf) $ TL.toLazyText msg
+            -- 一定時間待機後に実行時例外からの再開
+            CC.threadDelay (300 * 1000 * 1000)
+            applicationBody cmdLineOpts conf
+        ]
     where
-    --
-    toLocalDay :: Tm.TimeZone -> Tm.UTCTime -> Tm.Day
-    toLocalDay tz = Tm.localDay
-                    . Tm.zonedTimeToLocalTime
-                    . Tm.utcToZonedTime tz
-
     -- | 前場のスレッド
-    morningSessionThread jstDay =
+    morningSession jstDay =
         tradingTimeThread conf . fst $ Scheduling.tradingTimeOfTSEInJST jstDay
-
+    --
     -- | 後場のスレッド
-    afternoonSessionThread jstDay =
+    afternoonSession jstDay =
         tradingTimeThread conf . snd $ Scheduling.tradingTimeOfTSEInJST jstDay
-
+    --
+    -- | 明日になるまでただ待つスレッド
+    anchorman jstDay =
+        Scheduling.execute $ map Scheduling.packZonedTimeJob
+            [(Scheduling.tomorrowMidnightJST jstDay, return ())]
     --
     weekday =
         [ announceWeekdayThread conf
-        , morningSessionThread
-        , afternoonSessionThread
+        , morningSession
+        , afternoonSession
         , batchProcessThread conf
-        , sleepingTodayThread
+        , anchorman
         ]
     --
     holiday =
-        [ announceHolidayThread conf
-        , sleepingTodayThread
-        ]
+        [ announceHolidayThread conf, anchorman ]
 
 --
 data ApplicationRunMode = RunNormal | RunBatch deriving Show
