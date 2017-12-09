@@ -61,44 +61,52 @@ import qualified SinkSlack                    as Slack
 import qualified StockQuotesCrawler           as Q
 import qualified WebBot
 
--- | レポートをsinkSlackで送信する形式に変換する関数
+-- |
+-- レポートをsinkSlackで送信する形式に変換する関数
 reportMsg :: M.MonadIO m => Conf.Info -> C.Conduit Slack.Report m Slack.WebHook
 reportMsg = Slack.reportMsg . Conf.slack
 
--- | 組み立てられたメッセージをConf.Infoで指定されたSlackへ送る関数
+-- |
+-- 組み立てられたメッセージをConf.Infoで指定されたSlackへ送る関数
 sinkSlack :: Conf.Info -> C.Sink Slack.WebHook IO ()
 sinkSlack = Slack.sink . Conf.slack
 
--- | テキストメッセージをConf.InfoSlackで指定されたslackへ送る関数
+-- |
+-- テキストメッセージをConf.InfoSlackで指定されたslackへ送る関数
 toSlack :: Conf.InfoSlack -> TL.Text -> IO ()
 toSlack conf msg =
     C.yield msg
     $= Slack.simpleTextMsg conf
     $$ Slack.sink conf
 
--- | テキストメッセージをsinkSlackで送信する形式に変換する関数
+-- |
+-- テキストメッセージをsinkSlackで送信する形式に変換する関数
 simpleTextMsg :: M.MonadIO m => Conf.Info -> C.Conduit TL.Text m Slack.WebHook
 simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 
--- | runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
+-- |
+-- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
 siteConn :: (Monad m, M.MonadTrans t, M.MonadResource (t m)) =>
               Conf.Info -> (WebBot.HTTPSession -> m b) -> t m b
 siteConn conf f =
     M.allocate login WebBot.logout
     >>= (\(_,session) -> M.lift $ f session)
     where
-    -- | 証券会社のサイトにログインする関数
+    -- |
+    -- 証券会社のサイトにログインする関数
     login = do
         let url = Conf.loginURL conf
         u <- fail2Throw (url ++ " は有効なURLではありません") $ N.parseURI url
         s <- WebBot.login conf u
         fail2Throw (url ++ " にログインできませんでした") s
     --
+    --
     fail2Throw :: String -> Maybe a -> IO a
     fail2Throw  _ (Just x) = return x
     fail2Throw msg Nothing = throwIO (userError msg)
 
--- | Slackへお知らせを送るついでに現在資産評価をDBへ
+-- |
+-- Slackへお知らせを送るついでに現在資産評価をDBへ
 reportSecuritiesAnnounce :: Conf.Info -> IO ()
 reportSecuritiesAnnounce conf =
     M.runResourceT . siteConn conf $ \session -> do
@@ -109,14 +117,16 @@ reportSecuritiesAnnounce conf =
         -- Slackへお知らせを送る
         C.yield (TL.pack $ show fha) $= simpleTextMsg conf $$ sinkSlack conf
 
--- | DBから最新の資産評価を取り出してSlackへレポートを送る
+-- |
+-- DBから最新の資産評価を取り出してSlackへレポートを送る
 reportCurrentAssets :: Conf.Info -> IO ()
 reportCurrentAssets conf = do
     -- DBから最新の資産評価を取り出す
     currents <- DataBase.getTotalAstsDescList Nothing 1 0
     M.mapM_ toReport currents
     where
-    -- | Slackへレポートを送る関数
+    -- |
+    -- Slackへレポートを送る関数
     toReport :: DataBase.TotalAssets -> IO ()
     toReport current = do
         -- 前営業日終わりの資産評価(立ち会い開始時間以前の情報)を取り出す
@@ -146,7 +156,8 @@ reportCurrentAssets conf = do
         }
         C.yield report $= reportMsg conf $$ sinkSlack conf
 
--- | 現在資産評価を証券会社のサイトから取得してDBへ
+-- |
+-- 現在資産評価を証券会社のサイトから取得してDBへ
 fetchPriceToStore :: WebBot.HTTPSession -> IO ()
 fetchPriceToStore session = do
     -- 資産状況 -> 余力情報を見に行く
@@ -159,7 +170,8 @@ fetchPriceToStore session = do
         Scraper.storeToDB tm spare
         Scraper.storeToDB tm sell
 
--- | バッチ処理関数
+-- |
+-- バッチ処理関数
 batchProcessing :: Conf.Info -> IO ()
 batchProcessing conf = do
     -- Webクローリング
@@ -171,7 +183,8 @@ batchProcessing conf = do
         $= Slack.simpleTextMsg (Conf.slack conf)
         $$ Slack.sink (Conf.slack conf)
 
--- | バッチ処理スレッド
+-- |
+-- バッチ処理スレッド
 batchProcessThread :: Conf.Info -> Tm.Day -> IO ()
 batchProcessThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
@@ -179,7 +192,8 @@ batchProcessThread conf jstDay =
         | t<-Scheduling.batchProcessTimeInJST jstDay
         ]
 
--- | 平日の報告スレッド
+-- |
+-- 平日の報告スレッド
 announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
 announceWeekdayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
@@ -187,7 +201,8 @@ announceWeekdayThread conf jstDay =
         | t<-Scheduling.announceWeekdayTimeInJST jstDay
         ]
 
--- | 休日の報告スレッド
+-- |
+-- 休日の報告スレッド
 announceHolidayThread :: Conf.Info -> Tm.Day -> IO ()
 announceHolidayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
@@ -196,14 +211,17 @@ announceHolidayThread conf jstDay =
         ]
     where
     --
+    --
     msg =
         "本日 " <> TL.fromString (show jstDay) <> " は市場の休日です。"
+    --
     --
     announce =
         C.yield (TL.toLazyText msg) $= simpleTextMsg conf $$ sinkSlack conf
 
 
--- | 立会時間中のスレッド
+-- |
+-- 立会時間中のスレッド
 tradingTimeThread :: Conf.Info -> [Tm.ZonedTime] -> IO ()
 tradingTimeThread conf times =
     Scheduling.execute
@@ -212,6 +230,7 @@ tradingTimeThread conf times =
         [ (t, worker) | t<-Lib.every (30*60) times ]
         -- ^ 再復帰は30分間隔
     where
+    --
     -- 実際の作業
     worker =
         M.runResourceT . siteConn conf $ \sess ->
@@ -239,27 +258,28 @@ tradingTimeThread conf times =
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) $ TL.toLazyText msg
         ]
-    --
+    -- |
     -- 現在資産取得
     fetchPriceJobs session =
         map Scheduling.packZonedTimeJob
         [ (t, fetchPriceToStore session)    -- 現在資産取得関数
         | t<-Lib.every (Conf.recordAssetsInterval conf * 60) times
         ]
-    --
-    -- | 現在資産評価額報告
+    -- |
+    -- 現在資産評価額報告
     reportJobs =
         -- 資産取得の実行より1分遅らせる仕掛け
         map (timedelta 60 . Scheduling.packZonedTimeJob)
         [ (t, reportCurrentAssets conf)     -- 現在資産評価額報告関数
         | t<-Lib.every (Conf.sendReportInterval conf * 60) times
         ]
-    --
-    -- | UTC時間の加減算
+    -- |
+    -- UTC時間の加減算
     timedelta seconds =
         A.first $ Tm.addUTCTime (fromInteger seconds)
 
--- | アプリケーションの本体
+-- |
+-- アプリケーションの本体
 applicationBody :: CommandLineOption -> Conf.Info -> IO ()
 applicationBody cmdLineOpts conf =
     case coptRunMode cmdLineOpts of
@@ -324,18 +344,20 @@ applicationBody cmdLineOpts conf =
             applicationBody cmdLineOpts conf
         ]
     where
-    -- | 前場のスレッド
+    -- |
+    -- 前場のスレッド
     morningSession jstDay =
         tradingTimeThread conf . fst $ Scheduling.tradingTimeOfTSEInJST jstDay
-    --
-    -- | 後場のスレッド
+    -- |
+    -- 後場のスレッド
     afternoonSession jstDay =
         tradingTimeThread conf . snd $ Scheduling.tradingTimeOfTSEInJST jstDay
-    --
-    -- | 明日になるまでただ待つスレッド
+    -- |
+    -- 明日になるまでただ待つスレッド
     anchorman jstDay =
         Scheduling.execute $ map Scheduling.packZonedTimeJob
             [(Scheduling.tomorrowMidnightJST jstDay, return ())]
+    --
     --
     weekday =
         [ announceWeekdayThread conf
@@ -345,9 +367,12 @@ applicationBody cmdLineOpts conf =
         , anchorman
         ]
     --
+    --
     holiday =
         [ announceHolidayThread conf, anchorman ]
 
+--
+-- コマンドラインオプション
 --
 data ApplicationRunMode = RunNormal | RunBatch deriving Show
 data CommandLineOption = CommandLineOption
@@ -355,7 +380,8 @@ data CommandLineOption = CommandLineOption
     , coptConfigFile :: String
     } deriving Show
 
--- | エントリポイント
+-- |
+-- エントリポイント
 main :: IO ()
 main = do
     copts <- Opt.execParser (Opt.info commandLineOption mempty)
@@ -368,6 +394,7 @@ main = do
         (applicationBody copts)
         configure
     where
+    --
     --
     commandLineOption :: Opt.Parser CommandLineOption
     commandLineOption = CommandLineOption
