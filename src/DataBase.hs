@@ -57,9 +57,8 @@ import qualified Database.Persist.TH     as DB
 
 import qualified Scraper
 
-{- |
-    UTCTime時間をISO8601形式にする
--}
+-- |
+-- UTCTime時間をISO8601形式にする
 iso8601 :: UTCTime -> String
 iso8601 = formatTime defaultTimeLocale "%FT%T%Q"
 
@@ -110,15 +109,15 @@ TotalAssets
     deriving Show
 |]
 
--- | 総資産（現金換算）を返す関数
-{-
-    株式資産評価合計 + 使用可能現金
-    以下の手数料関係は夕方バッチ処理で決まるので算入しない
-    預り増加額
-    預り減少額
-    ボックスレート手数料拘束金
-    源泉徴収税拘束金（仮計算）
--}
+-- |
+-- 総資産（現金換算）を返す関数
+-- 株式資産評価合計 + 使用可能現金
+--
+-- 以下の手数料関係は夕方バッチ処理で決まるので算入しない
+-- 預り増加額
+-- 預り減少額
+-- ボックスレート手数料拘束金
+-- 源泉徴収税拘束金（仮計算）
 totalAssetsOfCash :: TotalAssets -> Double
 totalAssetsOfCash ta =
     totalAssetsQuantity ta          -- 株式資産評価合計
@@ -126,11 +125,10 @@ totalAssetsOfCash ta =
         totalAssetsCash ta          -- 使用可能現金
      )
 
-{- |
-    サマリーテーブルと保有株式テーブルを
-    日付時間フィールドでinner joinした
-    総資産テーブルを逆順（最新が先頭）で取り出す関数
--}
+-- |
+-- サマリーテーブルと保有株式テーブルを
+-- 日付時間フィールドでinner joinした
+-- 総資産テーブルを逆順（最新が先頭）で取り出す関数
 getTotalAstsDescList :: Maybe (String, UTCTime) -> Int -> Int -> IO [TotalAssets]
 getTotalAstsDescList predicade limit offset =
     let sql = T.toStrict $ T.unwords
@@ -168,9 +166,8 @@ getTotalAstsDescList predicade limit offset =
         , "\""
         ]
 
-{- |
-    保有株式テーブルを逆順（最新が先頭）で取り出す関数
--}
+-- |
+-- 保有株式テーブルを逆順（最新が先頭）で取り出す関数
 getHoldStockDescList :: Maybe (String, UTCTime) -> IO [Scraper.HoldStock]
 getHoldStockDescList predicade =
     let sql = T.toStrict $ T.unwords
@@ -194,17 +191,15 @@ getHoldStockDescList predicade =
         let tm' = T.pack $ iso8601 tm in
         T.concat [partial, op', "\"", tm', "\""]
 
-{- |
-    DBへ格納する関数
--}
+-- |
+-- DBへ格納する関数
 insertDB d =
     DB.runSqlite "assets.sqlite3" $ do
         DB.runMigration migrateAll
         M.void (DB.insert d)
 
-{-
-    型の変換関数
--}
+--
+-- 型の変換関数
 toSummary :: UTCTime -> Scraper.FraStkSell -> Summary
 toSummary time (Scraper.FraStkSell qua pro _) =
     Summary time qua pro
@@ -221,24 +216,21 @@ toAssetSpare :: UTCTime -> Scraper.FraAstSpare -> AssetSpare
 toAssetSpare time (Scraper.FraAstSpare mts som inc dec rfe rta cas) =
     AssetSpare time mts som inc dec rfe rta cas
 
-{- |
-    サマリーテーブル, 保有株式テーブルへ格納する関数
--}
+-- |
+-- サマリーテーブル, 保有株式テーブルへ格納する関数
 storeStkSell :: UTCTime -> Scraper.FraStkSell -> IO ()
 storeStkSell time fas = do
     insertDB $ toSummary time fas
     M.mapM_ (insertDB . toHoldStock time) $ Scraper.fsStocks fas
 
-{- |
-    余力テーブルへ格納する関数
--}
+-- |
+-- 余力テーブルへ格納する関数
 storeAssetSpare :: UTCTime -> Scraper.FraAstSpare -> IO ()
 storeAssetSpare time fss =
     insertDB $ toAssetSpare time fss
 
-{-
-    型クラスScraper.Contentsのインスタンスをここで定義する
--}
+--
+--  型クラスScraper.Contentsのインスタンスをここで定義する
 instance Scraper.Contents Scraper.OrderConfirmed where
     storeToDB _ _ = undefined
 

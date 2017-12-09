@@ -47,14 +47,16 @@ import           TickerSymbol          as Import
 import           TimeFrame             as Import
 
 DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateQuotes"] [DB.persistLowerCase|
--- | 株式銘柄テーブル
+-- |
+-- 株式銘柄テーブル
 Portfolio
     ticker      TickerSymbol        -- ^ ティッカー
     caption     Text Maybe          -- ^ 銘柄名
     updateAt    UTCTime Maybe       -- ^ 価格情報を取り込んだ日付時間
     deriving Show
 
--- | 初値, 高値, 安値, 終値, 出来高, 売買代金テーブル
+-- |
+-- 初値, 高値, 安値, 終値, 出来高, 売買代金テーブル
 Ohlcvt
     ticker      TickerSymbol        -- ^ ティッカー
     tf          TimeFrame           -- ^ 時間枠
@@ -68,7 +70,8 @@ Ohlcvt
     source      Text Maybe          -- ^ 情報の入手元
     deriving Show
 
--- | テクニカル指標テーブル
+-- |
+-- テクニカル指標テーブル
 TechInds
     ohlcvt      OhlcvtId        -- ^ 紐付け
     ind         TechnicalInds   -- ^ テクニカル指標
@@ -77,8 +80,9 @@ TechInds
 |]
 
 DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateLogTable"] [DB.persistLowerCase|
--- | HTTP通信記録用データーベース
---   urlのページにHTTP通信をした時の返答
+-- |
+-- HTTP通信記録用データーベース
+-- urlのページにHTTP通信をした時の返答
 Loghttp
     url             String      -- ^ ページのURL
     scheme          String      -- ^ スキーム

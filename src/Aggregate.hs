@@ -66,17 +66,23 @@ import qualified TechnicalIndicators          as TI
 import           TickerSymbol                 as Import
 import           TimeFrame                    as Import
 
--- | UTCの日付時間のうち、日本時間の日付のみ比較
+-- |
+-- UTCの日付時間のうち、日本時間の日付のみ比較
 sameDayOfJST :: Ohlcvt -> Ohlcvt -> Bool
 sameDayOfJST a b =
-    let jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzJST . ohlcvtAt in
     jstDay a == jstDay b
+    where
+    jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzJST . ohlcvtAt
 
--- | 始値, 高値, 安値, 終値, 出来高, 売買代金を集計する関数
-aggregateOfOHLCVT   :: (Ohlcvt -> Maybe Ohlcvt) -- ^ 値の判定関数
-                    -> [Ohlcvt]                 -- ^ 時系列通りで与えること
+-- |
+-- 始値, 高値, 安値, 終値, 出来高, 売買代金を集計する関数
+aggregateOfOHLCVT   :: (Ohlcvt -> Maybe Ohlcvt)
+                    -- ^ 値の判定関数
+                    -> [Ohlcvt]
+                    -- ^ 時系列通りで与えること
                     -> Maybe Ohlcvt
-aggregateOfOHLCVT _ [] = Nothing                -- 空リストの結果は未定義
+aggregateOfOHLCVT _ [] = Nothing
+-- ^ 空リストの結果は未定義
 aggregateOfOHLCVT decide serials@(first:_) =
     decide -- 集計結果が有効か無効かの判定をゆだねる。
         Ohlcvt
@@ -111,7 +117,8 @@ aggregateOfOHLCVT decide serials@(first:_) =
     vtSum [] = Nothing
     vtSum xs = Just $ sum xs
 
--- | 1時間足を日足にする集計処理
+-- |
+-- 1時間足を日足にする集計処理
 aggregate :: MySQL.ConnectInfo -> TickerSymbol -> IO ()
 aggregate connInfo tickerSymbol =
     runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
@@ -152,12 +159,13 @@ aggregate connInfo tickerSymbol =
         let timeOfUTC = Tm.localTimeToUTC Lib.tzJST $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
         Just $ val {ohlcvtTf = TF1d, ohlcvtAt = timeOfUTC}
 
+-- |
 -- データーベースにテクニカル指標を問い合わせる
 queryIndicatorsDesc :: MySQL.ConnectInfo
-                -> TickerSymbol
-                -> TimeFrame
-                -> TechnicalInds
-                -> IO [(DB.Entity Ohlcvt, Double)]
+                    -> TickerSymbol
+                    -> TimeFrame
+                    -> TechnicalInds
+                    -> IO [(DB.Entity Ohlcvt, Double)]
 queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator =
     runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
@@ -179,13 +187,13 @@ queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator =
                     )
     >>= return . map (A.second E.unValue)
 
--- | インディケータの計算
+-- |
+-- インディケータの計算
 calculate   :: MySQL.ConnectInfo
             -> TickerSymbol
             -> TimeFrame
             -> TechnicalInds
             -> IO ()
---
 calculate connInfo tickerSymbol timeFrame indicator =
     case indicator of
     TIMACD fastP slowP        -> do
@@ -311,7 +319,8 @@ calculate connInfo tickerSymbol timeFrame indicator =
         Mb.listToMaybe <$> queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator
 
 
--- | Portfolio上の情報を集計する関数
+-- |
+-- Portfolio上の情報を集計する関数
 runAggregateOfPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
 runAggregateOfPortfolios conf = do
     -- 処理対象銘柄の数

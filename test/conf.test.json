@@ -1,14 +1,22 @@
 {
     "recordAssetsInterval"  : 10,
     "sendReportInterval"    : 20,
-    "loginURL"          : "enter loginURL",
-    "loginID"           : "enter loginID",
-    "loginPassword"     : "enter loginPassword",
-    "dealingsPassword"  : "enter dealingsPassword",
-    "userAgent"         : "enter userAgent",
+    "loginURL"              : "enter loginURL",
+    "loginID"               : "enter loginID",
+    "loginPassword"         : "enter loginPassword",
+    "dealingsPassword"      : "enter dealingsPassword",
+    "userAgent"             : "enter userAgent",
     "slack" : {
         "webHookURL"    : "enter webHookURL",
         "channel"       : "enter channel",
         "userName"      : "enter userName"
+    },
+    "mariaDB" : {
+        "host"      : "localhost",
+        "port"      : 3306,
+        "user"      : "enter user",
+        "password"  : "enter password",
+        "database"  : "stockdb"
     }
 }
+

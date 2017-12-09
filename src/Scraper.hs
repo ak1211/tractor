@@ -67,44 +67,44 @@ import qualified Text.HTML.TagSoup      as TS
 import qualified Text.HTML.TagSoup.Tree as TS
 import qualified Text.Printf            as Printf
 
-{- |
-    ページからスクレイピングした情報の型クラス
--}
+-- |
+-- ページからスクレイピングした情報の型クラス
 class Contents a where
     storeToDB :: Tm.UTCTime -> a -> IO ()
 
-{- |
-    ホーム -> お知らせの内容
--}
-data FraHomeAnnounce = FraHomeAnnounce {
-    fsAnnounceDeriverTime   :: T.Text,  -- ^ お知らせの配信時間
-    fsAnnounceLastLoginTime :: T.Text,  -- ^ 前回ログイン
-    fsAnnounces             :: [T.Text] -- ^ お知らせ
-} deriving (Eq)
+-- |
+-- ホーム -> お知らせの内容
+data FraHomeAnnounce = FraHomeAnnounce
+    { fsAnnounceDeriverTime   :: T.Text     -- ^ お知らせの配信時間
+    , fsAnnounceLastLoginTime :: T.Text     -- ^ 前回ログイン
+    , fsAnnounces             :: [T.Text]   -- ^ お知らせ
+    } deriving (Eq)
 
+--
 -- 型クラスShowのインスタンス
 instance Show FraHomeAnnounce where
     show (FraHomeAnnounce dt lt as) =
         T.unpack $ T.unlines (dt : lt : as)
 
-{- |
-    保有株(個別銘柄)情報
--}
-data HoldStock = HoldStock {
-    hsSellOrderUrl  :: Maybe T.Text,    -- ^ 売り注文ページurl
-    hsCode          :: Int,             -- ^ 証券コード
-    hsCaption       :: T.Text,          -- ^ 名前
-    hsCount         :: Int,             -- ^ 保有数
-    hsPurchasePrice :: Double,          -- ^ 取得単価
-    hsPrice         :: Double           -- ^ 現在値
-} deriving (Eq)
+-- |
+-- 保有株(個別銘柄)情報
+data HoldStock = HoldStock
+    { hsSellOrderUrl  :: Maybe T.Text   -- ^ 売り注文ページurl
+    , hsCode          :: Int            -- ^ 証券コード
+    , hsCaption       :: T.Text         -- ^ 名前
+    , hsCount         :: Int            -- ^ 保有数
+    , hsPurchasePrice :: Double         -- ^ 取得単価
+    , hsPrice         :: Double         -- ^ 現在値
+    } deriving (Eq)
 
--- | 損益を計算する関数
+-- |
+-- 損益を計算する関数
 hsGain :: HoldStock -> Double
 hsGain hs =
     let delta =  hsPrice hs - hsPurchasePrice hs in
     realToFrac (hsCount hs) * delta
 
+--
 -- 型クラスShowのインスタンス
 instance Show HoldStock where
     show hs =
@@ -112,15 +112,15 @@ instance Show HoldStock where
        Printf.printf "%d %s, 保有 %d, 取得 %f, 現在 %f, 損益 %+f"
            cod cap cou pup pri (hsGain hs)
 
-{- |
-    株式取引 -> 現物売の内容
--}
-data FraStkSell = FraStkSell {
-    fsQuantity :: Double,      -- ^ 評価合計
-    fsProfit   :: Double,      -- ^ 損益合計
-    fsStocks   :: [HoldStock]  -- ^ 個別銘柄情報
- } deriving (Eq)
+-- |
+--  株式取引 -> 現物売の内容
+data FraStkSell = FraStkSell
+    { fsQuantity :: Double      -- ^ 評価合計
+    , fsProfit   :: Double      -- ^ 損益合計
+    , fsStocks   :: [HoldStock] -- ^ 個別銘柄情報
+    } deriving (Eq)
 
+--
 -- 型クラスShowのインスタンス
 instance Show FraStkSell where
     show (FraStkSell qua pro stk) =
@@ -128,19 +128,19 @@ instance Show FraStkSell where
            Printf.printf "評価合計 %f, 損益合計 %+f" qua pro,
            unlines $ map show stk]
 
-{- |
-    資産状況 -> 余力情報の内容
--}
-data FraAstSpare = FraAstSpare {
-    faMoneyToSpare       :: Int64,     -- ^ 現物買付余力
-    faStockOfMoney       :: Int64,     -- ^ 現金残高
-    faIncreaseOfDeposits :: Int64,     -- ^ 預り増加額
-    faDecreaseOfDeposits :: Int64,     -- ^ 預り減少額
-    faRestraintFee       :: Int64,     -- ^ ボックスレート手数料拘束金
-    faRestraintTax       :: Int64,     -- ^ 源泉徴収税拘束金（仮計算）
-    faCash               :: Int64      -- ^ 使用可能現金
-} deriving (Eq)
+-- |
+-- 資産状況 -> 余力情報の内容
+data FraAstSpare = FraAstSpare
+    { faMoneyToSpare       :: Int64     -- ^ 現物買付余力
+    , faStockOfMoney       :: Int64     -- ^ 現金残高
+    , faIncreaseOfDeposits :: Int64     -- ^ 預り増加額
+    , faDecreaseOfDeposits :: Int64     -- ^ 預り減少額
+    , faRestraintFee       :: Int64     -- ^ ボックスレート手数料拘束金
+    , faRestraintTax       :: Int64     -- ^ 源泉徴収税拘束金（仮計算）
+    , faCash               :: Int64     -- ^ 使用可能現金
+    } deriving (Eq)
 
+--
 -- 型クラスShowのインスタンス
 instance Show FraAstSpare where
     show (FraAstSpare mts som inc dec rfe rta cas) = unlines
@@ -153,81 +153,79 @@ instance Show FraAstSpare where
         , Printf.printf "使用可能現金 %d" cas
         ]
 
-{- |
-    注文発注後の"ご注文を受付けました"の内容
--}
-data OrderConfirmed = OrderConfirmed {
-    contents            :: T.Text
-} deriving (Eq)
+-- |
+-- 注文発注後の"ご注文を受付けました"の内容
+data OrderConfirmed = OrderConfirmed
+    { contents            :: T.Text
+    } deriving (Eq)
 
 -- 型クラスShowのインスタンス
 instance Show OrderConfirmed where
     show (OrderConfirmed co) =
         T.unpack co
 
-{- |
-    タグ名の子をリストで取り出す関数
--}
+-- |
+-- タグ名の子をリストで取り出す関数
 taglist :: T.Text -> [TS.TagTree T.Text] -> [[TS.TagTree T.Text]]
 taglist nm t = [c | TS.TagBranch k _ c <- TS.universeTree t, nm==T.toLower k]
 
-{- |
-    タグ名の子リストからidx番のタグを取り出す関数
--}
+-- |
+-- タグ名の子リストからidx番のタグを取り出す関数
 tag :: T.Text -> Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 tag name idx = flip Safe.atMay idx . taglist name
 
 --
+--
 table :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 table = tag "table"
+
+--
 --
 tr :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 tr = tag "tr"
+
+--
 --
 td :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
 td = tag "td"
 
-{- |
-    テキスト要素をリストで取り出す関数
--}
+-- |
+-- テキスト要素をリストで取り出す関数
 textlist :: [TS.TagTree T.Text] -> [T.Text]
 textlist t =
     filter (/="") [T.strip txt | TS.TagText txt <- TS.flattenTree t]
 
-{- |
-    idx番のテキストを取り出す関数
--}
+-- |
+-- idx番のテキストを取り出す関数
 text :: Int -> [TS.TagTree T.Text] -> Maybe T.Text
 text idx t =
     Safe.atMay [T.strip txt | TS.TagText txt <- TS.flattenTree t] idx
 
-{- |
-    aタグからhref属性を取り出す関数
--}
+-- |
+-- aタグからhref属性を取り出す関数
 href :: Int -> [TS.TagTree T.Text] -> Maybe T.Text
 href nm t =
     Safe.atMay [as | TS.TagBranch k as _ <- TS.universeTree t, "a"==T.toLower k] nm
     >>= \as -> Maybe.listToMaybe [v | (k, v) <- as, "href"==T.toLower k]
 
-{- |
-    符号あるいは数字または小数点か判定する関数
--}
+-- |
+-- 符号あるいは数字または小数点か判定する関数
 isSignDigit :: Char -> Bool
 isSignDigit c = List.any ($ c) [Data.Char.isDigit, (=='+'), (=='-'), (=='.')]
 
-{- |
-    符号,数字,小数点以外の文字を破棄する関数
--}
+-- |
+--  符号,数字,小数点以外の文字を破棄する関数
 onlySignDigit :: T.Text -> T.Text
 onlySignDigit = T.filter isSignDigit
 
-{-
-    Textからそれぞれの型に変換する関数
--}
+--
+--  Textからそれぞれの型に変換する関数
 toText :: Maybe T.Text -> T.Text -> Either T.Text T.Text
 toText Nothing note = Left note
 toText (Just t) _   = Right t
 
+--
+--
 toDecimal :: Integral a => Maybe T.Text -> T.Text -> Either T.Text a
 toDecimal Nothing note = Left note
 toDecimal (Just t) note =
@@ -235,6 +233,8 @@ toDecimal (Just t) note =
         Right (v, _) -> Right v
         Left _       -> Left note
 
+--
+--
 toDouble :: Maybe T.Text -> T.Text -> Either T.Text Double
 toDouble Nothing note = Left note
 toDouble (Just t) note =
@@ -242,9 +242,8 @@ toDouble (Just t) note =
         Right (v, _) -> Right v
         Left _       -> Left note
 
-{- |
-    "ホーム" -> "お知らせ" のページをスクレイピングする関数
--}
+-- |
+-- "ホーム" -> "お知らせ" のページをスクレイピングする関数
 scrapingFraHomeAnnounce :: [T.Text] -> Either T.Text FraHomeAnnounce
 scrapingFraHomeAnnounce htmls = do
     html <- case htmls of
@@ -264,9 +263,8 @@ scrapingFraHomeAnnounce htmls = do
         fsAnnounces             = Maybe.fromMaybe [] announces
     }
 
-{- |
-    "株式取引" -> "現物売" のページをスクレイピングする関数
--}
+-- |
+--  "株式取引" -> "現物売" のページをスクレイピングする関数
 scrapingFraStkSell :: [T.Text] -> Either T.Text FraStkSell
 scrapingFraStkSell htmls = do
     html <- case htmls of
@@ -314,9 +312,8 @@ scrapingFraStkSell htmls = do
             hsPrice         = price
         }
 
-{- |
-    資産状況 -> 余力情報のページをスクレイピングする関数
--}
+-- |
+-- 資産状況 -> 余力情報のページをスクレイピングする関数
 scrapingFraAstSpare :: [T.Text] -> Either T.Text FraAstSpare
 scrapingFraAstSpare htmls = do
     html <- case htmls of
@@ -343,9 +340,8 @@ scrapingFraAstSpare htmls = do
         faCash = cas
     }
 
-{- |
-    "ご注文を受け付けました"のページをスクレイピングする関数
--}
+-- |
+--  "ご注文を受け付けました"のページをスクレイピングする関数
 scrapingOrderConfirmed :: [T.Text] -> Either T.Text OrderConfirmed
 scrapingOrderConfirmed htmls = do
     html <- case htmls of

@@ -57,53 +57,49 @@ import qualified Network.HTTP.Types.Status  as N
 import qualified Scraper
 import qualified Text.Printf                as Printf
 
-{- |
-    Slack Web API - Incoming Webhooks
-    <https://api.slack.com/incoming-webhooks>
-    によるJSON構造定義
--}
-data WebHook = WebHook {
-    channel     :: String,
-    username    :: String,
-    attachments :: [Attachment],
-    hText       :: String,
-    icon_emoji  :: String
-} deriving Show
+-- |
+--  Slack Web API - Incoming Webhooks
+--  <https://api.slack.com/incoming-webhooks>
+--  によるJSON構造定義
+data WebHook = WebHook
+    { channel     :: String
+    , username    :: String
+    , attachments :: [Attachment]
+    , hText       :: String
+    , icon_emoji  :: String
+    } deriving Show
 
-{- |
-    Slack Web API - Attaching content and links to messages
-    <https://api.slack.com/docs/message-attachments>
-    によるJSON構造定義
--}
-data Attachment = Attachment {
-    color       :: String,
-    pretext     :: Maybe String,
-    title       :: Maybe String,
-    text        :: String,
-    footer      :: String,
-    footer_icon :: String,
-    ts          :: Integer
-} deriving Show
+-- |
+--  Slack Web API - Attaching content and links to messages
+--  <https://api.slack.com/docs/message-attachments>
+--  によるJSON構造定義
+data Attachment = Attachment
+    { color       :: String
+    , pretext     :: Maybe String
+    , title       :: Maybe String
+    , text        :: String
+    , footer      :: String
+    , footer_icon :: String
+    , ts          :: Integer
+    } deriving Show
 
 $(Aeson.deriveJSON Aeson.defaultOptions {
         Aeson.fieldLabelModifier = \label -> if label == "hText" then "text" else label
     } ''WebHook)
 $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 
-{- |
-    定期的に送信するレポート
--}
-data Report = Report {
-    rTime           :: UTCTime,             -- ^ DB上の時間
-    rTotalAsset     :: Double,              -- ^ 総資産
-    rAssetDiffByDay :: Maybe Double,        -- ^ 総資産増減(前日比)
-    rTotalProfit    :: Double,              -- ^ 損益合計
-    rHoldStocks     :: [Scraper.HoldStock]  -- ^ 保有株式
-} deriving Show
+-- |
+--  定期的に送信するレポート
+data Report = Report
+    { rTime           :: UTCTime                -- ^ DB上の時間
+    , rTotalAsset     :: Double                 -- ^ 総資産
+    , rAssetDiffByDay :: Maybe Double           -- ^ 総資産増減(前日比)
+    , rTotalProfit    :: Double                 -- ^ 損益合計
+    , rHoldStocks     :: [Scraper.HoldStock]    -- ^ 保有株式
+    } deriving Show
 
-{- |
-    Slackへ送信する関数
--}
+-- |
+-- Slackへ送信する関数
 send :: M.MonadIO m => Conf.InfoSlack -> BS8.ByteString -> m N.Status
 send conf json =
     let url = Conf.webHookURL conf in
@@ -115,9 +111,8 @@ send conf json =
         manager <- N.newManager N.tlsManagerSettings
         N.responseStatus <$> N.httpLbs req manager
 
-{- |
-    Slackへ流す関数
--}
+-- |
+--  Slackへ流す関数
 sink :: Conf.InfoSlack -> C.Sink WebHook IO ()
 sink conf =
     C.await >>= maybe (return ()) func
@@ -130,9 +125,8 @@ sink conf =
         C.await >>= maybe (return ()) func
 
 
-{- |
-    ただのテキストをSlackに送るJSONを組み立てる関数
--}
+-- |
+--  ただのテキストをSlackに送るJSONを組み立てる関数
 simpleTextMsg :: M.MonadIO m => Conf.InfoSlack -> C.Conduit TL.Text m WebHook
 simpleTextMsg conf =
     C.await >>= maybe (return ()) func
@@ -148,13 +142,13 @@ simpleTextMsg conf =
         }
         C.await >>= maybe (return ()) func
 
-{- |
-    資産情報をSlackに送るJSONを組み立てる関数
--}
+-- |
+--  資産情報をSlackに送るJSONを組み立てる関数
 reportMsg :: M.MonadIO m => Conf.InfoSlack -> C.Conduit Report m WebHook
 reportMsg conf =
     C.await >>= maybe (return ()) func
     where
+    --
     --
     func (Report time total differ profit holdStocks) = do
         let msg = unwords $ Maybe.catMaybes (
@@ -172,11 +166,13 @@ reportMsg conf =
             }
         C.await >>= maybe (return ()) func
     --
+    --
     updown :: Double -> String
     updown x
         | x < 0         = ":chart_with_downwards_trend:"
         |     0 < x     = ":chart_with_upwards_trend:"
         | otherwise     = ":chart_with_upwards_trend:"
+    --
     --
     mkAttach :: UTCTime -> Scraper.HoldStock -> Attachment
     mkAttach time stock = Attachment

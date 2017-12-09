@@ -109,9 +109,8 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''Info)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoSlack)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)
 
-{- |
-    設定ファイル(json)を読み込む
--}
+-- |
+-- 設定ファイル(json)を読み込む
 readJSONFile :: String -> IO (Either String Info)
 readJSONFile filePath =
     Aeson.eitherDecode <$> BSL.readFile filePath

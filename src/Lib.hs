@@ -45,7 +45,8 @@ import qualified Network.HTTP.Types.Header  as N
 
 import qualified Conf
 
--- | 起動時の挨拶文
+-- |
+-- 起動時の挨拶文
 greetingsMessage :: TL.Text
 greetingsMessage = TL.unlines
     [ "tractorが起動しました"
@@ -57,13 +58,15 @@ greetingsMessage = TL.unlines
     , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
     ]
 
--- | 日本時間(JST) = UTC+9
+-- |
+-- 日本時間(JST) = UTC+9
 tzJST :: Tm.TimeZone
 tzJST =
     let z = Tm.hoursToTimeZone 9 in
     z {Tm.timeZoneName = "JST"}
 
--- | HTTPリクエストヘッダ
+-- |
+-- HTTPリクエストヘッダ
 httpRequestHeader :: Conf.Info -> [N.Header]
 httpRequestHeader conf =
     [ (N.hAccept, "text/html, text/plain, text/css")
@@ -72,7 +75,8 @@ httpRequestHeader conf =
     , (N.hUserAgent, BL8.toStrict $ BL8.pack $ Conf.userAgent conf)
     ]
 
--- | 日本時間の日付時間をパースする
+-- |
+-- 日本時間の日付時間をパースする
 parseJSTDayTimeToUTCTime :: String -> Maybe String -> Tm.UTCTime
 parseJSTDayTimeToUTCTime date mTime =
     let t = M.fromMaybe "00:00" mTime in
@@ -83,14 +87,22 @@ parseJSTDayTimeToUTCTime date mTime =
 -- | (nth, total)
 type NthOfTotal = (Int,Int)
 
--- | リスト中のn番目情報を追加する関数
+-- |
+-- リスト中のn番目情報を追加する関数
+--
+-- >>> packNthOfTotal "abcdefg"
+-- [('a',(1,7)),('b',(2,7)),('c',(3,7)),('d',(4,7)),('e',(5,7)),('f',(6,7)),('g',(7,7))]
 packNthOfTotal :: [a] -> [(a, NthOfTotal)]
 packNthOfTotal vs =
     zip vs nth
     where
     nth = [(n, length vs) | n<-[1..]]
 
--- | リストからn個毎に取り出す
+-- |
+-- リストからn個毎に取り出す
+--
+-- >>> every 3 [1..50]
+-- [1,4,7,10,13,16,19,22,25,28,31,34,37,40,43,46,49]
 every :: Int -> [a] -> [a]
 every n =
     catMaybes . zipWith

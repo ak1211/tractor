@@ -71,24 +71,28 @@ import           TickerSymbol                 as Import
 import           TimeFrame                    as Import
 import qualified WebBot                       as WB
 
--- | スクリーンスクレイピング関数(k-db.com用)
-kdbcomScreenScraper   :: TickerSymbol
-                        -> TimeFrame
-                        -> Maybe T.Text
-                        -> BL.ByteString
-                        -> Either String (Maybe T.Text, [Ohlcvt])
+-- |
+-- スクリーンスクレイピング関数(k-db.com用)
+kdbcomScreenScraper :: TickerSymbol
+                    -> TimeFrame
+                    -> Maybe T.Text
+                    -> BL.ByteString
+                    -> Either String (Maybe T.Text, [Ohlcvt])
 kdbcomScreenScraper ticker tf sourceName html = do
     vs <- mapM packOHLCVT $ records xdoc
     Right (caption xdoc, vs)
     where
     --
+    --
     xdoc = X.fromDocument $ H.parseLBS html
+    --
     --
     rational :: Maybe T.Text -> Maybe Double
     rational Nothing = Nothing
     rational (Just t) =
         either (const Nothing) (Just . fst) $ T.rational t
-    -- | ohlcvtテーブルに変換する関数
+    -- |
+    -- ohlcvtテーブルに変換する関数
     packOHLCVT :: [Maybe T.Text] -> Either String Ohlcvt
     packOHLCVT (d : tm : vs) = do
         d' <- maybe (Left "Date field can't parsed.") (Right . T.unpack) d
@@ -124,12 +128,15 @@ kdbcomScreenScraper ticker tf sourceName html = do
                         }
             _ ->
                 Left "ohlcvt table can't parsed"
+    --
     -- 株価情報ではない何かが表示されている場合
     packOHLCVT _ = Left "This web page can't parsed"
-    -- | 銘柄名のXPath ---> //*[@id="tablecaption"]
+    -- |
+    -- 銘柄名のXPath ---> //*[@id="tablecaption"]
     caption :: X.Cursor -> Maybe T.Text
     caption doc = listToMaybe (doc$//X.attributeIs "id" "tablecaption"&/X.content)
-    -- | 4,6本値のXPath ---> //*[@id="maintable"]/tbody/tr
+    -- |
+    -- 4,6本値のXPath ---> //*[@id="maintable"]/tbody/tr
     records :: X.Cursor -> [[Maybe T.Text]]
     records doc =
         let tr = doc$//X.attributeIs "id" "maintable"&/X.element "tbody"&/X.element "tr" in
@@ -139,7 +146,8 @@ kdbcomScreenScraper ticker tf sourceName html = do
             | (X.NodeElement e')<-X.elementNodes e ]            -- 要素を取り出して
         | (X.NodeElement e)<-map X.node tr ]                    -- trの子の
 
--- | インターネット上の株価情報を取りに行く関数
+-- |
+-- インターネット上の株価情報を取りに行く関数
 fetchStockPrices :: Conf.Info -> TickerSymbol -> TimeFrame -> IO (Maybe T.Text, [Ohlcvt])
 fetchStockPrices conf ticker tf = do
     -- HTTPリクエストヘッダ
@@ -153,7 +161,8 @@ fetchStockPrices conf ticker tf = do
     either (throwIO . userError) pure $
         kdbcomScreenScraper ticker tf (Just $ T.pack aUri) body
     where
-    -- | アクセスURI
+    -- |
+    -- アクセスURI
     accessURI :: TickerSymbol -> String
     accessURI symbol =
         "http://k-db.com/"
@@ -171,7 +180,8 @@ fetchStockPrices conf ticker tf = do
             TF1d -> ""      -- 何もつけないのが日足
 
 
--- | ポートフォリオの株価情報を取りに行く関数
+-- |
+-- ポートフォリオの株価情報を取りに行く関数
 runWebCrawlingPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
 runWebCrawlingPortfolios conf = do
     limitTm <- M.liftIO $ diffTime <$> Tm.getCurrentTime
@@ -194,9 +204,11 @@ runWebCrawlingPortfolios conf = do
                 . concatMap updateActs $ Lib.packNthOfTotal ws
             C.yield "以上で更新処理を終了します。"
     where
+    --
     -- (-12)時間の足し算は12時間の引き算になる
     diffTime :: Tm.UTCTime -> Tm.UTCTime
     diffTime = Tm.addUTCTime $ fromInteger (-12*60*60)
+    --
     -- アクセス毎の停止アクション
     randomWait rgen = M.liftIO $
         -- 241秒(4分01秒)から277秒(4分37秒)までの停止アクション
@@ -204,6 +216,7 @@ runWebCrawlingPortfolios conf = do
         where
         lowerBound = 241*1000*1000
         upperBound = 277*1000*1000
+    --
     --
     connInfo :: MySQL.ConnectInfo
     connInfo =
@@ -215,6 +228,7 @@ runWebCrawlingPortfolios conf = do
             , MySQL.connectPassword = Conf.password mdb
             , MySQL.connectDatabase = Conf.database mdb
             }
+    --
     --
     updateActs  :: M.MonadIO m
                 => (DB.Entity Portfolio, Lib.NthOfTotal)
@@ -233,6 +247,7 @@ runWebCrawlingPortfolios conf = do
         act tf e@(DB.Entity _ v) = do
             putDescription tf v nth     -- 更新処理対象銘柄を説明する
             updateTimeAndSales tf e     -- 更新処理本体
+    --
     --
     updateTimeAndSales  :: M.MonadIO m
                         => TimeFrame
@@ -270,7 +285,8 @@ runWebCrawlingPortfolios conf = do
                 , PortfolioUpdateAt =. Just updateAt
                 ]
 
--- | 更新銘柄の説明を送る関数
+-- |
+-- 更新銘柄の説明を送る関数
 putDescription  :: M.MonadIO m
                 => TimeFrame
                 -> Portfolio

@@ -24,12 +24,21 @@ confInfo = Info
     , dealingsPassword = "enter dealingsPassword"
     , userAgent = "enter userAgent"
     , slack = confInfoSlack
+    , mariaDB = confInfoMariaDB
     }
 
 confInfoSlack = InfoSlack
     { webHookURL = "enter webHookURL"
     , channel = "enter channel"
     , userName = "enter userName"
+    }
+
+confInfoMariaDB = InfoMariaDB
+    { host     = "localhost"
+    , port     = 3306
+    , user     = "enter user"
+    , password = "enter password"
+    , database = "stockdb"
     }
 
 {-
