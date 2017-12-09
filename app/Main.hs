@@ -26,6 +26,7 @@ Portability :  POSIX
 
 アプリケーション「Tractor」のメインモジュールです。
 -}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
@@ -293,17 +294,16 @@ applicationBody cmdLineOpts conf =
             -- 今日の作業スレッドを実行する
             ths <- M.mapM (CC.async . (\f -> f jstDay)) works
             -- 作業スレッドの異常終了を確認したら再起動する
-            (_, result) <- CC.waitAnyCatchCancel ths
-            case result of
-                -- 正常終了
-                Right _ -> return ()
-                -- 失敗
-                Left ex -> do
-                    let msg = "Some exception caught, \""
-                                <> TL.fromString (show ex)
-                                <> "\""
-                    -- Slackへエラーメッセージを送る
-                    toSlack (Conf.slack conf) $ TL.toLazyText msg
+            M.forM_ ths $ \async ->
+                CC.waitCatch async >>= \case
+                    -- 正常終了
+                    Right _ -> return ()
+                    -- 失敗
+                    Left ex -> do
+                        -- 残りの作業スレッドをキャンセルする
+                        M.forM_ ths CC.cancel
+                        -- 例外再送出
+                        throwIO ex
         --
         -- foreverによって繰り返す
         --
