@@ -1,106 +1,133 @@
-name:                tractor
-version:             0.2.1
-synopsis:            "tractor" is an Assets observation application.
-description:         Please see README.md
-homepage:            https://github.com/ak1211/tractor
-license:             AGPL-3
-license-file:        LICENSE
-author:              Akihiro Yamamoto
-maintainer:          ak1211@mail.ak1211.com
-copyright:           (c) 2016, 2017 Akihiro Yamamoto.
-category:            Web
-build-type:          Simple
--- extra-source-files:
-cabal-version:       >=1.10
+-- This file has been generated from package.yaml by hpack version 0.20.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 5edb8af2c6d186392d464fbf6309e66e058e30988d9972efcdf71983f2ee28cc
 
-library
-  hs-source-dirs:      src
-  exposed-modules:     Lib Conf WebBot Scraper SinkSlack DataBase
-                       Model
-                       Aggregate
-                       StockQuotesCrawler
-                       TickerSymbol
-                       TimeFrame
-                       TechnicalIndicators
-                       Scheduling
-  ghc-options:         -Wall
-  build-depends:       base >= 4.7 && < 5
-                     , safe
-                     , mtl
-                     , containers
-                     , text
-                     , bytestring
-                     , utf8-string
-                     , iconv
-                     , time
-                     , aeson
-                     , conduit
-                     , conduit-extra
-                     , tagsoup
-                     , connection
-                     , network-uri
-                     , http-types
-                     , http-conduit
-                     , html-conduit
-                     , xml-conduit
-                     , persistent
-                     , persistent-template
-                     , persistent-sqlite
-                     , persistent-mysql
-                     , esqueleto
-                     , resourcet
-                     , transformers
-                     , monad-logger
-                     , mwc-random
-                     , parsec
-  default-language:    Haskell2010
+name:           tractor
+version:        0.2.1.0
+synopsis:       tractor is an Assets observation application.
+description:    Please see the README on Github at <https://github.com/ak1211/tractor#readme>
+category:       Web
+homepage:       https://github.com/ak1211/tractor#readme
+bug-reports:    https://github.com/ak1211/tractor/issues
+author:         Akihiro Yamamoto
+maintainer:     ak1211@mail.ak1211.com
+copyright:      (c) 2016, 2017 Akihiro Yamamoto.
+license:        AGPL-3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
 
-executable tractor
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  ghc-options:         -dynamic -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
-                     , unix
-                     , mtl
-                     , safe
-                     , text
-                     , time
-                     , utf8-string
-                     , resourcet
-                     , transformers
-                     , conduit
-                     , network-uri
-                     , http-conduit
-                     , http-types
-                     , persistent-mysql
-                     , optparse-applicative
-                     , async
-                     , tractor
-  default-language:    Haskell2010
-
-test-suite tractor-test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  build-depends:       base
-                     , mtl
-                     , resourcet
-                     , conduit
-                     , tractor
-                     , time
-                     , text
-                     , text
-                     , bytestring
-                     , utf8-string
-                     , network-uri
-                     , connection
-                     , http-types
-                     , http-conduit
-                     , hspec
-                     , QuickCheck
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  default-language:    Haskell2010
+extra-source-files:
+    README.md
 
 source-repository head
-  type:     git
+  type: git
   location: https://github.com/ak1211/tractor
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , conduit
+    , conduit-extra
+    , connection
+    , containers
+    , esqueleto
+    , html-conduit
+    , http-conduit
+    , http-types
+    , iconv
+    , monad-logger
+    , mtl
+    , mwc-random
+    , network-uri
+    , parsec
+    , persistent
+    , persistent-mysql
+    , persistent-sqlite
+    , persistent-template
+    , resourcet
+    , safe
+    , tagsoup
+    , text
+    , time
+    , transformers
+    , utf8-string
+    , xml-conduit
+  exposed-modules:
+      Aggregate
+      Conf
+      DataBase
+      Lib
+      Model
+      Scheduling
+      Scraper
+      SinkSlack
+      StockQuotesCrawler
+      TechnicalIndicators
+      TickerSymbol
+      TimeFrame
+      WebBot
+  other-modules:
+      Paths_tractor
+  default-language: Haskell2010
+
+executable tractor
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -dynamic -rtsopts -threaded -Wall -with-rtsopts=-N
+  build-depends:
+      async
+    , base
+    , conduit
+    , http-conduit
+    , http-types
+    , mtl
+    , network-uri
+    , optparse-applicative
+    , persistent-mysql
+    , resourcet
+    , safe
+    , text
+    , time
+    , tractor
+    , transformers
+    , unix
+    , utf8-string
+  other-modules:
+      Paths_tractor
+  default-language: Haskell2010
+
+test-suite tractor-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , base
+    , bytestring
+    , conduit
+    , connection
+    , hspec
+    , http-conduit
+    , http-types
+    , mtl
+    , network-uri
+    , resourcet
+    , text
+    , time
+    , tractor
+    , utf8-string
+  other-modules:
+      ConfSpec
+      Paths_tractor
+  default-language: Haskell2010

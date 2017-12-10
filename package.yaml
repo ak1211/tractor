@@ -1,0 +1,93 @@
+name:               tractor
+version:            0.2.1.0
+github:             ak1211/tractor
+license:            AGPL-3
+author:             Akihiro Yamamoto
+maintainer:         ak1211@mail.ak1211.com
+copyright:          (c) 2016, 2017 Akihiro Yamamoto.
+
+extra-source-files:
+- README.md
+#- ChangeLog.md
+
+# Metadata used when publishing your package
+synopsis:           tractor is an Assets observation application.
+category:           Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/ak1211/tractor#readme>
+
+dependencies:
+- conduit
+- http-conduit
+- http-types
+- mtl
+- network-uri
+- resourcet
+- text
+- time
+- utf8-string
+
+library:
+  source-dirs: src
+  ghc-options: -Wall
+  dependencies:
+  - base >=4.7 && <5
+  - aeson
+  - bytestring
+  - conduit-extra
+  - connection
+  - containers
+  - esqueleto
+  - html-conduit
+  - iconv
+  - monad-logger
+  - mwc-random
+  - parsec
+  - persistent
+  - persistent-mysql
+  - persistent-sqlite
+  - persistent-template
+  - safe
+  - tagsoup
+  - transformers
+  - xml-conduit
+
+executables:
+  tractor:
+    main:               Main.hs
+    source-dirs:        app
+    ghc-options:
+    - -dynamic
+    - -rtsopts
+    - -threaded
+    - -Wall
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - async
+    - optparse-applicative
+    - persistent-mysql
+    - safe
+    - tractor
+    - transformers
+    - unix
+
+tests:
+  tractor-test:
+    main:               Spec.hs
+    source-dirs:        test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - bytestring
+    - connection
+    - hspec
+    - QuickCheck
+    - tractor
+

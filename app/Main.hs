@@ -301,18 +301,8 @@ applicationBody cmdLineOpts conf =
                         . Tm.zonedTimeToLocalTime
                         . Tm.utcToZonedTime Lib.tzJST
                         <$> Tm.getCurrentTime
-            -- 今日の作業スレッドリスト
-            let works = case Tm.toWeekDate jstDay of
-                        (_,_,w) | w == 1 -> weekday     -- Monday
-                                | w == 2 -> weekday     -- Tuesday
-                                | w == 3 -> weekday     -- Wednesday
-                                | w == 4 -> weekday     -- Thursday
-                                | w == 5 -> weekday     -- Friday
-                                | w == 6 -> holiday     -- Saturday
-                                | w == 7 -> holiday     -- Sunday
-                                | otherwise -> holiday  -- ???
             -- 今日の作業スレッドを実行する
-            ths <- M.mapM (CC.async . (\f -> f jstDay)) works
+            ths <- M.mapM CC.async $ todayWorks conf jstDay
             -- 作業スレッドの異常終了を確認したら再起動する
             M.forM_ ths $ \async ->
                 CC.waitCatch async >>= \case
@@ -343,33 +333,48 @@ applicationBody cmdLineOpts conf =
             CC.threadDelay (300 * 1000 * 1000)
             applicationBody cmdLineOpts conf
         ]
+
+-- |
+-- 今日の作業リスト
+todayWorks :: Conf.Info -> Tm.Day -> [IO ()]
+todayWorks conf day =
+    case Tm.toWeekDate day of
+     (_,_,w)
+        | w == 1 -> weekday     -- Monday
+        | w == 2 -> weekday     -- Tuesday
+        | w == 3 -> weekday     -- Wednesday
+        | w == 4 -> weekday     -- Thursday
+        | w == 5 -> weekday     -- Friday
+        | w == 6 -> holiday     -- Saturday
+        | w == 7 -> holiday     -- Sunday
+        | otherwise -> holiday  -- ???
     where
     -- |
-    -- 前場のスレッド
+    -- 前場のアクション
     morningSession jstDay =
         tradingTimeThread conf . fst $ Scheduling.tradingTimeOfTSEInJST jstDay
     -- |
-    -- 後場のスレッド
+    -- 後場のアクション
     afternoonSession jstDay =
         tradingTimeThread conf . snd $ Scheduling.tradingTimeOfTSEInJST jstDay
     -- |
-    -- 明日になるまでただ待つスレッド
+    -- 明日になるまでただ待つアクション
     anchorman jstDay =
         Scheduling.execute $ map Scheduling.packZonedTimeJob
             [(Scheduling.tomorrowMidnightJST jstDay, return ())]
-    --
-    --
+    -- |
+    -- 平日のアクション
     weekday =
-        [ announceWeekdayThread conf
-        , morningSession
-        , afternoonSession
-        , batchProcessThread conf
-        , anchorman
-        ]
-    --
-    --
+        [ announceWeekdayThread conf day
+        , morningSession day
+        , afternoonSession day
+        , batchProcessThread conf day
+        , anchorman day ]
+    -- |
+    -- 休日のアクション
     holiday =
-        [ announceHolidayThread conf, anchorman ]
+        [ announceHolidayThread conf day
+        , anchorman day ]
 
 --
 -- コマンドラインオプション
