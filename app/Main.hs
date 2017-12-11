@@ -26,7 +26,6 @@ Portability :  POSIX
 
 アプリケーション「Tractor」のメインモジュールです。
 -}
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
@@ -38,12 +37,12 @@ import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as M
-import           Data.Conduit                 (($$), ($=))
+import           Data.Conduit                 (($$), ($=), (=$))
 import qualified Data.Conduit                 as C
 import           Data.Monoid                  ((<>))
 import qualified Data.Semigroup               as S
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TL
+import qualified Data.Text.Lazy.Builder       as TB
 import qualified Data.Text.Lazy.IO            as TL
 import qualified Data.Time                    as Tm
 import qualified Data.Time.Calendar.WeekDate  as Tm
@@ -173,15 +172,20 @@ fetchPriceToStore session = do
 -- |
 -- バッチ処理関数
 batchProcessing :: Conf.Info -> IO ()
-batchProcessing conf = do
+batchProcessing conf =
+    webCrawling <> aggregate $$ sink
+    where
+    --
+    --
+    sink =
+        Slack.simpleTextMsg (Conf.slack conf)
+        =$ Slack.sink (Conf.slack conf)
+    -- |
     -- Webクローリング
-    Q.runWebCrawlingPortfolios conf
-        $= Slack.simpleTextMsg (Conf.slack conf)
-        $$ Slack.sink (Conf.slack conf)
+    webCrawling = Q.runWebCrawlingPortfolios conf
+    -- |
     -- 集計
-    Aggregate.runAggregateOfPortfolios conf
-        $= Slack.simpleTextMsg (Conf.slack conf)
-        $$ Slack.sink (Conf.slack conf)
+    aggregate = Aggregate.runAggregateOfPortfolios conf
 
 -- |
 -- バッチ処理スレッド
@@ -213,11 +217,11 @@ announceHolidayThread conf jstDay =
     --
     --
     msg =
-        "本日 " <> TL.fromString (show jstDay) <> " は市場の休日です。"
+        "本日 " <> TB.fromString (show jstDay) <> " は市場の休日です。"
     --
     --
     announce =
-        C.yield (TL.toLazyText msg) $= simpleTextMsg conf $$ sinkSlack conf
+        C.yield (TB.toLazyText msg) $= simpleTextMsg conf $$ sinkSlack conf
 
 
 -- |
@@ -227,8 +231,8 @@ tradingTimeThread conf times =
     Scheduling.execute
         -- 3分前にログインする仕掛け
         $ map (timedelta (-180) . Scheduling.packZonedTimeJob)
+        -- 再復帰は30分間隔
         [ (t, worker) | t<-Lib.every (30*60) times ]
-        -- ^ 再復帰は30分間隔
     where
     --
     -- 実際の作業
@@ -240,23 +244,22 @@ tradingTimeThread conf times =
             Scheduling.execute js
         `catches`
         --
-        -- 実行時例外 : 予想外のHTML
-        [ Handler $ \(WebBot.UnexpectedHTMLException ex) ->
-            let msg = "予想外のHTML例外 \""
-                        <> TL.fromString ex
-                        <> "\""
-            in
-            -- Slackへエラーメッセージを送る
-            toSlack (Conf.slack conf) $ TL.toLazyText msg
+        -- ここの例外ハンドラは例外再送出しないので、
+        -- 例外処理の後は次のworkerに移る
         --
-        -- 実行時例外 : 未保有株の売却指示
-        , Handler $ \(WebBot.DontHaveStocksToSellException ex) ->
-            let msg = "未保有株の売却指示 \""
-                        <> TL.fromString ex
-                        <> "\""
-            in
+        -- 例外ハンドラ : 予想外のHTML
+        [ Handler $ \(WebBot.UnexpectedHTMLException ex) ->
             -- Slackへエラーメッセージを送る
-            toSlack (Conf.slack conf) $ TL.toLazyText msg
+            toSlack (Conf.slack conf) . TB.toLazyText
+            $ "予想外のHTML例外 "
+            <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
+        --
+        -- 例外ハンドラ : 未保有株の売却指示
+        , Handler $ \(WebBot.DontHaveStocksToSellException ex) ->
+            -- Slackへエラーメッセージを送る
+            toSlack (Conf.slack conf) . TB.toLazyText
+            $ "未保有株の売却指示 "
+            <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
         ]
     -- |
     -- 現在資産取得
@@ -303,36 +306,35 @@ applicationBody cmdLineOpts conf =
                         <$> Tm.getCurrentTime
             -- 今日の作業スレッドを実行する
             ths <- M.mapM CC.async $ todayWorks conf jstDay
-            -- 作業スレッドの異常終了を確認したら再起動する
-            M.forM_ ths $ \async ->
-                CC.waitCatch async >>= \case
-                    -- 正常終了
-                    Right _ -> return ()
-                    -- 失敗
-                    Left ex -> do
-                        -- 残りの作業スレッドをキャンセルする
-                        M.forM_ ths CC.cancel
-                        -- 例外再送出
-                        throwIO ex
+            --
+            -- 作業スレッドの終了を待つ
+            -- 作業スレッドの異常終了を確認したら
+            -- 残りの作業スレッドをキャンセルして
+            -- 例外再送出する
+            M.forM_ ths $
+                CC.waitCatch M.>=>
+                either
+                (\ex -> M.forM_ ths CC.cancel >> throwIO ex)
+                return
         --
         -- foreverによって繰り返す
         --
     `catches`
-        -- ユーザー例外ハンドラ
-        [ Handler $ \UserInterrupt ->
-            toSlack (Conf.slack conf) "User Interrupt (pressed Ctrl-C) caught"
-        --
-        -- 全ての例外ハンドラ
-        , Handler $ \(SomeException ex) -> do
-            let msg = "Some exception caught, \""
-                        <> TL.fromString (show ex)
-                        <> "\""
-            -- Slackへエラーメッセージを送る
-            toSlack (Conf.slack conf) $ TL.toLazyText msg
-            -- 一定時間待機後に実行時例外からの再開
-            CC.threadDelay (300 * 1000 * 1000)
-            applicationBody cmdLineOpts conf
-        ]
+    -- ユーザー例外ハンドラ
+    [ Handler $ \UserInterrupt ->
+        toSlack (Conf.slack conf) "User Interrupt (pressed Ctrl-C) caught"
+    --
+    -- 全ての例外ハンドラ
+    , Handler $ \(SomeException ex) -> do
+        -- Slackへエラーメッセージを送る
+        let msg = TB.toLazyText
+                    $ "Some exception caught, "
+                    <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
+        toSlack (Conf.slack conf) msg
+        -- 一定時間待機後に実行時例外からの再開
+        CC.threadDelay (300 * 1000 * 1000)
+        applicationBody cmdLineOpts conf
+    ]
 
 -- |
 -- 今日の作業リスト

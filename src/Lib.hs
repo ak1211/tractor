@@ -16,7 +16,7 @@
 -}
 {- |
 Module      :  Lib
-Description :
+Description :  library
 Copyright   :  (c) 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
