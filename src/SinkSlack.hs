@@ -52,9 +52,9 @@ import qualified Data.Maybe                 as Maybe
 import qualified Data.Text.Lazy             as TL
 import           Data.Time                  (UTCTime)
 import qualified Data.Time.Clock.POSIX      as Tm
+import qualified MatsuiCoJp.Scraper
 import qualified Network.HTTP.Conduit       as N
 import qualified Network.HTTP.Types.Status  as N
-import qualified Scraper
 import qualified Text.Printf                as Printf
 
 -- |
@@ -91,11 +91,11 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 -- |
 --  定期的に送信するレポート
 data Report = Report
-    { rTime           :: UTCTime                -- ^ DB上の時間
-    , rTotalAsset     :: Double                 -- ^ 総資産
-    , rAssetDiffByDay :: Maybe Double           -- ^ 総資産増減(前日比)
-    , rTotalProfit    :: Double                 -- ^ 損益合計
-    , rHoldStocks     :: [Scraper.HoldStock]    -- ^ 保有株式
+    { rTime           :: UTCTime                        -- ^ DB上の時間
+    , rTotalAsset     :: Double                         -- ^ 総資産
+    , rAssetDiffByDay :: Maybe Double                   -- ^ 総資産増減(前日比)
+    , rTotalProfit    :: Double                         -- ^ 損益合計
+    , rHoldStocks     :: [MatsuiCoJp.Scraper.HoldStock] -- ^ 保有株式
     } deriving Show
 
 -- |
@@ -174,9 +174,9 @@ reportMsg conf =
         | otherwise     = ":chart_with_upwards_trend:"
     --
     --
-    mkAttach :: UTCTime -> Scraper.HoldStock -> Attachment
+    mkAttach :: UTCTime -> MatsuiCoJp.Scraper.HoldStock -> Attachment
     mkAttach time stock = Attachment
-        { color         = if Scraper.hsGain stock >= 0 then "#F63200" else "#0034FF"
+        { color         = if MatsuiCoJp.Scraper.hsGain stock >= 0 then "#F63200" else "#0034FF"
         , pretext       = Nothing
         , title         = Nothing
         , text          = show stock

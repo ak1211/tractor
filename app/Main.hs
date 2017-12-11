@@ -52,13 +52,13 @@ import qualified Safe
 
 import qualified Aggregate
 import qualified Conf
-import qualified DataBase
 import qualified Lib
+import qualified MatsuiCoJp.DataBase
+import qualified MatsuiCoJp.Scraper
+import qualified MatsuiCoJp.WebBot
 import qualified Scheduling
-import qualified Scraper
 import qualified SinkSlack                    as Slack
 import qualified StockQuotesCrawler           as Q
-import qualified WebBot
 
 -- |
 -- レポートをsinkSlackで送信する形式に変換する関数
@@ -86,9 +86,9 @@ simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 -- |
 -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
 siteConn :: (Monad m, M.MonadTrans t, M.MonadResource (t m)) =>
-              Conf.Info -> (WebBot.HTTPSession -> m b) -> t m b
+              Conf.Info -> (MatsuiCoJp.WebBot.HTTPSession -> m b) -> t m b
 siteConn conf f =
-    M.allocate login WebBot.logout
+    M.allocate login MatsuiCoJp.WebBot.logout
     >>= (\(_,session) -> M.lift $ f session)
     where
     -- |
@@ -96,7 +96,7 @@ siteConn conf f =
     login = do
         let url = Conf.loginURL conf
         u <- fail2Throw (url ++ " は有効なURLではありません") $ N.parseURI url
-        s <- WebBot.login conf u
+        s <- MatsuiCoJp.WebBot.login conf u
         fail2Throw (url ++ " にログインできませんでした") s
     --
     --
@@ -110,7 +110,7 @@ reportSecuritiesAnnounce :: Conf.Info -> IO ()
 reportSecuritiesAnnounce conf =
     M.runResourceT . siteConn conf $ \session -> do
         -- ホーム -> お知らせを見に行く
-        fha <- WebBot.fetchFraHomeAnnounce session
+        fha <- MatsuiCoJp.WebBot.fetchFraHomeAnnounce session
         -- 現在資産評価を証券会社のサイトから取得してDBへ
         fetchPriceToStore session
         -- Slackへお知らせを送る
@@ -121,53 +121,53 @@ reportSecuritiesAnnounce conf =
 reportCurrentAssets :: Conf.Info -> IO ()
 reportCurrentAssets conf = do
     -- DBから最新の資産評価を取り出す
-    currents <- DataBase.getTotalAstsDescList Nothing 1 0
+    currents <- MatsuiCoJp.DataBase.getTotalAstsDescList Nothing 1 0
     M.mapM_ toReport currents
     where
     -- |
     -- Slackへレポートを送る関数
-    toReport :: DataBase.TotalAssets -> IO ()
+    toReport :: MatsuiCoJp.DataBase.TotalAssets -> IO ()
     toReport current = do
         -- 前営業日終わりの資産評価(立ち会い開始時間以前の情報)を取り出す
         (Tm.ZonedTime lt tz) <- Tm.getZonedTime
         let prevUTCTime = Tm.localTimeToUTC tz $
                             lt {Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}
         -- DBより前営業日終了時点の資産評価を取り出す
-        prevs <- DataBase.getTotalAstsDescList (Just ("<", prevUTCTime)) 1 0
+        prevs <- MatsuiCoJp.DataBase.getTotalAstsDescList (Just ("<", prevUTCTime)) 1 0
         let prev = Safe.headMay prevs
         -- 現在値
-        let curAsset = DataBase.totalAssetsOfCash current
+        let curAsset = MatsuiCoJp.DataBase.totalAssetsOfCash current
         -- 前営業日値
-        let prvAsset = DataBase.totalAssetsOfCash <$> prev
+        let prvAsset = MatsuiCoJp.DataBase.totalAssetsOfCash <$> prev
         -- 前営業日値よりの差
         let diffAsset = (\prv -> curAsset - prv) <$> prvAsset
         -- 最新の資産評価の記録時間
-        let tm = DataBase.totalAssetsDateTime current
+        let tm = MatsuiCoJp.DataBase.totalAssetsDateTime current
         -- DBから保有株式を取り出す
-        holdStocks <- DataBase.getHoldStockDescList $ Just ("==", tm)
+        holdStocks <- MatsuiCoJp.DataBase.getHoldStockDescList $ Just ("==", tm)
         -- レポートを送る
         let report = Slack.Report {
             Slack.rTime              = tm,
             Slack.rTotalAsset        = curAsset,
             Slack.rAssetDiffByDay    = diffAsset,
-            Slack.rTotalProfit       = DataBase.totalAssetsProfit current,
+            Slack.rTotalProfit       = MatsuiCoJp.DataBase.totalAssetsProfit current,
             Slack.rHoldStocks        = holdStocks
         }
         C.yield report $= reportMsg conf $$ sinkSlack conf
 
 -- |
 -- 現在資産評価を証券会社のサイトから取得してDBへ
-fetchPriceToStore :: WebBot.HTTPSession -> IO ()
+fetchPriceToStore :: MatsuiCoJp.WebBot.HTTPSession -> IO ()
 fetchPriceToStore session = do
     -- 資産状況 -> 余力情報を見に行く
-    spare <- WebBot.fetchFraAstSpare session
+    spare <- MatsuiCoJp.WebBot.fetchFraAstSpare session
     -- 株式取引 -> 現物売を見に行く
-    sell <- WebBot.fetchFraStkSell session
+    sell <- MatsuiCoJp.WebBot.fetchFraStkSell session
     -- 現在時間をキーに全てをデーターベースへ
     M.liftIO $ do
         tm <- Tm.getCurrentTime
-        Scraper.storeToDB tm spare
-        Scraper.storeToDB tm sell
+        MatsuiCoJp.Scraper.storeToDB tm spare
+        MatsuiCoJp.Scraper.storeToDB tm sell
 
 -- |
 -- バッチ処理関数
@@ -245,14 +245,14 @@ tradingTimeThread conf times =
         -- 例外処理の後は次のworkerに移る
         --
         -- 例外ハンドラ : 予想外のHTML
-        [ Handler $ \(WebBot.UnexpectedHTMLException ex) ->
+        [ Handler $ \(MatsuiCoJp.WebBot.UnexpectedHTMLException ex) ->
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) . TB.toLazyText
             $ "予想外のHTML例外 "
             <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
         --
         -- 例外ハンドラ : 未保有株の売却指示
-        , Handler $ \(WebBot.DontHaveStocksToSellException ex) ->
+        , Handler $ \(MatsuiCoJp.WebBot.DontHaveStocksToSellException ex) ->
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) . TB.toLazyText
             $ "未保有株の売却指示 "

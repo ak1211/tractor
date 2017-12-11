@@ -33,7 +33,7 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module WebBot
+module MatsuiCoJp.WebBot
     ( UnexpectedHTMLException (..)
     , DontHaveStocksToSellException (..)
     , HTTPSession (..)
@@ -74,8 +74,8 @@ import qualified Text.Parsec.ByteString.Lazy as P
 import qualified Text.Printf                 as Printf
 
 import qualified Conf
+import qualified MatsuiCoJp.Scraper
 import           Model
-import qualified Scraper
 
 -- |
 -- 実行時例外 : 予想外のHTML
@@ -508,9 +508,9 @@ failureAtScraping =
 -- |
 --  "お知らせ"を得る
 --  "ホーム" -> "お知らせ" のページからスクレイピングする関数
-fetchFraHomeAnnounce :: HTTPSession -> IO Scraper.FraHomeAnnounce
+fetchFraHomeAnnounce :: HTTPSession -> IO MatsuiCoJp.Scraper.FraHomeAnnounce
 fetchFraHomeAnnounce session = do
-    contents <- Scraper.scrapingFraHomeAnnounce <$> fetchContents
+    contents <- MatsuiCoJp.Scraper.scrapingFraHomeAnnounce <$> fetchContents
     case contents of
         Right r  -> return r
         Left err -> failureAtScraping err
@@ -529,9 +529,9 @@ fetchFraHomeAnnounce session = do
 -- |
 -- 現在の保有株情報を得る
 -- "株式取引" -> "現物売" のページからスクレイピングする関数
-fetchFraStkSell :: HTTPSession -> IO Scraper.FraStkSell
+fetchFraStkSell :: HTTPSession -> IO MatsuiCoJp.Scraper.FraStkSell
 fetchFraStkSell session = do
-    contents <- Scraper.scrapingFraStkSell <$> fetchContents
+    contents <- MatsuiCoJp.Scraper.scrapingFraStkSell <$> fetchContents
     case contents of
         Right r  -> return r
         Left err -> failureAtScraping err
@@ -550,9 +550,9 @@ fetchFraStkSell session = do
 -- |
 -- 現在の資産情報を得る
 -- "資産状況" -> "余力情報" のページからスクレイピングする関数
-fetchFraAstSpare :: HTTPSession -> IO Scraper.FraAstSpare
+fetchFraAstSpare :: HTTPSession -> IO MatsuiCoJp.Scraper.FraAstSpare
 fetchFraAstSpare session = do
-    contents <- Scraper.scrapingFraAstSpare <$> fetchContents
+    contents <- MatsuiCoJp.Scraper.scrapingFraAstSpare <$> fetchContents
     case contents of
         Right r  -> return r
         Left err -> failureAtScraping err
@@ -579,9 +579,9 @@ data SellOrderSet = SellOrderSet
 
 -- |
 --  売り注文を出す関数
-sellStock :: HTTPSession -> SellOrderSet -> IO Scraper.OrderConfirmed
+sellStock :: HTTPSession -> SellOrderSet -> IO MatsuiCoJp.Scraper.OrderConfirmed
 sellStock session order = do
-    contents <- Scraper.scrapingOrderConfirmed <$> fetchContents
+    contents <- MatsuiCoJp.Scraper.scrapingOrderConfirmed <$> fetchContents
     case contents of
         Right r  -> return r
         Left err -> failureAtScraping err
@@ -609,15 +609,15 @@ sellStock session order = do
     --
     clickSellOrderLink :: SellOrderSet -> [T.Text] -> IO [T.Text]
     clickSellOrderLink os htmls = do
-        fss <- either failureAtScraping pure $ Scraper.scrapingFraStkSell htmls
+        fss <- either failureAtScraping pure $ MatsuiCoJp.Scraper.scrapingFraStkSell htmls
 
         -- 所有株の中からcodeで指定された銘柄の売り注文ページリンクを取り出す
-        let eqCode = (==) (osCode os) . Scraper.hsCode
-        sellOrderUri <- case List.find eqCode $ Scraper.fsStocks fss of
+        let eqCode = (==) (osCode os) . MatsuiCoJp.Scraper.hsCode
+        sellOrderUri <- case List.find eqCode $ MatsuiCoJp.Scraper.fsStocks fss of
             Nothing ->
                 throwIO . DontHaveStocksToSellException .
                 Printf.printf "証券コード%dの株式を所有してないので売れません" $ osCode os
-            Just stock -> pure (Scraper.hsSellOrderUrl stock)
+            Just stock -> pure (MatsuiCoJp.Scraper.hsSellOrderUrl stock)
         -- 売り注文ページを読み込む
         sellOrderPage <- case sellOrderUri of
             Nothing ->

@@ -1,20 +1,18 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
 module ConfSpec (spec) where
 
 import qualified Data.Either as Either
 
-import Test.Hspec
-import Conf
+import           Conf
+import           Test.Hspec
 
-{-
- - テストファイル
- -}
+--
+-- テストファイル
 testConfFilePath = "test/conf.test.json"
 
-{-
- - テストファイルの内容
- -}
+--
+-- テストファイルの内容
 confInfo = Info
     { recordAssetsInterval = 10
     , sendReportInterval = 20
@@ -41,9 +39,8 @@ confInfoMariaDB = InfoMariaDB
     , database = "stockdb"
     }
 
-{-
- - Hspecテスト
- -}
+--
+-- Hspecテスト
 spec :: Spec
 spec = do
     describe "readJSONFile" $ do

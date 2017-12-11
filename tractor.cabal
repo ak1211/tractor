@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5edb8af2c6d186392d464fbf6309e66e058e30988d9972efcdf71983f2ee28cc
+-- hash: 43d492241dd264ce21c457129fed5bcf67748bd57c56ed74951d77a31a835502
 
 name:           tractor
 version:        0.2.1.0
@@ -63,17 +63,17 @@ library
   exposed-modules:
       Aggregate
       Conf
-      DataBase
       Lib
+      MatsuiCoJp.DataBase
+      MatsuiCoJp.Scraper
+      MatsuiCoJp.WebBot
       Model
       Scheduling
-      Scraper
       SinkSlack
       StockQuotesCrawler
       TechnicalIndicators
       TickerSymbol
       TimeFrame
-      WebBot
   other-modules:
       Paths_tractor
   default-language: Haskell2010

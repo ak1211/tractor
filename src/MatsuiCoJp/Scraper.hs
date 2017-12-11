@@ -32,7 +32,7 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Scraper
+module MatsuiCoJp.Scraper
     ( taglist
     , tag
     , table

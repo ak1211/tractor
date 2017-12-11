@@ -35,7 +35,7 @@ Portability :  POSIX
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-module DataBase
+module MatsuiCoJp.DataBase
     ( Summary (..)
     , HoldStock (..)
     , AssetSpare (..)
@@ -55,7 +55,7 @@ import           Data.Time.Format        (defaultTimeLocale, formatTime)
 import qualified Database.Persist.Sqlite as DB
 import qualified Database.Persist.TH     as DB
 
-import qualified Scraper
+import qualified MatsuiCoJp.Scraper
 
 -- |
 -- UTCTime時間をISO8601形式にする
@@ -172,7 +172,7 @@ getTotalAstsDescList predicade limit offset =
 
 -- |
 -- 保有株式テーブルを逆順（最新が先頭）で取り出す関数
-getHoldStockDescList :: Maybe (String, UTCTime) -> IO [Scraper.HoldStock]
+getHoldStockDescList :: Maybe (String, UTCTime) -> IO [MatsuiCoJp.Scraper.HoldStock]
 getHoldStockDescList predicade =
     let sql = T.toStrict $ T.unwords
                 [ "select"
@@ -204,47 +204,47 @@ insertDB d =
 
 --
 -- 型の変換関数
-toSummary :: UTCTime -> Scraper.FraStkSell -> Summary
-toSummary time (Scraper.FraStkSell qua pro _) =
+toSummary :: UTCTime -> MatsuiCoJp.Scraper.FraStkSell -> Summary
+toSummary time (MatsuiCoJp.Scraper.FraStkSell qua pro _) =
     Summary time qua pro
 
-toHoldStock :: UTCTime -> Scraper.HoldStock -> HoldStock
-toHoldStock time (Scraper.HoldStock _ cod cap cou pur pri) =
+toHoldStock :: UTCTime -> MatsuiCoJp.Scraper.HoldStock -> HoldStock
+toHoldStock time (MatsuiCoJp.Scraper.HoldStock _ cod cap cou pur pri) =
     HoldStock time cod (T.unpack cap) cou pur pri
 
-fromHoldStock :: HoldStock -> Scraper.HoldStock
+fromHoldStock :: HoldStock -> MatsuiCoJp.Scraper.HoldStock
 fromHoldStock (HoldStock _ cod cap cou pur pri) =
-    Scraper.HoldStock Nothing cod (T.pack cap) cou pur pri
+    MatsuiCoJp.Scraper.HoldStock Nothing cod (T.pack cap) cou pur pri
 
-toAssetSpare :: UTCTime -> Scraper.FraAstSpare -> AssetSpare
-toAssetSpare time (Scraper.FraAstSpare mts som inc dec rfe rta cas) =
+toAssetSpare :: UTCTime -> MatsuiCoJp.Scraper.FraAstSpare -> AssetSpare
+toAssetSpare time (MatsuiCoJp.Scraper.FraAstSpare mts som inc dec rfe rta cas) =
     AssetSpare time mts som inc dec rfe rta cas
 
 -- |
 -- サマリーテーブル, 保有株式テーブルへ格納する関数
-storeStkSell :: UTCTime -> Scraper.FraStkSell -> IO ()
+storeStkSell :: UTCTime -> MatsuiCoJp.Scraper.FraStkSell -> IO ()
 storeStkSell time fas = do
     insertDB $ toSummary time fas
-    M.mapM_ (insertDB . toHoldStock time) $ Scraper.fsStocks fas
+    M.mapM_ (insertDB . toHoldStock time) $ MatsuiCoJp.Scraper.fsStocks fas
 
 -- |
 -- 余力テーブルへ格納する関数
-storeAssetSpare :: UTCTime -> Scraper.FraAstSpare -> IO ()
+storeAssetSpare :: UTCTime -> MatsuiCoJp.Scraper.FraAstSpare -> IO ()
 storeAssetSpare time fss =
     insertDB $ toAssetSpare time fss
 
 --
---  型クラスScraper.Contentsのインスタンスをここで定義する
-instance Scraper.Contents Scraper.OrderConfirmed where
+--  型クラスMatsuiCoJp.Scraper.Contentsのインスタンスをここで定義する
+instance MatsuiCoJp.Scraper.Contents MatsuiCoJp.Scraper.OrderConfirmed where
     storeToDB _ _ = undefined
 
-instance Scraper.Contents Scraper.FraHomeAnnounce where
+instance MatsuiCoJp.Scraper.Contents MatsuiCoJp.Scraper.FraHomeAnnounce where
     -- こんなんDBに残しても意味ないんとちゃうか？
     storeToDB _ _ = undefined
 
-instance Scraper.Contents Scraper.FraStkSell where
+instance MatsuiCoJp.Scraper.Contents MatsuiCoJp.Scraper.FraStkSell where
     storeToDB = storeStkSell
 
-instance Scraper.Contents Scraper.FraAstSpare where
+instance MatsuiCoJp.Scraper.Contents MatsuiCoJp.Scraper.FraAstSpare where
     storeToDB = storeAssetSpare
 

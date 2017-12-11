@@ -30,7 +30,7 @@ MariaDBデータベースに入れる
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module StockQuotesCrawler
-    (runWebCrawlingPortfolios
+    ( runWebCrawlingPortfolios
     ) where
 
 import           Control.Applicative          ((<|>))
@@ -66,10 +66,10 @@ import qualified Text.XML.Cursor              as X
 
 import           Conf
 import qualified Lib
+import qualified MatsuiCoJp.WebBot
 import           Model
 import           TickerSymbol                 as Import
 import           TimeFrame                    as Import
-import qualified WebBot                       as WB
 
 -- |
 -- スクリーンスクレイピング関数(k-db.com用)
@@ -155,7 +155,7 @@ fetchStockPrices conf ticker tf = do
     let aUri = accessURI ticker
     manager <- N.newManager N.tlsManagerSettings
     uri <- maybe (throwIO $ userError "access uri parse error") pure $ N.parseURIReference aUri
-    response <- WB.fetchPage manager customHeader Nothing [] uri
+    response <- MatsuiCoJp.WebBot.fetchPage manager customHeader Nothing [] uri
     --
     let body = N.responseBody response
     either (throwIO . userError) pure $
