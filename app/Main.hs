@@ -238,10 +238,7 @@ tradingTimeThread conf times =
     -- 実際の作業
     worker =
         M.runResourceT . siteConn conf $ \sess ->
-            let js= fetchPriceJobs sess
-                    ++ reportJobs
-            in
-            Scheduling.execute js
+            Scheduling.execute (fetchPriceJobs sess ++ reportJobs)
         `catches`
         --
         -- ここの例外ハンドラは例外再送出しないので、

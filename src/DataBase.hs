@@ -63,13 +63,15 @@ iso8601 :: UTCTime -> String
 iso8601 = formatTime defaultTimeLocale "%FT%T%Q"
 
 DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateAll"] [DB.persistLowerCase|
--- | サマリーテーブル
+-- |
+-- サマリーテーブル
 Summary
     dateTime        UTCTime -- ^ 日付時間
     quantity        Double  -- ^ 評価合計
     profit          Double  -- ^ 損益合計
     deriving Show
--- | 保有株式テーブル
+-- |
+-- 保有株式テーブル
 HoldStock
     dateTime        UTCTime -- ^ 日付時間
     code            Int     -- ^ 証券コード
@@ -78,7 +80,8 @@ HoldStock
     purchase        Double  -- ^ 取得単価
     price           Double  -- ^ 現在値
     deriving Show
--- | 余力テーブル
+-- |
+-- 余力テーブル
 AssetSpare
     dateTime        UTCTime -- ^ 日付時間
     moneySpare      Int64   -- ^ 現物買付余力
@@ -92,9 +95,10 @@ AssetSpare
 |]
 
 DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateTotalAssets"] [DB.persistLowerCase|
--- | サマリーテーブルと
---  保有株式テーブルを
---  結合した総資産テーブル
+-- |
+-- サマリーテーブルと
+-- 保有株式テーブルを
+-- 結合した総資産テーブル
 TotalAssets
     dateTime        UTCTime -- ^ 日付時間
     quantity        Double  -- ^ 評価合計
