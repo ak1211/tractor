@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.2.1.0
+version:            0.3.0.0
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -48,7 +48,6 @@ library:
   - parsec
   - persistent
   - persistent-mysql
-  - persistent-sqlite
   - persistent-template
   - safe
   - tagsoup

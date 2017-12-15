@@ -35,18 +35,22 @@ Portability :  POSIX
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-module Model where
+module Model
+    ( module Model
+    , module ModelDef
+    ) where
 
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Text             (Text)
 import           Data.Time             (UTCTime)
-import qualified Database.Persist.TH   as DB
+import           Database.Persist.TH
 
-import           TechnicalIndicators   as Import
-import           TickerSymbol          as Import
-import           TimeFrame             as Import
+import           ModelDef
 
-DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateQuotes"] [DB.persistLowerCase|
+--
+-- 銘柄, 時系列株価, テクニカル指標テーブル
+--
+share [mkPersist sqlSettings, mkMigrate "migrateQuotes"] [persistLowerCase|
 -- |
 -- 株式銘柄テーブル
 Portfolio
@@ -79,11 +83,16 @@ TechInds
     deriving Show
 |]
 
-DB.share [DB.mkPersist DB.sqlSettings, DB.mkMigrate "migrateLogTable"] [DB.persistLowerCase|
+--
+-- HTTPアクセスログテーブル
+--
+share [mkPersist sqlSettings, mkMigrate "migrateLogTable"] [persistLowerCase|
 -- |
 -- HTTP通信記録用データーベース
 -- urlのページにHTTP通信をした時の返答
 Loghttp
+    receivedAt      UTCTime     -- ^ 受信時間
+    --
     url             String      -- ^ ページのURL
     scheme          String      -- ^ スキーム
     userInfo        String      -- ^ オーソリティ
@@ -96,7 +105,6 @@ Loghttp
     reqCookie       String      -- ^ 要求クッキー
     reqBody         String      -- ^ 要求ボディ
     --
-    respDatetime    UTCTime     -- ^ 返答時間
     respStatus      String      -- ^ 返答HTTP status code
     respVersion     String      -- ^ 返答HTTP version
     respHeader      String      -- ^ 返答ヘッダ
@@ -104,5 +112,3 @@ Loghttp
     respBody        ByteString  -- ^ 返答ボディ(HTML)
     deriving Show
 |]
-
-

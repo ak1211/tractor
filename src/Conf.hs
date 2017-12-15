@@ -28,19 +28,20 @@ Portability :  POSIX
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-
 module Conf
     ( readJSONFile
+    , loggingConnInfo
     , Info (..)
     , InfoSlack (..)
     , InfoMariaDB (..)
     ) where
 
-import qualified Data.Aeson           as Aeson
-import qualified Data.Aeson.TH        as Aeson
-import qualified Data.ByteString.Lazy as BSL
-import           Data.Word            (Word16)
-import qualified Text.Printf          as Printf
+import qualified Data.Aeson             as Aeson
+import qualified Data.Aeson.TH          as Aeson
+import qualified Data.ByteString.Lazy   as BSL
+import           Data.Word              (Word16)
+import qualified Database.Persist.MySQL as MySQL
+import qualified Text.Printf            as Printf
 
 -- | アプリケーションの設定情報
 data Info = Info
@@ -114,4 +115,14 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)
 readJSONFile :: String -> IO (Either String Info)
 readJSONFile filePath =
     Aeson.eitherDecode <$> BSL.readFile filePath
+
+-- |
+-- ログデーターベース情報
+loggingConnInfo :: MySQL.ConnectInfo
+loggingConnInfo =
+    MySQL.defaultConnectInfo
+        { MySQL.connectUser = "logginguser"
+        , MySQL.connectPassword = "loggingpassword"
+        , MySQL.connectDatabase = "stockdb"
+        }
 

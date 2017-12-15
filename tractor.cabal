@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 43d492241dd264ce21c457129fed5bcf67748bd57c56ed74951d77a31a835502
+-- hash: 5d5ea9b7638a69ff1bd44c441804975b02c154ac3e5d82780197b9f23eb1bb23
 
 name:           tractor
-version:        0.2.1.0
+version:        0.3.0.0
 synopsis:       tractor is an Assets observation application.
 description:    Please see the README on Github at <https://github.com/ak1211/tractor#readme>
 category:       Web
@@ -50,7 +50,6 @@ library
     , parsec
     , persistent
     , persistent-mysql
-    , persistent-sqlite
     , persistent-template
     , resourcet
     , safe
@@ -63,17 +62,17 @@ library
   exposed-modules:
       Aggregate
       Conf
+      GenBroker
       Lib
-      MatsuiCoJp.DataBase
+      MatsuiCoJp.Broker
+      MatsuiCoJp.Model
       MatsuiCoJp.Scraper
-      MatsuiCoJp.WebBot
       Model
+      ModelDef
       Scheduling
       SinkSlack
       StockQuotesCrawler
       TechnicalIndicators
-      TickerSymbol
-      TimeFrame
   other-modules:
       Paths_tractor
   default-language: Haskell2010

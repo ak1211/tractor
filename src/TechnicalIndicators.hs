@@ -28,31 +28,23 @@ Portability :  POSIX
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module TechnicalIndicators where
+module TechnicalIndicators
+    ( rolling
+    , mean
+    , sma
+    , ema
+    , ema1
+    , rsi
+    , psycologicalLine
+    , macdFormula
+    , macd
+    , macdSignal
+    , bollingerBands
+    , PriceHiLoClo
+    , dmi
+    ) where
 
-import qualified Data.List           as List
-import           Database.Persist.TH
-
-data TechnicalInds
-    = TISMA             Int         -- ^| 単純移動平均(SMA)
-    | TIEMA             Int         -- ^| 指数平滑移動平均(EMA)
-    | TIRSI             Int         -- ^| 相対力指数(RSI)
-    | TIMACD            Int Int     -- ^| MACD
-    | TIMACDSIG         Int Int Int -- ^| MACDシグナル
-    | TIBBLOW3          Int         -- ^| ボリンジャーバンド(-3σ)
-    | TIBBLOW2          Int         -- ^| ボリンジャーバンド(-2σ)
-    | TIBBLOW1          Int         -- ^| ボリンジャーバンド(-1σ)
-    | TIBBMIDDLE        Int         -- ^| ボリンジャーバンド
-    | TIBBUP1           Int         -- ^| ボリンジャーバンド(+1σ)
-    | TIBBUP2           Int         -- ^| ボリンジャーバンド(+2σ)
-    | TIBBUP3           Int         -- ^| ボリンジャーバンド(+3σ)
-    | TIPSYCHOLO        Int         -- ^| サイコロジカルライン
-    | TIDIPOS           Int         -- ^| +DI
-    | TIDINEG           Int         -- ^| -DI
-    | TIADX             Int         -- ^| ADX
-    deriving (Show, Read, Eq)
-
-derivePersistField "TechnicalInds"
+import qualified Data.List as List
 
 -- |
 -- 入力を一つずらしながら期間のグループを作る

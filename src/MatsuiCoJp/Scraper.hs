@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  Scraper
+Module      :  MatsuiCoJp.Scraper
 Description :  Scraping a web page
 Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
 License     :  AGPLv3
@@ -42,12 +42,11 @@ module MatsuiCoJp.Scraper
     , text
     , href
     , HoldStock (..)
-    , hsGain
     , FraHomeAnnounce (..)
     , FraStkSell (..)
     , FraAstSpare (..)
-    , Contents (..)
     , OrderConfirmed (..)
+    , nonScraping
     , scrapingFraHomeAnnounce
     , scrapingFraStkSell
     , scrapingFraAstSpare
@@ -56,61 +55,33 @@ module MatsuiCoJp.Scraper
 
 import qualified Control.Monad          as M
 import qualified Data.Char
-import           Data.Int               (Int64)
+import           Data.Int               (Int32)
 import qualified Data.List              as List
 import qualified Data.Maybe             as Maybe
-import qualified Data.Text.Lazy         as T
+import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Read    as Read
-import qualified Data.Time              as Tm
 import qualified Safe
 import qualified Text.HTML.TagSoup      as TS
 import qualified Text.HTML.TagSoup.Tree as TS
-import qualified Text.Printf            as Printf
-
--- |
--- ページからスクレイピングした情報の型クラス
-class Contents a where
-    storeToDB :: Tm.UTCTime -> a -> IO ()
 
 -- |
 -- ホーム -> お知らせの内容
 data FraHomeAnnounce = FraHomeAnnounce
-    { fsAnnounceDeriverTime   :: T.Text     -- ^ お知らせの配信時間
-    , fsAnnounceLastLoginTime :: T.Text     -- ^ 前回ログイン
-    , fsAnnounces             :: [T.Text]   -- ^ お知らせ
+    { fsAnnounceDeriverTime   :: TL.Text    -- ^ お知らせの配信時間
+    , fsAnnounceLastLoginTime :: TL.Text    -- ^ 前回ログイン
+    , fsAnnounces             :: [TL.Text]  -- ^ お知らせ
     } deriving (Eq)
-
---
--- 型クラスShowのインスタンス
-instance Show FraHomeAnnounce where
-    show (FraHomeAnnounce dt lt as) =
-        T.unpack $ T.unlines (dt : lt : as)
 
 -- |
 -- 保有株(個別銘柄)情報
 data HoldStock = HoldStock
-    { hsSellOrderUrl  :: Maybe T.Text   -- ^ 売り注文ページurl
+    { hsSellOrderUrl  :: Maybe TL.Text  -- ^ 売り注文ページurl
     , hsCode          :: Int            -- ^ 証券コード
-    , hsCaption       :: T.Text         -- ^ 名前
+    , hsCaption       :: TL.Text        -- ^ 名前
     , hsCount         :: Int            -- ^ 保有数
     , hsPurchasePrice :: Double         -- ^ 取得単価
     , hsPrice         :: Double         -- ^ 現在値
     } deriving (Eq)
-
--- |
--- 損益を計算する関数
-hsGain :: HoldStock -> Double
-hsGain hs =
-    let delta =  hsPrice hs - hsPurchasePrice hs in
-    realToFrac (hsCount hs) * delta
-
---
--- 型クラスShowのインスタンス
-instance Show HoldStock where
-    show hs =
-       let (HoldStock _ cod cap cou pup pri) = hs in
-       Printf.printf "%d %s, 保有 %d, 取得 %f, 現在 %f, 損益 %+f"
-           cod cap cou pup pri (hsGain hs)
 
 -- |
 --  株式取引 -> 現物売の内容
@@ -120,93 +91,67 @@ data FraStkSell = FraStkSell
     , fsStocks   :: [HoldStock] -- ^ 個別銘柄情報
     } deriving (Eq)
 
---
--- 型クラスShowのインスタンス
-instance Show FraStkSell where
-    show (FraStkSell qua pro stk) =
-        unlines [
-           Printf.printf "評価合計 %f, 損益合計 %+f" qua pro,
-           unlines $ map show stk]
-
 -- |
 -- 資産状況 -> 余力情報の内容
 data FraAstSpare = FraAstSpare
-    { faMoneyToSpare       :: Int64     -- ^ 現物買付余力
-    , faStockOfMoney       :: Int64     -- ^ 現金残高
-    , faIncreaseOfDeposits :: Int64     -- ^ 預り増加額
-    , faDecreaseOfDeposits :: Int64     -- ^ 預り減少額
-    , faRestraintFee       :: Int64     -- ^ ボックスレート手数料拘束金
-    , faRestraintTax       :: Int64     -- ^ 源泉徴収税拘束金（仮計算）
-    , faCash               :: Int64     -- ^ 使用可能現金
+    { faMoneyToSpare       :: Int32     -- ^ 現物買付余力
+    , faStockOfMoney       :: Int32     -- ^ 現金残高
+    , faIncreaseOfDeposits :: Int32     -- ^ 預り増加額
+    , faDecreaseOfDeposits :: Int32     -- ^ 預り減少額
+    , faRestraintFee       :: Int32     -- ^ ボックスレート手数料拘束金
+    , faRestraintTax       :: Int32     -- ^ 源泉徴収税拘束金（仮計算）
+    , faCash               :: Int32     -- ^ 使用可能現金
     } deriving (Eq)
-
---
--- 型クラスShowのインスタンス
-instance Show FraAstSpare where
-    show (FraAstSpare mts som inc dec rfe rta cas) = unlines
-        [ Printf.printf "現物買付余力 %d," mts
-        , Printf.printf "現金残高 %d," som
-        , Printf.printf "預り増加額 %d," inc
-        , Printf.printf "預り減少額 %d," dec
-        , Printf.printf "ボックスレート手数料拘束金 %d," rfe
-        , Printf.printf "源泉徴収税拘束金（仮計算） %d," rta
-        , Printf.printf "使用可能現金 %d" cas
-        ]
 
 -- |
 -- 注文発注後の"ご注文を受付けました"の内容
 data OrderConfirmed = OrderConfirmed
-    { contents            :: T.Text
+    { contents            :: TL.Text
     } deriving (Eq)
-
--- 型クラスShowのインスタンス
-instance Show OrderConfirmed where
-    show (OrderConfirmed co) =
-        T.unpack co
 
 -- |
 -- タグ名の子をリストで取り出す関数
-taglist :: T.Text -> [TS.TagTree T.Text] -> [[TS.TagTree T.Text]]
-taglist nm t = [c | TS.TagBranch k _ c <- TS.universeTree t, nm==T.toLower k]
+taglist :: TL.Text -> [TS.TagTree TL.Text] -> [[TS.TagTree TL.Text]]
+taglist nm t = [c | TS.TagBranch k _ c <- TS.universeTree t, nm==TL.toLower k]
 
 -- |
 -- タグ名の子リストからidx番のタグを取り出す関数
-tag :: T.Text -> Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
+tag :: TL.Text -> Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
 tag name idx = flip Safe.atMay idx . taglist name
 
 --
 --
-table :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
+table :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
 table = tag "table"
 
 --
 --
-tr :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
+tr :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
 tr = tag "tr"
 
 --
 --
-td :: Int -> [TS.TagTree T.Text] -> Maybe [TS.TagTree T.Text]
+td :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
 td = tag "td"
 
 -- |
 -- テキスト要素をリストで取り出す関数
-textlist :: [TS.TagTree T.Text] -> [T.Text]
+textlist :: [TS.TagTree TL.Text] -> [TL.Text]
 textlist t =
-    filter (/="") [T.strip txt | TS.TagText txt <- TS.flattenTree t]
+    filter (/="") [TL.strip txt | TS.TagText txt <- TS.flattenTree t]
 
 -- |
 -- idx番のテキストを取り出す関数
-text :: Int -> [TS.TagTree T.Text] -> Maybe T.Text
+text :: Int -> [TS.TagTree TL.Text] -> Maybe TL.Text
 text idx t =
-    Safe.atMay [T.strip txt | TS.TagText txt <- TS.flattenTree t] idx
+    Safe.atMay [TL.strip txt | TS.TagText txt <- TS.flattenTree t] idx
 
 -- |
 -- aタグからhref属性を取り出す関数
-href :: Int -> [TS.TagTree T.Text] -> Maybe T.Text
+href :: Int -> [TS.TagTree TL.Text] -> Maybe TL.Text
 href nm t =
-    Safe.atMay [as | TS.TagBranch k as _ <- TS.universeTree t, "a"==T.toLower k] nm
-    >>= \as -> Maybe.listToMaybe [v | (k, v) <- as, "href"==T.toLower k]
+    Safe.atMay [as | TS.TagBranch k as _ <- TS.universeTree t, "a"==TL.toLower k] nm
+    >>= \as -> Maybe.listToMaybe [v | (k, v) <- as, "href"==TL.toLower k]
 
 -- |
 -- 符号あるいは数字または小数点か判定する関数
@@ -215,18 +160,18 @@ isSignDigit c = List.any ($ c) [Data.Char.isDigit, (=='+'), (=='-'), (=='.')]
 
 -- |
 --  符号,数字,小数点以外の文字を破棄する関数
-onlySignDigit :: T.Text -> T.Text
-onlySignDigit = T.filter isSignDigit
+onlySignDigit :: TL.Text -> TL.Text
+onlySignDigit = TL.filter isSignDigit
 
 --
 --  Textからそれぞれの型に変換する関数
-toText :: Maybe T.Text -> T.Text -> Either T.Text T.Text
+toText :: Maybe TL.Text -> TL.Text -> Either TL.Text TL.Text
 toText Nothing note = Left note
 toText (Just t) _   = Right t
 
 --
 --
-toDecimal :: Integral a => Maybe T.Text -> T.Text -> Either T.Text a
+toDecimal :: Integral a => Maybe TL.Text -> TL.Text -> Either TL.Text a
 toDecimal Nothing note = Left note
 toDecimal (Just t) note =
     case Read.signed Read.decimal $ onlySignDigit t of
@@ -235,7 +180,7 @@ toDecimal (Just t) note =
 
 --
 --
-toDouble :: Maybe T.Text -> T.Text -> Either T.Text Double
+toDouble :: Maybe TL.Text -> TL.Text -> Either TL.Text Double
 toDouble Nothing note = Left note
 toDouble (Just t) note =
     case Read.signed Read.double $ onlySignDigit t of
@@ -243,8 +188,15 @@ toDouble (Just t) note =
         Left _       -> Left note
 
 -- |
+-- そのままページを返す関数
+nonScraping :: [TL.Text] -> Either TL.Text TL.Text
+nonScraping []    = Left "ページを受け取れていません。"
+nonScraping (h:_) = Right h
+
+
+-- |
 -- "ホーム" -> "お知らせ" のページをスクレイピングする関数
-scrapingFraHomeAnnounce :: [T.Text] -> Either T.Text FraHomeAnnounce
+scrapingFraHomeAnnounce :: [TL.Text] -> Either TL.Text FraHomeAnnounce
 scrapingFraHomeAnnounce htmls = do
     html <- case htmls of
         []  -> Left "お知らせページを受け取れていません。"
@@ -265,7 +217,7 @@ scrapingFraHomeAnnounce htmls = do
 
 -- |
 --  "株式取引" -> "現物売" のページをスクレイピングする関数
-scrapingFraStkSell :: [T.Text] -> Either T.Text FraStkSell
+scrapingFraStkSell :: [TL.Text] -> Either TL.Text FraStkSell
 scrapingFraStkSell htmls = do
     html <- case htmls of
         []  -> Left "現物売ページを受け取れていません。"
@@ -294,7 +246,7 @@ scrapingFraStkSell htmls = do
     }
     where
     -- 銘柄リストから株式情報を得る
-    takeHoldStock :: [TS.TagTree T.Text] -> Either T.Text HoldStock
+    takeHoldStock :: [TS.TagTree TL.Text] -> Either TL.Text HoldStock
     takeHoldStock tree = do
         url     <- (Just tree >>= td 0 >>= href 0) `toText`     "売り注文ページurlの取得に失敗"
         caption <- (Just tree >>= td 2 >>= text 0) `toText`     "銘柄名の取得に失敗"
@@ -314,7 +266,7 @@ scrapingFraStkSell htmls = do
 
 -- |
 -- 資産状況 -> 余力情報のページをスクレイピングする関数
-scrapingFraAstSpare :: [T.Text] -> Either T.Text FraAstSpare
+scrapingFraAstSpare :: [TL.Text] -> Either TL.Text FraAstSpare
 scrapingFraAstSpare htmls = do
     html <- case htmls of
         []  -> Left "余力情報ページを受け取れていません。"
@@ -342,7 +294,7 @@ scrapingFraAstSpare htmls = do
 
 -- |
 --  "ご注文を受け付けました"のページをスクレイピングする関数
-scrapingOrderConfirmed :: [T.Text] -> Either T.Text OrderConfirmed
+scrapingOrderConfirmed :: [TL.Text] -> Either TL.Text OrderConfirmed
 scrapingOrderConfirmed htmls = do
     html <- case htmls of
         []  -> Left "注文終了ページを受け取れていません。"

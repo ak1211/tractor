@@ -32,10 +32,9 @@ module Main where
 import qualified Control.Arrow                as A
 import qualified Control.Concurrent           as CC
 import qualified Control.Concurrent.Async     as CC
-import           Control.Exception
+import qualified Control.Exception            as Ex
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as M
 import           Data.Conduit                 (($$), ($=), (=$))
 import qualified Data.Conduit                 as C
@@ -46,16 +45,13 @@ import qualified Data.Text.Lazy.Builder       as TB
 import qualified Data.Text.Lazy.IO            as TL
 import qualified Data.Time                    as Tm
 import qualified Data.Time.Calendar.WeekDate  as Tm
-import qualified Network.URI                  as N
 import qualified Options.Applicative          as Opt
-import qualified Safe
 
 import qualified Aggregate
 import qualified Conf
+import qualified GenBroker                    as Broker
 import qualified Lib
-import qualified MatsuiCoJp.DataBase
-import qualified MatsuiCoJp.Scraper
-import qualified MatsuiCoJp.WebBot
+import qualified MatsuiCoJp.Broker
 import qualified Scheduling
 import qualified SinkSlack                    as Slack
 import qualified StockQuotesCrawler           as Q
@@ -82,92 +78,6 @@ toSlack conf msg =
 -- テキストメッセージをsinkSlackで送信する形式に変換する関数
 simpleTextMsg :: M.MonadIO m => Conf.Info -> C.Conduit TL.Text m Slack.WebHook
 simpleTextMsg = Slack.simpleTextMsg . Conf.slack
-
--- |
--- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
-siteConn :: (Monad m, M.MonadTrans t, M.MonadResource (t m)) =>
-              Conf.Info -> (MatsuiCoJp.WebBot.HTTPSession -> m b) -> t m b
-siteConn conf f =
-    M.allocate login MatsuiCoJp.WebBot.logout
-    >>= (\(_,session) -> M.lift $ f session)
-    where
-    -- |
-    -- 証券会社のサイトにログインする関数
-    login = do
-        let url = Conf.loginURL conf
-        u <- fail2Throw (url ++ " は有効なURLではありません") $ N.parseURI url
-        s <- MatsuiCoJp.WebBot.login conf u
-        fail2Throw (url ++ " にログインできませんでした") s
-    --
-    --
-    fail2Throw :: String -> Maybe a -> IO a
-    fail2Throw  _ (Just x) = return x
-    fail2Throw msg Nothing = throwIO (userError msg)
-
--- |
--- Slackへお知らせを送るついでに現在資産評価をDBへ
-reportSecuritiesAnnounce :: Conf.Info -> IO ()
-reportSecuritiesAnnounce conf =
-    M.runResourceT . siteConn conf $ \session -> do
-        -- ホーム -> お知らせを見に行く
-        fha <- MatsuiCoJp.WebBot.fetchFraHomeAnnounce session
-        -- 現在資産評価を証券会社のサイトから取得してDBへ
-        fetchPriceToStore session
-        -- Slackへお知らせを送る
-        C.yield (TL.pack $ show fha) $= simpleTextMsg conf $$ sinkSlack conf
-
--- |
--- DBから最新の資産評価を取り出してSlackへレポートを送る
-reportCurrentAssets :: Conf.Info -> IO ()
-reportCurrentAssets conf = do
-    -- DBから最新の資産評価を取り出す
-    currents <- MatsuiCoJp.DataBase.getTotalAstsDescList Nothing 1 0
-    M.mapM_ toReport currents
-    where
-    -- |
-    -- Slackへレポートを送る関数
-    toReport :: MatsuiCoJp.DataBase.TotalAssets -> IO ()
-    toReport current = do
-        -- 前営業日終わりの資産評価(立ち会い開始時間以前の情報)を取り出す
-        (Tm.ZonedTime lt tz) <- Tm.getZonedTime
-        let prevUTCTime = Tm.localTimeToUTC tz $
-                            lt {Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}
-        -- DBより前営業日終了時点の資産評価を取り出す
-        prevs <- MatsuiCoJp.DataBase.getTotalAstsDescList (Just ("<", prevUTCTime)) 1 0
-        let prev = Safe.headMay prevs
-        -- 現在値
-        let curAsset = MatsuiCoJp.DataBase.totalAssetsOfCash current
-        -- 前営業日値
-        let prvAsset = MatsuiCoJp.DataBase.totalAssetsOfCash <$> prev
-        -- 前営業日値よりの差
-        let diffAsset = (\prv -> curAsset - prv) <$> prvAsset
-        -- 最新の資産評価の記録時間
-        let tm = MatsuiCoJp.DataBase.totalAssetsDateTime current
-        -- DBから保有株式を取り出す
-        holdStocks <- MatsuiCoJp.DataBase.getHoldStockDescList $ Just ("==", tm)
-        -- レポートを送る
-        let report = Slack.Report {
-            Slack.rTime              = tm,
-            Slack.rTotalAsset        = curAsset,
-            Slack.rAssetDiffByDay    = diffAsset,
-            Slack.rTotalProfit       = MatsuiCoJp.DataBase.totalAssetsProfit current,
-            Slack.rHoldStocks        = holdStocks
-        }
-        C.yield report $= reportMsg conf $$ sinkSlack conf
-
--- |
--- 現在資産評価を証券会社のサイトから取得してDBへ
-fetchPriceToStore :: MatsuiCoJp.WebBot.HTTPSession -> IO ()
-fetchPriceToStore session = do
-    -- 資産状況 -> 余力情報を見に行く
-    spare <- MatsuiCoJp.WebBot.fetchFraAstSpare session
-    -- 株式取引 -> 現物売を見に行く
-    sell <- MatsuiCoJp.WebBot.fetchFraStkSell session
-    -- 現在時間をキーに全てをデーターベースへ
-    M.liftIO $ do
-        tm <- Tm.getCurrentTime
-        MatsuiCoJp.Scraper.storeToDB tm spare
-        MatsuiCoJp.Scraper.storeToDB tm sell
 
 -- |
 -- バッチ処理関数
@@ -201,7 +111,7 @@ batchProcessThread conf jstDay =
 announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
 announceWeekdayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, reportSecuritiesAnnounce conf)
+        [(t, MatsuiCoJp.Broker.reportSecuritiesAnnounce conf)
         | t<-Scheduling.announceWeekdayTimeInJST jstDay
         ]
 
@@ -237,22 +147,22 @@ tradingTimeThread conf times =
     --
     -- 実際の作業
     worker =
-        M.runResourceT . siteConn conf $ \sess ->
+        M.runResourceT . MatsuiCoJp.Broker.siteConn conf $ \sess ->
             Scheduling.execute (fetchPriceJobs sess ++ reportJobs)
-        `catches`
+        `Ex.catches`
         --
         -- ここの例外ハンドラは例外再送出しないので、
         -- 例外処理の後は次のworkerに移る
         --
         -- 例外ハンドラ : 予想外のHTML
-        [ Handler $ \(MatsuiCoJp.WebBot.UnexpectedHTMLException ex) ->
+        [ Ex.Handler $ \(Broker.UnexpectedHTMLException ex) ->
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) . TB.toLazyText
             $ "予想外のHTML例外 "
             <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
         --
         -- 例外ハンドラ : 未保有株の売却指示
-        , Handler $ \(MatsuiCoJp.WebBot.DontHaveStocksToSellException ex) ->
+        , Ex.Handler $ \(Broker.DontHaveStocksToSellException ex) ->
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) . TB.toLazyText
             $ "未保有株の売却指示 "
@@ -262,7 +172,7 @@ tradingTimeThread conf times =
     -- 現在資産取得
     fetchPriceJobs session =
         map Scheduling.packZonedTimeJob
-        [ (t, fetchPriceToStore session)    -- 現在資産取得関数
+        [ (t, MatsuiCoJp.Broker.fetchPriceToStore conf session)    -- 現在資産取得関数
         | t<-Lib.every (Conf.recordAssetsInterval conf * 60) times
         ]
     -- |
@@ -270,7 +180,7 @@ tradingTimeThread conf times =
     reportJobs =
         -- 資産取得の実行より1分遅らせる仕掛け
         map (timedelta 60 . Scheduling.packZonedTimeJob)
-        [ (t, reportCurrentAssets conf)     -- 現在資産評価額報告関数
+        [ (t, MatsuiCoJp.Broker.reportCurrentAssets conf)     -- 現在資産評価額報告関数
         | t<-Lib.every (Conf.sendReportInterval conf * 60) times
         ]
     -- |
@@ -292,6 +202,9 @@ applicationBody cmdLineOpts conf =
     RunNormal -> do
         -- 起動時の挨拶文をSlackへ送る
         toSlack (Conf.slack conf) Lib.greetingsMessage
+
+--        MatsuiCoJp.Broker.reportSecuritiesAnnounce conf
+        MatsuiCoJp.Broker.reportCurrentAssets conf
         --
         -- メインループ
         --
@@ -311,18 +224,18 @@ applicationBody cmdLineOpts conf =
             M.forM_ ths $
                 CC.waitCatch M.>=>
                 either
-                (\ex -> M.forM_ ths CC.cancel >> throwIO ex)
+                (\ex -> M.forM_ ths CC.cancel >> Ex.throwIO ex)
                 return
         --
         -- foreverによって繰り返す
         --
-    `catches`
+    `Ex.catches`
     -- ユーザー例外ハンドラ
-    [ Handler $ \UserInterrupt ->
+    [ Ex.Handler $ \Ex.UserInterrupt ->
         toSlack (Conf.slack conf) "User Interrupt (pressed Ctrl-C) caught"
     --
     -- 全ての例外ハンドラ
-    , Handler $ \(SomeException ex) -> do
+    , Ex.Handler $ \(Ex.SomeException ex) -> do
         -- Slackへエラーメッセージを送る
         let msg = TB.toLazyText
                     $ "Some exception caught, "
@@ -404,11 +317,11 @@ main = do
     commandLineOption = CommandLineOption
         Opt.<$> Opt.flag RunNormal RunBatch
             (  Opt.long "batch"
-            S.<> Opt.help "forced run batch processing"
+            S.<> Opt.help "Perform batch process now"
             )
         Opt.<*> Opt.strOption
             ( Opt.long "conf"
-            S.<> Opt.help "forced run batch processing"
+            S.<> Opt.help "Read configuration file"
             S.<> Opt.metavar "CONFIG_FILE"
             S.<> Opt.value "conf.json" -- default file path
             S.<> Opt.help "config file path"

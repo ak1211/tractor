@@ -40,7 +40,6 @@ module SinkSlack
     , reportMsg
     ) where
 
-import qualified Conf
 import qualified Control.Monad              as M
 import qualified Control.Monad.IO.Class     as M
 import qualified Data.Aeson                 as Aeson
@@ -50,12 +49,14 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 import qualified Data.Conduit               as C
 import qualified Data.Maybe                 as Maybe
 import qualified Data.Text.Lazy             as TL
-import           Data.Time                  (UTCTime)
+import qualified Data.Time                  as Tm
 import qualified Data.Time.Clock.POSIX      as Tm
-import qualified MatsuiCoJp.Scraper
 import qualified Network.HTTP.Conduit       as N
 import qualified Network.HTTP.Types.Status  as N
 import qualified Text.Printf                as Printf
+
+import qualified Conf
+import           MatsuiCoJp.Model
 
 -- |
 --  Slack Web API - Incoming Webhooks
@@ -91,48 +92,45 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 -- |
 --  定期的に送信するレポート
 data Report = Report
-    { rTime           :: UTCTime                        -- ^ DB上の時間
-    , rTotalAsset     :: Double                         -- ^ 総資産
-    , rAssetDiffByDay :: Maybe Double                   -- ^ 総資産増減(前日比)
-    , rTotalProfit    :: Double                         -- ^ 損益合計
-    , rHoldStocks     :: [MatsuiCoJp.Scraper.HoldStock] -- ^ 保有株式
+    { rTime           :: Tm.UTCTime           -- ^ DB上の時間
+    , rAllAsset       :: Double               -- ^ 総資産
+    , rAssetDiffByDay :: Maybe Double         -- ^ 総資産増減(前日比)
+    , rAllProfit      :: Double               -- ^ 損益合計
+    , rHoldStocks     :: [MatsuicojpStock]    -- ^ 保有株式
     } deriving Show
 
 -- |
 -- Slackへ送信する関数
 send :: M.MonadIO m => Conf.InfoSlack -> BS8.ByteString -> m N.Status
 send conf json =
-    let url = Conf.webHookURL conf in
-    let slackApiReqBody =   [ ("Content-type", "application/json")
-                            , ("payload", json) ]
-    in
     M.liftIO $ do
-        req <- N.urlEncodedBody slackApiReqBody <$> N.parseRequest url
+        req <- request
         manager <- N.newManager N.tlsManagerSettings
         N.responseStatus <$> N.httpLbs req manager
+    where
+    request =
+        N.urlEncodedBody
+            [("Content-type", "application/json"), ("payload", json)]
+        <$> N.parseRequest (Conf.webHookURL conf)
 
 -- |
 --  Slackへ流す関数
 sink :: Conf.InfoSlack -> C.Sink WebHook IO ()
 sink conf =
-    C.await >>= maybe (return ()) func
+    C.await >>= maybe (return ()) go
     where
-    --
-    func webhook = do
+    go webhook = do
         M.void $ send conf (BSL8.toStrict $ Aeson.encode webhook)
-        -- respに返ってきた結果はログに落とすためだけど
-        -- 今は無視する
-        C.await >>= maybe (return ()) func
+        C.await >>= maybe (return ()) go
 
 
 -- |
 --  ただのテキストをSlackに送るJSONを組み立てる関数
 simpleTextMsg :: M.MonadIO m => Conf.InfoSlack -> C.Conduit TL.Text m WebHook
 simpleTextMsg conf =
-    C.await >>= maybe (return ()) func
+    C.await >>= maybe (return ()) go
     where
-    --
-    func message = do
+    go message = do
         C.yield WebHook {
             channel       = Conf.channel conf,
             username      = Conf.userName conf,
@@ -140,31 +138,30 @@ simpleTextMsg conf =
             hText         = TL.unpack message,
             icon_emoji    = ":tractor:"
         }
-        C.await >>= maybe (return ()) func
+        C.await >>= maybe (return ()) go
 
 -- |
 --  資産情報をSlackに送るJSONを組み立てる関数
 reportMsg :: M.MonadIO m => Conf.InfoSlack -> C.Conduit Report m WebHook
 reportMsg conf =
-    C.await >>= maybe (return ()) func
+    C.await >>= maybe (return ()) go
     where
     --
     --
-    func (Report time total differ profit holdStocks) = do
-        let msg = unwords $ Maybe.catMaybes (
-                    [ updown <$> differ
-                    , Printf.printf "前日比 %+f " <$> differ
-                    , Printf.printf "総資産 %f " <$> Just total
-                    , Printf.printf "損益合計 %+f" <$> Just profit
-                    ] :: [Maybe String])
+    go rpt = do
         C.yield WebHook
             { channel       = Conf.channel conf
             , username      = Conf.userName conf
-            , attachments   = map (mkAttach time) holdStocks
-            , hText         = msg
+            , attachments   = map (mkAttach $ rTime rpt) $ rHoldStocks rpt
+            , hText         = unwords . Maybe.catMaybes $
+                                [ updown <$> rAssetDiffByDay rpt
+                                , Printf.printf "前日比 %+f " <$> rAssetDiffByDay rpt
+                                , Just (Printf.printf "総資産 %f " $ rAllAsset rpt)
+                                , Just (Printf.printf "損益合計 %+f" $ rAllProfit rpt)
+                                ]
             , icon_emoji    = ":tractor:"
             }
-        C.await >>= maybe (return ()) func
+        C.await >>= maybe (return ()) go
     --
     --
     updown :: Double -> String
@@ -174,9 +171,15 @@ reportMsg conf =
         | otherwise     = ":chart_with_upwards_trend:"
     --
     --
-    mkAttach :: UTCTime -> MatsuiCoJp.Scraper.HoldStock -> Attachment
+    gain :: MatsuicojpStock -> Double
+    gain s =
+        (matsuicojpStockPrice s - matsuicojpStockPurchase s)
+        * realToFrac (matsuicojpStockCount s)
+    --
+    --
+    mkAttach :: Tm.UTCTime -> MatsuicojpStock -> Attachment
     mkAttach time stock = Attachment
-        { color         = if MatsuiCoJp.Scraper.hsGain stock >= 0 then "#F63200" else "#0034FF"
+        { color         = if gain stock >= 0 then "#F63200" else "#0034FF"
         , pretext       = Nothing
         , title         = Nothing
         , text          = show stock

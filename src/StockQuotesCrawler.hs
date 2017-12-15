@@ -35,11 +35,11 @@ module StockQuotesCrawler
 
 import           Control.Applicative          ((<|>))
 import qualified Control.Concurrent           as CC
-import           Control.Exception
+import           Control.Exception            (throwIO)
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
-import           Control.Monad.Logger
-import qualified Control.Monad.Trans.Resource as MT
+import qualified Control.Monad.Logger         as ML
+import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.ByteString.Lazy         as BL
 import qualified Data.Conduit                 as C
 import qualified Data.List                    as List
@@ -65,11 +65,9 @@ import           Text.XML.Cursor              (($//), (&/))
 import qualified Text.XML.Cursor              as X
 
 import           Conf
+import qualified GenBroker
 import qualified Lib
-import qualified MatsuiCoJp.WebBot
 import           Model
-import           TickerSymbol                 as Import
-import           TimeFrame                    as Import
 
 -- |
 -- スクリーンスクレイピング関数(k-db.com用)
@@ -155,7 +153,7 @@ fetchStockPrices conf ticker tf = do
     let aUri = accessURI ticker
     manager <- N.newManager N.tlsManagerSettings
     uri <- maybe (throwIO $ userError "access uri parse error") pure $ N.parseURIReference aUri
-    response <- MatsuiCoJp.WebBot.fetchPage manager customHeader Nothing [] uri
+    response <- GenBroker.fetchPage manager customHeader Nothing [] uri
     --
     let body = N.responseBody response
     either (throwIO . userError) pure $
@@ -186,7 +184,7 @@ runWebCrawlingPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
 runWebCrawlingPortfolios conf = do
     limitTm <- M.liftIO $ diffTime <$> Tm.getCurrentTime
     -- 前回の更新から一定時間以上経過した更新対象のリストを得る
-    ws <- M.liftIO . runStderrLoggingT . MT.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    ws <- M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         DB.selectList ([PortfolioUpdateAt ==. Nothing] ||. [PortfolioUpdateAt <=. Just limitTm]) []
 
@@ -254,7 +252,7 @@ runWebCrawlingPortfolios conf = do
                         -> DB.Entity Portfolio
                         -> C.Source m TL.Text
     updateTimeAndSales tf (DB.Entity wKey wVal) =
-        M.liftIO . runStderrLoggingT . MT.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+        M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             -- インターネットから株価情報を取得する
             (caption, ohlcvts) <- M.liftIO $ fetchStockPrices conf (portfolioTicker wVal) tf

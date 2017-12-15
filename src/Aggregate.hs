@@ -36,7 +36,7 @@ module Aggregate
 import qualified Control.Arrow                as A
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
-import           Control.Monad.Logger
+import qualified Control.Monad.Logger         as ML
 import qualified Control.Monad.Trans.Resource as MR
 import           Data.Conduit                 (($$), ($=))
 import qualified Data.Conduit                 as C
@@ -61,10 +61,7 @@ import qualified Safe
 import           Conf
 import qualified Lib
 import           Model
-import           TechnicalIndicators          (TechnicalInds (..))
 import qualified TechnicalIndicators          as TI
-import           TickerSymbol                 as Import
-import           TimeFrame                    as Import
 
 -- |
 -- UTCの日付時間のうち、日本時間の日付のみ比較
@@ -121,7 +118,7 @@ aggregateOfOHLCVT decide serials@(first:_) =
 -- 1時間足を日足にする集計処理
 aggregate :: MySQL.ConnectInfo -> TickerSymbol -> IO ()
 aggregate connInfo tickerSymbol =
-    runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         -- 最新の日足を取り出す
         latestDaily <- DB.selectFirst
@@ -167,7 +164,7 @@ queryIndicatorsDesc :: MySQL.ConnectInfo
                     -> TechnicalInds
                     -> IO [(DB.Entity Ohlcvt, Double)]
 queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator =
-    runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         E.select $
             E.from $ \(ohlcvt `E.InnerJoin` ti) -> do
@@ -215,7 +212,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
         -- データーベースに入れる
         prevItem <- queryPrevItem
         let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
-        runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+        ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             M.mapM_ (DB.insert . uncurry packTI) $ takeWhile (isNewEntry prevAt . fst) macd
     --
@@ -234,7 +231,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
                         Just sd -> TI.ema sigP sd
         let macdSig = uncurry zip . A.second formula . unzip $ entAndMacd
         -- データーベースに入れる
-        runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+        ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             M.mapM_ (DB.insert . uncurry packTI) $ takeWhile (isNewEntry prevAt . fst) macdSig
     --
@@ -247,7 +244,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
         prevItem <- queryPrevItem
         let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
         let prevVal = snd <$> prevItem
-        runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+        ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             -- 計算に必要な値を取り出す
             let filt =  [ OhlcvtTicker  ==. tickerSymbol
@@ -324,7 +321,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
 runAggregateOfPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
 runAggregateOfPortfolios conf = do
     -- 処理対象銘柄の数
-    counts <- M.liftIO . runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    counts <- M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         DB.count ([] :: [DB.Filter Portfolio])
 
@@ -334,7 +331,7 @@ runAggregateOfPortfolios conf = do
         x -> "集計処理の対象銘柄は全部で" <> TB.decimal x <> "個有ります。"
 
     -- 処理対象銘柄のリストを得る
-    ps  <- M.liftIO . runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    ps  <- M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         map DB.entityVal <$> DB.selectList [] [DB.Asc PortfolioId]
 
