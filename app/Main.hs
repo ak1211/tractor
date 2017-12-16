@@ -111,7 +111,7 @@ batchProcessThread conf jstDay =
 announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
 announceWeekdayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, MatsuiCoJp.Broker.reportSecuritiesAnnounce conf)
+        [(t, MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement conf)
         | t<-Scheduling.announceWeekdayTimeInJST jstDay
         ]
 
@@ -180,7 +180,7 @@ tradingTimeThread conf times =
     reportJobs =
         -- 資産取得の実行より1分遅らせる仕掛け
         map (timedelta 60 . Scheduling.packZonedTimeJob)
-        [ (t, MatsuiCoJp.Broker.reportCurrentAssets conf)     -- 現在資産評価額報告関数
+        [ (t, MatsuiCoJp.Broker.noticeOfCurrentAssets conf)     -- 現在資産評価額報告関数
         | t<-Lib.every (Conf.sendReportInterval conf * 60) times
         ]
     -- |
@@ -204,7 +204,7 @@ applicationBody cmdLineOpts conf =
         toSlack (Conf.slack conf) Lib.greetingsMessage
 
 --        M.runResourceT . MatsuiCoJp.Broker.siteConn conf $ \sess -> MatsuiCoJp.Broker.fetchPriceToStore conf sess
-        MatsuiCoJp.Broker.reportCurrentAssets conf
+        MatsuiCoJp.Broker.noticeOfCurrentAssets conf
         --
         -- メインループ
         --

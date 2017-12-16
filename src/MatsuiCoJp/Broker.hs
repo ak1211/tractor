@@ -35,9 +35,9 @@ Portability :  POSIX
 {-# LANGUAGE TypeFamilies          #-}
 module MatsuiCoJp.Broker
     ( siteConn
-    , reportSecuritiesAnnounce
+    , noticeOfBrokerageAnnouncement
     , fetchPriceToStore
-    , reportCurrentAssets
+    , noticeOfCurrentAssets
     , SellOrderSet (..)
     , sellStock
     ) where
@@ -120,8 +120,8 @@ siteConn conf f =
 
 -- |
 -- Slackへお知らせを送るついでに現在資産評価をDBへ
-reportSecuritiesAnnounce :: Conf.Info -> IO ()
-reportSecuritiesAnnounce conf =
+noticeOfBrokerageAnnouncement :: Conf.Info -> IO ()
+noticeOfBrokerageAnnouncement conf =
     MR.runResourceT . siteConn conf $ \session -> do
         -- ホーム -> お知らせを見に行く
         fha <- MatsuiCoJp.Broker.fetchFraHomeAnnounce session
@@ -138,8 +138,8 @@ reportSecuritiesAnnounce conf =
 
 -- |
 -- DBから最新の資産評価を取り出してSlackへレポートを送る
-reportCurrentAssets :: Conf.Info -> IO ()
-reportCurrentAssets conf = do
+noticeOfCurrentAssets :: Conf.Info -> IO ()
+noticeOfCurrentAssets conf = do
     -- 今日の前場開始時間
     openingTime <- Tm.zonedTimeToUTC
                     . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
