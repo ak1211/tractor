@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5d5ea9b7638a69ff1bd44c441804975b02c154ac3e5d82780197b9f23eb1bb23
+-- hash: e80c3e5e3b72f89920b51d49060f1997ad975b12ef2a4c9403ddb87737435269
 
 name:           tractor
 version:        0.3.0.0
@@ -61,6 +61,7 @@ library
     , xml-conduit
   exposed-modules:
       Aggregate
+      BrokerBackend
       Conf
       GenBroker
       Lib

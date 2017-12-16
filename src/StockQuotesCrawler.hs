@@ -27,8 +27,9 @@ Portability :  POSIX
 WEBスクレイピングしてきた株式情報を
 MariaDBデータベースに入れる
 -}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module StockQuotesCrawler
     ( runWebCrawlingPortfolios
     ) where
@@ -64,8 +65,8 @@ import qualified Text.XML                     as X
 import           Text.XML.Cursor              (($//), (&/))
 import qualified Text.XML.Cursor              as X
 
+import qualified BrokerBackend                as BB
 import           Conf
-import qualified GenBroker
 import qualified Lib
 import           Model
 
@@ -148,17 +149,18 @@ kdbcomScreenScraper ticker tf sourceName html = do
 -- インターネット上の株価情報を取りに行く関数
 fetchStockPrices :: Conf.Info -> TickerSymbol -> TimeFrame -> IO (Maybe T.Text, [Ohlcvt])
 fetchStockPrices conf ticker tf = do
-    -- HTTPリクエストヘッダ
-    let customHeader = Lib.httpRequestHeader conf
     let aUri = accessURI ticker
     manager <- N.newManager N.tlsManagerSettings
     uri <- maybe (throwIO $ userError "access uri parse error") pure $ N.parseURIReference aUri
-    response <- GenBroker.fetchPage manager customHeader Nothing [] uri
+    response <- BB.fetchPage manager customHeader Nothing [] uri
     --
     let body = N.responseBody response
     either (throwIO . userError) pure $
         kdbcomScreenScraper ticker tf (Just $ T.pack aUri) body
     where
+    -- |
+    -- HTTPリクエストヘッダ
+    customHeader = Lib.httpRequestHeader $ Conf.userAgent (conf::Conf.Info)
     -- |
     -- アクセスURI
     accessURI :: TickerSymbol -> String

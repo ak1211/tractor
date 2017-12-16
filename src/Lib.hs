@@ -43,8 +43,6 @@ import qualified Data.Text.Lazy             as TL
 import qualified Data.Time                  as Tm
 import qualified Network.HTTP.Types.Header  as N
 
-import qualified Conf
-
 -- |
 -- 起動時の挨拶文
 greetingsMessage :: TL.Text
@@ -67,12 +65,12 @@ tzJST =
 
 -- |
 -- HTTPリクエストヘッダ
-httpRequestHeader :: Conf.Info -> [N.Header]
-httpRequestHeader conf =
+httpRequestHeader :: String -> [N.Header]
+httpRequestHeader ua =
     [ (N.hAccept, "text/html, text/plain, text/css")
     , (N.hAcceptCharset, "UTF-8")
     , (N.hAcceptLanguage, "ja, en;q=0.5")
-    , (N.hUserAgent, BL8.toStrict $ BL8.pack $ Conf.userAgent conf)
+    , (N.hUserAgent, BL8.toStrict $ BL8.pack ua)
     ]
 
 -- |

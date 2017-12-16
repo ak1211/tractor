@@ -26,6 +26,7 @@ Portability :  POSIX
 
 証券会社とやり取りするモジュールです。
 -}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
@@ -36,8 +37,8 @@ Portability :  POSIX
 module MatsuiCoJp.Broker
     ( siteConn
     , noticeOfBrokerageAnnouncement
-    , fetchPriceToStore
     , noticeOfCurrentAssets
+    , fetchUpdatedPriceAndStore
     , SellOrderSet (..)
     , sellStock
     ) where
@@ -52,7 +53,6 @@ import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy.Char8   as BL8
-import           Data.Conduit                 (($$), ($=))
 import qualified Data.Conduit                 as C
 import qualified Data.Conduit.List            as CL
 import qualified Data.List                    as List
@@ -70,34 +70,19 @@ import qualified Text.HTML.TagSoup            as TS
 import qualified Text.HTML.TagSoup.Tree       as TS
 import qualified Text.Printf                  as Printf
 
+import qualified BrokerBackend                as BB
 import qualified Conf
-import qualified GenBroker
 import qualified Lib
 import           MatsuiCoJp.Model
 import qualified MatsuiCoJp.Scraper
 import qualified SinkSlack                    as Slack
 
---fetchBroker'sNotification = undefined
-
--- |
--- レポートをsinkSlackで送信する形式に変換する関数
-reportMsg :: M.MonadIO m => Conf.Info -> C.Conduit Slack.Report m Slack.WebHook
-reportMsg = Slack.reportMsg . Conf.slack
-
--- |
--- 組み立てられたメッセージをConf.Infoで指定されたSlackへ送る関数
-sinkSlack :: Conf.Info -> C.Sink Slack.WebHook IO ()
-sinkSlack = Slack.sink . Conf.slack
-
--- |
--- テキストメッセージをsinkSlackで送信する形式に変換する関数
-simpleTextMsg :: M.MonadIO m => Conf.Info -> C.Conduit TL.Text m Slack.WebHook
-simpleTextMsg = Slack.simpleTextMsg . Conf.slack
-
 -- |
 -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
-siteConn :: (Monad m, M.MonadTrans t, MR.MonadResource (t m)) =>
-              Conf.Info -> (GenBroker.HTTPSession -> m b) -> t m b
+siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
+            => Conf.InfoMatsuiCoJp
+            -> (BB.HTTPSession -> m b)
+            -> t m b
 siteConn conf f =
     MR.allocate login' logout
     >>= (\(_,session) -> M.lift $ f session)
@@ -120,15 +105,21 @@ siteConn conf f =
 
 -- |
 -- Slackへお知らせを送るついでに現在資産評価をDBへ
-noticeOfBrokerageAnnouncement :: Conf.Info -> IO ()
-noticeOfBrokerageAnnouncement conf =
-    MR.runResourceT . siteConn conf $ \session -> do
+noticeOfBrokerageAnnouncement   :: M.MonadIO m
+                                => MySQL.ConnectInfo
+                                -> Conf.InfoMatsuiCoJp
+                                -> C.Source m TL.Text
+noticeOfBrokerageAnnouncement connInfo conf = do
+    r <- M.liftIO
+            . MR.runResourceT
+            . siteConn conf $ \session -> do
         -- ホーム -> お知らせを見に行く
         fha <- MatsuiCoJp.Broker.fetchFraHomeAnnounce session
         -- 現在資産評価を証券会社のサイトから取得してDBへ
-        fetchPriceToStore conf session
-        -- Slackへお知らせを送る
-        C.yield (text fha) $= simpleTextMsg conf $$ sinkSlack conf
+        fetchUpdatedPriceAndStore connInfo session
+        return (text fha)
+    -- Slackへお知らせを送る
+    C.yield r
     where
     text v =
         TL.unlines $
@@ -138,16 +129,16 @@ noticeOfBrokerageAnnouncement conf =
 
 -- |
 -- DBから最新の資産評価を取り出してSlackへレポートを送る
-noticeOfCurrentAssets :: Conf.Info -> IO ()
-noticeOfCurrentAssets conf = do
+noticeOfCurrentAssets   :: M.MonadIO m
+                        => MySQL.ConnectInfo
+                        -> C.Source m Slack.Report
+noticeOfCurrentAssets connInfo = do
     -- 今日の前場開始時間
-    openingTime <- Tm.zonedTimeToUTC
-                    . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
-                        (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
-                    . Tm.utcToZonedTime Lib.tzJST
-                    <$> Tm.getCurrentTime
+    openingTime <- todayOpeningTime <$> M.liftIO Tm.getCurrentTime
     -- データーベースの内容からレポートを作る
-    r <- ML.runNoLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    rpt <- M.liftIO
+            . ML.runNoLoggingT . MR.runResourceT
+            . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateMatsuiCoJp
         --
         yesterday <- takeBeforeAsset openingTime
@@ -157,8 +148,16 @@ noticeOfCurrentAssets conf = do
                     (latest :: Maybe (DB.Entity MatsuicojpAsset))
         return $ Maybe.maybeToList (report ::Maybe Slack.Report)
     -- Slackへレポートを送る
-    CL.sourceList r $= reportMsg conf $$ sinkSlack conf
+    CL.sourceList rpt
     where
+    -- |
+    -- 今日の前場開始時間
+    todayOpeningTime :: Tm.UTCTime -> Tm.UTCTime
+    todayOpeningTime =
+        Tm.zonedTimeToUTC
+        . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
+            (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
+        . Tm.utcToZonedTime Lib.tzJST
     -- |
     -- レポートを作る関数
     makeReport yesterday (DB.Entity key asset) = do
@@ -203,23 +202,13 @@ noticeOfCurrentAssets conf = do
     allAsset :: MatsuicojpAsset -> Double
     allAsset a =
         matsuicojpAssetEvaluation a + realToFrac (matsuicojpAssetCash a)
-    --
-    --
-    connInfo :: MySQL.ConnectInfo
-    connInfo =
-        let mdb = Conf.mariaDB conf in
-        MySQL.defaultConnectInfo
-            { MySQL.connectHost = Conf.host mdb
-            , MySQL.connectPort = Conf.port mdb
-            , MySQL.connectUser = Conf.user mdb
-            , MySQL.connectPassword = Conf.password mdb
-            , MySQL.connectDatabase = Conf.database mdb
-            }
 
 -- |
 -- 現在資産評価を証券会社のサイトから取得してDBへ
-fetchPriceToStore :: Conf.Info -> GenBroker.HTTPSession -> IO ()
-fetchPriceToStore conf session = do
+fetchUpdatedPriceAndStore   :: MySQL.ConnectInfo
+                            -> BB.HTTPSession
+                            -> IO ()
+fetchUpdatedPriceAndStore connInfo session = do
     -- 株式取引 -> 現物売を見に行く
     sell <- MatsuiCoJp.Broker.fetchFraStkSell session
     -- 資産状況 -> 余力情報を見に行く
@@ -266,18 +255,6 @@ fetchPriceToStore conf session = do
         , matsuicojpStockPurchase   = MatsuiCoJp.Scraper.hsPurchasePrice hs
         , matsuicojpStockPrice      = MatsuiCoJp.Scraper.hsPrice hs
         }
-    --
-    --
-    connInfo :: MySQL.ConnectInfo
-    connInfo =
-        let mdb = Conf.mariaDB conf in
-        MySQL.defaultConnectInfo
-            { MySQL.connectHost = Conf.host mdb
-            , MySQL.connectPort = Conf.port mdb
-            , MySQL.connectUser = Conf.user mdb
-            , MySQL.connectPassword = Conf.password mdb
-            , MySQL.connectDatabase = Conf.database mdb
-            }
 
 -- |
 -- formのactionを実行する関数
@@ -308,9 +285,9 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
                                 $ uncurry (List.zipWith chooseDefaultOrCustomReq)
                                 $ List.unzip defaultPostReqBody
             -- POSTリクエストを送信するURL
-            let postActionURL = GenBroker.toAbsoluteURI pageURI =<< fmAction
+            let postActionURL = BB.toAbsoluteURI pageURI =<< fmAction
             -- フォームのaction属性ページへアクセス
-            M.mapM (GenBroker.fetchPage manager reqHeader cookie postReqBody) (postActionURL :: Maybe N.URI)
+            M.mapM (BB.fetchPage manager reqHeader cookie postReqBody) (postActionURL :: Maybe N.URI)
         _ -> return Nothing
     --
     --
@@ -372,61 +349,63 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
 
 -- |
 -- HTTPセッション中にformのactionを実行する関数
-doPostActionOnSession   :: GenBroker.HTTPSession
+doPostActionOnSession   :: BB.HTTPSession
                         -> [(B8.ByteString, B8.ByteString)]
                         -> TL.Text
                         -> IO (Maybe (N.Response BL8.ByteString))
 doPostActionOnSession s customPostReq =
-    doPostAction (GenBroker.sManager s) (GenBroker.sReqHeaders s) (Just $ GenBroker.sRespCookies s) customPostReq (GenBroker.sLoginPageURI s)
+    doPostAction (BB.sManager s) (BB.sReqHeaders s) (Just $ BB.sRespCookies s) customPostReq (BB.sLoginPageURI s)
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
-login :: Conf.Info -> N.URI -> IO (Maybe GenBroker.HTTPSession)
+login :: Conf.InfoMatsuiCoJp -> N.URI -> IO (Maybe BB.HTTPSession)
 login conf loginUri = do
-    -- HTTPリクエストヘッダ
-    let reqHeader = [ (N.hAccept, "text/html, text/plain, text/css")
-                    , (N.hAcceptCharset, "UTF-8")
-                    , (N.hAcceptLanguage, "ja, en;q=0.5")
-                    , (N.hUserAgent, BL8.toStrict $ BL8.pack $ Conf.userAgent conf) ]
-    -- ログインID&パスワード
-    let customPostReq = [ ("clientCD", B8.pack $ Conf.loginID conf)
-                        , ("passwd", B8.pack $ Conf.loginPassword conf)
-                        ]
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセス
-    loginPageBody <- GenBroker.takeBodyFromResponse <$> GenBroker.fetchPage manager reqHeader Nothing [] loginUri
+    loginPageBody <- BB.takeBodyFromResponse
+                        <$> BB.fetchPage manager reqHeader Nothing [] loginUri
     -- ログインページでID&パスワードをsubmit
     resp <- doPostAction manager reqHeader Nothing customPostReq loginUri loginPageBody
-    let session = mkSession manager reqHeader <$> resp
+    let session = mkSession manager <$> resp
     return session
     where
     -- |
+    -- HTTPリクエストヘッダ
+    reqHeader =
+        Lib.httpRequestHeader $ Conf.userAgent (conf::Conf.InfoMatsuiCoJp)
+    -- |
+    -- ログインID&パスワード
+    customPostReq =
+        [ ("clientCD", B8.pack $ Conf.loginID conf)
+        , ("passwd", B8.pack $ Conf.loginPassword conf)
+        ]
+    -- |
     -- 返値組み立て
-    mkSession manager reqHeader resp =
-        GenBroker.HTTPSession
-            { GenBroker.sLoginPageURI = loginUri
-            , GenBroker.sManager      = manager
-            , GenBroker.sReqHeaders   = reqHeader
-            , GenBroker.sRespCookies  = N.responseCookieJar resp
-            , GenBroker.sTopPageHTML  = GenBroker.takeBodyFromResponse resp
+    mkSession manager resp =
+        BB.HTTPSession
+            { BB.sLoginPageURI = loginUri
+            , BB.sManager      = manager
+            , BB.sReqHeaders   = reqHeader
+            , BB.sRespCookies  = N.responseCookieJar resp
+            , BB.sTopPageHTML  = BB.takeBodyFromResponse resp
             }
 
 -- |
 -- fetchPage関数の相対リンク版
-fetchInRelativePath :: GenBroker.HTTPSession -> TL.Text -> IO (N.Response BL8.ByteString)
+fetchInRelativePath :: BB.HTTPSession -> TL.Text -> IO (N.Response BL8.ByteString)
 fetchInRelativePath session relativePath = do
-    uri <- case GenBroker.toAbsoluteURI (GenBroker.sLoginPageURI session) relativePath of
+    uri <- case BB.toAbsoluteURI (BB.sLoginPageURI session) relativePath of
         Nothing -> throwIO $ userError "link url is not valid"
         Just x  -> return x
-    let cookies = case N.destroyCookieJar $ GenBroker.sRespCookies session of
+    let cookies = case N.destroyCookieJar $ BB.sRespCookies session of
                     []-> Nothing
-                    _  -> Just (GenBroker.sRespCookies session)
-    GenBroker.fetchPage (GenBroker.sManager session) (GenBroker.sReqHeaders session) cookies [] uri
+                    _  -> Just (BB.sRespCookies session)
+    BB.fetchPage (BB.sManager session) (BB.sReqHeaders session) cookies [] uri
 
 -- |
 -- リンクをクリックする関数
-clickLinkText :: GenBroker.HTTPSession -> TL.Text -> [TL.Text] -> IO [TL.Text]
+clickLinkText :: BB.HTTPSession -> TL.Text -> [TL.Text] -> IO [TL.Text]
 clickLinkText session linkText htmls =
     M.mapM fetch linkPaths
     where
@@ -434,7 +413,7 @@ clickLinkText session linkText htmls =
     linkPaths = Maybe.mapMaybe (lookup linkText . getPageCaptionAndLink) htmls
     --
     fetch relativePath =
-        GenBroker.takeBodyFromResponse <$> fetchInRelativePath session relativePath
+        BB.takeBodyFromResponse <$> fetchInRelativePath session relativePath
 
 -- |
 -- GM / LMページからリンクテキストとリンクのタプルを取り出す関数
@@ -450,7 +429,7 @@ getPageCaptionAndLink html =
 
 -- |
 -- targetのフレームを処理する
-dispatchFrameSet    :: GenBroker.HTTPSession
+dispatchFrameSet    :: BB.HTTPSession
                     -> [TL.Text]
                     -> (TL.Text, [TL.Text] -> IO [TL.Text])
                     -> IO [TL.Text]
@@ -465,7 +444,7 @@ dispatchFrameSet session htmls (targetFrmName, action) =
             case List.lookup targetFrmName frames of
                 Nothing -> return []
                 Just linkPath -> do
-                    html <- GenBroker.takeBodyFromResponse <$> fetchInRelativePath session linkPath
+                    html <- BB.takeBodyFromResponse <$> fetchInRelativePath session linkPath
                     r <- action [html]
                     s <- dispatchFrameSet session hs (targetFrmName, action)
                     return (r ++ s)
@@ -482,10 +461,10 @@ dispatchFrameSet session htmls (targetFrmName, action) =
 -- スクレイピングに失敗した場合の例外送出
 failureAtScraping :: M.MonadIO m => TL.Text -> m a
 failureAtScraping =
-    M.liftIO . throwIO . GenBroker.UnexpectedHTMLException . TL.unpack
+    M.liftIO . throwIO . BB.UnexpectedHTMLException . TL.unpack
 
 type Scraper a      = ([TL.Text] -> Either TL.Text a)
-type ClickAction    = (GenBroker.HTTPSession -> [TL.Text] -> IO [TL.Text])
+type ClickAction    = (BB.HTTPSession -> [TL.Text] -> IO [TL.Text])
 type PathOfContents = [(TL.Text, ClickAction)]
 
 data ScrapingSet a  = ScrapingSet (Scraper a) PathOfContents
@@ -535,7 +514,7 @@ setSellStock order =
 
 --- |
 -- サイトから目的のページをスクレイピングする関数
-fetchSomethingPage  :: GenBroker.HTTPSession
+fetchSomethingPage  :: BB.HTTPSession
                     -> ScrapingSet a
                     -> IO a
 fetchSomethingPage session (ScrapingSet scraper pathes) =
@@ -547,27 +526,27 @@ fetchSomethingPage session (ScrapingSet scraper pathes) =
     --
     --
     dispatcher = dispatchFrameSet session
-    seed = [GenBroker.sTopPageHTML session]
+    seed = [BB.sTopPageHTML session]
     specificPaths = map (A.second ($ session)) pathes
 
 -- |
 -- ログアウトする関数
-logout :: GenBroker.HTTPSession -> IO ()
+logout :: BB.HTTPSession -> IO ()
 logout = M.void . flip fetchSomethingPage setLogout
 
 -- |
 --  "お知らせ"を得る
-fetchFraHomeAnnounce :: GenBroker.HTTPSession -> IO MatsuiCoJp.Scraper.FraHomeAnnounce
+fetchFraHomeAnnounce :: BB.HTTPSession -> IO MatsuiCoJp.Scraper.FraHomeAnnounce
 fetchFraHomeAnnounce = flip fetchSomethingPage setFraHomeAnnounce
 
 -- |
 -- 現在の保有株情報を得る
-fetchFraStkSell :: GenBroker.HTTPSession -> IO MatsuiCoJp.Scraper.FraStkSell
+fetchFraStkSell :: BB.HTTPSession -> IO MatsuiCoJp.Scraper.FraStkSell
 fetchFraStkSell = flip fetchSomethingPage setFraStkSell
 
 -- |
 -- 現在の資産情報を得る
-fetchFraAstSpare :: GenBroker.HTTPSession -> IO MatsuiCoJp.Scraper.FraAstSpare
+fetchFraAstSpare :: BB.HTTPSession -> IO MatsuiCoJp.Scraper.FraAstSpare
 fetchFraAstSpare = flip fetchSomethingPage setFraAstSpare
 
 -- |
@@ -581,13 +560,13 @@ data SellOrderSet = SellOrderSet
 
 -- |
 --  売り注文を出す関数
-sellStock :: GenBroker.HTTPSession -> SellOrderSet -> IO MatsuiCoJp.Scraper.OrderConfirmed
+sellStock :: BB.HTTPSession -> SellOrderSet -> IO MatsuiCoJp.Scraper.OrderConfirmed
 sellStock session order =
     fetchSomethingPage session (setSellStock order)
 
 --
 --
-doSellOrder :: SellOrderSet -> GenBroker.HTTPSession -> [TL.Text] -> IO [TL.Text]
+doSellOrder :: SellOrderSet -> BB.HTTPSession -> [TL.Text] -> IO [TL.Text]
 doSellOrder order session orderPage =
     clickSellOrderLink order orderPage
     >>= slowly >>= submitSellOrderPage order
@@ -606,15 +585,15 @@ doSellOrder order session orderPage =
         let eqCode = (==) (osCode os) . MatsuiCoJp.Scraper.hsCode
         sellOrderUri <- case List.find eqCode $ MatsuiCoJp.Scraper.fsStocks fss of
             Nothing ->
-                throwIO . GenBroker.DontHaveStocksToSellException .
+                throwIO . BB.DontHaveStocksToSellException .
                 Printf.printf "証券コード%dの株式を所有してないので売れません" $ osCode os
             Just stock -> pure (MatsuiCoJp.Scraper.hsSellOrderUrl stock)
         -- 売り注文ページを読み込む
         sellOrderPage <- case sellOrderUri of
             Nothing ->
-                throwIO . GenBroker.UnexpectedHTMLException .
+                throwIO . BB.UnexpectedHTMLException .
                 Printf.printf "証券コード%dの株式注文ページに行けません" $ osCode os
-            Just uri -> GenBroker.takeBodyFromResponse <$> fetchInRelativePath session uri
+            Just uri -> BB.takeBodyFromResponse <$> fetchInRelativePath session uri
         return [sellOrderPage]
     --
     --
@@ -639,9 +618,9 @@ doSellOrder order session orderPage =
         -- 売り注文ページのフォームを提出する
         doPostActionOnSession session customPostReq html
         >>= \case
-            Nothing -> M.liftIO . throwIO . GenBroker.UnexpectedHTMLException $
+            Nothing -> M.liftIO . throwIO . BB.UnexpectedHTMLException $
                         Printf.printf "証券コード%dの注文確認ページに行けません" (osCode os)
-            Just r -> return [GenBroker.takeBodyFromResponse r]
+            Just r -> return [BB.takeBodyFromResponse r]
     --
     --
     submitConfirmPage :: SellOrderSet -> [TL.Text] -> IO [TL.Text]
@@ -656,7 +635,7 @@ doSellOrder order session orderPage =
         -- 注文確認ページのフォームを提出する
         doPostActionOnSession session customPostReq html
         >>= \case
-            Nothing -> M.liftIO . throwIO . GenBroker.UnexpectedHTMLException $
+            Nothing -> M.liftIO . throwIO . BB.UnexpectedHTMLException $
                         Printf.printf "証券コード%dの注文終了ページに行けません" (osCode os)
-            Just r -> return [GenBroker.takeBodyFromResponse r]
+            Just r -> return [BB.takeBodyFromResponse r]
 

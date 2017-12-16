@@ -1,5 +1,6 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module ConfSpec (spec) where
 
 import qualified Data.Either as Either
@@ -14,15 +15,12 @@ testConfFilePath = "test/conf.test.json"
 --
 -- テストファイルの内容
 confInfo = Info
-    { recordAssetsInterval = 10
-    , sendReportInterval = 20
-    , loginURL  = "enter loginURL"
-    , loginID   = "enter loginID"
-    , loginPassword = "enter loginPassword"
-    , dealingsPassword = "enter dealingsPassword"
+    { updatePriceMinutes = 10
+    , noticeAssetsMinutes = 20
     , userAgent = "enter userAgent"
     , slack = confInfoSlack
     , mariaDB = confInfoMariaDB
+    , matsuiCoJp = confInfoMatsuiCoJp
     }
 
 confInfoSlack = InfoSlack
@@ -37,6 +35,15 @@ confInfoMariaDB = InfoMariaDB
     , user     = "enter user"
     , password = "enter password"
     , database = "stockdb"
+    }
+
+confInfoMatsuiCoJp = InfoMatsuiCoJp
+    { enabled  = True
+    , loginURL  = "enter loginURL"
+    , loginID   = "enter loginID"
+    , loginPassword = "enter loginPassword"
+    , dealingsPassword = "enter dealingsPassword"
+    , userAgent = "enter userAgent"
     }
 
 --

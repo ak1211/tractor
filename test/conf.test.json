@@ -1,10 +1,6 @@
 {
-    "recordAssetsInterval"  : 10,
-    "sendReportInterval"    : 20,
-    "loginURL"              : "enter loginURL",
-    "loginID"               : "enter loginID",
-    "loginPassword"         : "enter loginPassword",
-    "dealingsPassword"      : "enter dealingsPassword",
+    "updatePriceMinutes"    : 10,
+    "noticeAssetsMinutes"   : 20,
     "userAgent"             : "enter userAgent",
     "slack" : {
         "webHookURL"    : "enter webHookURL",
@@ -17,6 +13,14 @@
         "user"      : "enter user",
         "password"  : "enter password",
         "database"  : "stockdb"
+    },
+    "matsuiCoJp" : {
+        "enabled"           : true,
+        "loginURL"          : "enter loginURL",
+        "loginID"           : "enter loginID",
+        "loginPassword"     : "enter loginPassword",
+        "dealingsPassword"  : "enter dealingsPassword",
+        "userAgent"         : "enter userAgent"
     }
 }
 

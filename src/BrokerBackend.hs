@@ -15,8 +15,8 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  GenBroker
-Description :  generic broker
+Module      :  BrokerBackend
+Description :  broker backend
 Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -32,9 +32,8 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module GenBroker
-    ( GenBroker (..)
-    , HTTPSession (..)
+module BrokerBackend
+    ( HTTPSession (..)
     , UnexpectedHTMLException (..)
     , DontHaveStocksToSellException (..)
     , fetchPage
@@ -67,18 +66,8 @@ import           Text.Parsec                  ((<|>))
 import qualified Text.Parsec                  as P
 import qualified Text.Parsec.ByteString.Lazy  as P
 
-import           Conf
+import qualified Conf
 import           Model
-
--- |
--- 型クラス
-class GenBroker a where
-    --
-    --
-    fetchPriceToStore :: a -> IO ()
-    --
-    --
-    report :: a -> IO ()
 
 -- |
 -- HTTP / HTTPSセッション情報

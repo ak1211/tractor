@@ -45,13 +45,15 @@ import qualified Data.Text.Lazy.Builder       as TB
 import qualified Data.Text.Lazy.IO            as TL
 import qualified Data.Time                    as Tm
 import qualified Data.Time.Calendar.WeekDate  as Tm
+import qualified Database.Persist.MySQL       as MySQL
 import qualified Options.Applicative          as Opt
 
 import qualified Aggregate
+import qualified BrokerBackend                as BB
 import qualified Conf
-import qualified GenBroker                    as Broker
 import qualified Lib
-import qualified MatsuiCoJp.Broker
+--import qualified MatsuiCoJp.Broker
+import qualified GenBroker as Broker
 import qualified Scheduling
 import qualified SinkSlack                    as Slack
 import qualified StockQuotesCrawler           as Q
@@ -111,9 +113,22 @@ batchProcessThread conf jstDay =
 announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
 announceWeekdayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement conf)
-        | t<-Scheduling.announceWeekdayTimeInJST jstDay
-        ]
+        [(t, act) | t<-Scheduling.announceWeekdayTimeInJST jstDay]
+    where
+    act =
+        Broker.noticeOfBrokerageAnnouncement connInfo (Conf.matsuiCoJp conf) $= simpleTextMsg conf $$ sinkSlack conf
+    --
+    --
+    connInfo :: MySQL.ConnectInfo
+    connInfo =
+        let mdb = Conf.mariaDB conf in
+        MySQL.defaultConnectInfo
+            { MySQL.connectHost = Conf.host mdb
+            , MySQL.connectPort = Conf.port mdb
+            , MySQL.connectUser = Conf.user mdb
+            , MySQL.connectPassword = Conf.password mdb
+            , MySQL.connectDatabase = Conf.database mdb
+            }
 
 -- |
 -- 休日の報告スレッド
@@ -147,22 +162,22 @@ tradingTimeThread conf times =
     --
     -- 実際の作業
     worker =
-        M.runResourceT . MatsuiCoJp.Broker.siteConn conf $ \sess ->
-            Scheduling.execute (fetchPriceJobs sess ++ reportJobs)
+        M.runResourceT . Broker.siteConn (Conf.matsuiCoJp conf)
+            $ \sess -> Scheduling.execute (fetchPriceJobs sess ++ reportJobs)
         `Ex.catches`
         --
         -- ここの例外ハンドラは例外再送出しないので、
         -- 例外処理の後は次のworkerに移る
         --
         -- 例外ハンドラ : 予想外のHTML
-        [ Ex.Handler $ \(Broker.UnexpectedHTMLException ex) ->
+        [ Ex.Handler $ \(BB.UnexpectedHTMLException ex) ->
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) . TB.toLazyText
             $ "予想外のHTML例外 "
             <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
         --
         -- 例外ハンドラ : 未保有株の売却指示
-        , Ex.Handler $ \(Broker.DontHaveStocksToSellException ex) ->
+        , Ex.Handler $ \(BB.DontHaveStocksToSellException ex) ->
             -- Slackへエラーメッセージを送る
             toSlack (Conf.slack conf) . TB.toLazyText
             $ "未保有株の売却指示 "
@@ -172,17 +187,30 @@ tradingTimeThread conf times =
     -- 現在資産取得
     fetchPriceJobs session =
         map Scheduling.packZonedTimeJob
-        [ (t, MatsuiCoJp.Broker.fetchPriceToStore conf session)    -- 現在資産取得関数
-        | t<-Lib.every (Conf.recordAssetsInterval conf * 60) times
+        [ (t, act)
+        | t<-Lib.every (Conf.updatePriceMinutes conf * 60) times
         ]
+        where
+        -- 現在資産取得関数
+        act =
+            Broker.fetchUpdatedPriceAndStore
+                (Conf.connInfoDB $ Conf.mariaDB conf)
+                (Conf.matsuiCoJp conf) session
     -- |
     -- 現在資産評価額報告
     reportJobs =
         -- 資産取得の実行より1分遅らせる仕掛け
         map (timedelta 60 . Scheduling.packZonedTimeJob)
-        [ (t, MatsuiCoJp.Broker.noticeOfCurrentAssets conf)     -- 現在資産評価額報告関数
-        | t<-Lib.every (Conf.sendReportInterval conf * 60) times
+        [ (t, act)
+        | t<-Lib.every (Conf.noticeAssetsMinutes conf * 60) times
         ]
+        where
+        -- 現在資産評価額報告関数
+        act =
+            Broker.noticeOfCurrentAssets
+                (Conf.connInfoDB $ Conf.mariaDB conf)
+                (Conf.matsuiCoJp conf)
+            $= reportMsg conf $$ sinkSlack conf
     -- |
     -- UTC時間の加減算
     timedelta seconds =
@@ -204,7 +232,11 @@ applicationBody cmdLineOpts conf =
         toSlack (Conf.slack conf) Lib.greetingsMessage
 
 --        M.runResourceT . MatsuiCoJp.Broker.siteConn conf $ \sess -> MatsuiCoJp.Broker.fetchPriceToStore conf sess
-        MatsuiCoJp.Broker.noticeOfCurrentAssets conf
+        Broker.noticeOfCurrentAssets
+            (Conf.connInfoDB $ Conf.mariaDB conf)
+            (Conf.matsuiCoJp conf)
+            $= reportMsg conf $$ sinkSlack conf
+
         --
         -- メインループ
         --

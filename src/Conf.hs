@@ -28,10 +28,13 @@ Portability :  POSIX
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Conf
     ( readJSONFile
     , loggingConnInfo
+    , connInfoDB
     , Info (..)
+    , InfoMatsuiCoJp (..)
     , InfoSlack (..)
     , InfoMariaDB (..)
     ) where
@@ -41,19 +44,15 @@ import qualified Data.Aeson.TH          as Aeson
 import qualified Data.ByteString.Lazy   as BSL
 import           Data.Word              (Word16)
 import qualified Database.Persist.MySQL as MySQL
-import qualified Text.Printf            as Printf
 
 -- | アプリケーションの設定情報
 data Info = Info
-    { recordAssetsInterval :: Int
-    , sendReportInterval   :: Int
-    , loginURL             :: String
-    , loginID              :: String
-    , loginPassword        :: String
-    , dealingsPassword     :: String
-    , userAgent            :: String
-    , slack                :: InfoSlack
-    , mariaDB              :: InfoMariaDB
+    { updatePriceMinutes  :: Int
+    , noticeAssetsMinutes :: Int
+    , userAgent           :: String
+    , slack               :: InfoSlack
+    , mariaDB             :: InfoMariaDB
+    , matsuiCoJp          :: InfoMatsuiCoJp
     } deriving Eq
 
 -- | 通知するSlackの設定情報
@@ -72,49 +71,80 @@ data InfoMariaDB = InfoMariaDB
     , database :: String
     } deriving Eq
 
+-- | 証券会社の設定情報
+data InfoMatsuiCoJp = InfoMatsuiCoJp
+    { enabled          :: Bool
+    , loginURL         :: String
+    , loginID          :: String
+    , loginPassword    :: String
+    , dealingsPassword :: String
+    , userAgent        :: String
+    } deriving Eq
+
+
 -- | パスワードを*に置き換える
-hidingPassword :: String -> String
-hidingPassword = map (const '*')
+hiding :: String -> String
+hiding = map (const '*')
 
 -- 型クラスShowのインスタンス
 instance Show Info where
-    show (Info rai sri url lid lpw dpw ua slk mdb) = unlines
-        [ Printf.printf "資産情報取得間隔:%d分" rai
-        , Printf.printf "レポート送信間隔:%d分" sri
-        , Printf.printf "ログインURL:<%s>" url
-        , Printf.printf "ログインID:\"%s\"" $ hidingPassword lid
-        , Printf.printf "パスワード:\"%s\"" $ hidingPassword lpw
-        , Printf.printf "取引パスワード:\"%s\"" $ hidingPassword dpw
-        , Printf.printf "UA:\"%s\"" ua
-        , show slk
-        , show mdb
+    show v = unlines
+        [ "資産情報取得間隔:"   ++ (show $ updatePriceMinutes v) ++ "分"
+        , "レポート送信間隔:"   ++ (show $ noticeAssetsMinutes v) ++ "分"
+        , "UA:\""               ++ (userAgent (v::Info)) ++ "\""
+        , show (slack v)
+        , show (mariaDB v)
+        , show (matsuiCoJp v)
         ]
 
 instance Show InfoSlack where
-    show (InfoSlack url cha un) = unlines
-        [ Printf.printf "Slack Webhook URL:<%s>" $ hidingPassword url
-        , Printf.printf "Slack channel:\"%s\"" cha
-        , Printf.printf "Slack user name:\"%s\"" un
+    show v = unlines
+        [ "Slack Webhook URL:<" ++ (webHookURL v)
+        , "Slack channel:\""    ++ (channel v) ++ "\""
+        , "Slack user name:\""  ++ (userName v) ++ "\""
         ]
 
 instance Show InfoMariaDB where
-    show (InfoMariaDB h pt u pw db) = unlines
-        [ Printf.printf "MariaDB host:\"%s\"" h
-        , Printf.printf "MariaDB port:%d" pt
-        , Printf.printf "MariaDB user:\"%s\"" u
-        , Printf.printf "MariaDB password:\"%s\"" $ hidingPassword pw
-        , Printf.printf "MariaDB database:\"%s\"" db
+    show v = unlines
+        [ "MariaDB host:\""     ++ (host v)  ++ "\""
+        , "MariaDB port:"       ++ (show $ port v)
+        , "MariaDB user:\""     ++ (user v) ++ "\""
+        , "MariaDB password:\"" ++ (hiding $ password v) ++ "\""
+        , "MariaDB database:\"" ++ (database v) ++ "\""
+        ]
+
+instance Show InfoMatsuiCoJp where
+    show v = unlines
+        [ "有効:"               ++ (show $ enabled v)
+        , "ログインURL:<"       ++ (loginURL v) ++ ">"
+        , "ログインID:\""       ++ (hiding $ loginID v) ++ "\""
+        , "パスワード:\""       ++ (hiding $ loginPassword v) ++ "\""
+        , "取引パスワード:\""   ++ (hiding $ dealingsPassword v) ++ "\""
+        , "UA:\""               ++ (userAgent (v::InfoMatsuiCoJp)) ++ "\""
         ]
 
 $(Aeson.deriveJSON Aeson.defaultOptions ''Info)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoSlack)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)
+$(Aeson.deriveJSON Aeson.defaultOptions ''InfoMatsuiCoJp)
 
 -- |
 -- 設定ファイル(json)を読み込む
 readJSONFile :: String -> IO (Either String Info)
 readJSONFile filePath =
     Aeson.eitherDecode <$> BSL.readFile filePath
+
+-- |
+-- MySQLの接続情報
+connInfoDB :: InfoMariaDB -> MySQL.ConnectInfo
+connInfoDB mdb =
+    MySQL.defaultConnectInfo
+        { MySQL.connectHost = Conf.host mdb
+        , MySQL.connectPort = Conf.port mdb
+        , MySQL.connectUser = Conf.user mdb
+        , MySQL.connectPassword = Conf.password mdb
+        , MySQL.connectDatabase = Conf.database mdb
+        }
 
 -- |
 -- ログデーターベース情報
