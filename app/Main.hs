@@ -203,7 +203,7 @@ applicationBody cmdLineOpts conf =
         -- 起動時の挨拶文をSlackへ送る
         toSlack (Conf.slack conf) Lib.greetingsMessage
 
---        MatsuiCoJp.Broker.reportSecuritiesAnnounce conf
+--        M.runResourceT . MatsuiCoJp.Broker.siteConn conf $ \sess -> MatsuiCoJp.Broker.fetchPriceToStore conf sess
         MatsuiCoJp.Broker.reportCurrentAssets conf
         --
         -- メインループ

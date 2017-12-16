@@ -56,7 +56,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateQuotes"] [persistLowerCase|
 Portfolio
     ticker      TickerSymbol        -- ^ ティッカー
     caption     Text Maybe          -- ^ 銘柄名
-    updateAt    UTCTime Maybe       -- ^ 価格情報を取り込んだ日付時間
+    updateAt    UTCTime Maybe   -- ^ 価格情報を取り込んだ日付時間
     deriving Show
 
 -- |
@@ -91,7 +91,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateLogTable"] [persistLowerCase|
 -- HTTP通信記録用データーベース
 -- urlのページにHTTP通信をした時の返答
 Loghttp
-    receivedAt      UTCTime     -- ^ 受信時間
+    receivedAt      UTCTime sqltype=DATETIME(6) -- ^ 受信時間(マイクロ秒精度)
     --
     url             String      -- ^ ページのURL
     scheme          String      -- ^ スキーム
