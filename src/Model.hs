@@ -86,11 +86,11 @@ TechInds
 --
 -- HTTPアクセスログテーブル
 --
-share [mkPersist sqlSettings, mkMigrate "migrateLogTable"] [persistLowerCase|
+share [mkPersist sqlSettings, mkMigrate "migrateAccessLog"] [persistLowerCase|
 -- |
 -- HTTP通信記録用データーベース
 -- urlのページにHTTP通信をした時の返答
-Loghttp
+AccessLog
     receivedAt      UTCTime sqltype=DATETIME(6) -- ^ 受信時間(マイクロ秒精度)
     --
     url             String      -- ^ ページのURL

@@ -20,7 +20,7 @@ confInfo = Info
     , userAgent = "enter userAgent"
     , slack = confInfoSlack
     , mariaDB = confInfoMariaDB
-    , matsuiCoJp = confInfoMatsuiCoJp
+    , matsuiCoJp = Just confInfoMatsuiCoJp
     }
 
 confInfoSlack = InfoSlack
@@ -38,8 +38,7 @@ confInfoMariaDB = InfoMariaDB
     }
 
 confInfoMatsuiCoJp = InfoMatsuiCoJp
-    { enabled  = True
-    , loginURL  = "enter loginURL"
+    { loginURL  = "enter loginURL"
     , loginID   = "enter loginID"
     , loginPassword = "enter loginPassword"
     , dealingsPassword = "enter dealingsPassword"

@@ -52,7 +52,7 @@ data Info = Info
     , userAgent           :: String
     , slack               :: InfoSlack
     , mariaDB             :: InfoMariaDB
-    , matsuiCoJp          :: InfoMatsuiCoJp
+    , matsuiCoJp          :: Maybe InfoMatsuiCoJp
     } deriving Eq
 
 -- | 通知するSlackの設定情報
@@ -73,8 +73,7 @@ data InfoMariaDB = InfoMariaDB
 
 -- | 証券会社の設定情報
 data InfoMatsuiCoJp = InfoMatsuiCoJp
-    { enabled          :: Bool
-    , loginURL         :: String
+    { loginURL         :: String
     , loginID          :: String
     , loginPassword    :: String
     , dealingsPassword :: String
@@ -115,8 +114,7 @@ instance Show InfoMariaDB where
 
 instance Show InfoMatsuiCoJp where
     show v = unlines
-        [ "有効:"               ++ (show $ enabled v)
-        , "ログインURL:<"       ++ (loginURL v) ++ ">"
+        [ "ログインURL:<"       ++ (loginURL v) ++ ">"
         , "ログインID:\""       ++ (hiding $ loginID v) ++ "\""
         , "パスワード:\""       ++ (hiding $ loginPassword v) ++ "\""
         , "取引パスワード:\""   ++ (hiding $ dealingsPassword v) ++ "\""

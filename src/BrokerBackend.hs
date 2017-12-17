@@ -50,9 +50,7 @@ import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy.Char8   as BL8
 import qualified Data.List                    as List
 import qualified Data.Maybe                   as Maybe
-import           Data.Monoid                  ((<>))
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TB
 import qualified Data.Text.Lazy.Encoding      as TE
 import qualified Data.Time                    as Tm
 import qualified Data.Typeable
@@ -80,12 +78,11 @@ data HTTPSession = HTTPSession
     }
 
 instance Show HTTPSession where
-    show (HTTPSession a _ c d e) =
-        TL.unpack . TB.toLazyText $
-        TB.fromString (show a) <> TB.singleton ','<> TB.singleton ' '
-        <> TB.fromString (show c) <> TB.singleton ','<> TB.singleton ' '
-        <> TB.fromString (show d) <> TB.singleton ','<> TB.singleton ' '
-        <> TB.fromString (show e)
+    show sess =
+        show (sLoginPageURI sess)
+        ++ ", " ++ show (sReqHeaders sess)
+        ++ ", " ++ show (sRespCookies sess)
+        ++ ", " ++ TL.unpack (sTopPageHTML sess)
 
 -- |
 -- 実行時例外 : 予想外のHTML
@@ -108,10 +105,10 @@ instance Exception DontHaveStocksToSellException
 
 -- |
 -- ログをデーターベースへ格納する
-storeLogDB :: M.MonadIO m => Loghttp -> m ()
-storeLogDB logMessage = M.liftIO $
+storeAccessLog :: M.MonadIO m => AccessLog -> m ()
+storeAccessLog logMessage = M.liftIO $
     ML.runNoLoggingT . MR.runResourceT . MySQL.withMySQLConn Conf.loggingConnInfo . MySQL.runSqlConn $ do
-        DB.runMigration migrateLogTable
+        DB.runMigration migrateAccessLog
         M.void $ DB.insert logMessage
 
 -- |
@@ -133,7 +130,7 @@ fetchPage manager header cookie reqBody url =
         -- 受信時間
         now <- Tm.getCurrentTime
         -- ログDBへ
-        storeLogDB $ packLoghttp now req responce
+        storeAccessLog $ packLoghttp now req responce
         -- HTTPレスポンスを返却
         return responce
     where
@@ -149,23 +146,23 @@ fetchPage manager header cookie reqBody url =
             body -> N.urlEncodedBody body req
     --
     --
-    packLoghttp receivedAt customReq resp = Loghttp
-        { loghttpReceivedAt     = receivedAt
-        , loghttpUrl            = show url
-        , loghttpScheme         = N.uriScheme url
-        , loghttpUserInfo       = maybe "" N.uriUserInfo $ N.uriAuthority url
-        , loghttpHost           = maybe "" N.uriRegName $ N.uriAuthority url
-        , loghttpPort           = maybe "" N.uriPort $ N.uriAuthority url
-        , loghttpPath           = N.uriPath url
-        , loghttpQuery          = N.uriQuery url
-        , loghttpFragment       = N.uriFragment url
-        , loghttpReqCookie      = show cookie
-        , loghttpReqBody        = show customReq
-        , loghttpRespStatus     = show $ N.responseStatus resp
-        , loghttpRespVersion    = show $ N.responseVersion resp
-        , loghttpRespHeader     = show $ N.responseHeaders resp
-        , loghttpRespCookie     = show . N.destroyCookieJar $ N.responseCookieJar resp
-        , loghttpRespBody       = BL8.toStrict $ N.responseBody resp
+    packLoghttp receivedAt customReq resp = AccessLog
+        { accessLogReceivedAt   = receivedAt
+        , accessLogUrl          = show url
+        , accessLogScheme       = N.uriScheme url
+        , accessLogUserInfo     = maybe "" N.uriUserInfo $ N.uriAuthority url
+        , accessLogHost         = maybe "" N.uriRegName $ N.uriAuthority url
+        , accessLogPort         = maybe "" N.uriPort $ N.uriAuthority url
+        , accessLogPath         = N.uriPath url
+        , accessLogQuery        = N.uriQuery url
+        , accessLogFragment     = N.uriFragment url
+        , accessLogReqCookie    = show cookie
+        , accessLogReqBody      = show customReq
+        , accessLogRespStatus   = show $ N.responseStatus resp
+        , accessLogRespVersion  = show $ N.responseVersion resp
+        , accessLogRespHeader   = show $ N.responseHeaders resp
+        , accessLogRespCookie   = show . N.destroyCookieJar $ N.responseCookieJar resp
+        , accessLogRespBody     = BL8.toStrict $ N.responseBody resp
         }
 
 --

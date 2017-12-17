@@ -146,7 +146,7 @@ noticeOfCurrentAssets connInfo = do
         report <- M.mapM
                     (makeReport yesterday)
                     (latest :: Maybe (DB.Entity MatsuicojpAsset))
-        return $ Maybe.maybeToList (report ::Maybe Slack.Report)
+        return $ Maybe.maybeToList (report :: Maybe Slack.Report)
     -- Slackへレポートを送る
     CL.sourceList rpt
     where
@@ -165,12 +165,12 @@ noticeOfCurrentAssets connInfo = do
         stocks <- takeStocks key
         --
         return Slack.Report
-            { Slack.rTime           = matsuicojpAssetAt asset
-            , Slack.rAllAsset       = allAsset asset
+            { Slack.reportAt            = matsuicojpAssetAt asset
+            , Slack.reportAllAsset      = allAsset asset
             -- 現在値 - 前営業日値
-            , Slack.rAssetDiffByDay = (\y -> allAsset asset - allAsset y) <$> yesterday
-            , Slack.rAllProfit      = matsuicojpAssetProfit asset
-            , Slack.rHoldStocks     = stocks
+            , Slack.reportGrowthToday   = (\y -> allAsset asset - allAsset y) <$> yesterday
+            , Slack.reportAllProfit     = matsuicojpAssetProfit asset
+            , Slack.reportHoldStocks    = stocks
             }
     -- |
     -- DBから最新の資産評価を取り出す
