@@ -15,7 +15,6 @@
         "database"  : "stockdb"
     },
     "matsuiCoJp" : {
-        "enabled"           : true,
         "loginURL"          : "enter loginURL",
         "loginID"           : "enter loginID",
         "loginPassword"     : "enter loginPassword",
