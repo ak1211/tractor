@@ -230,17 +230,6 @@ applicationBody cmdLineOpts conf =
     RunNormal -> do
         -- 起動時の挨拶文をSlackへ送る
         toSlack (Conf.slack conf) Lib.greetingsMessage
-
-        case Conf.matsuiCoJp conf of
-            Nothing -> return ()
-            Just mconf -> do
-                M.runResourceT . Broker.siteConn mconf $ \sess ->
-                    Broker.fetchUpdatedPriceAndStore
-                        (Conf.connInfoDB $ Conf.mariaDB conf) mconf sess
-                Broker.noticeOfCurrentAssets
-                    (Conf.connInfoDB $ Conf.mariaDB conf) mconf
-                    $= reportMsg conf $$ sinkSlack conf
-
         --
         -- メインループ
         --

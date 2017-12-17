@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e80c3e5e3b72f89920b51d49060f1997ad975b12ef2a4c9403ddb87737435269
+-- hash: e821b23b4099077adb064db827fe6dbb0c88836a7dde7c4c9030ddf3f49019a9
 
 name:           tractor
 version:        0.3.0.0
@@ -110,7 +110,7 @@ test-suite tractor-test
   main-is: Spec.hs
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -dynamic -rtsopts -threaded -Wall -with-rtsopts=-N
   build-depends:
       QuickCheck
     , base
@@ -128,6 +128,7 @@ test-suite tractor-test
     , tractor
     , utf8-string
   other-modules:
+      BrokerSpec
       ConfSpec
       Paths_tractor
   default-language: Haskell2010

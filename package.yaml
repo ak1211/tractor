@@ -79,8 +79,10 @@ tests:
     main:               Spec.hs
     source-dirs:        test
     ghc-options:
-    - -threaded
+    - -dynamic
     - -rtsopts
+    - -threaded
+    - -Wall
     - -with-rtsopts=-N
     dependencies:
     - base

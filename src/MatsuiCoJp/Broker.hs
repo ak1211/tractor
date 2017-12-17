@@ -452,7 +452,7 @@ type PathOfContents = [(TL.Text, ClickAction)]
 data ScrapingSet a  = ScrapingSet (Scraper a) PathOfContents
 
 -- |
---  "ログアウト" のページ
+-- "ログアウト" のページ
 setLogout :: ScrapingSet TL.Text
 setLogout =
     ScrapingSet
@@ -460,8 +460,8 @@ setLogout =
         [ ("GM", flip clickLinkText "■ログアウト"), ("CT", const return) ]
 
 -- |
---  "お知らせ"
---  "ホーム" -> "お知らせ" のページ
+-- "お知らせ"
+-- "ホーム" -> "お知らせ" のページ
 setFraHomeAnnounce :: ScrapingSet MatsuiCoJp.Scraper.FraHomeAnnounce
 setFraHomeAnnounce =
     ScrapingSet
@@ -487,14 +487,14 @@ setFraAstSpare =
         [ ("GM", flip clickLinkText "資産状況"), ("LM", flip clickLinkText "余力情報"), ("CT", const return) ]
 
 -- |
---  売り注文を出す関数
+-- 売り注文を出す関数
 setSellStock :: SellOrder -> ScrapingSet MatsuiCoJp.Scraper.OrderConfirmed
 setSellStock order =
     ScrapingSet
         MatsuiCoJp.Scraper.scrapingOrderConfirmed
         [ ("GM", flip clickLinkText "株式取引"), ("LM", flip clickLinkText "現物売"), ("CT", doSellOrder order) ]
 
---- |
+-- |
 -- サイトから目的のページをスクレイピングする関数
 fetchSomethingPage  :: BB.HTTPSession
                     -> ScrapingSet a
@@ -517,7 +517,7 @@ logout :: BB.HTTPSession -> IO ()
 logout = M.void . flip fetchSomethingPage setLogout
 
 -- |
---  "お知らせ"を得る
+-- "お知らせ"を得る
 fetchFraHomeAnnounce :: BB.HTTPSession -> IO MatsuiCoJp.Scraper.FraHomeAnnounce
 fetchFraHomeAnnounce = flip fetchSomethingPage setFraHomeAnnounce
 
@@ -541,7 +541,7 @@ data SellOrder = SellOrder
     }
 
 -- |
---  売り注文を出す関数
+-- 売り注文を出す関数
 sellStock :: BB.HTTPSession -> SellOrder -> IO MatsuiCoJp.Scraper.OrderConfirmed
 sellStock session order =
     fetchSomethingPage session (setSellStock order)
@@ -604,16 +604,16 @@ doSellOrder order session orderPage =
             -- 売り注文ページのフォームを提出する
             doPostActionOnSession session customPostReq firstPage
         --
-        --  売り注文ページのPOSTリクエストを組み立てる
-        --  以下は初期値のまま
-        --  name="orderNari" 成行チェックボックス
-        --  name="execCondCD" 執行条件ラジオボタン
-        --  name="validDt" 有効期間ラジオボタン
+        -- 売り注文ページのPOSTリクエストを組み立てる
+        -- 以下は初期値のまま
+        -- name="orderNari" 成行チェックボックス
+        -- name="execCondCD" 執行条件ラジオボタン
+        -- name="validDt" 有効期間ラジオボタン
         customPostReq =
-            [("orderNominal", B8.pack . show $ sellOrderNominal order)  -- 株数
-            ,("orderPrc", B8.pack . show $ sellOrderPrice order)        -- 値段
-            ,("tyukakuButton.x", "57")                                  -- 注文確認ボタンのクリック位置
-            ,("tyukakuButton.y", "10")                                  -- 注文確認ボタンのクリック位置
+            [ ("orderNominal", B8.pack . show $ sellOrderNominal order) -- 株数
+            , ("orderPrc", B8.pack . show $ sellOrderPrice order)       -- 値段
+            , ("tyukakuButton.x", "57")                                 -- 注文確認ボタンのクリック位置
+            , ("tyukakuButton.y", "10")                                 -- 注文確認ボタンのクリック位置
             ]
     -- |
     -- 注文確認ページに取引暗証番号を入力して送信する
