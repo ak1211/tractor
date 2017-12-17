@@ -197,7 +197,7 @@ tradingTimeThread conf times =
         act =
             Broker.fetchUpdatedPriceAndStore
                 (Conf.connInfoDB $ Conf.mariaDB conf) matsuiCoJp session
--- |
+    -- |
     -- 現在資産評価額報告
     reportJobs matsuiCoJp =
         -- 資産取得の実行より1分遅らせる仕掛け
