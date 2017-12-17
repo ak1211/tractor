@@ -39,10 +39,12 @@ module BrokerBackend
     , fetchPage
     , takeBodyFromResponse
     , toAbsoluteURI
+    , fetchInRelativePath
+    , failureAtScraping
     ) where
 
 import qualified Codec.Text.IConv             as IConv
-import           Control.Exception            (Exception)
+import           Control.Exception            (Exception, throwIO)
 import qualified Control.Monad.Logger         as ML
 import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as MR
@@ -290,4 +292,21 @@ toAbsoluteURI :: N.URI -> TL.Text -> Maybe N.URI
 toAbsoluteURI baseURI href =
     fmap (`N.relativeTo` baseURI) (N.parseURIReference $ TL.unpack href)
 
+-- |
+-- fetchPage関数の相対リンク版
+fetchInRelativePath :: HTTPSession -> TL.Text -> IO (N.Response BL8.ByteString)
+fetchInRelativePath session relativePath = do
+    uri <- case toAbsoluteURI (sLoginPageURI session) relativePath of
+        Nothing -> throwIO $ userError "link url is not valid"
+        Just x  -> return x
+    let cookies = case N.destroyCookieJar $ sRespCookies session of
+                    []-> Nothing
+                    _  -> Just (sRespCookies session)
+    fetchPage (sManager session) (sReqHeaders session) cookies [] uri
+
+-- |
+-- スクレイピングに失敗した場合の例外送出
+failureAtScraping :: M.MonadIO m => String -> m a
+failureAtScraping =
+    M.liftIO . throwIO . UnexpectedHTMLException
 
