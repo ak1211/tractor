@@ -75,52 +75,52 @@ MatsuicojpStock
 |]
 
 -- |
--- 型クラスShowのインスタンス
--- 資産テーブル
-instance Show MatsuicojpAsset where
-    show a =
-        show (matsuicojpAssetAt a)
-        ++ ", "
-        ++ "評価合計 " ++ show (matsuicojpAssetEvaluation a)
-        ++ ", "
-        ++ "損益合計 " ++ show (matsuicojpAssetProfit a)
-        ++ ", "
-        ++ "現物買付余力 " ++ show (matsuicojpAssetMoneySpare a)
-        ++ ", "
-        ++ "現金残高 " ++ show (matsuicojpAssetCashBalance a)
-        ++ ", "
-        ++ "預り増加額 " ++ show (matsuicojpAssetDepositInc a)
-        ++ ", "
-        ++ "預り減少額 " ++ show (matsuicojpAssetDepositDec a)
-        ++ ", "
-        ++ "ボックスレート手数料拘束金 " ++ show (matsuicojpAssetBindingFee a)
-        ++ ", "
-        ++ "源泉徴収税拘束金（仮計算） " ++ show (matsuicojpAssetBindingTax a)
-        ++ ", "
-        ++ "使用可能現金 " ++ show (matsuicojpAssetCash a)
- 
--- |
--- 型クラスShowのインスタンス
--- 保有株式テーブル
-instance Show MatsuicojpStock where
-    show hs =
-        show (matsuicojpStockTicker hs) ++ " " ++ (matsuicojpStockCaption hs)
-        ++ ", "
-        ++ "保有 " ++ show (matsuicojpStockCount hs)
-        ++ ", "
-        ++ "取得 " ++ show (matsuicojpStockPurchase hs)
-        ++ ", "
-        ++ "現在 " ++ show (matsuicojpStockPrice hs)
-        ++ ", "
-        ++ "損益 " ++ show gain
-        where
-        --
-        --
-        delta = matsuicojpStockPrice hs - matsuicojpStockPurchase hs
-        --
-        --
-        gain :: Double
-        gain =
-            realToFrac (matsuicojpStockCount hs) * delta
+-- 資産テーブルの要約
+matsuicojpAssetDigest :: MatsuicojpAsset -> String
+matsuicojpAssetDigest v =
+    show (matsuicojpAssetAt v)
+    ++ ", "
+    ++ "評価合計 " ++ show (matsuicojpAssetEvaluation v)
+    ++ ", "
+    ++ "損益合計 " ++ show (matsuicojpAssetProfit v)
+    ++ ", "
+    ++ "現物買付余力 " ++ show (matsuicojpAssetMoneySpare v)
+    ++ ", "
+    ++ "現金残高 " ++ show (matsuicojpAssetCashBalance v)
+    ++ ", "
+    ++ "預り増加額 " ++ show (matsuicojpAssetDepositInc v)
+    ++ ", "
+    ++ "預り減少額 " ++ show (matsuicojpAssetDepositDec v)
+    ++ ", "
+    ++ "ボックスレート手数料拘束金 " ++ show (matsuicojpAssetBindingFee v)
+    ++ ", "
+    ++ "源泉徴収税拘束金（仮計算） " ++ show (matsuicojpAssetBindingTax v)
+    ++ ", "
+    ++ "使用可能現金 " ++ show (matsuicojpAssetCash v)
 
+-- |
+-- 保有株式の要約
+matsuicojpStockDigest :: MatsuicojpStock -> String
+matsuicojpStockDigest v =
+    (ticker $ matsuicojpStockTicker v) ++ " " ++ (matsuicojpStockCaption v)
+    ++ ", "
+    ++ "保有 " ++ show (matsuicojpStockCount v)
+    ++ ", "
+    ++ "取得 " ++ show (matsuicojpStockPurchase v)
+    ++ ", "
+    ++ "現在 " ++ show (matsuicojpStockPrice v)
+    ++ ", "
+    ++ "損益 " ++ show (matsuicojpStockGain v)
+    where
+    ticker (TSTYO c) = show c
+    ticker TSNI225 = "日経平均株価"
+    ticker TSTOPIX = "東証株価指数"
+    ticker TSJPXNI400 = "JPX400"
+
+-- |
+-- 保有株式の損益
+matsuicojpStockGain :: MatsuicojpStock -> Double
+matsuicojpStockGain v =
+    (matsuicojpStockPrice v - matsuicojpStockPurchase v)
+    * realToFrac (matsuicojpStockCount v)
 

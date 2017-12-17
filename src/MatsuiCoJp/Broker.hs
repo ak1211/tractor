@@ -170,7 +170,8 @@ noticeOfCurrentAssets connInfo = do
             -- 現在値 - 前営業日値
             , Slack.reportGrowthToday   = (\y -> allAsset asset - allAsset y) <$> yesterday
             , Slack.reportAllProfit     = matsuicojpAssetProfit asset
-            , Slack.reportHoldStocks    = stocks
+            , Slack.reportStockDigests  =
+                [Slack.StockDigest (matsuicojpStockGain s) (matsuicojpStockDigest s) | s<-stocks]
             }
     -- |
     -- DBから最新の資産評価を取り出す

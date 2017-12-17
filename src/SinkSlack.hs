@@ -32,7 +32,8 @@ SlackとAPI接続するモジュールです。
 {-# LANGUAGE TemplateHaskell   #-}
 
 module SinkSlack
-    ( WebHook (..)
+    ( StockDigest (..)
+    , WebHook (..)
     , Attachment (..)
     , Report (..)
     , sink
@@ -53,15 +54,6 @@ import qualified Network.HTTP.Conduit       as N
 import qualified Network.HTTP.Types.Status  as N
 
 import qualified Conf
-import MatsuiCoJp.Model
-
--- |
--- 型クラス
-{-
-class StockInfo a where
-    stockDigest :: a -> String
-    stockGain :: a -> Double
--}
 
 -- |
 --  Slack Web API - Incoming Webhooks
@@ -94,15 +86,21 @@ $(Aeson.deriveJSON Aeson.defaultOptions {
     } ''WebHook)
 $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 
+
+data StockDigest = StockDigest
+    { stockDigestGain   :: Double
+    , stockDigestMsg    :: String
+    }
+
 -- |
 --  定期的に送信するレポート
 data Report = Report
-    { reportAt          :: Tm.UTCTime   -- ^ DB上の時間
-    , reportAllAsset    :: Double       -- ^ 総資産
-    , reportGrowthToday :: Maybe Double -- ^ 総資産増減(前日比)
-    , reportAllProfit   :: Double       -- ^ 損益合計
-    , reportHoldStocks  :: [MatsuicojpStock]          -- ^ 保有株式
-    } deriving Show
+    { reportAt              :: Tm.UTCTime       -- ^ DB上の時間
+    , reportAllAsset        :: Double           -- ^ 総資産
+    , reportGrowthToday     :: Maybe Double     -- ^ 総資産増減(前日比)
+    , reportAllProfit       :: Double           -- ^ 損益合計
+    , reportStockDigests    :: [StockDigest]    -- ^ 保有株式
+    }
 
 -- |
 -- Slackへ送信する関数
@@ -172,7 +170,7 @@ reportMsg conf =
     webHook report = WebHook
         { channel       = Conf.channel conf
         , username      = Conf.userName conf
-        , attachments   = map (packAttach $ reportAt report) $ reportHoldStocks report
+        , attachments   = [packAttach (reportAt report) d | d<-reportStockDigests report]
         , hText         = headline report
         , icon_emoji    = ":tractor:"
         }
@@ -194,12 +192,12 @@ reportMsg conf =
         upEmoji = ":chart_with_downwards_trend:"
     --
     --
-    packAttach :: Tm.UTCTime -> MatsuicojpStock -> Attachment
+    packAttach :: Tm.UTCTime -> StockDigest -> Attachment
     packAttach at stock = Attachment
         { color         = colorUpdown
         , pretext       = Nothing
         , title         = Nothing
-        , text          = show stock
+        , text          = stockDigestMsg stock
         , footer        = Conf.userName conf
         , footer_icon   = "https://platform.slack-edge.com/img/default_application_icon.png"
         , ts            = round $ Tm.utcTimeToPOSIXSeconds at
@@ -207,10 +205,12 @@ reportMsg conf =
         where
         --
         --
-        colorUpdown | stockGain < 0 = "#0034FF"
-                    | otherwise             = "#F63200"
+        colorUpdown | (stockDigestGain stock) < 0   = "#0034FF"
+                    | otherwise                     = "#F63200"
+{-
         --
         --
         stockGain =
             (matsuicojpStockPrice stock - matsuicojpStockPurchase stock)
             * realToFrac (matsuicojpStockCount stock)
+            -}
