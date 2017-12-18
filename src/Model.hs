@@ -103,7 +103,7 @@ AccessLog
     fragment        String      -- ^ フラグメント
     --
     reqCookie       String      -- ^ 要求クッキー
-    reqBody         String      -- ^ 要求ボディ
+    reqHeader       String      -- ^ 要求ヘッダ
     --
     respStatus      String      -- ^ 返答HTTP status code
     respVersion     String      -- ^ 返答HTTP version

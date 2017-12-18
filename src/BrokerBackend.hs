@@ -93,7 +93,7 @@ newtype UnexpectedHTMLException
     deriving (Data.Typeable.Typeable, Eq)
 
 instance Show UnexpectedHTMLException where
-    show (UnexpectedHTMLException s) = s
+    show (UnexpectedHTMLException msg) = msg
 
 instance Exception UnexpectedHTMLException
 
@@ -101,7 +101,10 @@ instance Exception UnexpectedHTMLException
 -- 実行時例外 : 未保有株の売却指示
 newtype DontHaveStocksToSellException
     = DontHaveStocksToSellException String
-    deriving (Data.Typeable.Typeable, Eq, Show)
+    deriving (Data.Typeable.Typeable, Eq)
+
+instance Show DontHaveStocksToSellException where
+    show (DontHaveStocksToSellException msg) = msg
 
 instance Exception DontHaveStocksToSellException
 
@@ -148,6 +151,10 @@ fetchPage manager header cookie reqBody url =
             body -> N.urlEncodedBody body req
     --
     --
+    packLoghttp :: Tm.UTCTime
+                -> N.Request
+                -> (N.Response BL8.ByteString)
+                -> AccessLog
     packLoghttp receivedAt customReq resp = AccessLog
         { accessLogReceivedAt   = receivedAt
         , accessLogUrl          = show url
@@ -159,7 +166,7 @@ fetchPage manager header cookie reqBody url =
         , accessLogQuery        = N.uriQuery url
         , accessLogFragment     = N.uriFragment url
         , accessLogReqCookie    = show cookie
-        , accessLogReqBody      = show customReq
+        , accessLogReqHeader    = show $ N.requestHeaders customReq
         , accessLogRespStatus   = show $ N.responseStatus resp
         , accessLogRespVersion  = show $ N.responseVersion resp
         , accessLogRespHeader   = show $ N.responseHeaders resp

@@ -3,17 +3,17 @@
 {-# LANGUAGE OverloadedStrings     #-}
 module ConfSpec (spec) where
 
-import qualified Data.Either as Either
-
 import           Conf
 import           Test.Hspec
 
 --
 -- テストファイル
+--
 testConfFilePath = "test/conf.test.json"
 
 --
 -- テストファイルの内容
+--
 confInfo = Info
     { updatePriceMinutes = 10
     , noticeAssetsMinutes = 20
@@ -47,6 +47,7 @@ confInfoMatsuiCoJp = InfoMatsuiCoJp
 
 --
 -- Hspecテスト
+--
 spec :: Spec
 spec = do
     describe "readJSONFile" $ do
@@ -54,6 +55,6 @@ spec = do
             readJSONFile "" `shouldThrow` anyIOException
         it ("can parse this file \"" ++ testConfFilePath ++ "\"") $ do
             readJSONFile testConfFilePath `shouldReturn` (Right confInfo)
-            readJSONFile testConfFilePath >>= print
+--            readJSONFile testConfFilePath >>= print
 
 

@@ -33,36 +33,33 @@ Portability :  POSIX
 {-# LANGUAGE TypeFamilies          #-}
 
 module MatsuiCoJp.Scraper
-    ( taglist
-    , tag
-    , table
-    , tr
-    , td
-    , textlist
-    , text
-    , href
-    , HoldStock (..)
+    ( FraAstSpare (..)
     , FraHomeAnnounce (..)
     , FraStkSell (..)
-    , FraAstSpare (..)
-    , OrderConfirmed (..)
+    , HoldStock (..)
     , nonScraping
+    , OrderConfirmed (..)
+    , scrapingFraAstSpare
     , scrapingFraHomeAnnounce
     , scrapingFraStkSell
-    , scrapingFraAstSpare
     , scrapingOrderConfirmed
     ) where
 
+import Control.Monad          ((>=>))
 import qualified Control.Monad          as M
 import qualified Data.Char
 import           Data.Int               (Int32)
 import qualified Data.List              as List
 import qualified Data.Maybe             as Maybe
+import qualified Data.Text              as T
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Read    as Read
 import qualified Safe
+import qualified Text.HTML.DOM          as H
 import qualified Text.HTML.TagSoup      as TS
 import qualified Text.HTML.TagSoup.Tree as TS
+import           Text.XML.Cursor        (($//), (&//), (&/))
+import qualified Text.XML.Cursor        as X
 
 -- |
 -- ホーム -> お知らせの内容
@@ -70,7 +67,7 @@ data FraHomeAnnounce = FraHomeAnnounce
     { fsAnnounceDeriverTime   :: TL.Text    -- ^ お知らせの配信時間
     , fsAnnounceLastLoginTime :: TL.Text    -- ^ 前回ログイン
     , fsAnnounces             :: [TL.Text]  -- ^ お知らせ
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
 -- |
 -- 保有株(個別銘柄)情報
@@ -81,7 +78,7 @@ data HoldStock = HoldStock
     , hsCount         :: Int            -- ^ 保有数
     , hsPurchasePrice :: Double         -- ^ 取得単価
     , hsPrice         :: Double         -- ^ 現在値
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
 -- |
 --  株式取引 -> 現物売の内容
@@ -89,7 +86,7 @@ data FraStkSell = FraStkSell
     { fsQuantity :: Double      -- ^ 評価合計
     , fsProfit   :: Double      -- ^ 損益合計
     , fsStocks   :: [HoldStock] -- ^ 個別銘柄情報
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
 -- |
 -- 資産状況 -> 余力情報の内容
@@ -101,13 +98,13 @@ data FraAstSpare = FraAstSpare
     , faRestraintFee       :: Int32     -- ^ ボックスレート手数料拘束金
     , faRestraintTax       :: Int32     -- ^ 源泉徴収税拘束金（仮計算）
     , faCash               :: Int32     -- ^ 使用可能現金
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
 -- |
 -- 注文発注後の"ご注文を受付けました"の内容
 data OrderConfirmed = OrderConfirmed
     { contents            :: TL.Text
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
 -- |
 -- タグ名の子をリストで取り出す関数
@@ -136,9 +133,9 @@ td = tag "td"
 
 -- |
 -- テキスト要素をリストで取り出す関数
-textlist :: [TS.TagTree TL.Text] -> [TL.Text]
-textlist t =
-    filter (/="") [TL.strip txt | TS.TagText txt <- TS.flattenTree t]
+--textlist :: [TS.TagTree TL.Text] -> [TL.Text]
+--textlist t =
+--    filter (/="") [TL.strip txt | TS.TagText txt <- TS.flattenTree t]
 
 -- |
 -- idx番のテキストを取り出す関数
@@ -197,23 +194,42 @@ nonScraping (h:_) = Right h
 -- |
 -- "ホーム" -> "お知らせ" のページをスクレイピングする関数
 scrapingFraHomeAnnounce :: [TL.Text] -> Either TL.Text FraHomeAnnounce
-scrapingFraHomeAnnounce htmls = do
-    html <- case htmls of
-        []  -> Left "お知らせページを受け取れていません。"
-        -- お知らせには次のページが無いので先頭のみを取り出す
-        x:_ -> Right x
-    let tree = TS.tagTree $ TS.parseTags html
-    deriverTime     <- (Just tree >>= table 0 >>= tr 0 >>= table 0 >>= td 1 >>= text 0) `toText` "お知らせ配信時間の取得に失敗"
-    lastLoginTime   <- (Just tree >>= table 0 >>= tr 6 >>= td 0 >>= text 0) `toText` "前回ログイン時間の取得に失敗"
+scrapingFraHomeAnnounce [] = Left "お知らせページを受け取れていません。"
+scrapingFraHomeAnnounce (html:_) = do
+    -- お知らせには次のページが無いので先頭ページのみが対象
+    at <- deriverAt
+    ll <- lastLogin
+    Right FraHomeAnnounce
+        { fsAnnounceDeriverTime   = at
+        , fsAnnounceLastLoginTime = ll
+        , fsAnnounces             = [ TL.fromStrict v
+                                    | v<-map (T.dropAround (== '\n')) announces, v /= T.empty
+                                    ]
+        }
+    where
+    --
+    --
+    root = X.fromDocument $ H.parseLT html
+    --
+    -- <B></B>で囲まれた要素
+    bolds = root $// X.element "B" &/ X.content
+    --
+    -- 配信時間 (<B></B>で囲まれた要素の2番目)
+    deriverAt :: Either TL.Text TL.Text
+    deriverAt = case drop 1 $ bolds of
+        []      -> Left "お知らせ配信時間の取得に失敗"
+        (x:_)   -> Right $ TL.fromStrict x
+    --
+    -- 前回ログイン時間 (<B></B>で囲まれた要素の3番目)
+    lastLogin :: Either TL.Text TL.Text
+    lastLogin = case drop 2 $ bolds of
+        []      -> Left "前回ログイン時間の取得に失敗"
+        (x:_)   -> Right $ TL.fromStrict x
+    --
+    -- おしらせのXPath (<TABLE></TABLE>で囲まれた要素の3番目)
+    announces :: [T.Text]
+    announces = root $// X.element "TABLE" >=> X.attributeIs "cellspacing" "5" &// X.content
 
-    -- お知らせ
-    let announces = textlist <$> (Just tree >>= table 0 >>= tr 8 >>= td 1)
-    -- 返値
-    Right FraHomeAnnounce {
-        fsAnnounceDeriverTime   = deriverTime,
-        fsAnnounceLastLoginTime = lastLoginTime,
-        fsAnnounces             = Maybe.fromMaybe [] announces
-    }
 
 -- |
 --  "株式取引" -> "現物売" のページをスクレイピングする関数
