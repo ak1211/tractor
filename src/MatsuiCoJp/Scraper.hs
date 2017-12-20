@@ -50,7 +50,6 @@ import qualified Control.Monad          as M
 import qualified Data.Char
 import           Data.Int               (Int32)
 import qualified Data.List              as List
-import qualified Data.Maybe             as Maybe
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Read    as Read
 import qualified Safe
@@ -131,23 +130,11 @@ td' :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
 td' = tag "td"
 
 -- |
--- テキスト要素をリストで取り出す関数
---textlist :: [TS.TagTree TL.Text] -> [TL.Text]
---textlist t =
---    filter (/="") [TL.strip txt | TS.TagText txt <- TS.flattenTree t]
-
--- |
 -- idx番のテキストを取り出す関数
 text :: Int -> [TS.TagTree TL.Text] -> Maybe TL.Text
 text idx t =
     Safe.atMay [TL.strip txt | TS.TagText txt <- TS.flattenTree t] idx
 
--- |
--- aタグからhref属性を取り出す関数
-href' :: Int -> [TS.TagTree TL.Text] -> Maybe TL.Text
-href' nm t =
-    Safe.atMay [as | TS.TagBranch k as _ <- TS.universeTree t, "a"==TL.toLower k] nm
-    >>= \as -> Maybe.listToMaybe [v | (k, v) <- as, "href"==TL.toLower k]
 
 -- |
 -- 符号あるいは数字または小数点か判定する関数
@@ -160,26 +147,11 @@ onlySignDigit :: TL.Text -> TL.Text
 onlySignDigit = TL.filter isSignDigit
 
 --
---  Textからそれぞれの型に変換する関数
-toText :: Maybe TL.Text -> TL.Text -> Either TL.Text TL.Text
-toText Nothing note = Left note
-toText (Just t) _   = Right t
-
---
 --
 toDecimal :: Integral a => Maybe TL.Text -> TL.Text -> Either TL.Text a
 toDecimal Nothing note = Left note
 toDecimal (Just t) note =
     case Read.signed Read.decimal $ onlySignDigit t of
-        Right (v, _) -> Right v
-        Left _       -> Left note
-
---
---
-toDouble :: Maybe TL.Text -> TL.Text -> Either TL.Text Double
-toDouble Nothing note = Left note
-toDouble (Just t) note =
-    case Read.signed Read.double $ onlySignDigit t of
         Right (v, _) -> Right v
         Left _       -> Left note
 
@@ -257,12 +229,18 @@ scrapingFraStkSell (html:_) = do
     --
     profit <- sumProfit . take 1 . drop 4 $ tblSummary
     quantity <- sumQuantity . take 1 . drop 6 $ tblSummary
-    stocks <- M.mapM takeHoldStock myHoldStocks
-    Right FraStkSell
-        { fsQuantity = quantity
-        , fsProfit = profit
-        , fsStocks = stocks
-        }
+    case emptyCondition myHoldStocks of
+        True ->
+            Right FraStkSell    { fsQuantity = quantity
+                                , fsProfit = profit
+                                , fsStocks = []
+                                }
+        False -> do
+            stocks <- M.mapM takeHoldStock myHoldStocks
+            Right FraStkSell    { fsQuantity = quantity
+                                , fsProfit = profit
+                                , fsStocks = stocks
+                                }
     where
     --
     --
@@ -315,10 +293,19 @@ scrapingFraStkSell (html:_) = do
             -- "TD"要素内の"href"属性を結合したテキスト
             myHref = TL.concat . take 1 $ map TL.fromStrict (c $// X.attribute "href")
     --
+    -- こういう物を分解する
+    -- 注文 口座区分 銘柄 保有数<BR>[株] 取得平均<BR>[円] 評価単価[円]<BR>前日比[円] 時価評価額[円]<BR>前日比[円] 評価損益[円]<BR>損益率 発注数<BR>[株]
+    -- <B>株式残高はありません。</B>
+    emptyCondition :: [[(TL.Text, TL.Text, TL.Text)]] -> Bool
+    emptyCondition ((stock:_):_) =
+        first stock =="株式残高はありません。"
+    emptyCondition _ = False
+    --
     -- 保有株式リストから株式情報を得る
     takeHoldStock :: [(TL.Text, TL.Text, TL.Text)] -> Either TL.Text HoldStock
     takeHoldStock = go
         where
+        --
         -- こういう物を分解する
         -- 注文 口座区分 銘柄 保有数<BR>[株] 取得平均<BR>[円] 評価単価[円]<BR>前日比[円] 時価評価額[円]<BR>前日比[円] 評価損益[円]<BR>損益率 発注数<BR>[株]
         -- 売 特定 新華ホールディングス・リミテッド[東]9399 3 189 1870 5610 -6-1.05% 0

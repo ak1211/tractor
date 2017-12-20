@@ -59,16 +59,9 @@ test01StkSell =
 test02StkHavingList = "02www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
 test02StkSell =
     FraStkSell
-        { fsQuantity    = 561.0
-        , fsProfit      = -6.0
-        , fsStocks      = [ HoldStock
-                            { hsSellOrderUrl  = Just "/servlet/ITS/stock/StkSellOrder;"
-                            , hsCode          = 9399
-                            , hsCaption       = "新華ホールディングス・リミテッド"
-                            , hsCount         = 3
-                            , hsPurchasePrice = 189.0
-                            , hsPrice         = 187.0
-                            } ]
+        { fsQuantity    = 0.0
+        , fsProfit      = 0.0
+        , fsStocks      = []
         }
 
 test01AstSpare = "01www.deal.matsui.co.jp_servlet_ITS_asset_MoneyToSpare.utf8.html"
@@ -103,9 +96,9 @@ spec = do
                 Left l -> TL.putStrLn l
                 Right r -> r `shouldBe` test01StkSell
         --
---        it "test 02" $ do
---            html <- TL.readFile ("test/MatsuiCoJp/" ++ test02StkHavingList)
---            scrapingFraStkSell [html] `shouldBe` (Right test02StkSell)
+        it "test 02" $ do
+            html <- TL.readFile ("test/MatsuiCoJp/" ++ test02StkHavingList)
+            scrapingFraStkSell [html] `shouldBe` (Right test02StkSell)
     --
     describe "scrapingFraAstSpare" $ do
         it "test 01" $ do
