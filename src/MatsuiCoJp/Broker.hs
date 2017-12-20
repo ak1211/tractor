@@ -500,7 +500,7 @@ fetchSomethingPage  :: BB.HTTPSession
                     -> ScrapingSet a
                     -> IO a
 fetchSomethingPage session (ScrapingSet scraper pathes) =
-    either (BB.failureAtScraping . TL.unpack) return =<< scraper <$> fetchTargetPage
+    either BB.failureAtScraping return =<< scraper <$> fetchTargetPage
     where
     -- |
     -- フレームのパスに従って目的のページを取得する関数
@@ -586,7 +586,7 @@ doSellOrder order session orderPage =
         takeHoldStocks :: IO [MatsuiCoJp.Scraper.HoldStock]
         takeHoldStocks =
             case MatsuiCoJp.Scraper.scrapingFraStkSell htmls of
-                Left l -> M.liftIO . throwIO . BB.UnexpectedHTMLException $ TL.unpack l
+                Left l -> M.liftIO . throwIO $ BB.UnexpectedHTMLException l
                 Right r -> return (MatsuiCoJp.Scraper.fsStocks r)
     -- |
     -- 売り注文ページに注文を入力して送信する
@@ -635,26 +635,28 @@ doSellOrder order session orderPage =
             [("pinNo", B8.pack $ sellOrderPassword order)]  -- 取引暗証番号
     --
     --
-    cannotgetSellOrderPageEx = BB.UnexpectedHTMLException $
+    txtSellCode = TL.pack . show $ sellOrderCode order
+    --
+    cannotgetSellOrderPageEx = BB.UnexpectedHTMLException
         "株式売り注文ページを受け取れていません。"
     --
     --
-    donothaveStockSellEx = BB.DontHaveStocksToSellException $
-        "証券コード" ++ (show $ sellOrderCode order) ++ "の株式を所有してないので売れません"
+    donothaveStockSellEx = BB.DontHaveStocksToSellException $ TL.concat
+        [ "証券コード", txtSellCode, "の株式を所有してないので売れません" ]
     --
     --
-    cannotgotoSellPageEx = BB.UnexpectedHTMLException $
-        "証券コード" ++ (show $ sellOrderCode order) ++ "の株式注文ページに行けません"
+    cannotgotoSellPageEx = BB.UnexpectedHTMLException $ TL.concat
+        [ "証券コード", txtSellCode, "の株式注文ページに行けません" ]
     --
     --
-    cannotgetConfirmPageEx = BB.UnexpectedHTMLException $
+    cannotgetConfirmPageEx = BB.UnexpectedHTMLException
         "注文確認ページを受け取れていません。"
     --
     --
-    cannotgotoConfirmPageEx = BB.UnexpectedHTMLException $
-        "証券コード" ++ (show $ sellOrderCode order) ++ "の注文確認ページに行けません"
+    cannotgotoConfirmPageEx = BB.UnexpectedHTMLException $ TL.concat
+        [ "証券コード", txtSellCode, "の注文確認ページに行けません" ]
     --
     --
-    cannotgotoAcceptedPageEx = BB.UnexpectedHTMLException $
-        "証券コード" ++ (show $ sellOrderCode order) ++ "の注文終了ページに行けません"
+    cannotgotoAcceptedPageEx = BB.UnexpectedHTMLException $ TL.concat
+        [ "証券コード", txtSellCode, "の注文終了ページに行けません" ]
 

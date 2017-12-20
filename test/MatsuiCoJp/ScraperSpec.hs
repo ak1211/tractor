@@ -11,8 +11,8 @@ import           Test.Hspec
 --
 -- テストファイル
 --
-homeAnnounceFilePath = "www.deal.matsui.co.jp_servlet_ITS_home_Announce.utf8.html"
-homeAnnounce =
+test01HomeAnnounce = "01www.deal.matsui.co.jp_servlet_ITS_home_Announce.utf8.html"
+test01HomeAnnounce' =
     FraHomeAnnounce
         { fsAnnounceDeriverTime     = "2017年12月18日 23:25 現在"
         , fsAnnounceLastLoginTime   = "前回ログイン：2017年12月18日 23:25"
@@ -41,25 +41,38 @@ homeAnnounce =
                                         ]
         }
 
-stkHavingListFilePath = "www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
-stkSell =
+test01StkHavingList = "01www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
+test01StkSell =
     FraStkSell
         { fsQuantity    = 561.0
         , fsProfit      = -6.0
-        , fsStocks      = [myHoldStock]
-        }
-myHoldStock =
-    HoldStock
-        { hsSellOrderUrl  = Just "/servlet/ITS/stock/StkSellOrder;"
-        , hsCode          = 9399
-        , hsCaption       = "新華ホールディングス・リミテッド"
-        , hsCount         = 3
-        , hsPurchasePrice = 189.0
-        , hsPrice         = 187.0
+        , fsStocks      = [ HoldStock
+                            { hsSellOrderUrl  = Just "/servlet/ITS/stock/StkSellOrder;"
+                            , hsCode          = 9399
+                            , hsCaption       = "新華ホールディングス・リミテッド"
+                            , hsCount         = 3
+                            , hsPurchasePrice = 189.0
+                            , hsPrice         = 187.0
+                            } ]
         }
 
-astSpareFilePath = "www.deal.matsui.co.jp_servlet_ITS_asset_MoneyToSpare.utf8.html"
-astSpare =
+test02StkHavingList = "02www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
+test02StkSell =
+    FraStkSell
+        { fsQuantity    = 561.0
+        , fsProfit      = -6.0
+        , fsStocks      = [ HoldStock
+                            { hsSellOrderUrl  = Just "/servlet/ITS/stock/StkSellOrder;"
+                            , hsCode          = 9399
+                            , hsCaption       = "新華ホールディングス・リミテッド"
+                            , hsCount         = 3
+                            , hsPurchasePrice = 189.0
+                            , hsPrice         = 187.0
+                            } ]
+        }
+
+test01AstSpare = "01www.deal.matsui.co.jp_servlet_ITS_asset_MoneyToSpare.utf8.html"
+test01AstSpare' =
     FraAstSpare
         { faMoneyToSpare        = 402
         , faStockOfMoney        = 1482
@@ -77,23 +90,27 @@ spec :: Spec
 spec = do
     --
     describe "scrapingFraHomeAnnounce" $ do
-        it "Success test" $ do
-            html <- TL.readFile ("test/MatsuiCoJp/" ++ homeAnnounceFilePath)
+        it "test 01" $ do
+            html <- TL.readFile ("test/MatsuiCoJp/" ++ test01HomeAnnounce)
             case scrapingFraHomeAnnounce [html] of
                 Left l -> TL.putStrLn l
-                Right r -> r `shouldBe` homeAnnounce
+                Right r -> r `shouldBe` test01HomeAnnounce'
     --
     describe "scrapingFraStkSell" $ do
-        it "Success test" $ do
-            html <- TL.readFile ("test/MatsuiCoJp/" ++ stkHavingListFilePath)
+        it "test 01" $ do
+            html <- TL.readFile ("test/MatsuiCoJp/" ++ test01StkHavingList)
             case scrapingFraStkSell [html] of
                 Left l -> TL.putStrLn l
-                Right r -> r `shouldBe` stkSell
+                Right r -> r `shouldBe` test01StkSell
+        --
+--        it "test 02" $ do
+--            html <- TL.readFile ("test/MatsuiCoJp/" ++ test02StkHavingList)
+--            scrapingFraStkSell [html] `shouldBe` (Right test02StkSell)
     --
     describe "scrapingFraAstSpare" $ do
-        it "Success test" $ do
-            html <- TL.readFile ("test/MatsuiCoJp/" ++ astSpareFilePath)
+        it "test 01" $ do
+            html <- TL.readFile ("test/MatsuiCoJp/" ++ test01AstSpare)
             case scrapingFraAstSpare [html] of
                 Left l -> TL.putStrLn l
-                Right r -> r `shouldBe` astSpare
+                Right r -> r `shouldBe` test01AstSpare'
 

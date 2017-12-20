@@ -89,22 +89,22 @@ instance Show HTTPSession where
 -- |
 -- 実行時例外 : 予想外のHTML
 newtype UnexpectedHTMLException
-    = UnexpectedHTMLException String
+    = UnexpectedHTMLException TL.Text
     deriving (Data.Typeable.Typeable, Eq)
 
 instance Show UnexpectedHTMLException where
-    show (UnexpectedHTMLException msg) = msg
+    show (UnexpectedHTMLException msg) = TL.unpack msg
 
 instance Exception UnexpectedHTMLException
 
 -- |
 -- 実行時例外 : 未保有株の売却指示
 newtype DontHaveStocksToSellException
-    = DontHaveStocksToSellException String
+    = DontHaveStocksToSellException TL.Text
     deriving (Data.Typeable.Typeable, Eq)
 
 instance Show DontHaveStocksToSellException where
-    show (DontHaveStocksToSellException msg) = msg
+    show (DontHaveStocksToSellException msg) = TL.unpack msg
 
 instance Exception DontHaveStocksToSellException
 
@@ -313,7 +313,7 @@ fetchInRelativePath session relativePath = do
 
 -- |
 -- スクレイピングに失敗した場合の例外送出
-failureAtScraping :: M.MonadIO m => String -> m a
+failureAtScraping :: M.MonadIO m => TL.Text -> m a
 failureAtScraping =
     M.liftIO . throwIO . UnexpectedHTMLException
 
