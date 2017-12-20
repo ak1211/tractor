@@ -298,7 +298,7 @@ scrapingFraStkSell (html:_) = do
     -- <B>株式残高はありません。</B>
     emptyCondition :: [[(TL.Text, TL.Text, TL.Text)]] -> Bool
     emptyCondition ((stock:_):_) =
-        first stock =="株式残高はありません。"
+        first3 stock =="株式残高はありません。"
     emptyCondition _ = False
     --
     -- 保有株式リストから株式情報を得る
@@ -310,16 +310,19 @@ scrapingFraStkSell (html:_) = do
         -- 注文 口座区分 銘柄 保有数<BR>[株] 取得平均<BR>[円] 評価単価[円]<BR>前日比[円] 時価評価額[円]<BR>前日比[円] 評価損益[円]<BR>損益率 発注数<BR>[株]
         -- 売 特定 新華ホールディングス・リミテッド[東]9399 3 189 1870 5610 -6-1.05% 0
         go (url : _ : captioncode : count : purchase : price : _) = do
-            let url' = (\x -> if x == "" then Nothing else Just x) $ (third url)
-            let (_, code) = TL.breakOn "[東]" $ scond captioncode
+            let url' = (\x -> if x == "" then Nothing else Just x) $ (third3 url)
+            --
+            -- HACK: 東証以外は考えていない
+            --
+            let (_, code) = TL.breakOn "[東]" $ scond3 captioncode
             code'       <- decimalFromTxt code
-            count'      <- decimalFromTxt (first count)
-            purchase'   <- doubleFromTxt (first purchase)
-            price'      <- doubleFromTxt (first price)
+            count'      <- decimalFromTxt (first3 count)
+            purchase'   <- doubleFromTxt (first3 purchase)
+            price'      <- doubleFromTxt (first3 price)
             Right HoldStock
                 { hsSellOrderUrl  = url'
                 , hsCode          = code'
-                , hsCaption       = first captioncode
+                , hsCaption       = first3 captioncode
                 , hsCount         = count'
                 , hsPurchasePrice = purchase'
                 , hsPrice         = price'
@@ -327,9 +330,9 @@ scrapingFraStkSell (html:_) = do
         go _ = Left "保有株式の取得に失敗"
     --
     --
-    first (x,_,_) = x
-    scond (_,y,_) = y
-    third (_,_,z) = z
+    first3 (x,_,_) = x
+    scond3 (_,y,_) = y
+    third3 (_,_,z) = z
 
 -- |
 -- 資産状況 -> 余力情報のページをスクレイピングする関数
