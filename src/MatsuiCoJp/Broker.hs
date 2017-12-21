@@ -231,16 +231,16 @@ fetchUpdatedPriceAndStore connInfo session = do
             -> MatsuicojpAsset
     asset at fsell fas = MatsuicojpAsset
         { matsuicojpAssetAt             = at
-        , matsuicojpAssetEvaluation     = MatsuiCoJp.Scraper.fsQuantity fsell
+        , matsuicojpAssetEvaluation     = MatsuiCoJp.Scraper.fsEvaluation fsell
         , matsuicojpAssetProfit         = MatsuiCoJp.Scraper.fsProfit fsell
         --
-        , matsuicojpAssetMoneySpare     = MatsuiCoJp.Scraper.faMoneyToSpare fas
-        , matsuicojpAssetCashBalance    = MatsuiCoJp.Scraper.faStockOfMoney fas
-        , matsuicojpAssetDepositInc     = MatsuiCoJp.Scraper.faIncreaseOfDeposits fas
-        , matsuicojpAssetDepositDec     = MatsuiCoJp.Scraper.faDecreaseOfDeposits fas
-        , matsuicojpAssetBindingFee     = MatsuiCoJp.Scraper.faRestraintFee fas
-        , matsuicojpAssetBindingTax     = MatsuiCoJp.Scraper.faRestraintTax fas
-        , matsuicojpAssetCash           = MatsuiCoJp.Scraper.faCash fas
+        , matsuicojpAssetMoneySpare     = MatsuiCoJp.Scraper.faMoneySpare fas
+        , matsuicojpAssetCashBalance    = MatsuiCoJp.Scraper.faCashBalance fas
+        , matsuicojpAssetDepositInc     = MatsuiCoJp.Scraper.faDepositInc fas
+        , matsuicojpAssetDepositDec     = MatsuiCoJp.Scraper.faDepositDec fas
+        , matsuicojpAssetBindingFee     = MatsuiCoJp.Scraper.faBindingFee fas
+        , matsuicojpAssetBindingTax     = MatsuiCoJp.Scraper.faBindingTax fas
+        , matsuicojpAssetCash           = MatsuiCoJp.Scraper.faFreeCash fas
         }
     --
     --

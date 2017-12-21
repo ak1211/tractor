@@ -43,9 +43,10 @@ test01HomeAnnounce' = FraHomeAnnounce
 --
 --  "株式取引" -> "現物売" のページ
 --
+-- 保有株式1つの場合
 test01StkHavingList = "01www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
 test01StkSell = FraStkSell
-    { fsQuantity    = 561.0
+    { fsEvaluation  = 561.0
     , fsProfit      = -6.0
     , fsStocks      = [ HoldStock
                         { hsSellOrderUrl  = Just "/servlet/ITS/stock/StkSellOrder;"
@@ -57,9 +58,10 @@ test01StkSell = FraStkSell
                         } ]
     }
 
+-- 保有株式なしの場合
 test02StkHavingList = "02www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
 test02StkSell = FraStkSell
-    { fsQuantity    = 0.0
+    { fsEvaluation  = 0.0
     , fsProfit      = 0.0
     , fsStocks      = []
     }
@@ -69,13 +71,13 @@ test02StkSell = FraStkSell
 --
 test01AstSpare = "01www.deal.matsui.co.jp_servlet_ITS_asset_MoneyToSpare.utf8.html"
 test01AstSpare' = FraAstSpare
-    { faMoneyToSpare        = 402
-    , faStockOfMoney        = 1482
-    , faIncreaseOfDeposits  = 0
-    , faDecreaseOfDeposits  = 0
-    , faRestraintFee        = 0
-    , faRestraintTax        = 0
-    , faCash                = 1482
+    { faMoneySpare  = 402
+    , faCashBalance = 1482
+    , faDepositInc  = 0
+    , faDepositDec  = 0
+    , faBindingFee  = 0
+    , faBindingTax  = 0
+    , faFreeCash    = 1482
     }
 
 --

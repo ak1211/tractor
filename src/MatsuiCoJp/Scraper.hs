@@ -45,19 +45,17 @@ module MatsuiCoJp.Scraper
     , scrapingOrderConfirmed
     ) where
 
-import           Control.Monad          ((>=>))
-import qualified Control.Monad          as M
+import           Control.Monad       ((>=>))
+import qualified Control.Monad       as M
 import qualified Data.Char
-import           Data.Int               (Int32)
-import qualified Data.List              as List
-import qualified Data.Text.Lazy         as TL
-import qualified Data.Text.Lazy.Read    as Read
+import           Data.Int            (Int32)
+import qualified Data.List           as List
+import qualified Data.Text.Lazy      as TL
+import qualified Data.Text.Lazy.Read as Read
 import qualified Safe
-import qualified Text.HTML.DOM          as H
-import qualified Text.HTML.TagSoup      as TS
-import qualified Text.HTML.TagSoup.Tree as TS
-import           Text.XML.Cursor        (($/), ($//), (&/), (&//), (&|))
-import qualified Text.XML.Cursor        as X
+import qualified Text.HTML.DOM       as H
+import           Text.XML.Cursor     (($/), ($//), (&/), (&//), (&|))
+import qualified Text.XML.Cursor     as X
 
 -- |
 -- ホーム -> お知らせの内容
@@ -81,21 +79,21 @@ data HoldStock = HoldStock
 -- |
 --  株式取引 -> 現物売の内容
 data FraStkSell = FraStkSell
-    { fsQuantity :: Double      -- ^ 評価合計
-    , fsProfit   :: Double      -- ^ 損益合計
-    , fsStocks   :: [HoldStock] -- ^ 個別銘柄情報
+    { fsEvaluation  :: Double      -- ^ 評価合計
+    , fsProfit      :: Double      -- ^ 損益合計
+    , fsStocks      :: [HoldStock] -- ^ 個別銘柄情報
     } deriving (Eq, Show)
 
 -- |
 -- 資産状況 -> 余力情報の内容
 data FraAstSpare = FraAstSpare
-    { faMoneyToSpare       :: Int32     -- ^ 現物買付余力
-    , faStockOfMoney       :: Int32     -- ^ 現金残高
-    , faIncreaseOfDeposits :: Int32     -- ^ 預り増加額
-    , faDecreaseOfDeposits :: Int32     -- ^ 預り減少額
-    , faRestraintFee       :: Int32     -- ^ ボックスレート手数料拘束金
-    , faRestraintTax       :: Int32     -- ^ 源泉徴収税拘束金（仮計算）
-    , faCash               :: Int32     -- ^ 使用可能現金
+    { faMoneySpare  :: Int32     -- ^ 現物買付余力
+    , faCashBalance :: Int32     -- ^ 現金残高
+    , faDepositInc  :: Int32     -- ^ 預り増加額
+    , faDepositDec  :: Int32     -- ^ 預り減少額
+    , faBindingFee  :: Int32     -- ^ ボックスレート手数料拘束金
+    , faBindingTax  :: Int32     -- ^ 源泉徴収税拘束金（仮計算）
+    , faFreeCash    :: Int32     -- ^ 使用可能現金
     } deriving (Eq, Show)
 
 -- |
@@ -103,38 +101,6 @@ data FraAstSpare = FraAstSpare
 data OrderConfirmed = OrderConfirmed
     { contents            :: TL.Text
     } deriving (Eq, Show)
-
--- |
--- タグ名の子をリストで取り出す関数
-taglist :: TL.Text -> [TS.TagTree TL.Text] -> [[TS.TagTree TL.Text]]
-taglist nm t = [c | TS.TagBranch k _ c <- TS.universeTree t, nm==TL.toLower k]
-
--- |
--- タグ名の子リストからidx番のタグを取り出す関数
-tag :: TL.Text -> Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
-tag name idx = flip Safe.atMay idx . taglist name
-
---
---
-table :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
-table = tag "table"
-
---
---
-tr' :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
-tr' = tag "tr"
-
---
---
-td' :: Int -> [TS.TagTree TL.Text] -> Maybe [TS.TagTree TL.Text]
-td' = tag "td"
-
--- |
--- idx番のテキストを取り出す関数
-text :: Int -> [TS.TagTree TL.Text] -> Maybe TL.Text
-text idx t =
-    Safe.atMay [TL.strip txt | TS.TagText txt <- TS.flattenTree t] idx
-
 
 -- |
 -- 符号あるいは数字または小数点か判定する関数
@@ -145,15 +111,6 @@ isSignDigit c = List.any ($ c) [Data.Char.isDigit, (=='+'), (=='-'), (=='.')]
 --  符号,数字,小数点以外の文字を破棄する関数
 onlySignDigit :: TL.Text -> TL.Text
 onlySignDigit = TL.filter isSignDigit
-
---
---
-toDecimal :: Integral a => Maybe TL.Text -> TL.Text -> Either TL.Text a
-toDecimal Nothing note = Left note
-toDecimal (Just t) note =
-    case Read.signed Read.decimal $ onlySignDigit t of
-        Right (v, _) -> Right v
-        Left _       -> Left note
 
 --
 --
@@ -228,16 +185,16 @@ scrapingFraStkSell (html:_) = do
     -- TODO: 現物売ページの次のページを確認したことが無いのでいまは後続ページを無視する
     --
     profit <- sumProfit . take 1 . drop 4 $ tblSummary
-    quantity <- sumQuantity . take 1 . drop 6 $ tblSummary
+    ev <- evaluation . take 1 . drop 6 $ tblSummary
     case emptyCondition myHoldStocks of
         True ->
-            Right FraStkSell    { fsQuantity = quantity
+            Right FraStkSell    { fsEvaluation = ev
                                 , fsProfit = profit
                                 , fsStocks = []
                                 }
         False -> do
             stocks <- M.mapM takeHoldStock myHoldStocks
-            Right FraStkSell    { fsQuantity = quantity
+            Right FraStkSell    { fsEvaluation = ev
                                 , fsProfit = profit
                                 , fsStocks = stocks
                                 }
@@ -259,12 +216,12 @@ scrapingFraStkSell (html:_) = do
     -- 株式評価損益を取り出す
     sumProfit :: [TL.Text] -> Either TL.Text Double
     sumProfit [t] = doubleFromTxt t
-    sumProfit _ = Left "株式評価損益の取得に失敗"
+    sumProfit _   = Left "株式評価損益の取得に失敗"
     --
     -- 株式時価評価額を取り出す
-    sumQuantity :: [TL.Text] -> Either TL.Text Double
-    sumQuantity [t] = doubleFromTxt t
-    sumQuantity _ = Left "株式時価評価額の取得に失敗"
+    evaluation :: [TL.Text] -> Either TL.Text Double
+    evaluation [t] = doubleFromTxt t
+    evaluation _   = Left "株式時価評価額の取得に失敗"
     --
     -- 保有株式が書いてあるテーブルのリスト
     myHoldStocks :: [[(TL.Text, TL.Text, TL.Text)]]
@@ -293,9 +250,9 @@ scrapingFraStkSell (html:_) = do
             -- "TD"要素内の"href"属性を結合したテキスト
             myHref = TL.concat . take 1 $ map TL.fromStrict (c $// X.attribute "href")
     --
-    -- こういう物を分解する
-    -- 注文 口座区分 銘柄 保有数<BR>[株] 取得平均<BR>[円] 評価単価[円]<BR>前日比[円] 時価評価額[円]<BR>前日比[円] 評価損益[円]<BR>損益率 発注数<BR>[株]
+    -- 保有株式テーブルの内容が
     -- <B>株式残高はありません。</B>
+    -- であることを確認する
     emptyCondition :: [[(TL.Text, TL.Text, TL.Text)]] -> Bool
     emptyCondition ((stock:_):_) =
         first3 stock =="株式残高はありません。"
@@ -306,9 +263,9 @@ scrapingFraStkSell (html:_) = do
     takeHoldStock = go
         where
         --
-        -- こういう物を分解する
-        -- 注文 口座区分 銘柄 保有数<BR>[株] 取得平均<BR>[円] 評価単価[円]<BR>前日比[円] 時価評価額[円]<BR>前日比[円] 評価損益[円]<BR>損益率 発注数<BR>[株]
+        -- 保有株式テーブルの内容が
         -- 売 特定 新華ホールディングス・リミテッド[東]9399 3 189 1870 5610 -6-1.05% 0
+        -- こういうリストであるときに、内容を受け取って分解する
         go (url : _ : captioncode : count : purchase : price : _) = do
             let url' = (\x -> if x == "" then Nothing else Just x) $ (third3 url)
             --
@@ -337,41 +294,82 @@ scrapingFraStkSell (html:_) = do
 -- |
 -- 資産状況 -> 余力情報のページをスクレイピングする関数
 scrapingFraAstSpare :: [TL.Text] -> Either TL.Text FraAstSpare
-scrapingFraAstSpare htmls = do
-    html <- case htmls of
-        []  -> Left "余力情報ページを受け取れていません。"
-        -- 余力情報には次のページが無いので先頭のみを取り出す
-        x:_ -> Right x
-    let tree = TS.tagTree $ TS.parseTags html
-    let node = Just tree >>= table 5
-    mts <- (node >>= table 0          >>= td' 1 >>= text 0) `toDecimal` "現物買付余力の取得に失敗"
-    som <- (node >>= table 1 >>= tr' 1 >>= td' 1 >>= text 0) `toDecimal` "現金残高の取得に失敗"
-    inc <- (node >>= table 1 >>= tr' 2 >>= td' 1 >>= text 0) `toDecimal` "預り増加額の取得に失敗"
-    dec <- (node >>= table 1 >>= tr' 3 >>= td' 1 >>= text 0) `toDecimal` "預り減少額の取得に失敗"
-    rfe <- (node >>= table 1 >>= tr' 4 >>= td' 1 >>= text 0) `toDecimal` "ボックスレート手数料拘束金の取得に失敗"
-    rta <- (node >>= table 1 >>= tr' 5 >>= td' 1 >>= text 0) `toDecimal` "源泉徴収税拘束金（仮計算）の取得に失敗"
-    cas <- (node >>= table 1 >>= tr' 6 >>= td' 1 >>= text 0) `toDecimal` "使用可能現金の取得に失敗"
-    -- 返値
-    Right FraAstSpare {
-        faMoneyToSpare = mts,
-        faStockOfMoney = som,
-        faIncreaseOfDeposits = inc,
-        faDecreaseOfDeposits = dec,
-        faRestraintFee = rfe,
-        faRestraintTax = rta,
-        faCash = cas
-    }
+scrapingFraAstSpare [] = Left "余力情報ページを受け取れていません。"
+scrapingFraAstSpare (html:_) = do
+    --
+    -- 余力情報には次のページが無いので先頭ページのみ
+    --
+    spare   <- moneySpare   . take 1 . drop 0 $ mySpares
+    balance <- cashBalance  . take 1 . drop 5 $ mySpares
+    inc     <- depositInc   . take 1 . drop 6 $ mySpares
+    dec     <- depositDec   . take 1 . drop 7 $ mySpares
+    fee     <- bindingFee   . take 1 . drop 8 $ mySpares
+    tax     <- bindingTax   . take 1 . drop 9 $ mySpares
+    cash    <- freeCash     . take 1 . drop 10 $ mySpares
+    Right FraAstSpare
+        { faMoneySpare = spare
+        , faCashBalance = balance
+        , faDepositInc = inc
+        , faDepositDec = dec
+        , faBindingFee = fee
+        , faBindingTax = tax
+        , faFreeCash = cash
+        }
+    where
+    --
+    --
+    root = X.fromDocument $ H.parseLT html
+    -- |
+    -- 現物買付余力を取り出す
+    moneySpare :: Integral a => [TL.Text] -> Either TL.Text a
+    moneySpare [t] = decimalFromTxt t
+    moneySpare _   = Left "現物買付余力の取得に失敗"
+    -- |
+    -- 現金残高を取り出す
+    cashBalance :: Integral a => [TL.Text] -> Either TL.Text a
+    cashBalance [t] = decimalFromTxt t
+    cashBalance _   = Left "現金残高の取得に失敗"
+    -- |
+    -- 預り増加額を取り出す
+    depositInc :: Integral a => [TL.Text] -> Either TL.Text a
+    depositInc [t] = decimalFromTxt t
+    depositInc _   = Left "預り増加額の取得に失敗"
+    -- |
+    -- 預り減少額を取り出す
+    depositDec :: Integral a => [TL.Text] -> Either TL.Text a
+    depositDec [t] = decimalFromTxt t
+    depositDec _   = Left "預り減少額の取得に失敗"
+    -- |
+    -- ボックスレート手数料拘束金を取り出す
+    bindingFee :: Integral a => [TL.Text] -> Either TL.Text a
+    bindingFee [t] = decimalFromTxt t
+    bindingFee _   = Left "ボックスレート手数料拘束金の取得に失敗"
+    -- |
+    -- 源泉徴収税拘束金（仮計算）を取り出す
+    bindingTax :: Integral a => [TL.Text] -> Either TL.Text a
+    bindingTax [t] = decimalFromTxt t
+    bindingTax _   = Left "源泉徴収税拘束金（仮計算）の取得に失敗"
+    -- |
+    -- 使用可能現金を取り出す
+    freeCash :: Integral a => [TL.Text] -> Either TL.Text a
+    freeCash [t] = decimalFromTxt t
+    freeCash _   = Left "使用可能現金の取得に失敗"
+    --
+    -- 余力情報リスト
+    mySpares :: [TL.Text]
+    mySpares =
+        map TL.fromStrict $ root
+        $// X.element "TR"
+        &/ X.element "TD" >=> X.attributeIs "align" "right"
+        &/ X.content
 
 -- |
 --  "ご注文を受け付けました"のページをスクレイピングする関数
 scrapingOrderConfirmed :: [TL.Text] -> Either TL.Text OrderConfirmed
-scrapingOrderConfirmed htmls = do
-    html <- case htmls of
-        []  -> Left "注文終了ページを受け取れていません。"
-        -- 注文終了ページには次のページが無いので先頭のみを取り出す
-        x:_ -> Right x
-    -- 返値
-    Right OrderConfirmed {
-        contents = html
-    }
+scrapingOrderConfirmed [] = Left "注文終了ページを受け取れていません。"
+scrapingOrderConfirmed (html:_) = do
+    --
+    -- 注文終了ページには次のページが無いので先頭ページのみ
+    --
+    Right OrderConfirmed { contents = html }
 
