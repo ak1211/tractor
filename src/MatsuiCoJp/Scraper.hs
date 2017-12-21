@@ -300,6 +300,10 @@ scrapingFraAstSpare (html:_) = do
     -- 余力情報には次のページが無いので先頭ページのみ
     --
     spare   <- moneySpare   . take 1 . drop 0 $ mySpares
+    -- 出金余力(1日後)は無視する
+    -- 出金余力(2日後)は無視する
+    -- 出金余力(3日後)は無視する
+    -- 出金余力(4日後)は無視する
     balance <- cashBalance  . take 1 . drop 5 $ mySpares
     inc     <- depositInc   . take 1 . drop 6 $ mySpares
     dec     <- depositDec   . take 1 . drop 7 $ mySpares
