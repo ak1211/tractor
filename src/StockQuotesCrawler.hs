@@ -31,7 +31,8 @@ MariaDBデータベースに入れる
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 module StockQuotesCrawler
-    ( runWebCrawlingPortfolios
+    ( kdbcomScreenScraper
+    , runWebCrawlingPortfolios
     ) where
 
 import           Control.Applicative          ((<|>))

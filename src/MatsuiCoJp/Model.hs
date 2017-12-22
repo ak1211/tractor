@@ -102,7 +102,7 @@ matsuicojpAssetDigest v =
 -- 保有株式の要約
 matsuicojpStockDigest :: MatsuicojpStock -> String
 matsuicojpStockDigest v =
-    (ticker $ matsuicojpStockTicker v) ++ " " ++ (matsuicojpStockCaption v)
+    ticker (matsuicojpStockTicker v) ++ " " ++ matsuicojpStockCaption v
     ++ ", "
     ++ "保有 " ++ show (matsuicojpStockCount v)
     ++ ", "
@@ -112,9 +112,9 @@ matsuicojpStockDigest v =
     ++ ", "
     ++ "損益 " ++ show (matsuicojpStockGain v)
     where
-    ticker (TSTYO c) = show c
-    ticker TSNI225 = "日経平均株価"
-    ticker TSTOPIX = "東証株価指数"
+    ticker (TSTYO c)  = show c
+    ticker TSNI225    = "日経平均株価"
+    ticker TSTOPIX    = "東証株価指数"
     ticker TSJPXNI400 = "JPX400"
 
 -- |

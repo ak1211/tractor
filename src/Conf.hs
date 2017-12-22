@@ -26,9 +26,9 @@ Portability :  POSIX
 
 アプリケーションの設定情報を管理するモジュールです
 -}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
 module Conf
     ( readJSONFile
     , loggingConnInfo
@@ -88,9 +88,9 @@ hiding = map (const '*')
 -- 型クラスShowのインスタンス
 instance Show Info where
     show v = unlines
-        [ "資産情報取得間隔:"   ++ (show $ updatePriceMinutes v) ++ "分"
-        , "レポート送信間隔:"   ++ (show $ noticeAssetsMinutes v) ++ "分"
-        , "UA:\""               ++ (userAgent (v::Info)) ++ "\""
+        [ "資産情報取得間隔:"   ++ show (updatePriceMinutes v) ++ "分"
+        , "レポート送信間隔:"   ++ show (noticeAssetsMinutes v) ++ "分"
+        , "UA:\""               ++ userAgent (v::Info) ++ "\""
         , show (slack v)
         , show (mariaDB v)
         , show (matsuiCoJp v)
@@ -98,27 +98,27 @@ instance Show Info where
 
 instance Show InfoSlack where
     show v = unlines
-        [ "Slack Webhook URL:<" ++ (webHookURL v)
-        , "Slack channel:\""    ++ (channel v) ++ "\""
-        , "Slack user name:\""  ++ (userName v) ++ "\""
+        [ "Slack Webhook URL:<" ++ webHookURL v
+        , "Slack channel:\""    ++ channel v ++ "\""
+        , "Slack user name:\""  ++ userName v ++ "\""
         ]
 
 instance Show InfoMariaDB where
     show v = unlines
-        [ "MariaDB host:\""     ++ (host v)  ++ "\""
-        , "MariaDB port:"       ++ (show $ port v)
-        , "MariaDB user:\""     ++ (user v) ++ "\""
-        , "MariaDB password:\"" ++ (hiding $ password v) ++ "\""
-        , "MariaDB database:\"" ++ (database v) ++ "\""
+        [ "MariaDB host:\""     ++ host v  ++ "\""
+        , "MariaDB port:"       ++ show (port v)
+        , "MariaDB user:\""     ++ user v ++ "\""
+        , "MariaDB password:\"" ++ hiding (password v) ++ "\""
+        , "MariaDB database:\"" ++ database v ++ "\""
         ]
 
 instance Show InfoMatsuiCoJp where
     show v = unlines
-        [ "ログインURL:<"       ++ (loginURL v) ++ ">"
-        , "ログインID:\""       ++ (hiding $ loginID v) ++ "\""
-        , "パスワード:\""       ++ (hiding $ loginPassword v) ++ "\""
-        , "取引パスワード:\""   ++ (hiding $ dealingsPassword v) ++ "\""
-        , "UA:\""               ++ (userAgent (v::InfoMatsuiCoJp)) ++ "\""
+        [ "ログインURL:<"       ++ loginURL v ++ ">"
+        , "ログインID:\""       ++ hiding (loginID v) ++ "\""
+        , "パスワード:\""       ++ hiding (loginPassword v) ++ "\""
+        , "取引パスワード:\""   ++ hiding (dealingsPassword v) ++ "\""
+        , "UA:\""               ++ userAgent (v::InfoMatsuiCoJp) ++ "\""
         ]
 
 $(Aeson.deriveJSON Aeson.defaultOptions ''Info)

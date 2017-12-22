@@ -51,8 +51,8 @@ import qualified Options.Applicative          as Opt
 import qualified Aggregate
 import qualified BrokerBackend                as BB
 import qualified Conf
+import qualified GenBroker                    as Broker
 import qualified Lib
-import qualified GenBroker as Broker
 import qualified Scheduling
 import qualified SinkSlack                    as Slack
 import qualified StockQuotesCrawler           as Q

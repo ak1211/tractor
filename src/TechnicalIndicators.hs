@@ -25,9 +25,7 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE TemplateHaskell #-}
-
+{-# LANGUAGE LambdaCase #-}
 module TechnicalIndicators
     ( rolling
     , mean

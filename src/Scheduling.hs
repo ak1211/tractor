@@ -59,7 +59,7 @@ packZonedTimeJob = A.first Tm.zonedTimeToUTC
 packLocalTimeJob :: Tm.TimeZone -> (Tm.LocalTime, JobFunc) -> Job
 packLocalTimeJob tz =
     packZonedTimeJob
-    . (A.first $ flip Tm.ZonedTime tz)
+    . A.first (flip Tm.ZonedTime tz)
 
 -- |
 -- スケジュール実行関数
@@ -148,9 +148,8 @@ batchProcessTimeInJST jstDay =
 -- |
 -- 明日の日本時間午前0時
 tomorrowMidnightJST :: Tm.Day -> Tm.ZonedTime
-tomorrowMidnightJST jstDay =
+tomorrowMidnightJST =
     flip Tm.ZonedTime Lib.tzJST         -- JST ZonedTime
     . flip Tm.LocalTime Tm.midnight     -- JST Tomorrow 00:00:00
     . succ                              -- JST Today + 1 (a.k.a Tomorrow)
-    $ jstDay
 

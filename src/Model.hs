@@ -57,7 +57,7 @@ Portfolio
     ticker      TickerSymbol        -- ^ ティッカー
     caption     Text Maybe          -- ^ 銘柄名
     updateAt    UTCTime Maybe   -- ^ 価格情報を取り込んだ日付時間
-    deriving Show
+    deriving Show Eq
 
 -- |
 -- 初値, 高値, 安値, 終値, 出来高, 売買代金テーブル
@@ -72,7 +72,7 @@ Ohlcvt
     volume      Double Maybe        -- ^ 出来高
     turnover    Double Maybe        -- ^ 売買代金
     source      Text Maybe          -- ^ 情報の入手元
-    deriving Show
+    deriving Show Eq
 
 -- |
 -- テクニカル指標テーブル
@@ -80,7 +80,7 @@ TechInds
     ohlcvt      OhlcvtId        -- ^ 紐付け
     ind         TechnicalInds   -- ^ テクニカル指標
     val         Double          -- ^ 値
-    deriving Show
+    deriving Show Eq
 |]
 
 --

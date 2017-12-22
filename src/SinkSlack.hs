@@ -88,18 +88,18 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 
 
 data StockDigest = StockDigest
-    { stockDigestGain   :: Double
-    , stockDigestMsg    :: String
+    { stockDigestGain :: Double
+    , stockDigestMsg  :: String
     }
 
 -- |
 --  定期的に送信するレポート
 data Report = Report
-    { reportAt              :: Tm.UTCTime       -- ^ DB上の時間
-    , reportAllAsset        :: Double           -- ^ 総資産
-    , reportGrowthToday     :: Maybe Double     -- ^ 総資産増減(前日比)
-    , reportAllProfit       :: Double           -- ^ 損益合計
-    , reportStockDigests    :: [StockDigest]    -- ^ 保有株式
+    { reportAt           :: Tm.UTCTime       -- ^ DB上の時間
+    , reportAllAsset     :: Double           -- ^ 総資産
+    , reportGrowthToday  :: Maybe Double     -- ^ 総資産増減(前日比)
+    , reportAllProfit    :: Double           -- ^ 損益合計
+    , reportStockDigests :: [StockDigest]    -- ^ 保有株式
     }
 
 -- |
@@ -205,12 +205,6 @@ reportMsg conf =
         where
         --
         --
-        colorUpdown | (stockDigestGain stock) < 0   = "#0034FF"
-                    | otherwise                     = "#F63200"
-{-
-        --
-        --
-        stockGain =
-            (matsuicojpStockPrice stock - matsuicojpStockPurchase stock)
-            * realToFrac (matsuicojpStockCount stock)
-            -}
+        colorUpdown | stockDigestGain stock < 0 = "#0034FF"
+                    | otherwise                 = "#F63200"
+

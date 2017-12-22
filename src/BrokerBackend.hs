@@ -153,7 +153,7 @@ fetchPage manager header cookie reqBody url =
     --
     packLoghttp :: Tm.UTCTime
                 -> N.Request
-                -> (N.Response BL8.ByteString)
+                -> N.Response BL8.ByteString
                 -> AccessLog
     packLoghttp receivedAt customReq resp = AccessLog
         { accessLogReceivedAt   = receivedAt

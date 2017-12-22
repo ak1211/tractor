@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 466dba603778e7cbb76326d2db62355c9c17bb73fff51e6af62f927d23c59f94
+-- hash: 73bd3f84a6ffad41f6bc3ba28f26db97f92b38f917e17bae9965527045a2a503
 
 name:           tractor
 version:        0.3.0.0
@@ -130,5 +130,6 @@ test-suite tractor-test
   other-modules:
       ConfSpec
       MatsuiCoJp.ScraperSpec
+      StockQuotesCrawlerSpec
       Paths_tractor
   default-language: Haskell2010

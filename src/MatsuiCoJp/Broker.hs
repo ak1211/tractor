@@ -122,9 +122,9 @@ noticeOfBrokerageAnnouncement connInfo conf = do
     where
     text v =
         TL.unlines $
-            [ MatsuiCoJp.Scraper.fsAnnounceDeriverTime v
-            , MatsuiCoJp.Scraper.fsAnnounceLastLoginTime v ]
-            ++ MatsuiCoJp.Scraper.fsAnnounces v
+            [ MatsuiCoJp.Scraper.announceDeriverTime v
+            , MatsuiCoJp.Scraper.announceLastLoginTime v ]
+            ++ MatsuiCoJp.Scraper.announces v
 
 -- |
 -- DBから最新の資産評価を取り出してSlackへレポートを送る
@@ -221,7 +221,7 @@ fetchUpdatedPriceAndStore connInfo session = do
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm sell assetspare
         -- 保有株式テーブルへ格納する
-        M.mapM_ (DB.insert . stock key) $ MatsuiCoJp.Scraper.fsStocks sell
+        M.mapM_ (DB.insert . stock key) $ MatsuiCoJp.Scraper.stocks sell
     where
     --
     --
@@ -231,16 +231,16 @@ fetchUpdatedPriceAndStore connInfo session = do
             -> MatsuicojpAsset
     asset at fsell fas = MatsuicojpAsset
         { matsuicojpAssetAt             = at
-        , matsuicojpAssetEvaluation     = MatsuiCoJp.Scraper.fsEvaluation fsell
-        , matsuicojpAssetProfit         = MatsuiCoJp.Scraper.fsProfit fsell
+        , matsuicojpAssetEvaluation     = MatsuiCoJp.Scraper.evaluation fsell
+        , matsuicojpAssetProfit         = MatsuiCoJp.Scraper.profit fsell
         --
-        , matsuicojpAssetMoneySpare     = MatsuiCoJp.Scraper.faMoneySpare fas
-        , matsuicojpAssetCashBalance    = MatsuiCoJp.Scraper.faCashBalance fas
-        , matsuicojpAssetDepositInc     = MatsuiCoJp.Scraper.faDepositInc fas
-        , matsuicojpAssetDepositDec     = MatsuiCoJp.Scraper.faDepositDec fas
-        , matsuicojpAssetBindingFee     = MatsuiCoJp.Scraper.faBindingFee fas
-        , matsuicojpAssetBindingTax     = MatsuiCoJp.Scraper.faBindingTax fas
-        , matsuicojpAssetCash           = MatsuiCoJp.Scraper.faFreeCash fas
+        , matsuicojpAssetMoneySpare     = MatsuiCoJp.Scraper.moneySpare fas
+        , matsuicojpAssetCashBalance    = MatsuiCoJp.Scraper.cashBalance fas
+        , matsuicojpAssetDepositInc     = MatsuiCoJp.Scraper.depositInc fas
+        , matsuicojpAssetDepositDec     = MatsuiCoJp.Scraper.depositDec fas
+        , matsuicojpAssetBindingFee     = MatsuiCoJp.Scraper.bindingFee fas
+        , matsuicojpAssetBindingTax     = MatsuiCoJp.Scraper.bindingTax fas
+        , matsuicojpAssetCash           = MatsuiCoJp.Scraper.freeCash fas
         }
     --
     --
@@ -249,11 +249,11 @@ fetchUpdatedPriceAndStore connInfo session = do
             -> MatsuicojpStock
     stock key hs = MatsuicojpStock
         { matsuicojpStockAsset      = key
-        , matsuicojpStockTicker     = TSTYO $ fromIntegral(MatsuiCoJp.Scraper.hsCode hs)
-        , matsuicojpStockCaption    = TL.unpack (MatsuiCoJp.Scraper.hsCaption hs)
-        , matsuicojpStockCount      = MatsuiCoJp.Scraper.hsCount hs
-        , matsuicojpStockPurchase   = MatsuiCoJp.Scraper.hsPurchasePrice hs
-        , matsuicojpStockPrice      = MatsuiCoJp.Scraper.hsPrice hs
+        , matsuicojpStockTicker     = TSTYO $ fromIntegral(MatsuiCoJp.Scraper.code hs)
+        , matsuicojpStockCaption    = TL.unpack (MatsuiCoJp.Scraper.caption hs)
+        , matsuicojpStockCount      = MatsuiCoJp.Scraper.count hs
+        , matsuicojpStockPurchase   = MatsuiCoJp.Scraper.purchasePrice hs
+        , matsuicojpStockPrice      = MatsuiCoJp.Scraper.price hs
         }
 
 -- |
@@ -570,7 +570,7 @@ doSellOrder order session orderPage =
         --
         --
         matchCode c =
-            sellOrderCode order == MatsuiCoJp.Scraper.hsCode c
+            sellOrderCode order == MatsuiCoJp.Scraper.code c
         --
         -- 所有株の中からcodeで指定された銘柄の売り注文ページリンクを取り出す
         takeSellOrderUrl:: [MatsuiCoJp.Scraper.HoldStock] -> IO TL.Text
@@ -578,16 +578,16 @@ doSellOrder order session orderPage =
             case List.find matchCode stocks of
                 Nothing -> M.liftIO $ throwIO donothaveStockSellEx
                 Just v ->
-                    case MatsuiCoJp.Scraper.hsSellOrderUrl v of
+                    case MatsuiCoJp.Scraper.sellOrderUrl v of
                         Nothing -> M.liftIO $ throwIO cannotgotoSellPageEx
-                        Just y -> return y
+                        Just y  -> return y
         --
         -- 売り注文ページから所有株式リストを取り出す
         takeHoldStocks :: IO [MatsuiCoJp.Scraper.HoldStock]
         takeHoldStocks =
             case MatsuiCoJp.Scraper.scrapingFraStkSell htmls of
-                Left l -> M.liftIO . throwIO $ BB.UnexpectedHTMLException l
-                Right r -> return (MatsuiCoJp.Scraper.fsStocks r)
+                Left l  -> M.liftIO . throwIO $ BB.UnexpectedHTMLException l
+                Right r -> return (MatsuiCoJp.Scraper.stocks r)
     -- |
     -- 売り注文ページに注文を入力して送信する
     submitSellOrderPage :: [TL.Text] -> IO [TL.Text]
