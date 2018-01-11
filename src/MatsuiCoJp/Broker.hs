@@ -88,7 +88,7 @@ siteConn conf f =
     where
     --
     --
-    url = Conf.loginURL conf
+    url = Conf.loginURL (conf::Conf.InfoMatsuiCoJp)
     --
     --
     invalidUrl = throwIO . userError $ url ++ " は有効なURLではありません"
@@ -370,6 +370,8 @@ login conf loginUri = do
     let session = mkSession manager <$> resp
     return session
     where
+    --
+    account = Conf.account (conf::Conf.InfoMatsuiCoJp)
     -- |
     -- HTTPリクエストヘッダ
     reqHeader =
@@ -377,8 +379,8 @@ login conf loginUri = do
     -- |
     -- ログインID&パスワード
     customPostReq =
-        [ ("clientCD", B8.pack $ Conf.loginID conf)
-        , ("passwd", B8.pack $ Conf.loginPassword conf)
+        [ ("clientCD", B8.pack $ Conf.loginID account)
+        , ("passwd", B8.pack $ Conf.loginPassword account)
         ]
     -- |
     -- 返値組み立て

@@ -112,10 +112,9 @@ batchProcessThread conf jstDay =
 announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
 announceWeekdayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, act $ Conf.matsuiCoJp conf) | t<-Scheduling.announceWeekdayTimeInJST jstDay]
+        [(t, act $ Conf.broker conf) | t<-Scheduling.announceWeekdayTimeInJST jstDay]
     where
-    act Nothing = return ()
-    act (Just matsuiCoJp) =
+    act (Conf.MatsuiCoJp matsuiCoJp) =
         Broker.noticeOfBrokerageAnnouncement connInfo matsuiCoJp
         $= simpleTextMsg conf $$ sinkSlack conf
     --
@@ -158,12 +157,11 @@ tradingTimeThread conf times =
         -- 3分前にログインする仕掛け
         $ map (timedelta (-180) . Scheduling.packZonedTimeJob)
         -- 再復帰は30分間隔
-        [ (t, worker $ Conf.matsuiCoJp conf) | t<-Lib.every (30*60) times ]
+        [ (t, worker $ Conf.broker conf) | t<-Lib.every (30*60) times ]
     where
     --
     -- 実際の作業
-    worker Nothing = return ()
-    worker (Just matsuiCoJp) =
+    worker (Conf.MatsuiCoJp matsuiCoJp) =
         M.runResourceT . Broker.siteConn matsuiCoJp
             $ \sess -> Scheduling.execute (fetchPriceJobs matsuiCoJp sess ++ reportJobs matsuiCoJp)
         `Ex.catches`

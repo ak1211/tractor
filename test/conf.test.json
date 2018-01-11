@@ -14,12 +14,13 @@
         "password"  : "enter password",
         "database"  : "stockdb"
     },
-    "matsuiCoJp" : {
+    "broker" : {
+        "name"              : "MatsuiCoJp",
         "loginURL"          : "enter loginURL",
+        "userAgent"         : "enter userAgent",
         "loginID"           : "enter loginID",
         "loginPassword"     : "enter loginPassword",
-        "dealingsPassword"  : "enter dealingsPassword",
-        "userAgent"         : "enter userAgent"
+        "dealingsPassword"  : "enter dealingsPassword"
     }
 }
 

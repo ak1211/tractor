@@ -8,19 +8,17 @@ import           Test.Hspec
 
 --
 -- テストファイル
---
 testConfFilePath = "test/conf.test.json"
 
 --
 -- テストファイルの内容
---
 confInfo = Info
     { updatePriceMinutes = 10
     , noticeAssetsMinutes = 20
     , userAgent = "enter userAgent"
     , slack = confInfoSlack
     , mariaDB = confInfoMariaDB
-    , matsuiCoJp = Just confInfoMatsuiCoJp
+    , broker = confInfoBroker
     }
 
 confInfoSlack = InfoSlack
@@ -39,15 +37,19 @@ confInfoMariaDB = InfoMariaDB
 
 confInfoMatsuiCoJp = InfoMatsuiCoJp
     { loginURL  = "enter loginURL"
-    , loginID   = "enter loginID"
-    , loginPassword = "enter loginPassword"
-    , dealingsPassword = "enter dealingsPassword"
     , userAgent = "enter userAgent"
+    , account   = InfoAccount
+        { loginID   = "enter loginID"
+        , loginPassword = "enter loginPassword"
+        , dealingsPassword = "enter dealingsPassword"
+        }
     }
+
+confInfoBroker =
+    MatsuiCoJp confInfoMatsuiCoJp
 
 --
 -- Hspecテスト
---
 spec :: Spec
 spec = do
     describe "readJSONFile" $ do
@@ -55,6 +57,5 @@ spec = do
             readJSONFile "" `shouldThrow` anyIOException
         it ("can parse this file \"" ++ testConfFilePath ++ "\"") $ do
             readJSONFile testConfFilePath `shouldReturn` (Right confInfo)
---            readJSONFile testConfFilePath >>= print
 
 

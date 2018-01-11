@@ -28,32 +28,38 @@ Portability :  POSIX
 -}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
 module Conf
     ( readJSONFile
     , loggingConnInfo
     , connInfoDB
     , Info (..)
+    , InfoAccount (..)
     , InfoMatsuiCoJp (..)
+    , InfoSBIsecCoJp (..)
+    , InfoBroker (..)
     , InfoSlack (..)
     , InfoMariaDB (..)
     ) where
 
-import Data.Aeson ((.=), (.:))
+import           Data.Aeson             ((.:), (.=))
 import qualified Data.Aeson             as Aeson
 import qualified Data.Aeson.TH          as Aeson
 import qualified Data.ByteString.Lazy   as BSL
+import           Data.Monoid            ((<>))
 import           Data.Word              (Word16)
 import qualified Database.Persist.MySQL as MySQL
+import           GHC.Exts               (fromList)
 
 -- | アプリケーションの設定情報
 data Info = Info
-    { updatePriceMinutes  :: Int
-    , noticeAssetsMinutes :: Int
-    , userAgent           :: String
-    , slack               :: InfoSlack
-    , mariaDB             :: InfoMariaDB
-    , matsuiCoJp          :: Maybe InfoMatsuiCoJp
+    { updatePriceMinutes    :: Int
+    , noticeAssetsMinutes   :: Int
+    , userAgent             :: String
+    , slack                 :: InfoSlack
+    , mariaDB               :: InfoMariaDB
+    , broker                :: InfoBroker
     } deriving Eq
 
 -- | 通知するSlackの設定情報
@@ -73,13 +79,28 @@ data InfoMariaDB = InfoMariaDB
     } deriving Eq
 
 -- | 証券会社の設定情報
-data InfoMatsuiCoJp = InfoMatsuiCoJp
-    { loginURL         :: String
-    , loginID          :: String
+data InfoAccount = InfoAccount
+    { loginID          :: String
     , loginPassword    :: String
     , dealingsPassword :: String
-    , userAgent        :: String
     } deriving Eq
+
+data InfoMatsuiCoJp = InfoMatsuiCoJp
+    { loginURL  :: String
+    , userAgent :: String
+    , account   :: InfoAccount
+    } deriving Eq
+
+data InfoSBIsecCoJp = InfoSBIsecCoJp
+    { loginURL  :: String
+    , userAgent :: String
+    , account   :: InfoAccount
+    } deriving Eq
+
+data InfoBroker
+    = MatsuiCoJp InfoMatsuiCoJp
+    | SBIsecCoJp InfoSBIsecCoJp
+    deriving Eq
 
 -- | パスワードを*に置き換える
 hiding :: String -> String
@@ -93,7 +114,7 @@ instance Show Info where
         , "UA:\""               ++ userAgent (v::Info) ++ "\""
         , show (slack v)
         , show (mariaDB v)
-        , show (matsuiCoJp v)
+        , show (broker v)
         ]
 
 instance Show InfoSlack where
@@ -112,36 +133,107 @@ instance Show InfoMariaDB where
         , "MariaDB database:\"" ++ database v ++ "\""
         ]
 
-instance Show InfoMatsuiCoJp where
+instance Show InfoAccount where
     show v = unlines
-        [ "ログインURL:<"       ++ loginURL v ++ ">"
-        , "ログインID:\""       ++ hiding (loginID v) ++ "\""
-        , "パスワード:\""       ++ hiding (loginPassword v) ++ "\""
-        , "取引パスワード:\""   ++ hiding (dealingsPassword v) ++ "\""
-        , "UA:\""               ++ userAgent (v::InfoMatsuiCoJp) ++ "\""
+        [ "ログインID:\""       ++ hiding (loginID (v::InfoAccount)) ++ "\""
+        , "パスワード:\""       ++ hiding (loginPassword (v::InfoAccount)) ++ "\""
+        , "取引パスワード:\""   ++ hiding (dealingsPassword (v::InfoAccount)) ++ "\""
+        ]
+
+instance Show InfoMatsuiCoJp where
+    show InfoMatsuiCoJp{..} = unlines
+        [ "ログインURL:<"       ++ loginURL ++ ">"
+        , "UA:\""               ++ userAgent ++ "\""
+        , show account
+        ]
+
+instance Show InfoSBIsecCoJp where
+    show InfoSBIsecCoJp{..} = unlines
+        [ "ログインURL:<"       ++ loginURL ++ ">"
+        , "UA:\""               ++ userAgent ++ "\""
+        , show account
+        ]
+
+instance Show InfoBroker where
+    show (MatsuiCoJp v) = show v
+    show (SBIsecCoJp v) = show v
+
+instance Aeson.FromJSON InfoAccount where
+    --
+    parseJSON = Aeson.withObject "account" $ \o -> do
+        loginID         <- o .: "loginID"
+        loginPassword   <- o .: "loginPassword"
+        dealingsPassword<- o .: "dealingsPassword"
+        return InfoAccount{..}
+
+instance Aeson.ToJSON InfoAccount where
+    toJSON InfoAccount{..} = Aeson.object
+        [ "loginID"         .= loginID
+        , "loginPassword"   .= loginPassword
+        , "dealingsPassword".= dealingsPassword
         ]
 
 instance Aeson.FromJSON InfoMatsuiCoJp where
     --
-    parseJSON (Aeson.Object v) =
-        InfoMatsuiCoJp  <$> (v .: "loginURL")
-                        <*> (v .: "loginID")
-                        <*> (v .: "loginPassword")
-                        <*> (v .: "dealingsPassword")
-                        <*> (v .: "userAgent")
-    --
-    parseJSON _ =
-        fail "expected an object"
+    parseJSON = Aeson.withObject "account" $ \o -> do
+        loginURL    <- o .: "loginURL"
+        userAgent   <- o .: "userAgent"
+        account     <- Aeson.parseJSON (Aeson.Object o)
+        return InfoMatsuiCoJp{..}
 
 instance Aeson.ToJSON InfoMatsuiCoJp where
-    toJSON v =
-        Aeson.object
-        [ "loginURL"        .= loginURL (v::InfoMatsuiCoJp)
-        , "loginID"         .= loginID (v::InfoMatsuiCoJp)
-        , "loginPassword"   .= loginPassword (v::InfoMatsuiCoJp)
-        , "dealingsPassword".= dealingsPassword (v::InfoMatsuiCoJp)
-        , "userAgent"       .= userAgent (v::InfoMatsuiCoJp)
-        ]
+    toJSON InfoMatsuiCoJp{..} = Aeson.Object $
+        fromList
+            [ "loginURL"    .= loginURL
+            , "userAgent"   .= userAgent
+            ]
+        <> toObject account
+
+instance Aeson.FromJSON InfoSBIsecCoJp where
+    --
+    parseJSON = Aeson.withObject "account" $ \o -> do
+        loginURL    <- o .: "loginURL"
+        userAgent   <- o .: "userAgent"
+        account     <- Aeson.parseJSON (Aeson.Object o)
+        return InfoSBIsecCoJp{..}
+
+instance Aeson.ToJSON InfoSBIsecCoJp where
+    toJSON InfoSBIsecCoJp{..} = Aeson.Object $
+        fromList
+            [ "loginURL"    .= loginURL
+            , "userAgent"   .= userAgent
+            ]
+        <> toObject account
+
+instance Aeson.FromJSON InfoBroker where
+    --
+    parseJSON = Aeson.withObject "some broker" $ \o -> do
+        name <- o .: "name"
+        case name of
+            "SBIsecCoJp" -> SBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            "MatsuiCoJp" -> MatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            _ -> fail ("unknown broker: " ++ name)
+
+instance Aeson.ToJSON InfoBroker where
+    --
+    toJSON (MatsuiCoJp (InfoMatsuiCoJp{..})) = Aeson.Object $
+        fromList
+            [ "loginURL"    .= loginURL
+            , "userAgent"   .= userAgent
+            ]
+        <> toObject account
+    --
+    toJSON (SBIsecCoJp (InfoSBIsecCoJp{..})) = Aeson.Object $
+        fromList
+            [ "loginURL"    .= loginURL
+            , "userAgent"   .= userAgent
+            ]
+        <> toObject account
+
+toObject:: Aeson.ToJSON a => a -> Aeson.Object
+toObject a = case Aeson.toJSON a of
+    Aeson.Object o -> o
+    _              -> error "toObject: value isn't an Object"
 
 $(Aeson.deriveJSON Aeson.defaultOptions ''Info)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoSlack)
