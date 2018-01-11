@@ -17,7 +17,7 @@
 {- |
 Module      :  Conf
 Description :  read configure information from file
-Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
+Copyright   :  (c) 2016-2018 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211

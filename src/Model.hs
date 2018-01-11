@@ -17,7 +17,7 @@
 {- |
 Module      :  Model
 Description :  A schema of Table
-Copyright   :  (c) 2017 Akihiro Yamamoto
+Copyright   :  (c) 2017-2018 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211

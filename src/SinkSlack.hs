@@ -15,9 +15,9 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  SlackBot
+Module      :  SinkSlack
 Description :  Send a message via Slack
-Copyright   :  (c) 2016, 2017 Akihiro Yamamoto
+Copyright   :  (c) 2016-2018 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211
