@@ -39,6 +39,7 @@ module Conf
     , InfoMariaDB (..)
     ) where
 
+import Data.Aeson ((.=), (.:))
 import qualified Data.Aeson             as Aeson
 import qualified Data.Aeson.TH          as Aeson
 import qualified Data.ByteString.Lazy   as BSL
@@ -80,7 +81,6 @@ data InfoMatsuiCoJp = InfoMatsuiCoJp
     , userAgent        :: String
     } deriving Eq
 
-
 -- | パスワードを*に置き換える
 hiding :: String -> String
 hiding = map (const '*')
@@ -121,10 +121,31 @@ instance Show InfoMatsuiCoJp where
         , "UA:\""               ++ userAgent (v::InfoMatsuiCoJp) ++ "\""
         ]
 
+instance Aeson.FromJSON InfoMatsuiCoJp where
+    --
+    parseJSON (Aeson.Object v) =
+        InfoMatsuiCoJp  <$> (v .: "loginURL")
+                        <*> (v .: "loginID")
+                        <*> (v .: "loginPassword")
+                        <*> (v .: "dealingsPassword")
+                        <*> (v .: "userAgent")
+    --
+    parseJSON _ =
+        fail "expected an object"
+
+instance Aeson.ToJSON InfoMatsuiCoJp where
+    toJSON v =
+        Aeson.object
+        [ "loginURL"        .= loginURL (v::InfoMatsuiCoJp)
+        , "loginID"         .= loginID (v::InfoMatsuiCoJp)
+        , "loginPassword"   .= loginPassword (v::InfoMatsuiCoJp)
+        , "dealingsPassword".= dealingsPassword (v::InfoMatsuiCoJp)
+        , "userAgent"       .= userAgent (v::InfoMatsuiCoJp)
+        ]
+
 $(Aeson.deriveJSON Aeson.defaultOptions ''Info)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoSlack)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)
-$(Aeson.deriveJSON Aeson.defaultOptions ''InfoMatsuiCoJp)
 
 -- |
 -- 設定ファイル(json)を読み込む
