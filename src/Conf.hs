@@ -30,14 +30,13 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE LambdaCase #-}
 module Conf
     ( readJSONFile
     , loggingConnInfo
     , connInfoDB
     , Info (..)
     , InfoAccount (..)
-    , InfoMatsuiCoJp (..)
-    , InfoSBIsecCoJp (..)
     , InfoBroker (..)
     , InfoSlack (..)
     , InfoMariaDB (..)
@@ -59,7 +58,7 @@ data Info = Info
     , userAgent             :: String
     , slack                 :: InfoSlack
     , mariaDB               :: InfoMariaDB
-    , broker                :: InfoBroker
+    , brokers               :: [InfoBroker]
     } deriving Eq
 
 -- | 通知するSlackの設定情報
@@ -85,19 +84,9 @@ data InfoAccount = InfoAccount
     , dealingsPassword :: String
     } deriving Eq
 
-data InfoMatsuiCoJp = InfoMatsuiCoJp
-    { loginURL  :: String
-    , account   :: InfoAccount
-    } deriving Eq
-
-data InfoSBIsecCoJp = InfoSBIsecCoJp
-    { loginURL  :: String
-    , account   :: InfoAccount
-    } deriving Eq
-
 data InfoBroker
-    = MatsuiCoJp InfoMatsuiCoJp
-    | SBIsecCoJp InfoSBIsecCoJp
+    = MatsuiCoJp InfoAccount
+    | SBIsecCoJp InfoAccount
     deriving Eq
 
 -- | パスワードを*に置き換える
@@ -112,7 +101,7 @@ instance Show Info where
         , "UA:\""               ++ userAgent (v::Info) ++ "\""
         , show (slack v)
         , show (mariaDB v)
-        , show (broker v)
+        , show (brokers v)
         ]
 
 instance Show InfoSlack where
@@ -138,21 +127,9 @@ instance Show InfoAccount where
         , "取引パスワード:\""   ++ hiding (dealingsPassword (v::InfoAccount)) ++ "\""
         ]
 
-instance Show InfoMatsuiCoJp where
-    show InfoMatsuiCoJp{..} = unlines
-        [ "ログインURL:<"       ++ loginURL ++ ">"
-        , show account
-        ]
-
-instance Show InfoSBIsecCoJp where
-    show InfoSBIsecCoJp{..} = unlines
-        [ "ログインURL:<"       ++ loginURL ++ ">"
-        , show account
-        ]
-
 instance Show InfoBroker where
-    show (MatsuiCoJp v) = show v
-    show (SBIsecCoJp v) = show v
+    show (MatsuiCoJp v) = "松井証券: " ++ show v
+    show (SBIsecCoJp v) = "SBI証券: " ++ show v
 
 instance Aeson.FromJSON InfoAccount where
     --
@@ -169,56 +146,22 @@ instance Aeson.ToJSON InfoAccount where
         , "dealingsPassword".= dealingsPassword
         ]
 
-instance Aeson.FromJSON InfoMatsuiCoJp where
-    --
-    parseJSON = Aeson.withObject "account" $ \o -> do
-        loginURL    <- o .: "loginURL"
-        account     <- Aeson.parseJSON (Aeson.Object o)
-        return InfoMatsuiCoJp{..}
-
-instance Aeson.ToJSON InfoMatsuiCoJp where
-    toJSON InfoMatsuiCoJp{..} = Aeson.Object $
-        fromList
-            [ "loginURL"    .= loginURL
-            ]
-        <> toObject account
-
-instance Aeson.FromJSON InfoSBIsecCoJp where
-    --
-    parseJSON = Aeson.withObject "account" $ \o -> do
-        loginURL    <- o .: "loginURL"
-        account     <- Aeson.parseJSON (Aeson.Object o)
-        return InfoSBIsecCoJp{..}
-
-instance Aeson.ToJSON InfoSBIsecCoJp where
-    toJSON InfoSBIsecCoJp{..} = Aeson.Object $
-        fromList
-            [ "loginURL"    .= loginURL
-            ]
-        <> toObject account
-
 instance Aeson.FromJSON InfoBroker where
     --
     parseJSON = Aeson.withObject "some broker" $ \o -> do
         name <- o .: "name"
         case name of
-            "SBIsecCoJp" -> SBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
-            "MatsuiCoJp" -> MatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            "matsui.co.jp" -> MatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            "sbisec.co.jp" -> SBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
             _ -> fail ("unknown broker: " ++ name)
 
 instance Aeson.ToJSON InfoBroker where
     --
-    toJSON (MatsuiCoJp (InfoMatsuiCoJp{..})) = Aeson.Object $
-        fromList
-            [ "loginURL"    .= loginURL
-            ]
-        <> toObject account
-    --
-    toJSON (SBIsecCoJp (InfoSBIsecCoJp{..})) = Aeson.Object $
-        fromList
-            [ "loginURL"    .= loginURL
-            ]
-        <> toObject account
+    toJSON = \case
+        (MatsuiCoJp o) -> Aeson.Object $
+            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject o
+        (SBIsecCoJp o) -> Aeson.Object $
+            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject o
 
 toObject:: Aeson.ToJSON a => a -> Aeson.Object
 toObject a = case Aeson.toJSON a of

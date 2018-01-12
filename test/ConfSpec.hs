@@ -18,7 +18,7 @@ confInfo = Info
     , userAgent = "enter userAgent"
     , slack = confInfoSlack
     , mariaDB = confInfoMariaDB
-    , broker = confInfoBroker
+    , brokers = confInfoBrokers
     }
 
 confInfoSlack = InfoSlack
@@ -35,17 +35,18 @@ confInfoMariaDB = InfoMariaDB
     , database = "stockdb"
     }
 
-confInfoMatsuiCoJp = InfoMatsuiCoJp
-    { loginURL  = "enter loginURL"
-    , account   = InfoAccount
-        { loginID   = "enter loginID"
-        , loginPassword = "enter loginPassword"
-        , dealingsPassword = "enter dealingsPassword"
+confInfoBrokers =
+    [ MatsuiCoJp $ InfoAccount
+        { loginID   = "matsui.co.jp loginID"
+        , loginPassword = "matsui.co.jp loginPassword"
+        , dealingsPassword = "matsui.co.jp dealingsPassword"
         }
-    }
-
-confInfoBroker =
-    MatsuiCoJp confInfoMatsuiCoJp
+    , SBIsecCoJp $ InfoAccount
+        { loginID   = "sbisec.co.jp loginID"
+        , loginPassword = "sbisec.co.jp loginPassword"
+        , dealingsPassword = "sbisec.co.jp dealingsPassword"
+        }
+    ]
 
 --
 -- Hspecテスト

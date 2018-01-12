@@ -79,7 +79,7 @@ import qualified SinkSlack                    as Slack
 -- |
 -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
 siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
-            => Conf.InfoMatsuiCoJp
+            => Conf.InfoAccount
             -> String
             -> (BB.HTTPSession -> m b)
             -> t m b
@@ -89,7 +89,7 @@ siteConn conf userAgent f =
     where
     --
     --
-    url = Conf.loginURL (conf::Conf.InfoMatsuiCoJp)
+    url = "https://www.deal.matsui.co.jp/ITS/login/MemberLogin.jsp"
     --
     --
     invalidUrl = throwIO . userError $ url ++ " は有効なURLではありません"
@@ -106,7 +106,7 @@ siteConn conf userAgent f =
 -- |
 -- Slackへお知らせを送るついでに現在資産評価をDBへ
 noticeOfBrokerageAnnouncement   :: M.MonadIO m
-                                => Conf.InfoMatsuiCoJp
+                                => Conf.InfoAccount
                                 -> MySQL.ConnectInfo
                                 -> String
                                 -> C.Source m TL.Text
@@ -360,7 +360,7 @@ doPostActionOnSession s customPostReq =
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
-login :: Conf.InfoMatsuiCoJp -> String -> N.URI -> IO (Maybe BB.HTTPSession)
+login :: Conf.InfoAccount -> String -> N.URI -> IO (Maybe BB.HTTPSession)
 login conf userAgent loginUri = do
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
@@ -372,8 +372,6 @@ login conf userAgent loginUri = do
     let session = mkSession manager <$> resp
     return session
     where
-    --
-    account = Conf.account (conf::Conf.InfoMatsuiCoJp)
     -- |
     -- HTTPリクエストヘッダ
     reqHeader =
@@ -381,8 +379,8 @@ login conf userAgent loginUri = do
     -- |
     -- ログインID&パスワード
     customPostReq =
-        [ ("clientCD", B8.pack $ Conf.loginID account)
-        , ("passwd", B8.pack $ Conf.loginPassword account)
+        [ ("clientCD", B8.pack $ Conf.loginID conf)
+        , ("passwd", B8.pack $ Conf.loginPassword conf)
         ]
     -- |
     -- 返値組み立て

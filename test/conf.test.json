@@ -14,12 +14,17 @@
         "password"  : "enter password",
         "database"  : "stockdb"
     },
-    "broker" : {
-        "name"              : "MatsuiCoJp",
-        "loginURL"          : "enter loginURL",
-        "loginID"           : "enter loginID",
-        "loginPassword"     : "enter loginPassword",
-        "dealingsPassword"  : "enter dealingsPassword"
-    }
+    "brokers" : [
+        {"name"             : "matsui.co.jp"
+        ,"loginID"          : "matsui.co.jp loginID"
+        ,"loginPassword"    : "matsui.co.jp loginPassword"
+        ,"dealingsPassword" : "matsui.co.jp dealingsPassword"
+        },
+        {"name"             : "sbisec.co.jp"
+        ,"loginID"          : "sbisec.co.jp loginID"
+        ,"loginPassword"    : "sbisec.co.jp loginPassword"
+        ,"dealingsPassword" : "sbisec.co.jp dealingsPassword"
+        }
+    ]
 }
 
