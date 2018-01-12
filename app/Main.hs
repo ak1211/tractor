@@ -117,7 +117,7 @@ announceWeekdayThread conf jstDay =
     --
     --
     act =
-        Broker.noticeOfBrokerageAnnouncement connInfo (Conf.broker conf) (Conf.userAgent conf)
+        Broker.noticeOfBrokerageAnnouncement (Conf.broker conf) connInfo (Conf.userAgent conf)
         $= simpleTextMsg conf $$ sinkSlack conf
     --
     --
@@ -197,8 +197,8 @@ tradingTimeThread conf times =
         where
         -- 現在資産取得関数
         act =
-            Broker.fetchUpdatedPriceAndStore
-                (Conf.connInfoDB $ Conf.mariaDB conf) broker session
+            Broker.fetchUpdatedPriceAndStore broker
+                (Conf.connInfoDB $ Conf.mariaDB conf) session
     -- |
     -- 現在資産評価額報告
     reportJobs =
@@ -210,8 +210,8 @@ tradingTimeThread conf times =
         where
         -- 現在資産評価額報告関数
         act =
-            Broker.noticeOfCurrentAssets
-                (Conf.connInfoDB $ Conf.mariaDB conf) broker
+            Broker.noticeOfCurrentAssets broker
+                (Conf.connInfoDB $ Conf.mariaDB conf)
             $= reportMsg conf $$ sinkSlack conf
     -- |
     -- UTC時間の加減算

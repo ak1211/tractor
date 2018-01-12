@@ -106,11 +106,11 @@ siteConn conf userAgent f =
 -- |
 -- Slackへお知らせを送るついでに現在資産評価をDBへ
 noticeOfBrokerageAnnouncement   :: M.MonadIO m
-                                => MySQL.ConnectInfo
-                                -> Conf.InfoMatsuiCoJp
+                                => Conf.InfoMatsuiCoJp
+                                -> MySQL.ConnectInfo
                                 -> String
                                 -> C.Source m TL.Text
-noticeOfBrokerageAnnouncement connInfo conf userAgent = do
+noticeOfBrokerageAnnouncement conf connInfo userAgent = do
     r <- M.liftIO
             . MR.runResourceT
             . siteConn conf userAgent $ \session -> do

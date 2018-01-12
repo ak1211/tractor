@@ -59,20 +59,20 @@ class Broker a where
     -- |
     -- Slackへお知らせを送るついでに現在資産評価をDBへ
     noticeOfBrokerageAnnouncement   :: M.MonadIO m
-                                    => MySQL.ConnectInfo
-                                    -> a
+                                    => a
+                                    -> MySQL.ConnectInfo
                                     -> String
                                     -> C.Source m TL.Text
     -- |
     -- DBから最新の資産評価を取り出してSlackへレポートを送る
     noticeOfCurrentAssets   :: M.MonadIO m
-                            => MySQL.ConnectInfo
-                            -> a
+                            => a
+                            -> MySQL.ConnectInfo
                             -> C.Source m SinkSlack.Report
     -- |
     -- 現在資産評価を証券会社のサイトから取得してDBへ
-    fetchUpdatedPriceAndStore   :: MySQL.ConnectInfo
-                                -> a
+    fetchUpdatedPriceAndStore   :: a
+                                -> MySQL.ConnectInfo
                                 -> BB.HTTPSession
                                 -> IO ()
 
@@ -81,14 +81,14 @@ class Broker a where
 instance Broker Conf.InfoBroker where
     --
     siteConn = \case
-        (Conf.MatsuiCoJp b) -> MatsuiCoJp.Broker.siteConn b
+        (Conf.MatsuiCoJp a) -> MatsuiCoJp.Broker.siteConn a
     --
-    noticeOfBrokerageAnnouncement a = \case
-        (Conf.MatsuiCoJp b) -> MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement a b
+    noticeOfBrokerageAnnouncement = \case
+        (Conf.MatsuiCoJp a) -> MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement a
     --
-    noticeOfCurrentAssets a _ =
-        MatsuiCoJp.Broker.noticeOfCurrentAssets a
+    noticeOfCurrentAssets = \case
+        (Conf.MatsuiCoJp _) -> MatsuiCoJp.Broker.noticeOfCurrentAssets
     --
-    fetchUpdatedPriceAndStore a _ =
-        MatsuiCoJp.Broker.fetchUpdatedPriceAndStore a
+    fetchUpdatedPriceAndStore = \case
+        (Conf.MatsuiCoJp _) -> MatsuiCoJp.Broker.fetchUpdatedPriceAndStore
 
