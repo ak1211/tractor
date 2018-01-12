@@ -37,7 +37,6 @@ confInfoMariaDB = InfoMariaDB
 
 confInfoMatsuiCoJp = InfoMatsuiCoJp
     { loginURL  = "enter loginURL"
-    , userAgent = "enter userAgent"
     , account   = InfoAccount
         { loginID   = "enter loginID"
         , loginPassword = "enter loginPassword"

@@ -87,13 +87,11 @@ data InfoAccount = InfoAccount
 
 data InfoMatsuiCoJp = InfoMatsuiCoJp
     { loginURL  :: String
-    , userAgent :: String
     , account   :: InfoAccount
     } deriving Eq
 
 data InfoSBIsecCoJp = InfoSBIsecCoJp
     { loginURL  :: String
-    , userAgent :: String
     , account   :: InfoAccount
     } deriving Eq
 
@@ -143,14 +141,12 @@ instance Show InfoAccount where
 instance Show InfoMatsuiCoJp where
     show InfoMatsuiCoJp{..} = unlines
         [ "ログインURL:<"       ++ loginURL ++ ">"
-        , "UA:\""               ++ userAgent ++ "\""
         , show account
         ]
 
 instance Show InfoSBIsecCoJp where
     show InfoSBIsecCoJp{..} = unlines
         [ "ログインURL:<"       ++ loginURL ++ ">"
-        , "UA:\""               ++ userAgent ++ "\""
         , show account
         ]
 
@@ -177,7 +173,6 @@ instance Aeson.FromJSON InfoMatsuiCoJp where
     --
     parseJSON = Aeson.withObject "account" $ \o -> do
         loginURL    <- o .: "loginURL"
-        userAgent   <- o .: "userAgent"
         account     <- Aeson.parseJSON (Aeson.Object o)
         return InfoMatsuiCoJp{..}
 
@@ -185,7 +180,6 @@ instance Aeson.ToJSON InfoMatsuiCoJp where
     toJSON InfoMatsuiCoJp{..} = Aeson.Object $
         fromList
             [ "loginURL"    .= loginURL
-            , "userAgent"   .= userAgent
             ]
         <> toObject account
 
@@ -193,7 +187,6 @@ instance Aeson.FromJSON InfoSBIsecCoJp where
     --
     parseJSON = Aeson.withObject "account" $ \o -> do
         loginURL    <- o .: "loginURL"
-        userAgent   <- o .: "userAgent"
         account     <- Aeson.parseJSON (Aeson.Object o)
         return InfoSBIsecCoJp{..}
 
@@ -201,7 +194,6 @@ instance Aeson.ToJSON InfoSBIsecCoJp where
     toJSON InfoSBIsecCoJp{..} = Aeson.Object $
         fromList
             [ "loginURL"    .= loginURL
-            , "userAgent"   .= userAgent
             ]
         <> toObject account
 
@@ -219,14 +211,12 @@ instance Aeson.ToJSON InfoBroker where
     toJSON (MatsuiCoJp (InfoMatsuiCoJp{..})) = Aeson.Object $
         fromList
             [ "loginURL"    .= loginURL
-            , "userAgent"   .= userAgent
             ]
         <> toObject account
     --
     toJSON (SBIsecCoJp (InfoSBIsecCoJp{..})) = Aeson.Object $
         fromList
             [ "loginURL"    .= loginURL
-            , "userAgent"   .= userAgent
             ]
         <> toObject account
 

@@ -143,7 +143,7 @@ announceHolidayTimeInJST jstDay =
 batchProcessTimeInJST :: Tm.Day -> [Tm.ZonedTime]
 batchProcessTimeInJST jstDay =
     map (flip Tm.ZonedTime Lib.tzJST . Tm.LocalTime jstDay)
-    [ Tm.TimeOfDay 18 20 00 ]
+    []
 
 -- |
 -- 明日の日本時間午前0時

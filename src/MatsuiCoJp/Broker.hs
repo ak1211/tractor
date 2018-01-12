@@ -80,9 +80,10 @@ import qualified SinkSlack                    as Slack
 -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
 siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
             => Conf.InfoMatsuiCoJp
+            -> String
             -> (BB.HTTPSession -> m b)
             -> t m b
-siteConn conf f =
+siteConn conf userAgent f =
     MR.allocate login' logout
     >>= (\(_,session) -> M.lift $ f session)
     where
@@ -99,7 +100,7 @@ siteConn conf f =
     -- 証券会社のサイトにログインする関数
     login' =
         maybe invalidUrl return (N.parseURI url)
-        >>= MatsuiCoJp.Broker.login conf
+        >>= MatsuiCoJp.Broker.login conf userAgent
         >>= maybe loginFail return
 
 -- |
@@ -107,11 +108,12 @@ siteConn conf f =
 noticeOfBrokerageAnnouncement   :: M.MonadIO m
                                 => MySQL.ConnectInfo
                                 -> Conf.InfoMatsuiCoJp
+                                -> String
                                 -> C.Source m TL.Text
-noticeOfBrokerageAnnouncement connInfo conf = do
+noticeOfBrokerageAnnouncement connInfo conf userAgent = do
     r <- M.liftIO
             . MR.runResourceT
-            . siteConn conf $ \session -> do
+            . siteConn conf userAgent $ \session -> do
         -- ホーム -> お知らせを見に行く
         fha <- MatsuiCoJp.Broker.fetchFraHomeAnnounce session
         -- 現在資産評価を証券会社のサイトから取得してDBへ
@@ -358,8 +360,8 @@ doPostActionOnSession s customPostReq =
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
-login :: Conf.InfoMatsuiCoJp -> N.URI -> IO (Maybe BB.HTTPSession)
-login conf loginUri = do
+login :: Conf.InfoMatsuiCoJp -> String -> N.URI -> IO (Maybe BB.HTTPSession)
+login conf userAgent loginUri = do
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセス
@@ -375,7 +377,7 @@ login conf loginUri = do
     -- |
     -- HTTPリクエストヘッダ
     reqHeader =
-        Lib.httpRequestHeader $ Conf.userAgent (conf::Conf.InfoMatsuiCoJp)
+        Lib.httpRequestHeader userAgent
     -- |
     -- ログインID&パスワード
     customPostReq =

@@ -52,6 +52,7 @@ class Broker a where
     -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
     siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
                 => a
+                -> String
                 -> (BB.HTTPSession -> m b)
                 -> t m b
     -- |
@@ -59,6 +60,7 @@ class Broker a where
     noticeOfBrokerageAnnouncement   :: M.MonadIO m
                                     => MySQL.ConnectInfo
                                     -> a
+                                    -> String
                                     -> C.Source m TL.Text
     -- |
     -- DBから最新の資産評価を取り出してSlackへレポートを送る

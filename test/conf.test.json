@@ -17,7 +17,6 @@
     "broker" : {
         "name"              : "MatsuiCoJp",
         "loginURL"          : "enter loginURL",
-        "userAgent"         : "enter userAgent",
         "loginID"           : "enter loginID",
         "loginPassword"     : "enter loginPassword",
         "dealingsPassword"  : "enter dealingsPassword"

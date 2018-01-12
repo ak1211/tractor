@@ -114,8 +114,12 @@ announceWeekdayThread conf jstDay =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
         [(t, act $ Conf.broker conf) | t<-Scheduling.announceWeekdayTimeInJST jstDay]
     where
+    userAgent :: String
+    userAgent = Conf.userAgent conf
+    --
+    --
     act (Conf.MatsuiCoJp matsuiCoJp) =
-        Broker.noticeOfBrokerageAnnouncement connInfo matsuiCoJp
+        Broker.noticeOfBrokerageAnnouncement connInfo matsuiCoJp userAgent
         $= simpleTextMsg conf $$ sinkSlack conf
     --
     --
@@ -159,10 +163,12 @@ tradingTimeThread conf times =
         -- 再復帰は30分間隔
         [ (t, worker $ Conf.broker conf) | t<-Lib.every (30*60) times ]
     where
+    userAgent :: String
+    userAgent = Conf.userAgent conf
     --
     -- 実際の作業
     worker (Conf.MatsuiCoJp matsuiCoJp) =
-        M.runResourceT . Broker.siteConn matsuiCoJp
+        M.runResourceT . Broker.siteConn matsuiCoJp userAgent
             $ \sess -> Scheduling.execute (fetchPriceJobs matsuiCoJp sess ++ reportJobs matsuiCoJp)
         `Ex.catches`
         --
