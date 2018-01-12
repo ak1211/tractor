@@ -28,6 +28,7 @@ Portability :  POSIX
 -}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 module GenBroker
@@ -77,17 +78,17 @@ class Broker a where
 
 --
 --
-instance Broker Conf.InfoMatsuiCoJp where
+instance Broker Conf.InfoBroker where
     --
-    siteConn =
-        MatsuiCoJp.Broker.siteConn
+    siteConn = \case
+        (Conf.MatsuiCoJp b) -> MatsuiCoJp.Broker.siteConn b
     --
-    noticeOfBrokerageAnnouncement =
-        MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement
+    noticeOfBrokerageAnnouncement a = \case
+        (Conf.MatsuiCoJp b) -> MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement a b
     --
-    noticeOfCurrentAssets x _ =
-        MatsuiCoJp.Broker.noticeOfCurrentAssets x
+    noticeOfCurrentAssets a _ =
+        MatsuiCoJp.Broker.noticeOfCurrentAssets a
     --
-    fetchUpdatedPriceAndStore x _ =
-        MatsuiCoJp.Broker.fetchUpdatedPriceAndStore x
+    fetchUpdatedPriceAndStore a _ =
+        MatsuiCoJp.Broker.fetchUpdatedPriceAndStore a
 
