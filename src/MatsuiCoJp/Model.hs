@@ -41,8 +41,13 @@ module MatsuiCoJp.Model
     , module ModelDef
     ) where
 
-import           Data.Int            (Int32)
-import           Data.Time           (UTCTime)
+import           Data.Int                         (Int32)
+import           Data.Monoid                      (mempty, (<>))
+import qualified Data.Text.Lazy                   as TL
+import qualified Data.Text.Lazy.Builder           as TLB
+import qualified Data.Text.Lazy.Builder.Int       as TLB
+import qualified Data.Text.Lazy.Builder.RealFloat as TLB
+import           Data.Time                        (UTCTime)
 import           Database.Persist.TH
 
 import           ModelDef
@@ -79,41 +84,32 @@ MatsuicojpStock
 -- 資産テーブルの要約
 matsuicojpAssetDigest :: MatsuicojpAsset -> String
 matsuicojpAssetDigest MatsuicojpAsset{..} =
-    show matsuicojpAssetAt
-    ++ ", "
-    ++ "評価合計 " ++ show matsuicojpAssetEvaluation
-    ++ ", "
-    ++ "損益合計 " ++ show matsuicojpAssetProfit
-    ++ ", "
-    ++ "現物買付余力 " ++ show matsuicojpAssetMoneySpare
-    ++ ", "
-    ++ "現金残高 " ++ show matsuicojpAssetCashBalance
-    ++ ", "
-    ++ "預り増加額 " ++ show matsuicojpAssetDepositInc
-    ++ ", "
-    ++ "預り減少額 " ++ show matsuicojpAssetDepositDec
-    ++ ", "
-    ++ "ボックスレート手数料拘束金 " ++ show matsuicojpAssetBindingFee
-    ++ ", "
-    ++ "源泉徴収税拘束金（仮計算） " ++ show matsuicojpAssetBindingTax
-    ++ ", "
-    ++ "使用可能現金 " ++ show matsuicojpAssetCash
+    TL.unpack . TLB.toLazyText $ mempty
+    <> TLB.fromString (show matsuicojpAssetAt) <> ", "
+    <> "評価合計 " <> TLB.realFloat matsuicojpAssetEvaluation <> ", "
+    <> "損益合計 " <> TLB.realFloat matsuicojpAssetProfit <> ", "
+    <> "現物買付余力 " <> TLB.decimal matsuicojpAssetMoneySpare <> ", "
+    <> "現金残高 " <> TLB.decimal matsuicojpAssetCashBalance <> ", "
+    <> "預り増加額 " <> TLB.decimal matsuicojpAssetDepositInc <> ", "
+    <> "預り減少額 " <> TLB.decimal matsuicojpAssetDepositDec <> ", "
+    <> "ボックスレート手数料拘束金 " <> TLB.decimal matsuicojpAssetBindingFee <> ", "
+    <> "源泉徴収税拘束金（仮計算） " <> TLB.decimal matsuicojpAssetBindingTax <> ", "
+    <> "使用可能現金 " <> TLB.decimal matsuicojpAssetCash
 
 -- |
 -- 保有株式の要約
 matsuicojpStockDigest :: MatsuicojpStock -> String
 matsuicojpStockDigest stk@(MatsuicojpStock{..}) =
-    ticker matsuicojpStockTicker ++ " " ++ matsuicojpStockCaption
-    ++ ", "
-    ++ "保有 " ++ show matsuicojpStockCount
-    ++ ", "
-    ++ "取得 " ++ show matsuicojpStockPurchase
-    ++ ", "
-    ++ "現在 " ++ show matsuicojpStockPrice
-    ++ ", "
-    ++ "損益 " ++ show (matsuicojpStockGain stk)
+    TL.unpack . TLB.toLazyText $ mempty
+    <> ticker matsuicojpStockTicker <> " "
+    <> TLB.fromString matsuicojpStockCaption <> ", "
+    <> "保有 " <> TLB.decimal matsuicojpStockCount <> ", "
+    <> "取得 " <> TLB.realFloat matsuicojpStockPurchase <> ", "
+    <> "現在 " <> TLB.realFloat matsuicojpStockPrice <> ", "
+    <> "損益 " <> TLB.realFloat (matsuicojpStockGain stk)
     where
-    ticker (TSTYO c)  = show c
+    ticker :: TickerSymbol -> TLB.Builder
+    ticker (TSTYO c)  = TLB.fromString (show c)
     ticker TSNI225    = "日経平均株価"
     ticker TSTOPIX    = "東証株価指数"
     ticker TSJPXNI400 = "JPX400"

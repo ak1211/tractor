@@ -45,8 +45,8 @@ import qualified Data.Maybe                   as Mb
 import           Data.Monoid                  ((<>))
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TB
-import qualified Data.Text.Lazy.Builder.Int   as TB
+import qualified Data.Text.Lazy.Builder       as TLB
+import qualified Data.Text.Lazy.Builder.Int   as TLB
 import qualified Data.Time.Calendar           as Tm
 import qualified Data.Time.Clock              as Tm
 import qualified Data.Time.LocalTime          as Tm
@@ -325,10 +325,10 @@ runAggregateOfPortfolios conf = do
         DB.runMigration migrateQuotes
         DB.count ([] :: [DB.Filter Portfolio])
 
-    C.yield . TB.toLazyText $
+    C.yield . TLB.toLazyText $
         case counts of
         0 -> "集計処理の対象銘柄がありません。"
-        x -> "集計処理の対象銘柄は全部で" <> TB.decimal x <> "個有ります。"
+        x -> "集計処理の対象銘柄は全部で" <> TLB.decimal x <> "個有ります。"
 
     -- 処理対象銘柄のリストを得る
     ps  <- M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
@@ -339,10 +339,10 @@ runAggregateOfPortfolios conf = do
     M.forM_ (zip ps [1..]) $ \(val, number) -> do
         let ticker = portfolioTicker val
         let textCaption = Mb.fromMaybe (T.pack . show $ portfolioTicker val) $ portfolioCaption val
-        let progress=  TB.singleton '[' <> TB.decimal (number :: Int)
-                    <> TB.singleton '/' <> TB.decimal counts
-                    <> TB.singleton ']'
-        C.yield . TB.toLazyText $ TB.fromText textCaption <> " を集計中。" <> progress
+        let progress=  TLB.singleton '[' <> TLB.decimal (number :: Int)
+                    <> TLB.singleton '/' <> TLB.decimal counts
+                    <> TLB.singleton ']'
+        C.yield . TLB.toLazyText $ TLB.fromText textCaption <> " を集計中。" <> progress
         M.liftIO $ do
             aggregate connInfo ticker
             --

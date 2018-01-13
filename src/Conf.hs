@@ -42,17 +42,22 @@ module Conf
     , InfoMariaDB (..)
     ) where
 
-import           Data.Aeson             ((.:), (.=))
-import qualified Data.Aeson             as Aeson
-import qualified Data.Aeson.TH          as Aeson
-import qualified Data.ByteString.Char8  as B8
-import qualified Data.ByteString.Lazy   as BSL
-import           Data.Monoid            ((<>))
-import           Data.Word              (Word16)
-import qualified Database.Persist.MySQL as MySQL
-import           GHC.Exts               (fromList)
+import           Data.Aeson                 ((.:), (.=))
+import qualified Data.Aeson                 as Aeson
+import qualified Data.Aeson.TH              as Aeson
+import qualified Data.ByteString.Char8      as B8
+import qualified Data.ByteString.Lazy       as BSL
+import           Data.Monoid                (mempty, (<>))
+import qualified Data.Text.Lazy             as TL
+import qualified Data.Text.Lazy.Builder     as TLB
+import qualified Data.Text.Lazy.Builder.Int as TLB
+import           Data.Word                  (Word16)
+import qualified Database.Persist.MySQL     as MySQL
+import           GHC.Exts                   (fromList)
+import           System.IO                  (nativeNewline)
 
--- | アプリケーションの設定情報
+-- |
+-- アプリケーションの設定情報
 data Info = Info
     { updatePriceMinutes  :: Int
     , noticeAssetsMinutes :: Int
@@ -62,14 +67,16 @@ data Info = Info
     , brokers             :: [InfoBroker]
     } deriving Eq
 
--- | 通知するSlackの設定情報
+-- |
+-- 通知するSlackの設定情報
 data InfoSlack = InfoSlack
     { webHookURL :: String
     , channel    :: String
     , userName   :: String
     } deriving Eq
 
--- | MariaDBの設定情報
+-- |
+-- MariaDBの設定情報
 data InfoMariaDB = InfoMariaDB
     { host     :: String
     , port     :: Word16
@@ -78,55 +85,64 @@ data InfoMariaDB = InfoMariaDB
     , database :: String
     } deriving Eq
 
--- | 証券会社の設定情報
+-- |
+-- アカウント情報
 data InfoAccount = InfoAccount
     { loginID          :: B8.ByteString
     , loginPassword    :: B8.ByteString
     , dealingsPassword :: B8.ByteString
     } deriving Eq
 
+-- |
+-- 証券会社の設定情報
 data InfoBroker
     = MatsuiCoJp InfoAccount    -- ^ 松井証券
     | SBIsecCoJp InfoAccount    -- ^ SBI証券
     deriving Eq
 
--- | パスワードを*に置き換える
+-- |
+-- パスワードを*に置き換える
 hiding :: String -> String
 hiding = map (const '*')
 
+-- |
+-- 改行文字
+newline :: TLB.Builder
+newline = TLB.fromString (show nativeNewline)
+
 -- 型クラスShowのインスタンス
 instance Show Info where
-    show v = unlines
-        [ "資産情報取得間隔:"   ++ show (updatePriceMinutes v) ++ "分"
-        , "レポート送信間隔:"   ++ show (noticeAssetsMinutes v) ++ "分"
-        , "UA:\""               ++ userAgent (v::Info) ++ "\""
-        , show (slack v)
-        , show (mariaDB v)
-        , show (brokers v)
-        ]
+    show Info{..} =
+        TL.unpack . TLB.toLazyText $ mempty
+        <> "資産情報取得間隔:" <> TLB.decimal updatePriceMinutes <> "分" <> newline
+        <> "レポート送信間隔:" <> TLB.decimal noticeAssetsMinutes <> "分" <> newline
+        <> "UA:\"" <> TLB.fromString userAgent <> "\"" <> newline
+        <> TLB.fromString (show slack) <> newline
+        <> TLB.fromString (show mariaDB) <> newline
+        <> TLB.fromString (show brokers) <> newline
 
 instance Show InfoSlack where
-    show v = unlines
-        [ "Slack Webhook URL:<" ++ webHookURL v
-        , "Slack channel:\""    ++ channel v ++ "\""
-        , "Slack user name:\""  ++ userName v ++ "\""
-        ]
+    show InfoSlack{..} =
+        TL.unpack . TLB.toLazyText $ mempty
+        <> "Slack Webhook URL:<" <> TLB.fromString webHookURL <> newline
+        <> "Slack channel:\"" <> TLB.fromString channel <> "\"" <> newline
+        <> "Slack user name:\"" <> TLB.fromString userName <> "\"" <> newline
 
 instance Show InfoMariaDB where
-    show v = unlines
-        [ "MariaDB host:\""     ++ host v  ++ "\""
-        , "MariaDB port:"       ++ show (port v)
-        , "MariaDB user:\""     ++ user v ++ "\""
-        , "MariaDB password:\"" ++ hiding (password v) ++ "\""
-        , "MariaDB database:\"" ++ database v ++ "\""
-        ]
+    show InfoMariaDB{..} =
+        TL.unpack . TLB.toLazyText $ mempty
+        <> "MariaDB host:\"" <> TLB.fromString host <> "\"" <> newline
+        <> "MariaDB port:" <> TLB.decimal port <> newline
+        <> "MariaDB user:\"" <> TLB.fromString user <> "\"" <> newline
+        <> "MariaDB password:\"" <> TLB.fromString (hiding password) <> "\"" <> newline
+        <> "MariaDB database:\"" <> TLB.fromString database <> "\"" <> newline
 
 instance Show InfoAccount where
-    show InfoAccount{..} = unlines
-        [ "ログインID:\""       ++ hiding (B8.unpack loginID) ++ "\""
-        , "パスワード:\""       ++ hiding (B8.unpack loginPassword) ++ "\""
-        , "取引パスワード:\""   ++ hiding (B8.unpack dealingsPassword) ++ "\""
-        ]
+    show InfoAccount{..} =
+        TL.unpack . TLB.toLazyText $ mempty
+        <> "ログインID:\"" <> (TLB.fromString . hiding $ B8.unpack loginID) <> "\"" <> newline
+        <> "パスワード:\"" <> (TLB.fromString . hiding $ B8.unpack loginPassword) <> "\"" <> newline
+        <> "取引パスワード:\"" <> (TLB.fromString . hiding $ B8.unpack dealingsPassword) <> "\"" <> newline
 
 instance Show InfoBroker where
     show (MatsuiCoJp v) = "松井証券: " ++ show v

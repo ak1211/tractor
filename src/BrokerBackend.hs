@@ -31,7 +31,6 @@ Portability :  POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
-
 module BrokerBackend
     ( HTTPSession (..)
     , UnexpectedHTMLException (..)
@@ -43,28 +42,30 @@ module BrokerBackend
     , failureAtScraping
     ) where
 
-import qualified Codec.Text.IConv             as IConv
-import           Control.Exception            (Exception, throwIO)
-import qualified Control.Monad.Logger         as ML
-import qualified Control.Monad.Reader         as M
-import qualified Control.Monad.Trans.Resource as MR
-import qualified Data.ByteString.Char8        as B8
-import qualified Data.ByteString.Lazy.Char8   as BL8
-import qualified Data.List                    as List
-import qualified Data.Maybe                   as Maybe
-import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Encoding      as TE
-import qualified Data.Time                    as Tm
+import qualified Codec.Text.IConv                 as IConv
+import           Control.Exception                (Exception, throwIO)
+import qualified Control.Monad.Logger             as ML
+import qualified Control.Monad.Reader             as M
+import qualified Control.Monad.Trans.Resource     as MR
+import qualified Data.ByteString.Char8            as B8
+import qualified Data.ByteString.Lazy.Char8       as BL8
+import qualified Data.List                        as List
+import qualified Data.Maybe                       as Maybe
+import           Data.Monoid                      (mempty, (<>))
+import qualified Data.Text.Lazy                   as TL
+import qualified Data.Text.Lazy.Builder           as TLB
+import qualified Data.Text.Lazy.Encoding          as TE
+import qualified Data.Time                        as Tm
 import qualified Data.Typeable
-import qualified Database.Persist             as DB
-import qualified Database.Persist.MySQL       as MySQL
-import qualified Database.Persist.Sql         as DB
-import qualified Network.HTTP.Conduit         as N
-import qualified Network.HTTP.Types.Header    as N
-import qualified Network.URI                  as N
-import           Text.Parsec                  ((<|>))
-import qualified Text.Parsec                  as P
-import qualified Text.Parsec.ByteString.Lazy  as P
+import qualified Database.Persist                 as DB
+import qualified Database.Persist.MySQL           as MySQL
+import qualified Database.Persist.Sql             as DB
+import qualified Network.HTTP.Conduit             as N
+import qualified Network.HTTP.Types.Header        as N
+import qualified Network.URI                      as N
+import           Text.Parsec                      ((<|>))
+import qualified Text.Parsec                      as P
+import qualified Text.Parsec.ByteString.Lazy      as P
 
 import qualified Conf
 import           Model
@@ -81,10 +82,11 @@ data HTTPSession = HTTPSession
 
 instance Show HTTPSession where
     show sess =
-        show (sLoginPageURI sess)
-        ++ ", " ++ show (sReqHeaders sess)
-        ++ ", " ++ show (sRespCookies sess)
-        ++ ", " ++ TL.unpack (sTopPageHTML sess)
+        TL.unpack . TLB.toLazyText $ mempty
+        <> TLB.fromString (show $ sLoginPageURI sess) <> ", "
+        <> TLB.fromString (show $ sReqHeaders sess) <> ", "
+        <> TLB.fromString (show $ sRespCookies sess) <> ", "
+        <> TLB.fromLazyText (sTopPageHTML sess)
 
 -- |
 -- 実行時例外 : 予想外のHTML

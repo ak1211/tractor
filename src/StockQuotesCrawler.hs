@@ -50,8 +50,8 @@ import qualified Data.Maybe                   as Mb
 import           Data.Monoid                  ((<>))
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TB
-import qualified Data.Text.Lazy.Builder.Int   as TB
+import qualified Data.Text.Lazy.Builder       as TLB
+import qualified Data.Text.Lazy.Builder.Int   as TLB
 import qualified Data.Text.Read               as T
 import qualified Data.Time.Clock              as Tm
 import           Database.Persist             ((<=.), (=.), (==.), (||.))
@@ -193,9 +193,9 @@ runWebCrawlingPortfolios conf = do
 
     case length ws of
         0 ->
-            C.yield . TB.toLazyText $ "今回の更新は不要です。"
+            C.yield . TLB.toLazyText $ "今回の更新は不要です。"
         counts -> do
-            C.yield . TB.toLazyText $ "更新対象は全部で" <> TB.decimal counts  <> "個有ります。"
+            C.yield . TLB.toLazyText $ "更新対象は全部で" <> TLB.decimal counts  <> "個有ります。"
             rgen <- M.liftIO R.createSystemRandom
             -- 更新作業毎に停止しながら更新する
             M.sequence_
@@ -294,15 +294,15 @@ putDescription  :: M.MonadIO m
                 -> Lib.NthOfTotal
                 -> C.Source m TL.Text
 putDescription tf pf (current,total) =
-    C.yield $ TB.toLazyText msg
+    C.yield $ TLB.toLazyText msg
     where
     defaultCaption = T.pack . show . portfolioTicker $ pf
     textCaption = Mb.fromMaybe defaultCaption $ portfolioCaption pf
-    c = TB.fromText textCaption
+    c = TLB.fromText textCaption
     t TF1h = "１時間足"
     t TF1d = "日足"
-    s = TB.singleton
-    d = TB.decimal
+    s = TLB.singleton
+    d = TLB.decimal
     body = c <> " の" <> t tf <> "を更新中。"
     trailer = s '[' <> d current <> s '/' <> d total <> s ']'
     msg = body <> trailer
