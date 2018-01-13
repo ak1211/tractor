@@ -379,8 +379,8 @@ login conf userAgent loginUri = do
     -- |
     -- ログインID&パスワード
     customPostReq =
-        [ ("clientCD", B8.pack $ Conf.loginID conf)
-        , ("passwd", B8.pack $ Conf.loginPassword conf)
+        [ ("clientCD", Conf.loginID conf)
+        , ("passwd", Conf.loginPassword conf)
         ]
     -- |
     -- 返値組み立て
@@ -536,7 +536,7 @@ fetchFraAstSpare = flip fetchSomethingPage setFraAstSpare
 -- |
 -- 注文情報
 data SellOrder = SellOrder
-    { sellOrderPassword :: String
+    { sellOrderPassword :: B8.ByteString
     , sellOrderCode     :: Int
     , sellOrderNominal  :: Int
     , sellOrderPrice    :: Double
@@ -634,7 +634,7 @@ doSellOrder order session orderPage =
         --
         -- 注文確認ページのPOSTリクエスト
         customPostReq =
-            [("pinNo", B8.pack $ sellOrderPassword order)]  -- 取引暗証番号
+            [("pinNo", sellOrderPassword order)]  -- 取引暗証番号
     --
     --
     txtSellCode = TL.pack . show $ sellOrderCode order

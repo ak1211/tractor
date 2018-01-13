@@ -27,10 +27,10 @@ Portability :  POSIX
 アプリケーションの設定情報を管理するモジュールです
 -}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE LambdaCase #-}
 module Conf
     ( readJSONFile
     , loggingConnInfo
@@ -45,6 +45,7 @@ module Conf
 import           Data.Aeson             ((.:), (.=))
 import qualified Data.Aeson             as Aeson
 import qualified Data.Aeson.TH          as Aeson
+import qualified Data.ByteString.Char8  as B8
 import qualified Data.ByteString.Lazy   as BSL
 import           Data.Monoid            ((<>))
 import           Data.Word              (Word16)
@@ -53,12 +54,12 @@ import           GHC.Exts               (fromList)
 
 -- | アプリケーションの設定情報
 data Info = Info
-    { updatePriceMinutes    :: Int
-    , noticeAssetsMinutes   :: Int
-    , userAgent             :: String
-    , slack                 :: InfoSlack
-    , mariaDB               :: InfoMariaDB
-    , brokers               :: [InfoBroker]
+    { updatePriceMinutes  :: Int
+    , noticeAssetsMinutes :: Int
+    , userAgent           :: String
+    , slack               :: InfoSlack
+    , mariaDB             :: InfoMariaDB
+    , brokers             :: [InfoBroker]
     } deriving Eq
 
 -- | 通知するSlackの設定情報
@@ -79,14 +80,14 @@ data InfoMariaDB = InfoMariaDB
 
 -- | 証券会社の設定情報
 data InfoAccount = InfoAccount
-    { loginID          :: String
-    , loginPassword    :: String
-    , dealingsPassword :: String
+    { loginID          :: B8.ByteString
+    , loginPassword    :: B8.ByteString
+    , dealingsPassword :: B8.ByteString
     } deriving Eq
 
 data InfoBroker
-    = MatsuiCoJp InfoAccount
-    | SBIsecCoJp InfoAccount
+    = MatsuiCoJp InfoAccount    -- ^ 松井証券
+    | SBIsecCoJp InfoAccount    -- ^ SBI証券
     deriving Eq
 
 -- | パスワードを*に置き換える
@@ -121,10 +122,10 @@ instance Show InfoMariaDB where
         ]
 
 instance Show InfoAccount where
-    show v = unlines
-        [ "ログインID:\""       ++ hiding (loginID (v::InfoAccount)) ++ "\""
-        , "パスワード:\""       ++ hiding (loginPassword (v::InfoAccount)) ++ "\""
-        , "取引パスワード:\""   ++ hiding (dealingsPassword (v::InfoAccount)) ++ "\""
+    show InfoAccount{..} = unlines
+        [ "ログインID:\""       ++ hiding (B8.unpack loginID) ++ "\""
+        , "パスワード:\""       ++ hiding (B8.unpack loginPassword) ++ "\""
+        , "取引パスワード:\""   ++ hiding (B8.unpack dealingsPassword) ++ "\""
         ]
 
 instance Show InfoBroker where
@@ -134,16 +135,16 @@ instance Show InfoBroker where
 instance Aeson.FromJSON InfoAccount where
     --
     parseJSON = Aeson.withObject "account" $ \o -> do
-        loginID         <- o .: "loginID"
-        loginPassword   <- o .: "loginPassword"
-        dealingsPassword<- o .: "dealingsPassword"
+        loginID         <- B8.pack <$> o .: "loginID"
+        loginPassword   <- B8.pack <$> o .: "loginPassword"
+        dealingsPassword<- B8.pack <$> o .: "dealingsPassword"
         return InfoAccount{..}
 
 instance Aeson.ToJSON InfoAccount where
     toJSON InfoAccount{..} = Aeson.object
-        [ "loginID"         .= loginID
-        , "loginPassword"   .= loginPassword
-        , "dealingsPassword".= dealingsPassword
+        [ "loginID"         .= B8.unpack loginID
+        , "loginPassword"   .= B8.unpack loginPassword
+        , "dealingsPassword".= B8.unpack dealingsPassword
         ]
 
 instance Aeson.FromJSON InfoBroker where
@@ -153,7 +154,7 @@ instance Aeson.FromJSON InfoBroker where
         case name of
             "matsui.co.jp" -> MatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
             "sbisec.co.jp" -> SBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
-            _ -> fail ("unknown broker: " ++ name)
+            _              -> fail ("unknown broker: " ++ name)
 
 instance Aeson.ToJSON InfoBroker where
     --

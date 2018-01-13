@@ -1,10 +1,10 @@
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module MatsuiCoJp.BrokerSpec (spec) where
 
 import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as M
+import qualified Data.ByteString.Char8        as B8
 import           Data.Conduit                 (($$), (=$))
 import qualified Data.Conduit                 as C
 import           Data.Maybe                   (fromJust)
@@ -20,7 +20,7 @@ import qualified SinkSlack                    as Slack
 
 --
 --
-successSellOrder :: String -> B.SellOrder
+successSellOrder :: B8.ByteString -> B.SellOrder
 successSellOrder passwd =
     B.SellOrder
         { B.sellOrderPassword   = passwd
@@ -31,7 +31,7 @@ successSellOrder passwd =
 
 --
 --
-failSellOrder :: String -> B.SellOrder
+failSellOrder :: B8.ByteString -> B.SellOrder
 failSellOrder passwd =
     B.SellOrder
         { B.sellOrderPassword   = passwd
@@ -42,42 +42,41 @@ failSellOrder passwd =
 
 --
 --
-fetchUpdatedPriceAndStore :: Conf.Info -> IO ()
-fetchUpdatedPriceAndStore conf =
-    M.runResourceT . GenBroker.siteConn mconf $ \sess ->
-        GenBroker.fetchUpdatedPriceAndStore connInfo mconf sess
+fetchUpdatedPriceAndStore :: Conf.InfoBroker -> Conf.Info -> IO ()
+fetchUpdatedPriceAndStore broker@(Conf.MatsuiCoJp matsui) conf =
+    M.runResourceT . GenBroker.siteConn broker ua $ \sess ->
+        GenBroker.fetchUpdatedPriceAndStore broker connInfo sess
     where
-    mconf = fromJust $ Conf.matsuiCoJp conf
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
+    ua = Conf.userAgent conf
 
 --
 --
-sellStock :: Conf.Info -> (String -> B.SellOrder) -> IO ()
-sellStock conf order =
-    M.runResourceT . GenBroker.siteConn mconf $ \sess -> do
+sellStock :: Conf.InfoBroker -> Conf.Info -> (B8.ByteString -> B.SellOrder) -> IO ()
+sellStock broker@(Conf.MatsuiCoJp matsui) conf order =
+    M.runResourceT . GenBroker.siteConn broker ua $ \sess -> do
         r <- B.sellStock sess order'
         M.liftIO $ TL.putStrLn (Scr.contents r)
     where
-    mconf = fromJust $ Conf.matsuiCoJp conf
-    order' = order $ Conf.dealingsPassword mconf
+    order' = order $ Conf.dealingsPassword matsui
+    ua = Conf.userAgent conf
 
 --
 --
-noticeOfCurrentAssets :: Conf.Info -> IO ()
-noticeOfCurrentAssets conf =
-    GenBroker.noticeOfCurrentAssets connInfo mconf $$ sinkReport conf
+noticeOfCurrentAssets :: Conf.InfoBroker -> Conf.Info -> IO ()
+noticeOfCurrentAssets broker@(Conf.MatsuiCoJp matsui) conf =
+    GenBroker.noticeOfCurrentAssets broker connInfo $$ sinkReport conf
     where
-    mconf = fromJust $ Conf.matsuiCoJp conf
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
 
 --
 --
-noticeOfBrokerageAnnouncement :: Conf.Info -> IO ()
-noticeOfBrokerageAnnouncement conf =
-    B.noticeOfBrokerageAnnouncement connInfo mconf $$ sinkText conf
+noticeOfBrokerageAnnouncement :: Conf.InfoBroker -> Conf.Info -> IO ()
+noticeOfBrokerageAnnouncement (Conf.MatsuiCoJp matsui) conf =
+    B.noticeOfBrokerageAnnouncement matsui connInfo ua $$ sinkText conf
     where
-    mconf = fromJust $ Conf.matsuiCoJp conf
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
+    ua = Conf.userAgent conf
 
 --
 -- ここからHspecテスト
@@ -87,9 +86,9 @@ spec = do
     --
     describe "fetchUpdatedPriceAndStore" $ do
         it "may successful" $ do
-            confEither <- Conf.readJSONFile "conf.json"
-            let (Right conf) = confEither
-            fetchUpdatedPriceAndStore conf `shouldReturn` ()
+            (Right conf) <- Conf.readJSONFile "conf.json"
+            let b = head $ Conf.brokers conf
+            fetchUpdatedPriceAndStore b conf `shouldReturn` ()
     --
     describe "sellStock" $ do
 --        it "may successful" $ do
@@ -97,21 +96,21 @@ spec = do
 --            let (Right conf) = confEither
 --            sellStockOrder conf successSellOrder `shouldReturn` ()
         it "fail contdition" $ do
-            confEither <- Conf.readJSONFile "conf.json"
-            let (Right conf) = confEither
-            sellStock conf failSellOrder `shouldThrow` anyException
+            (Right conf) <- Conf.readJSONFile "conf.json"
+            let b = head $ Conf.brokers conf
+            sellStock b conf failSellOrder `shouldThrow` anyException
     --
     describe "noticeOfCurrentAssets" $ do
         it "may successful" $ do
-            confEither <- Conf.readJSONFile "conf.json"
-            let (Right conf) = confEither
-            noticeOfCurrentAssets conf `shouldReturn` ()
+            (Right conf) <- Conf.readJSONFile "conf.json"
+            let b = head $ Conf.brokers conf
+            noticeOfCurrentAssets b conf `shouldReturn` ()
     --
     describe "noticeOfBrokerageAnnouncement" $ do
         it "may successful" $ do
-            confEither <- Conf.readJSONFile "conf.json"
-            let (Right conf) = confEither
-            noticeOfBrokerageAnnouncement conf `shouldReturn` ()
+            (Right conf) <- Conf.readJSONFile "conf.json"
+            let b = head $ Conf.brokers conf
+            noticeOfBrokerageAnnouncement b conf `shouldReturn` ()
 --
 -- ここまでHspecテスト
 --
