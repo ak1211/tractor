@@ -51,7 +51,7 @@ import qualified Options.Applicative          as Opt
 import qualified Aggregate
 import qualified BrokerBackend                as BB
 import qualified Conf
-import qualified GenBroker                    as Broker
+import qualified GenBroker                    as GB
 import qualified Lib
 import qualified Scheduling
 import qualified SinkSlack                    as Slack
@@ -120,7 +120,7 @@ announceWeekdayThread conf jstDay =
         M.mapM_ announce brokers $= simpleTextMsg conf $$ sinkSlack conf
     --
     --
-    announce b = Broker.noticeOfBrokerageAnnouncement b connInfo ua
+    announce b = GB.noticeOfBrokerageAnnouncement b connInfo ua
     --
     --
     brokers :: [Conf.InfoBroker]
@@ -174,7 +174,7 @@ tradingTimeThread conf broker times =
     --
     -- 実際の作業
     worker =
-        M.runResourceT . Broker.siteConn broker (Conf.userAgent conf)
+        M.runResourceT . GB.siteConn broker (Conf.userAgent conf)
             $ \sess -> Scheduling.execute (fetchPriceJobs sess ++ reportJobs)
         `Ex.catches`
         --
@@ -205,7 +205,7 @@ tradingTimeThread conf broker times =
         where
         -- 現在資産取得関数
         act =
-            Broker.fetchUpdatedPriceAndStore broker
+            GB.fetchUpdatedPriceAndStore broker
                 (Conf.connInfoDB $ Conf.mariaDB conf) session
     -- |
     -- 現在資産評価額報告
@@ -218,7 +218,7 @@ tradingTimeThread conf broker times =
         where
         -- 現在資産評価額報告関数
         act =
-            Broker.noticeOfCurrentAssets broker
+            GB.noticeOfCurrentAssets broker
                 (Conf.connInfoDB $ Conf.mariaDB conf)
             $= reportMsg conf $$ sinkSlack conf
     -- |
