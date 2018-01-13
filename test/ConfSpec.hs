@@ -36,12 +36,12 @@ confInfoMariaDB = InfoMariaDB
     }
 
 confInfoBrokers =
-    [ MatsuiCoJp $ InfoAccount
+    [ MatsuiCoJp . InfoMatsuiCoJp $ InfoAccount
         { loginID   = "matsui.co.jp loginID"
         , loginPassword = "matsui.co.jp loginPassword"
         , dealingsPassword = "matsui.co.jp dealingsPassword"
         }
-    , SBIsecCoJp $ InfoAccount
+    , SBIsecCoJp . InfoSBIsecCoJp $ InfoAccount
         { loginID   = "sbisec.co.jp loginID"
         , loginPassword = "sbisec.co.jp loginPassword"
         , dealingsPassword = "sbisec.co.jp dealingsPassword"

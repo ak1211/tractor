@@ -35,11 +35,13 @@ module Conf
     ( readJSONFile
     , loggingConnInfo
     , connInfoDB
-    , Info (..)
-    , InfoAccount (..)
-    , InfoBroker (..)
-    , InfoSlack (..)
-    , InfoMariaDB (..)
+    , Info(..)
+    , InfoAccount(..)
+    , InfoMatsuiCoJp(..)
+    , InfoSBIsecCoJp(..)
+    , InfoBroker(..)
+    , InfoSlack(..)
+    , InfoMariaDB(..)
     ) where
 
 import           Data.Aeson                 ((.:), (.=))
@@ -94,10 +96,20 @@ data InfoAccount = InfoAccount
     } deriving Eq
 
 -- |
+-- 松井証券
+newtype InfoMatsuiCoJp = InfoMatsuiCoJp InfoAccount
+    deriving Eq
+
+-- |
+-- SBI証券
+newtype InfoSBIsecCoJp = InfoSBIsecCoJp InfoAccount
+    deriving Eq
+
+-- |
 -- 証券会社の設定情報
 data InfoBroker
-    = MatsuiCoJp InfoAccount    -- ^ 松井証券
-    | SBIsecCoJp InfoAccount    -- ^ SBI証券
+    = MatsuiCoJp InfoMatsuiCoJp
+    | SBIsecCoJp InfoSBIsecCoJp
     deriving Eq
 
 -- |
@@ -110,7 +122,8 @@ hiding = map (const '*')
 newline :: TLB.Builder
 newline = TLB.fromString (show nativeNewline)
 
--- 型クラスShowのインスタンス
+-- |
+-- Infoのshow
 instance Show Info where
     show Info{..} =
         TL.unpack . TLB.toLazyText $ mempty
@@ -121,6 +134,8 @@ instance Show Info where
         <> TLB.fromString (show mariaDB) <> newline
         <> TLB.fromString (show brokers) <> newline
 
+-- |
+-- InfoSlackのshow
 instance Show InfoSlack where
     show InfoSlack{..} =
         TL.unpack . TLB.toLazyText $ mempty
@@ -128,6 +143,8 @@ instance Show InfoSlack where
         <> "Slack channel:\"" <> TLB.fromString channel <> "\"" <> newline
         <> "Slack user name:\"" <> TLB.fromString userName <> "\"" <> newline
 
+-- |
+-- InfoMariaDBのshow
 instance Show InfoMariaDB where
     show InfoMariaDB{..} =
         TL.unpack . TLB.toLazyText $ mempty
@@ -137,6 +154,8 @@ instance Show InfoMariaDB where
         <> "MariaDB password:\"" <> TLB.fromString (hiding password) <> "\"" <> newline
         <> "MariaDB database:\"" <> TLB.fromString database <> "\"" <> newline
 
+-- |
+-- InfoAccountのshow
 instance Show InfoAccount where
     show InfoAccount{..} =
         TL.unpack . TLB.toLazyText $ mempty
@@ -144,18 +163,34 @@ instance Show InfoAccount where
         <> "パスワード:\"" <> (TLB.fromString . hiding $ B8.unpack loginPassword) <> "\"" <> newline
         <> "取引パスワード:\"" <> (TLB.fromString . hiding $ B8.unpack dealingsPassword) <> "\"" <> newline
 
-instance Show InfoBroker where
-    show (MatsuiCoJp v) = "松井証券: " ++ show v
-    show (SBIsecCoJp v) = "SBI証券: " ++ show v
+-- |
+-- InfoMatsuiCoJpのshow
+instance Show InfoMatsuiCoJp where
+    show (InfoMatsuiCoJp v) = "松井証券: " ++ show v
 
+-- |
+-- InfoSBIsecCoJpのshow
+instance Show InfoSBIsecCoJp where
+    show (InfoSBIsecCoJp v) = "SBI証券: " ++ show v
+
+-- |
+-- InfoBrokerのshow
+instance Show InfoBroker where
+    show = \case
+        (MatsuiCoJp v) -> show v
+        (SBIsecCoJp v) -> show v
+
+-- |
+-- InfoAccountのparseJSON
 instance Aeson.FromJSON InfoAccount where
-    --
     parseJSON = Aeson.withObject "account" $ \o -> do
         loginID         <- B8.pack <$> o .: "loginID"
         loginPassword   <- B8.pack <$> o .: "loginPassword"
         dealingsPassword<- B8.pack <$> o .: "dealingsPassword"
         return InfoAccount{..}
 
+-- |
+-- InfoAccountのtoJSON
 instance Aeson.ToJSON InfoAccount where
     toJSON InfoAccount{..} = Aeson.object
         [ "loginID"         .= B8.unpack loginID
@@ -163,28 +198,38 @@ instance Aeson.ToJSON InfoAccount where
         , "dealingsPassword".= B8.unpack dealingsPassword
         ]
 
+-- |
+-- InfoBrokerのparseJSON
 instance Aeson.FromJSON InfoBroker where
-    --
     parseJSON = Aeson.withObject "some broker" $ \o -> do
         name <- o .: "name"
         case name of
-            "matsui.co.jp" -> MatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
-            "sbisec.co.jp" -> SBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            "matsui.co.jp" -> MatsuiCoJp . InfoMatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            "sbisec.co.jp" -> SBIsecCoJp . InfoSBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
             _              -> fail ("unknown broker: " ++ name)
 
+-- |
+-- InfoBrokerのtoJSON
 instance Aeson.ToJSON InfoBroker where
-    --
     toJSON = \case
-        (MatsuiCoJp o) -> Aeson.Object $
-            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject o
-        (SBIsecCoJp o) -> Aeson.Object $
-            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject o
+        (MatsuiCoJp o) ->
+            let (InfoMatsuiCoJp v) = o in
+            Aeson.Object $
+            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject v
+        (SBIsecCoJp o) ->
+            let (InfoSBIsecCoJp v) = o in
+            Aeson.Object $
+            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject v
 
+--
+--
 toObject:: Aeson.ToJSON a => a -> Aeson.Object
 toObject a = case Aeson.toJSON a of
     Aeson.Object o -> o
     _              -> error "toObject: value isn't an Object"
 
+--
+--
 $(Aeson.deriveJSON Aeson.defaultOptions ''Info)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoSlack)
 $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)

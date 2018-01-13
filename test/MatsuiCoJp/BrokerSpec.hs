@@ -43,7 +43,7 @@ failSellOrder passwd =
 --
 --
 fetchUpdatedPriceAndStore :: Conf.InfoBroker -> Conf.Info -> IO ()
-fetchUpdatedPriceAndStore broker@(Conf.MatsuiCoJp matsui) conf =
+fetchUpdatedPriceAndStore broker conf =
     M.runResourceT . GenBroker.siteConn broker ua $ \sess ->
         GenBroker.fetchUpdatedPriceAndStore broker connInfo sess
     where
@@ -53,12 +53,14 @@ fetchUpdatedPriceAndStore broker@(Conf.MatsuiCoJp matsui) conf =
 --
 --
 sellStock :: Conf.InfoBroker -> Conf.Info -> (B8.ByteString -> B.SellOrder) -> IO ()
-sellStock broker@(Conf.MatsuiCoJp matsui) conf order =
+sellStock broker conf order =
     M.runResourceT . GenBroker.siteConn broker ua $ \sess -> do
         r <- B.sellStock sess order'
         M.liftIO $ TL.putStrLn (Scr.contents r)
     where
-    order' = order $ Conf.dealingsPassword matsui
+    (Conf.MatsuiCoJp matsuicojp) = broker
+    (Conf.InfoMatsuiCoJp account) = matsuicojp
+    order' = order $ Conf.dealingsPassword account
     ua = Conf.userAgent conf
 
 --
@@ -87,8 +89,8 @@ spec = do
     describe "fetchUpdatedPriceAndStore" $ do
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let b = head $ Conf.brokers conf
-            fetchUpdatedPriceAndStore b conf `shouldReturn` ()
+            let broker = head $ Conf.brokers conf
+            fetchUpdatedPriceAndStore broker conf `shouldReturn` ()
     --
     describe "sellStock" $ do
 --        it "may successful" $ do
@@ -97,20 +99,20 @@ spec = do
 --            sellStockOrder conf successSellOrder `shouldReturn` ()
         it "fail contdition" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let b = head $ Conf.brokers conf
-            sellStock b conf failSellOrder `shouldThrow` anyException
+            let broker = head $ Conf.brokers conf
+            sellStock broker conf failSellOrder `shouldThrow` anyException
     --
     describe "noticeOfCurrentAssets" $ do
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let b = head $ Conf.brokers conf
-            noticeOfCurrentAssets b conf `shouldReturn` ()
+            let broker = head $ Conf.brokers conf
+            noticeOfCurrentAssets broker conf `shouldReturn` ()
     --
     describe "noticeOfBrokerageAnnouncement" $ do
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let b = head $ Conf.brokers conf
-            noticeOfBrokerageAnnouncement b conf `shouldReturn` ()
+            let broker = head $ Conf.brokers conf
+            noticeOfBrokerageAnnouncement broker conf `shouldReturn` ()
 --
 -- ここまでHspecテスト
 --

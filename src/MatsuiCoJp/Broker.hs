@@ -79,7 +79,7 @@ import qualified SinkSlack                    as Slack
 -- |
 -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
 siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
-            => Conf.InfoAccount
+            => Conf.InfoMatsuiCoJp
             -> String
             -> (BB.HTTPSession -> m b)
             -> t m b
@@ -100,13 +100,13 @@ siteConn conf userAgent f =
     -- 証券会社のサイトにログインする関数
     login' =
         maybe invalidUrl return (N.parseURI url)
-        >>= MatsuiCoJp.Broker.login conf userAgent
+        >>= login conf userAgent
         >>= maybe loginFail return
 
 -- |
 -- Slackへお知らせを送るついでに現在資産評価をDBへ
 noticeOfBrokerageAnnouncement   :: M.MonadIO m
-                                => Conf.InfoAccount
+                                => Conf.InfoMatsuiCoJp
                                 -> MySQL.ConnectInfo
                                 -> String
                                 -> C.Source m TL.Text
@@ -360,8 +360,8 @@ doPostActionOnSession s customPostReq =
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
-login :: Conf.InfoAccount -> String -> N.URI -> IO (Maybe BB.HTTPSession)
-login conf userAgent loginUri = do
+login :: Conf.InfoMatsuiCoJp -> String -> N.URI -> IO (Maybe BB.HTTPSession)
+login (Conf.InfoMatsuiCoJp conf) userAgent loginUri = do
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセス
