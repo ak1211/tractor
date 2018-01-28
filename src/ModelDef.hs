@@ -17,7 +17,7 @@
 {- |
 Module      :  ModelDef
 Description :
-Copyright   :  (c) 2017-2018 Akihiro Yamamoto
+Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211

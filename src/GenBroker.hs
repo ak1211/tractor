@@ -17,7 +17,7 @@
 {- |
 Module      :  GenBroker
 Description :  generic broker
-Copyright   :  (c) 2017-2018 Akihiro Yamamoto
+Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211
@@ -32,7 +32,7 @@ Portability :  POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 module GenBroker
-    ( Broker (..)
+    ( Broker(..)
     ) where
 
 import qualified Control.Monad.Reader         as M
@@ -44,6 +44,7 @@ import qualified Database.Persist.MySQL       as MySQL
 import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified MatsuiCoJp.Broker
+import qualified SBIsecCoJp.Broker
 import qualified SinkSlack
 
 -- |
@@ -82,13 +83,17 @@ instance Broker Conf.InfoBroker where
     --
     siteConn = \case
         (Conf.MatsuiCoJp a) -> MatsuiCoJp.Broker.siteConn a
+        (Conf.SBIsecCoJp a) -> SBIsecCoJp.Broker.siteConn a
     --
     noticeOfBrokerageAnnouncement = \case
         (Conf.MatsuiCoJp a) -> MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement a
+        (Conf.SBIsecCoJp a) -> SBIsecCoJp.Broker.noticeOfBrokerageAnnouncement a
     --
     noticeOfCurrentAssets = \case
         (Conf.MatsuiCoJp _) -> MatsuiCoJp.Broker.noticeOfCurrentAssets
+        (Conf.SBIsecCoJp _) -> SBIsecCoJp.Broker.noticeOfCurrentAssets
     --
     fetchUpdatedPriceAndStore = \case
         (Conf.MatsuiCoJp _) -> MatsuiCoJp.Broker.fetchUpdatedPriceAndStore
+        (Conf.SBIsecCoJp _) -> SBIsecCoJp.Broker.fetchUpdatedPriceAndStore
 

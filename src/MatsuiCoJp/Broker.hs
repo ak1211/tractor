@@ -17,7 +17,7 @@
 {- |
 Module      :  MatsuiCoJp.Broker
 Description :  broker
-Copyright   :  (c) 2016-2018 Akihiro Yamamoto
+Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211
@@ -39,7 +39,7 @@ module MatsuiCoJp.Broker
     , noticeOfBrokerageAnnouncement
     , noticeOfCurrentAssets
     , fetchUpdatedPriceAndStore
-    , SellOrder (..)
+    , SellOrder(..)
     , sellStock
     ) where
 
@@ -57,7 +57,9 @@ import qualified Data.Conduit                 as C
 import qualified Data.Conduit.List            as CL
 import qualified Data.List                    as List
 import qualified Data.Maybe                   as Maybe
+import           Data.Monoid                  ((<>))
 import qualified Data.Text.Lazy               as TL
+import qualified Data.Text.Lazy.Builder       as TLB
 import qualified Data.Time                    as Tm
 import           Database.Persist             ((<.), (==.))
 import qualified Database.Persist             as DB
@@ -80,7 +82,7 @@ import qualified SinkSlack                    as Slack
 -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
 siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
             => Conf.InfoMatsuiCoJp
-            -> String
+            -> Conf.UserAgent
             -> (BB.HTTPSession -> m b)
             -> t m b
 siteConn conf userAgent f =
@@ -108,7 +110,7 @@ siteConn conf userAgent f =
 noticeOfBrokerageAnnouncement   :: M.MonadIO m
                                 => Conf.InfoMatsuiCoJp
                                 -> MySQL.ConnectInfo
-                                -> String
+                                -> Conf.UserAgent
                                 -> C.Source m TL.Text
 noticeOfBrokerageAnnouncement conf connInfo userAgent = do
     r <- M.liftIO
@@ -287,7 +289,7 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
                                 $ uncurry (List.zipWith chooseDefaultOrCustomReq)
                                 $ List.unzip defaultPostReqBody
             -- POSTリクエストを送信するURL
-            let postActionURL = BB.toAbsoluteURI pageURI =<< fmAction
+            let postActionURL = BB.toAbsoluteURI pageURI . TL.unpack =<< fmAction
             -- フォームのaction属性ページへアクセス
             M.mapM (BB.fetchPage manager reqHeader cookie postReqBody) (postActionURL :: Maybe N.URI)
         _ -> return Nothing
@@ -360,7 +362,7 @@ doPostActionOnSession s customPostReq =
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
-login :: Conf.InfoMatsuiCoJp -> String -> N.URI -> IO (Maybe BB.HTTPSession)
+login :: Conf.InfoMatsuiCoJp -> Conf.UserAgent -> N.URI -> IO (Maybe BB.HTTPSession)
 login (Conf.InfoMatsuiCoJp conf) userAgent loginUri = do
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
@@ -403,7 +405,7 @@ clickLinkText session linkText htmls =
     linkPaths = Maybe.mapMaybe (lookup linkText . getPageCaptionAndLink) htmls
     --
     fetch relativePath =
-        BB.takeBodyFromResponse <$> BB.fetchInRelativePath session relativePath
+        BB.takeBodyFromResponse <$> BB.fetchInRelativePath session (TL.unpack relativePath)
 
 -- |
 -- GM / LMページからリンクテキストとリンクのタプルを取り出す関数
@@ -434,7 +436,7 @@ dispatchFrameSet session htmls (targetFrmName, action) =
             case List.lookup targetFrmName frames of
                 Nothing -> return []
                 Just linkPath -> do
-                    html <- BB.takeBodyFromResponse <$> BB.fetchInRelativePath session linkPath
+                    html <- BB.takeBodyFromResponse <$> BB.fetchInRelativePath session (TL.unpack linkPath)
                     r <- action [html]
                     s <- dispatchFrameSet session hs (targetFrmName, action)
                     return (r ++ s)
@@ -565,7 +567,7 @@ doSellOrder order session orderPage =
     clickSellOrderLink :: [TL.Text] -> IO [TL.Text]
     clickSellOrderLink htmls =
         (\x -> return [BB.takeBodyFromResponse x])
-        =<< BB.fetchInRelativePath session
+        =<< BB.fetchInRelativePath session . TL.unpack
         =<< takeSellOrderUrl
         =<< takeHoldStocks
         where
@@ -643,22 +645,22 @@ doSellOrder order session orderPage =
         "株式売り注文ページを受け取れていません。"
     --
     --
-    donothaveStockSellEx = BB.DontHaveStocksToSellException $ TL.concat
-        [ "証券コード", txtSellCode, "の株式を所有してないので売れません" ]
+    donothaveStockSellEx = BB.DontHaveStocksToSellException $ TLB.toLazyText
+        "証券コード" <> txtSellCode <> "の株式を所有してないので売れません"
     --
     --
-    cannotgotoSellPageEx = BB.UnexpectedHTMLException $ TL.concat
-        [ "証券コード", txtSellCode, "の株式注文ページに行けません" ]
+    cannotgotoSellPageEx = BB.UnexpectedHTMLException $ TLB.toLazyText
+        "証券コード" <> txtSellCode <> "の株式注文ページに行けません"
     --
     --
     cannotgetConfirmPageEx = BB.UnexpectedHTMLException
         "注文確認ページを受け取れていません。"
     --
     --
-    cannotgotoConfirmPageEx = BB.UnexpectedHTMLException $ TL.concat
-        [ "証券コード", txtSellCode, "の注文確認ページに行けません" ]
+    cannotgotoConfirmPageEx = BB.UnexpectedHTMLException $ TLB.toLazyText
+        "証券コード" <> txtSellCode <> "の注文確認ページに行けません"
     --
     --
-    cannotgotoAcceptedPageEx = BB.UnexpectedHTMLException $ TL.concat
-        [ "証券コード", txtSellCode, "の注文終了ページに行けません" ]
+    cannotgotoAcceptedPageEx = BB.UnexpectedHTMLException $ TLB.toLazyText
+        "証券コード" <> txtSellCode <> "の注文終了ページに行けません"
 

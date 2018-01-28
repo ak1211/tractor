@@ -17,7 +17,7 @@
 {- |
 Module      :  Conf
 Description :  read configure information from file
-Copyright   :  (c) 2016-2018 Akihiro Yamamoto
+Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211
@@ -35,6 +35,7 @@ module Conf
     ( readJSONFile
     , loggingConnInfo
     , connInfoDB
+    , UserAgent
     , Info(..)
     , InfoAccount(..)
     , InfoMatsuiCoJp(..)
@@ -56,14 +57,16 @@ import qualified Data.Text.Lazy.Builder.Int as TLB
 import           Data.Word                  (Word16)
 import qualified Database.Persist.MySQL     as MySQL
 import           GHC.Exts                   (fromList)
-import           System.IO                  (nativeNewline)
+import           System.IO                  (nativeNewline, Newline(..))
+
+type UserAgent = String
 
 -- |
 -- アプリケーションの設定情報
 data Info = Info
     { updatePriceMinutes  :: Int
     , noticeAssetsMinutes :: Int
-    , userAgent           :: String
+    , userAgent           :: UserAgent
     , slack               :: InfoSlack
     , mariaDB             :: InfoMariaDB
     , brokers             :: [InfoBroker]
@@ -120,7 +123,11 @@ hiding = map (const '*')
 -- |
 -- 改行文字
 newline :: TLB.Builder
-newline = TLB.fromString (show nativeNewline)
+newline =
+    TLB.fromString $
+    case nativeNewline of
+        LF -> "\n"
+        CRLF -> "\r\n"
 
 -- |
 -- Infoのshow

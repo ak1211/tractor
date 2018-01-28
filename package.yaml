@@ -4,7 +4,7 @@ github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
 maintainer:         ak1211@mail.ak1211.com
-copyright:          (c) 2016-2018 Akihiro Yamamoto.
+copyright:          (c) 2016 Akihiro Yamamoto.
 
 extra-source-files:
 - README.md

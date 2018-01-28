@@ -17,7 +17,7 @@
 {- |
 Module      :  MatsuiCoJp.Scraper
 Description :  Scraping a web page
-Copyright   :  (c) 2016-2018 Akihiro Yamamoto
+Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211
@@ -45,17 +45,19 @@ module MatsuiCoJp.Scraper
     , scrapingOrderConfirmed
     ) where
 
-import           Control.Monad       ((>=>))
-import qualified Control.Monad       as M
+import           Control.Monad          ((>=>))
+import qualified Control.Monad          as M
 import qualified Data.Char
-import           Data.Int            (Int32)
-import qualified Data.List           as List
-import qualified Data.Text.Lazy      as TL
-import qualified Data.Text.Lazy.Read as Read
+import           Data.Int               (Int32)
+import qualified Data.List              as List
+import           Data.Monoid            ((<>))
+import qualified Data.Text.Lazy         as TL
+import qualified Data.Text.Lazy.Builder as TLB
+import qualified Data.Text.Lazy.Read    as Read
 import qualified Safe
-import qualified Text.HTML.DOM       as H
-import           Text.XML.Cursor     (($/), ($//), (&/), (&//), (&|))
-import qualified Text.XML.Cursor     as X
+import qualified Text.HTML.DOM          as H
+import           Text.XML.Cursor        (($/), ($//), (&/), (&//), (&|))
+import qualified Text.XML.Cursor        as X
 
 -- |
 -- ホーム -> お知らせの内容
@@ -79,21 +81,21 @@ data HoldStock = HoldStock
 -- |
 --  株式取引 -> 現物売の内容
 data FraStkSell = FraStkSell
-    { evaluation    :: Double           -- ^ 評価合計
-    , profit        :: Double           -- ^ 損益合計
-    , stocks        :: [HoldStock]      -- ^ 個別銘柄情報
+    { evaluation :: Double           -- ^ 評価合計
+    , profit     :: Double           -- ^ 損益合計
+    , stocks     :: [HoldStock]      -- ^ 個別銘柄情報
     } deriving (Eq, Show)
 
 -- |
 -- 資産状況 -> 余力情報の内容
 data FraAstSpare = FraAstSpare
-    { moneySpare    :: Int32            -- ^ 現物買付余力
-    , cashBalance   :: Int32            -- ^ 現金残高
-    , depositInc    :: Int32            -- ^ 預り増加額
-    , depositDec    :: Int32            -- ^ 預り減少額
-    , bindingFee    :: Int32            -- ^ ボックスレート手数料拘束金
-    , bindingTax    :: Int32            -- ^ 源泉徴収税拘束金（仮計算）
-    , freeCash      :: Int32            -- ^ 使用可能現金
+    { moneySpare  :: Int32            -- ^ 現物買付余力
+    , cashBalance :: Int32            -- ^ 現金残高
+    , depositInc  :: Int32            -- ^ 預り増加額
+    , depositDec  :: Int32            -- ^ 預り減少額
+    , bindingFee  :: Int32            -- ^ ボックスレート手数料拘束金
+    , bindingTax  :: Int32            -- ^ 源泉徴収税拘束金（仮計算）
+    , freeCash    :: Int32            -- ^ 使用可能現金
     } deriving (Eq, Show)
 
 -- |
@@ -116,14 +118,14 @@ onlySignDigit = TL.filter isSignDigit
 --
 doubleFromTxt :: TL.Text -> Either TL.Text Double
 doubleFromTxt t =
-    either (const $ Left $ TL.concat ["文字から数字への変換に失敗:\"", t, "\""]) Right
+    either (const . Left $ TLB.toLazyText "文字から数字への変換に失敗:\"" <> t <> "\"") Right
     (fst <$> Read.signed Read.double (onlySignDigit t))
 
 --
 --
 decimalFromTxt :: Integral a => TL.Text -> Either TL.Text a
 decimalFromTxt t =
-    either (const $ Left $ TL.concat ["文字から数字への変換に失敗:\"", t, "\""]) Right
+    either (const . Left $ TLB.toLazyText "文字から数字への変換に失敗:\"" <> t <> "\"") Right
     (fst <$> Read.signed Read.decimal (onlySignDigit t))
 
 -- |

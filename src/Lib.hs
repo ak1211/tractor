@@ -17,7 +17,7 @@
 {- |
 Module      :  Lib
 Description :  library
-Copyright   :  (c) 2017-2018 Akihiro Yamamoto
+Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
 Maintainer  :  https://github.com/ak1211
@@ -50,7 +50,7 @@ greetingsMessage = TL.unlines
     [ "tractorが起動しました"
     , "以降一定時間で通知します。"
     , "tractor is an Assets observation application."
-    , "*tractor © 2016, 2017 Akihiro Yamamoto.*"
+    , "*tractor © 2016 Akihiro Yamamoto.*"
     , "このプログラムは *全くの無保証* で提供されます。"
     , "これはフリーソフトウェアであり、ある条件の下で再頒布することが奨励されています。"
     , "詳しくは https://github.com/ak1211/tractor をご覧ください。"
