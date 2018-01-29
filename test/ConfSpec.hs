@@ -1,8 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 module ConfSpec (spec) where
-
 import           Conf
 import           Test.Hspec
 
@@ -51,11 +49,11 @@ confInfoBrokers =
 --
 -- Hspecテスト
 spec :: Spec
-spec = do
+spec =
     describe "readJSONFile" $ do
-        it "invalid input test, \"file not exist\"" $ do
+        it "invalid input test, \"file not exist\"" $
             readJSONFile "" `shouldThrow` anyIOException
-        it ("can parse this file \"" ++ testConfFilePath ++ "\"") $ do
-            readJSONFile testConfFilePath `shouldReturn` (Right confInfo)
+        it ("can parse this file \"" ++ testConfFilePath ++ "\"") $
+            readJSONFile testConfFilePath `shouldReturn` Right confInfo
 
 

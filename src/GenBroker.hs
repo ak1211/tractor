@@ -26,11 +26,7 @@ Portability :  POSIX
 
 証券会社とやりとりするモジュールです。
 -}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE LambdaCase #-}
 module GenBroker
     ( Broker(..)
     ) where
@@ -42,58 +38,71 @@ import qualified Data.Text.Lazy               as TL
 import qualified Database.Persist.MySQL       as MySQL
 
 import qualified BrokerBackend                as BB
-import qualified Conf
-import qualified MatsuiCoJp.Broker
-import qualified SBIsecCoJp.Broker
+import           Conf                         (InfoBroker (..),
+                                               InfoMatsuiCoJp (..),
+                                               InfoSBIsecCoJp (..))
+import qualified MatsuiCoJp.Broker            as MatsuiCoJp
+import qualified SBIsecCoJp.Broker            as SBIsecCoJp
 import qualified SinkSlack
 
 -- |
 -- 型クラス
-class Broker a where
+class Broker account where
     -- |
     -- runResourceTと組み合わせて証券会社のサイトにログイン/ログアウトする
     siteConn    :: (Monad m, M.MonadTrans t, MR.MonadResource (t m))
-                => a
+                => account
                 -> String
                 -> (BB.HTTPSession -> m b)
                 -> t m b
     -- |
     -- Slackへお知らせを送るついでに現在資産評価をDBへ
     noticeOfBrokerageAnnouncement   :: M.MonadIO m
-                                    => a
+                                    => account
                                     -> MySQL.ConnectInfo
                                     -> String
                                     -> C.Source m TL.Text
     -- |
     -- DBから最新の資産評価を取り出してSlackへレポートを送る
     noticeOfCurrentAssets   :: M.MonadIO m
-                            => a
+                            => account
                             -> MySQL.ConnectInfo
                             -> C.Source m SinkSlack.Report
     -- |
     -- 現在資産評価を証券会社のサイトから取得してDBへ
-    fetchUpdatedPriceAndStore   :: a
+    fetchUpdatedPriceAndStore   :: account
                                 -> MySQL.ConnectInfo
                                 -> BB.HTTPSession
                                 -> IO ()
 
 --
 --
-instance Broker Conf.InfoBroker where
-    --
+instance Broker InfoMatsuiCoJp where
+    siteConn = MatsuiCoJp.siteConn
+    noticeOfBrokerageAnnouncement = MatsuiCoJp.noticeOfBrokerageAnnouncement
+    noticeOfCurrentAssets _ = MatsuiCoJp.noticeOfCurrentAssets
+    fetchUpdatedPriceAndStore _ = MatsuiCoJp.fetchUpdatedPriceAndStore
+--
+--
+instance Broker InfoSBIsecCoJp where
+    siteConn = SBIsecCoJp.siteConn
+    noticeOfBrokerageAnnouncement = SBIsecCoJp.noticeOfBrokerageAnnouncement
+    noticeOfCurrentAssets _ = SBIsecCoJp.noticeOfCurrentAssets
+    fetchUpdatedPriceAndStore _ = SBIsecCoJp.fetchUpdatedPriceAndStore
+
+--
+--
+instance Broker InfoBroker where
     siteConn = \case
-        (Conf.MatsuiCoJp a) -> MatsuiCoJp.Broker.siteConn a
-        (Conf.SBIsecCoJp a) -> SBIsecCoJp.Broker.siteConn a
-    --
+        (MatsuiCoJp a) -> siteConn a
+        (SBIsecCoJp a) -> siteConn a
     noticeOfBrokerageAnnouncement = \case
-        (Conf.MatsuiCoJp a) -> MatsuiCoJp.Broker.noticeOfBrokerageAnnouncement a
-        (Conf.SBIsecCoJp a) -> SBIsecCoJp.Broker.noticeOfBrokerageAnnouncement a
-    --
+        (MatsuiCoJp a) -> noticeOfBrokerageAnnouncement a
+        (SBIsecCoJp a) -> noticeOfBrokerageAnnouncement a
     noticeOfCurrentAssets = \case
-        (Conf.MatsuiCoJp _) -> MatsuiCoJp.Broker.noticeOfCurrentAssets
-        (Conf.SBIsecCoJp _) -> SBIsecCoJp.Broker.noticeOfCurrentAssets
-    --
+        (MatsuiCoJp a) -> noticeOfCurrentAssets a
+        (SBIsecCoJp a) -> noticeOfCurrentAssets a
     fetchUpdatedPriceAndStore = \case
-        (Conf.MatsuiCoJp _) -> MatsuiCoJp.Broker.fetchUpdatedPriceAndStore
-        (Conf.SBIsecCoJp _) -> SBIsecCoJp.Broker.fetchUpdatedPriceAndStore
+        (MatsuiCoJp a) -> fetchUpdatedPriceAndStore a
+        (SBIsecCoJp a) -> fetchUpdatedPriceAndStore a
 

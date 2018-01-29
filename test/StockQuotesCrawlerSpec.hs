@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 module StockQuotesCrawlerSpec (spec) where
-
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy       as TL
 import qualified Data.Time            as Tm
@@ -908,25 +907,25 @@ test04'' =
 -- Hspecテスト
 --
 spec :: Spec
-spec = do
+spec =
     --
     describe "kdbcomScreenScraper" $ do
         --
         it "test 01" $ do
             html <- BL.readFile ("test/" ++ test01)
-            kdbcomScreenScraper TSNI225 TF1h (Just "http://k-db.com/indices/I101/1h") html `shouldBe` (Right test01')
+            kdbcomScreenScraper TSNI225 TF1h (Just "http://k-db.com/indices/I101/1h") html `shouldBe` Right test01'
         --
         it "test 02" $ do
             html <- BL.readFile ("test/" ++ test02)
-            kdbcomScreenScraper TSNI225 TF1d (Just "http://k-db.com/indices/I101") html `shouldBe` (Right test02')
+            kdbcomScreenScraper TSNI225 TF1d (Just "http://k-db.com/indices/I101") html `shouldBe` Right test02'
         --
         it "test 03" $ do
             html <- BL.readFile ("test/" ++ test03)
-            kdbcomScreenScraper (TSTYO 7312) TF1d (Just "http://k-db.com/stocks/7312-T") html `shouldBe` (Right test03')
+            kdbcomScreenScraper (TSTYO 7312) TF1d (Just "http://k-db.com/stocks/7312-T") html `shouldBe` Right test03'
         --
         it "test 04" $ do
             html <- BL.readFile ("test/" ++ test04)
-            kdbcomScreenScraper (TSTYO 8306) TF1h (Just "http://k-db.com/stocks/8306-T/1h") html `shouldBe` (Right test04')
+            kdbcomScreenScraper (TSTYO 8306) TF1h (Just "http://k-db.com/stocks/8306-T/1h") html `shouldBe` Right test04'
 
 {- vim: set fdm=marker commentstring=--%s: -}
 
