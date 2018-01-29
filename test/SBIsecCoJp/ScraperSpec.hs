@@ -125,8 +125,8 @@ test01AccPurchaseMarginDetailPage = "01k.sbisec.co.jp_bsite_member_acc_purchaseM
 test01AccPurchaseMarginDetailPage' = Just S.PurchaseMarginDetailPage
  { pmdUserid = "Z12-1234567"
  , pmdDay = "2018/01/26"
- , pmdMoneyToSpare = 215759
- , pmdCashBalance = 226639
+ , pmdMoneyToSpare = 123456
+ , pmdCashBalance = 321654
  }
 
 --
