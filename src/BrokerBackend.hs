@@ -201,16 +201,16 @@ type HtmlCharset = String
 -- <meta http-equiv="Content-Type" content="text/html; charset=shift_jis"> とか
 -- <meta charset="shift_jis">とかを探す
 --
--- >>> charsetFromHTML "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head>"
+-- >>> takeCharsetFromHTML "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head>"
 -- Right "UTF-8"
--- >>> charsetFromHTML "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=shift_jis\"></head>"
+-- >>> takeCharsetFromHTML "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=shift_jis\"></head>"
 -- Right "shift_jis"
--- >>> charsetFromHTML "<html><head><meta charset=\"utf-8\"></head></html>"
+-- >>> takeCharsetFromHTML "<html><head><meta charset=\"utf-8\"></head></html>"
 -- Right "utf-8"
--- >>> charsetFromHTML "<html><head><meta charset=\"shift_jis\"></head></html>"
+-- >>> takeCharsetFromHTML "<html><head><meta charset=\"shift_jis\"></head></html>"
 -- Right "shift_jis"
-charsetFromHTML :: BL8.ByteString -> Either P.ParseError HtmlCharset
-charsetFromHTML =
+takeCharsetFromHTML :: BL8.ByteString -> Either P.ParseError HtmlCharset
+takeCharsetFromHTML =
     P.parse html "(parse html header)"
     . first1024Bytes
     where
@@ -294,16 +294,16 @@ content =
 -- |
 -- HTTPヘッダからcharsetを得る
 --
--- >>> charsetFromHTTPHeader [("Content-Length","5962"),("Content-Type","text/html; charset=Shift_JIS")]
+-- >>> takeCharsetFromHTTPHeader [("Content-Length","5962"),("Content-Type","text/html; charset=Shift_JIS")]
 -- Just "Shift_JIS"
--- >>> charsetFromHTTPHeader [("Content-Length","5962"),("Content-Type","text/html; charset=utf-8")]
+-- >>> takeCharsetFromHTTPHeader [("Content-Length","5962"),("Content-Type","text/html; charset=utf-8")]
 -- Just "utf-8"
--- >>> charsetFromHTTPHeader [("Content-Encoding","gzip"),("Content-Type","text/html;charset=UTF-8")]
+-- >>> takeCharsetFromHTTPHeader [("Content-Encoding","gzip"),("Content-Type","text/html;charset=UTF-8")]
 -- Just "UTF-8"
--- >>> charsetFromHTTPHeader [("Content-Length","5962")]
+-- >>> takeCharsetFromHTTPHeader [("Content-Length","5962")]
 -- Nothing
-charsetFromHTTPHeader :: N.ResponseHeaders -> Maybe HtmlCharset
-charsetFromHTTPHeader headers =
+takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Maybe HtmlCharset
+takeCharsetFromHTTPHeader headers =
     -- HTTPヘッダから"Content-Type"を得る
     BL8.fromStrict <$> lookup "Content-Type" headers
     -- "Content-Type"からcontentを得る
@@ -320,12 +320,12 @@ takeBodyFromResponse resp =
     let
         html = N.responseBody resp
         -- HTMLから文字コードを得る
-        csetHtml = case charsetFromHTML html of
+        csetHtml = case takeCharsetFromHTML html of
                     Left   _ -> Nothing
                     Right "" -> Nothing
                     Right  r -> Just r
         -- HTTPレスポンスヘッダから文字コードを得る
-        csetResp = charsetFromHTTPHeader $ N.responseHeaders resp
+        csetResp = takeCharsetFromHTTPHeader $ N.responseHeaders resp
         -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
         charset = csetHtml App.<|> csetResp
         -- UTF-8テキスト
