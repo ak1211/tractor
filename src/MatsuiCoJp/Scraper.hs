@@ -100,7 +100,7 @@ data FraAstSpare = FraAstSpare
 
 -- |
 -- 注文発注後の"ご注文を受付けました"の内容
-data OrderConfirmed = OrderConfirmed
+newtype OrderConfirmed = OrderConfirmed
     { contents      :: TL.Text
     } deriving (Eq, Show)
 

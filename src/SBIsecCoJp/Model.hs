@@ -89,7 +89,7 @@ sbiseccojpAssetDigest SbiseccojpAsset{..} =
 -- |
 -- 保有株式の要約
 sbiseccojpStockDigest :: SbiseccojpStock -> String
-sbiseccojpStockDigest stk@(SbiseccojpStock{..}) =
+sbiseccojpStockDigest stk@SbiseccojpStock{..} =
     TL.unpack . TLB.toLazyText $ mempty
     <> ticker sbiseccojpStockTicker <> " "
     <> TLB.fromString sbiseccojpStockCaption <> ", "

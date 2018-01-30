@@ -30,7 +30,6 @@ Portability :  POSIX
 -}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -56,7 +55,7 @@ import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy.Char8   as BL8
 import qualified Data.List                    as List
-import qualified Data.Maybe                   as Maybe
+import qualified Data.Maybe                   as Mb
 import           Data.Monoid                  (mempty, (<>))
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.Builder       as TLB
@@ -138,7 +137,7 @@ fetchPage   :: M.MonadIO m
 fetchPage manager header cookieJar postReq url =
     M.liftIO $ do
         -- 指定のHTTPヘッダでHTTPリクエストを作る
-        let custom = (customRequest postReq) . (customHeader cookieJar)
+        let custom = customRequest postReq . customHeader cookieJar
         req <- custom <$> N.parseRequest (show url)
         -- 組み立てたHTTPリクエストを発行する
         responce <- N.httpLbs req manager
@@ -181,7 +180,7 @@ fetchPage manager header cookieJar postReq url =
         , accessLogPath         = N.uriPath url
         , accessLogQuery        = N.uriQuery url
         , accessLogFragment     = N.uriFragment url
-        , accessLogReqCookie    = show $ cookieJar
+        , accessLogReqCookie    = show cookieJar
         , accessLogReqHeader    = show $ N.requestHeaders customReq
         , accessLogRespStatus   = show $ N.responseStatus resp
         , accessLogRespVersion  = show $ N.responseVersion resp
@@ -303,12 +302,11 @@ content =
 -- >>> takeCharsetFromHTTPHeader [("Content-Length","5962")]
 -- Nothing
 takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Maybe HtmlCharset
-takeCharsetFromHTTPHeader headers =
+takeCharsetFromHTTPHeader headers = do
     -- HTTPヘッダから"Content-Type"を得る
-    BL8.fromStrict <$> lookup "Content-Type" headers
+    ct <- BL8.fromStrict <$> lookup "Content-Type" headers
     -- "Content-Type"からcontentを得る
-    >>= return . P.parse content "(http header)"
-    >>= \case
+    case P.parse content "(http header)" ct of
         Left   _ -> Nothing
         Right "" -> Nothing
         Right  r -> Just r
@@ -329,10 +327,10 @@ takeBodyFromResponse resp =
         -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
         charset = csetHtml App.<|> csetResp
         -- UTF-8テキスト
-        utf8txt = (flip toUtf8) html =<< charset
+        utf8txt = flip toUtf8 html =<< charset
     in
     -- デコードの失敗はあきらめて文字化けで返却
-    maybe (forcedConv html) id utf8txt
+    Mb.fromMaybe (forcedConv html) utf8txt
     where
     --
     --
@@ -382,7 +380,7 @@ mkCustomPostReq original custom =
     -- originalからNothingが混ざっている物を削除するので
     -- 自ずと"ACT_login"は消える仕組み
     List.unionBy (\(a,_) (b,_) -> a == b) custom
-        $ Maybe.mapMaybe (\(a,b) -> (,) <$> a <*> b) original
+        $ Mb.mapMaybe (\(a,b) -> (,) <$> a <*> b) original
 
 -- |
 -- スクレイピングに失敗した場合の例外送出

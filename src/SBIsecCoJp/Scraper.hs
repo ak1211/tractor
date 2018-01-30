@@ -522,7 +522,7 @@ marketInfoPage html = do
         pr <- Maybe.listToMaybe . take 1 . drop 1 $ tds
         -- 時間
         tm <- Maybe.listToMaybe . take 1 . drop 2 $ tds
-        let tms = T.split (\c -> any (c ==) ['/',' ',':']) . T.init . T.tail $ T.strip tm
+        let tms = T.split (`elem` ['/',' ',':']) . T.init . T.tail $ T.strip tm
         at <- M.mapM toDecimal tms
         M.guard (length at == 4)
         let [month, day, hour, minute] = at

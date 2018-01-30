@@ -183,17 +183,19 @@ noticeOfCurrentAssets connInfo = do
     -- |
     -- DBから保有株式を取り出す
     takeStocks key =
+        fmap DB.entityVal
+        <$>
         DB.selectList
             [MatsuicojpStockAsset ==. key]
             [DB.Asc MatsuicojpStockTicker]
-        >>= return . map DB.entityVal
     -- |
     -- DBから前場開始直前の資産評価を取り出す
     takeBeforeAsset openingTime =
+        fmap DB.entityVal
+        <$>
         DB.selectFirst
             [MatsuicojpAssetAt <. openingTime]
             [DB.Desc MatsuicojpAssetAt]
-        >>= return . fmap DB.entityVal
     -- |
     -- 全財産（現金換算）を返す関数
     -- 株式資産評価合計 + 使用可能現金

@@ -109,22 +109,18 @@ batchProcessThread conf jstDay =
 
 -- |
 -- 平日の報告スレッド
-announceWeekdayThread :: Conf.Info -> Tm.Day -> IO ()
-announceWeekdayThread conf jstDay =
+announceWeekdayThread :: Conf.Info -> Tm.Day -> Conf.InfoBroker -> IO ()
+announceWeekdayThread conf jstDay broker =
     Scheduling.execute $ map Scheduling.packZonedTimeJob
         [(t, act) | t<-Scheduling.announceWeekdayTimeInJST jstDay]
     where
     --
     --
     act =
-        M.mapM_ announce brokers $= simpleTextMsg conf $$ sinkSlack conf
+        announce $= simpleTextMsg conf $$ sinkSlack conf
     --
     --
-    announce b = GB.noticeOfBrokerageAnnouncement b connInfo ua
-    --
-    --
-    brokers :: [Conf.InfoBroker]
-    brokers = Conf.brokers conf
+    announce = GB.noticeOfBrokerageAnnouncement broker connInfo ua
     --
     --
     ua :: Conf.UserAgent
@@ -311,19 +307,25 @@ todayWorks conf day =
             [(Scheduling.tomorrowMidnightJST jstDay, return ())]
     -- |
     -- 平日のアクション
-    weekday = concat
-        [ [announceWeekdayThread conf day]
+    weekday =
+        let
+            brs = Conf.brokers conf
+        in
         -- 証券会社毎にスレッドを割り当てる
-        , [morningSession day b | b<-Conf.brokers conf]
-        , [afternoonSession day b | b<-Conf.brokers conf]
-        --
-        , [batchProcessThread conf day]
-        , [anchorman day] ]
+        concat
+        [ map (announceWeekdayThread conf day) brs
+        , map (morningSession day) brs
+        , map (afternoonSession day) brs
+        ,   [ batchProcessThread conf day
+            , anchorman day
+            ]
+        ]
     -- |
     -- 休日のアクション
     holiday =
         [ announceHolidayThread conf day
-        , anchorman day ]
+        , anchorman day
+        ]
 
 --
 -- コマンドラインオプション

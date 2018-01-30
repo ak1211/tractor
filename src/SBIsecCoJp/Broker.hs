@@ -157,17 +157,19 @@ noticeOfCurrentAssets connInfo = do
     -- |
     -- DBから保有株式を取り出す
     takeStocks key =
+        fmap DB.entityVal
+        <$>
         DB.selectList
             [SbiseccojpStockAsset ==. key]
             [DB.Asc SbiseccojpStockTicker]
-        >>= return . map DB.entityVal
     -- |
     -- DBから前場開始直前の資産評価を取り出す
     takeBeforeAsset openingTime =
+        fmap DB.entityVal
+        <$>
         DB.selectFirst
             [SbiseccojpAssetAt <. openingTime]
             [DB.Desc SbiseccojpAssetAt]
-        >>= return . fmap DB.entityVal
     -- |
     -- 全財産（現金換算）を返す関数
     -- 株式資産評価合計 + 使用可能現金
@@ -241,7 +243,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
                             -> MaybeT IO [S.HoldStockDetailPage]
     goHoldStockDetailPage page =
         -- 詳細ページをスクレイピングする
-        MaybeT . return . M.mapM (S.holdStockDetailPage)
+        MaybeT . return . M.mapM S.holdStockDetailPage
         -- 詳細ページへアクセスする
         =<< M.mapM (fetch sess) . mapAbsUri . unpack =<< pure page
         where
@@ -252,14 +254,14 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     -- トップ -> 買付余力を見に行く関数
     goPurchaseMarginListPage :: MaybeT IO S.PurchaseMarginListPage
     goPurchaseMarginListPage =
-        return . S.purchaseMarginListPage =<< fetchLinkPage sess "買付余力"
+        S.purchaseMarginListPage <$> fetchLinkPage sess "買付余力"
     -- |
     -- トップ -> 買付余力 -> 詳細を見に行く関数
     goPurchaseMarginDetailPage  :: S.PurchaseMarginListPage
                                 -> MaybeT IO [S.PurchaseMarginDetailPage]
     goPurchaseMarginDetailPage page =
         -- 詳細ページをスクレイピングする
-        MaybeT . return . M.mapM (S.purchaseMarginDetailPage)
+        MaybeT . return . M.mapM S.purchaseMarginDetailPage
         -- 詳細ページへアクセスする
         =<< M.mapM (fetch sess) . mapAbsUri . unpack =<< pure page
         where

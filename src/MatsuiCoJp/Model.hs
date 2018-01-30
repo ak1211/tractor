@@ -99,7 +99,7 @@ matsuicojpAssetDigest MatsuicojpAsset{..} =
 -- |
 -- 保有株式の要約
 matsuicojpStockDigest :: MatsuicojpStock -> String
-matsuicojpStockDigest stk@(MatsuicojpStock{..}) =
+matsuicojpStockDigest stk@MatsuicojpStock{..} =
     TL.unpack . TLB.toLazyText $ mempty
     <> ticker matsuicojpStockTicker <> " "
     <> TLB.fromString matsuicojpStockCaption <> ", "
