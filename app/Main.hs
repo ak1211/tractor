@@ -28,7 +28,6 @@ Portability :  POSIX
 -}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
-
 import qualified Control.Arrow                as A
 import qualified Control.Concurrent           as CC
 import qualified Control.Concurrent.Async     as CC
@@ -157,7 +156,7 @@ tradingTimeThread conf broker times =
     Scheduling.execute
     -- 3分前にログインする仕掛け
     . map (timedelta (-180) . job)
-    -- 再復帰は30分間隔
+    -- 失敗による停止後の再復帰は30分間隔
     . Lib.every (30*60)
     $ times
     where
