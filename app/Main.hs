@@ -101,30 +101,25 @@ batchProcessing conf =
 -- |
 -- バッチ処理スレッド
 batchProcessThread :: Conf.Info -> Tm.Day -> IO ()
-batchProcessThread conf jstDay =
-    Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, batchProcessing conf)
-        | t<-Scheduling.batchProcessTimeInJST jstDay
-        ]
+batchProcessThread conf =
+    let job t = Scheduling.packZonedTimeJob (t, batchProcessing conf) in
+    Scheduling.execute . map job . Scheduling.batchProcessTimeInJST
 
 -- |
 -- 平日の報告スレッド
 announceWeekdayThread :: Conf.Info -> Tm.Day -> Conf.InfoBroker -> IO ()
 announceWeekdayThread conf jstDay broker =
-    Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, act) | t<-Scheduling.announceWeekdayTimeInJST jstDay]
+    let job t = Scheduling.packZonedTimeJob (t, act) in
+    Scheduling.execute . map job . Scheduling.announceWeekdayTimeInJST
+    $ jstDay
     where
     --
     --
-    act =
-        announce $= simpleTextMsg conf $$ sinkSlack conf
+    act = announce $= simpleTextMsg conf $$ sinkSlack conf
     --
     --
-    announce = GB.noticeOfBrokerageAnnouncement broker connInfo ua
-    --
-    --
-    ua :: Conf.UserAgent
-    ua = Conf.userAgent conf
+    announce =
+        GB.noticeOfBrokerageAnnouncement broker connInfo $ Conf.userAgent conf
     --
     --
     connInfo :: MySQL.ConnectInfo
@@ -142,30 +137,29 @@ announceWeekdayThread conf jstDay broker =
 -- 休日の報告スレッド
 announceHolidayThread :: Conf.Info -> Tm.Day -> IO ()
 announceHolidayThread conf jstDay =
-    Scheduling.execute $ map Scheduling.packZonedTimeJob
-        [(t, announce)
-        | t<-Scheduling.announceHolidayTimeInJST jstDay
-        ]
-    where
-    --
-    --
-    msg =
-        "本日 " <> TB.fromString (show jstDay) <> " は市場の休日です。"
-    --
-    --
-    announce =
-        C.yield (TB.toLazyText msg) $= simpleTextMsg conf $$ sinkSlack conf
+    let
+        job t = Scheduling.packZonedTimeJob (t, announce)
+        announce = C.yield (TB.toLazyText msg) $$ report
+        --
+        today = TB.fromString (show jstDay)
+        msg = "本日 " <> today <> " は市場の休日です。"
+        report = simpleTextMsg conf =$ sinkSlack conf
+    in
+    Scheduling.execute . map job . Scheduling.announceHolidayTimeInJST
+    $ jstDay
 
 
 -- |
 -- 立会時間中のスレッド
 tradingTimeThread :: Conf.Info -> Conf.InfoBroker -> [Tm.ZonedTime] -> IO ()
 tradingTimeThread conf broker times =
+    let job t = Scheduling.packZonedTimeJob (t, worker) in
     Scheduling.execute
-        -- 3分前にログインする仕掛け
-        $ map (timedelta (-180) . Scheduling.packZonedTimeJob)
-        -- 再復帰は30分間隔
-        [ (t, worker) | t<-Lib.every (30*60) times ]
+    -- 3分前にログインする仕掛け
+    . map (timedelta (-180) . job)
+    -- 再復帰は30分間隔
+    . Lib.every (30*60)
+    $ times
     where
     --
     -- 実際の作業
@@ -194,29 +188,29 @@ tradingTimeThread conf broker times =
     -- |
     -- 現在資産取得
     fetchPriceJobs session =
-        map Scheduling.packZonedTimeJob
-        [ (t, act)
-        | t<-Lib.every (Conf.updatePriceMinutes conf * 60) times
-        ]
-        where
-        -- 現在資産取得関数
-        act =
-            GB.fetchUpdatedPriceAndStore broker
-                (Conf.connInfoDB $ Conf.mariaDB conf) session
+        let
+            job t = Scheduling.packZonedTimeJob (t, act)
+            -- 現在資産取得関数
+            act = GB.fetchUpdatedPriceAndStore broker conn session
+            --
+            conn = Conf.connInfoDB $ Conf.mariaDB conf
+            seconds = Conf.updatePriceMinutes conf * 60
+        in
+        map job . Lib.every seconds $ times
     -- |
     -- 現在資産評価額報告
     reportJobs =
+        let
+            job t = Scheduling.packZonedTimeJob (t, act)
+            -- 現在資産評価額報告関数
+            act = GB.noticeOfCurrentAssets broker conn $$ report
+            --
+            conn = Conf.connInfoDB $ Conf.mariaDB conf
+            seconds = Conf.noticeAssetsMinutes conf * 60
+            report = reportMsg conf =$ sinkSlack conf
+        in
         -- 資産取得の実行より1分遅らせる仕掛け
-        map (timedelta 60 . Scheduling.packZonedTimeJob)
-        [ (t, act)
-        | t<-Lib.every (Conf.noticeAssetsMinutes conf * 60) times
-        ]
-        where
-        -- 現在資産評価額報告関数
-        act =
-            GB.noticeOfCurrentAssets broker
-                (Conf.connInfoDB $ Conf.mariaDB conf)
-            $= reportMsg conf $$ sinkSlack conf
+        map (timedelta 60 . job) . Lib.every seconds $ times
     -- |
     -- UTC時間の加減算
     timedelta seconds =
