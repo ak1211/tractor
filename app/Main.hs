@@ -101,14 +101,18 @@ batchProcessing conf =
 -- バッチ処理スレッド
 batchProcessThread :: Conf.Info -> Tm.Day -> IO ()
 batchProcessThread conf =
-    let job t = Scheduling.packZonedTimeJob (t, batchProcessing conf) in
+    let
+        job t = Scheduling.packZonedTimeJob (t, batchProcessing conf)
+    in
     Scheduling.execute . map job . Scheduling.batchProcessTimeInJST
 
 -- |
 -- 平日の報告スレッド
 announceWeekdayThread :: Conf.Info -> Tm.Day -> Conf.InfoBroker -> IO ()
 announceWeekdayThread conf jstDay broker =
-    let job t = Scheduling.packZonedTimeJob (t, act) in
+    let
+        job t = Scheduling.packZonedTimeJob (t, act)
+    in
     Scheduling.execute . map job . Scheduling.announceWeekdayTimeInJST
     $ jstDay
     where
@@ -152,7 +156,9 @@ announceHolidayThread conf jstDay =
 -- 立会時間中のスレッド
 tradingTimeThread :: Conf.Info -> Conf.InfoBroker -> [Tm.ZonedTime] -> IO ()
 tradingTimeThread conf broker times =
-    let job t = Scheduling.packZonedTimeJob (t, worker) in
+    let
+        job t = Scheduling.packZonedTimeJob (t, worker)
+    in
     Scheduling.execute
     -- 3分前にログインする仕掛け
     . map (timedelta (-180) . job)
@@ -285,39 +291,46 @@ todayWorks conf day =
         | w == 7 -> holiday     -- Sunday
         | otherwise -> holiday  -- ???
     where
-    -- |
-    -- 前場のアクション
-    morningSession jstDay broker =
-        tradingTimeThread conf broker . fst $ Scheduling.tradingTimeOfTSEInJST jstDay
-    -- |
-    -- 後場のアクション
-    afternoonSession jstDay broker =
-        tradingTimeThread conf broker . snd $ Scheduling.tradingTimeOfTSEInJST jstDay
+    --
+    -- 前場後場の立会時間(東京証券取引所,日本時間)
+    morSessTm :: [Tm.ZonedTime]
+    aftSessTm :: [Tm.ZonedTime]
+    (morSessTm, aftSessTm) =
+        Scheduling.tradingTimeOfTSEInJST day
     -- |
     -- 明日になるまでただ待つアクション
-    anchorman jstDay =
-        Scheduling.execute $ map Scheduling.packZonedTimeJob
-            [(Scheduling.tomorrowMidnightJST jstDay, return ())]
+    anchorman =
+        let
+            nop = return ()
+            tim = Scheduling.tomorrowMidnightJST day
+            job = [Scheduling.packZonedTimeJob (tim, nop)]
+        in
+        Scheduling.execute job
     -- |
     -- 平日のアクション
     weekday =
         let
             brs = Conf.brokers conf
+            annThread = announceWeekdayThread conf day
+            ttThread = tradingTimeThread conf
+            morThread broker = ttThread broker morSessTm
+            aftThread broker = ttThread broker aftSessTm
         in
         -- 証券会社毎にスレッドを割り当てる
         concat
-        [ map (announceWeekdayThread conf day) brs
-        , map (morningSession day) brs
-        , map (afternoonSession day) brs
-        ,   [ batchProcessThread conf day
-            , anchorman day
+            [ map annThread brs
+            , map morThread brs
+            , map aftThread brs
             ]
+        ++
+        [ batchProcessThread conf day
+        , anchorman
         ]
     -- |
     -- 休日のアクション
     holiday =
         [ announceHolidayThread conf day
-        , anchorman day
+        , anchorman
         ]
 
 --
