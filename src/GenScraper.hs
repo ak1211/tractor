@@ -15,8 +15,8 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  ScraperBackend
-Description :  scraper backend
+Module      :  GenScraper
+Description :  generic scraper
 Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
 
@@ -33,8 +33,9 @@ Portability :  POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
-module ScraperBackend
-    ( PairNV
+module GenScraper
+    ( TextAndHref
+    , PairNV
     , takeNVpairs
     , toPairNV
     , InputTag(..)
@@ -83,6 +84,10 @@ takeInputTags cursor =
     --
     go n =
         Maybe.listToMaybe . X.attribute n
+
+-- |
+-- link text and href pair
+type TextAndHref = (T.Text, T.Text)
 
 -- |
 -- name and value pair

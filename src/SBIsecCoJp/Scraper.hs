@@ -36,8 +36,7 @@ Portability :  POSIX
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeFamilies          #-}
 module SBIsecCoJp.Scraper
-    ( TextAndHref
-    , MarketInfoPage(..)
+    ( MarketInfoPage(..)
     , TopPage(..)
     , AccMenuPage(..)
     , PurchaseMarginListPage(..)
@@ -72,12 +71,8 @@ import           Text.XML.Cursor                  (($/), ($//), (&/), (&//),
                                                    (&|))
 import qualified Text.XML.Cursor                  as X
 
+import qualified GenScraper                       as GS
 import           ModelDef                         (TickerSymbol (..))
-import qualified ScraperBackend                   as SB
-
--- |
--- link text and href pair
-type TextAndHref = (T.Text, T.Text)
 
 -- |
 -- マーケット情報ページの内容
@@ -131,19 +126,19 @@ newline =
 -- |
 -- トップページの内容
 newtype TopPage = TopPage
-    { getTopPage :: [TextAndHref] }
+    { getTopPage :: [GS.TextAndHref] }
     deriving (Eq, Show)
 
 -- |
 -- 口座管理ページの内容
 newtype AccMenuPage = AccMenuPage
-    { getAccMenuPage :: [TextAndHref] }
+    { getAccMenuPage :: [GS.TextAndHref] }
     deriving (Eq, Show)
 
 -- |
 -- 買付余力ページの内容
 newtype PurchaseMarginListPage = PurchaseMarginListPage
-    { getPurchaseMarginListPage :: [TextAndHref] }
+    { getPurchaseMarginListPage :: [GS.TextAndHref] }
     deriving (Eq, Show)
 
 -- |
@@ -170,7 +165,7 @@ data HoldStockDetailPage = HoldStockDetailPage
 -- |
 -- 保有証券詳細ページへのリンク
 newtype HoldStockDetailLink = HoldStockDetailLink
-    { getHoldStockDetailLink :: [TextAndHref] }
+    { getHoldStockDetailLink :: [GS.TextAndHref] }
     deriving (Eq, Show)
 
 -- |
@@ -221,7 +216,7 @@ toDouble x =
 
 -- |
 -- ログインページをスクレイピングする関数
-formLoginPage :: TL.Text -> Either TL.Text SB.FormTag
+formLoginPage :: TL.Text -> Either TL.Text GS.FormTag
 formLoginPage html =
     maybe
         (Left "\"form1\" form or \"action\" attribute is not present.")
@@ -230,11 +225,11 @@ formLoginPage html =
         . concat
         $ X.fromDocument (H.parseLT html)
         $// X.element "form" >=> X.attributeIs "name" "form1"
-        &| SB.takeFormTag
+        &| GS.takeFormTag
 
 -- |
 -- リンクを取り出す関数
-takeAnchorTag :: X.Cursor -> [TextAndHref]
+takeAnchorTag :: X.Cursor -> [GS.TextAndHref]
 takeAnchorTag cursor =
     concat (cursor $// X.element "a" &| pair)
     where

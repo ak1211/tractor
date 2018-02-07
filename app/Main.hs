@@ -159,28 +159,22 @@ tradingTimeSchedule conf broker times =
         --
         -- ここの例外ハンドラは例外再送出しないので、
         -- 例外処理の後は関数から抜ける
+        -- つまりこのスレッドの終了
         --
-        -- 例外ハンドラ : 予想外のHTML
         [ Ex.Handler $ \(BB.UnexpectedHTMLException ex) ->
-            -- Slackへエラーメッセージを送る
-            toSlack (Conf.slack conf) . TB.toLazyText
-            $ "予想外のHTML例外 "
-            <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
+            toSlack (Conf.slack conf) $ toText ex "予想外のHTML例外 "
         --
-        -- 例外ハンドラ : 未保有株の売却指示
         , Ex.Handler $ \(BB.DontHaveStocksToSellException ex) ->
-            -- Slackへエラーメッセージを送る
-            toSlack (Conf.slack conf) . TB.toLazyText
-            $ "未保有株の売却指示 "
-            <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
+            toSlack (Conf.slack conf) $ toText ex "未保有株の売却指示 "
         --
-        -- 例外ハンドラ :
-        , Ex.Handler $ \(Ex.SomeException ex) -> do
-             -- Slackへエラーメッセージを送る
-            toSlack (Conf.slack conf) . TB.toLazyText
-            $ mempty
-            <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
+        , Ex.Handler $ \(Ex.SomeException ex) ->
+            toSlack (Conf.slack conf) $ toText ex mempty
         ]
+    --
+    --
+    toText ex m =
+        TB.toLazyText $ m
+        <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
     --
     --
     conn = Conf.connInfoDB $ Conf.mariaDB conf

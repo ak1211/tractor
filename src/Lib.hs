@@ -122,7 +122,7 @@ packNthOfTotal vs =
 -- [1,6,11,16,21,26,31,36,41,46]
 every :: Int -> [a] -> [a]
 every n =
-    snd . unzip . filter fst . zip bs
+    map snd . (filter fst . zip bs)
     where
     bs = cycle $ take n (True : repeat False)
 

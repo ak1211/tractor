@@ -73,8 +73,8 @@ import qualified Text.Parsec                  as P
 import qualified Text.Parsec.ByteString.Lazy  as P
 
 import qualified Conf
+import qualified GenScraper                   as GB
 import           Model
-import qualified ScraperBackend               as SB
 
 -- |
 -- 実行時例外 : 予想外のHTML
@@ -372,7 +372,7 @@ fetchInRelativePath HTTPSession{..} relativePath = do
 -- >>>      [("JS_FLG","1"), ("user_id","myname"), ("password","mypass")]
 -- >>> :}
 -- [("JS_FLG","1"),("user_id","myname"),("password","mypass")]
-mkCustomPostReq :: [SB.PairNV B8.ByteString]
+mkCustomPostReq :: [GB.PairNV B8.ByteString]
                 -> [(B8.ByteString, B8.ByteString)]
                 -> [(B8.ByteString, B8.ByteString)]
 mkCustomPostReq original custom =

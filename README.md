@@ -5,7 +5,7 @@
 
 ## Description
 このアプリケーションは保有資産を監視するアプリケーションです。
-詳細は [blog](https://ak1211.com/3358) にて
+詳細は [blog](https://ak1211.com/3538) にて
 
 ## Compile and Run
 % stack build --exec tractor

@@ -63,10 +63,10 @@ import qualified Safe
 
 import qualified BrokerBackend                as BB
 import qualified Conf
+import qualified GenScraper                   as GS
 import qualified Lib
 import           SBIsecCoJp.Model
 import qualified SBIsecCoJp.Scraper           as S
-import qualified ScraperBackend               as SB
 import qualified SinkSlack                    as Slack
 
 -- |
@@ -90,13 +90,13 @@ noticeOfBrokerageAnnouncement   :: M.MonadIO m
                                 -> Conf.UserAgent
                                 -> C.Source m TL.Text
 noticeOfBrokerageAnnouncement conf _ userAgent = do
-    r <- M.liftIO
-            . MR.runResourceT
-            . siteConn conf userAgent $ \session -> do
-        -- トップ -> マーケット情報を見に行く
-        TL.pack . maybe "マーケット情報がありません。" show <$> runMaybeT (goMarketInfoPage session)
+    r <- M.liftIO . MR.runResourceT . siteConn conf userAgent $ go
     C.yield r
     where
+    go :: BB.HTTPSession -> IO TL.Text
+    go sess =
+        TL.pack . maybe "マーケット情報がありません。" show
+        <$> runMaybeT (goMarketInfoPage sess)
     -- |
     -- トップ -> マーケット情報を見に行く関数
     goMarketInfoPage :: BB.HTTPSession -> MaybeT IO S.MarketInfoPage
@@ -267,7 +267,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         unpack (S.PurchaseMarginListPage x) = x
     -- |
     -- リンク情報からURIに写す
-    mapAbsUri :: [S.TextAndHref] -> [N.URI]
+    mapAbsUri :: [GS.TextAndHref] -> [N.URI]
     mapAbsUri =
         Mb.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . snd)
 
@@ -305,12 +305,12 @@ login (Conf.InfoSBIsecCoJp conf) userAgent loginPageURL = do
     loginForm <- either BB.failureAtScraping return $ S.formLoginPage loginPage
     -- IDとパスワードを入力する
     let postMsg = BB.mkCustomPostReq
-                    (map SB.toPairNV $ SB.formInputTag loginForm)
+                    (map GS.toPairNV $ GS.formInputTag loginForm)
                     [ ("username", Conf.loginID conf)
                     , ("password", Conf.loginPassword conf)
                     ]
     -- フォームのaction属性ページ
-    let formAction = T.unpack $ SB.formAction loginForm
+    let formAction = T.unpack $ GS.formAction loginForm
     postto <- maybe loginFail return $ BB.toAbsoluteURI loginURI formAction
     -- 提出
     resp <- BB.fetchPage manager reqHeader Nothing postMsg postto
