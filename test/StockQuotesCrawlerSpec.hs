@@ -20,7 +20,7 @@ jst =
 --
 -- 日経平均株価 1時間足
 --
-test01   = "01k-db.com_indices_I101_1h.utf8.html"
+test01   = "http%3A%2F%2Fk-db.com%2Findices%2FI101%2F1h.utf8.html"
 test01'  =  (Just "日経平均株価", test01'')
 test01'' :: [Ohlcvt]
 test01'' =
@@ -204,7 +204,7 @@ test01'' =
 --
 -- 日経平均株価 1日足
 --
-test02   = "02k-db.com_indices_I101.utf8.html"
+test02   = "http%3A%2F%2Fk-db.com%2Findices%2FI101.utf8.html"
 test02'  =  (Just "日経平均株価", test02'')
 test02'' :: [Ohlcvt]
 test02'' =
@@ -463,7 +463,7 @@ test02'' =
 --
 -- [7312 東証1部] タカタ （輸送用機器）
 --
-test03   = "03k-db.com_stocks_7312-T.utf8.html"
+test03   = "http%3A%2F%2Fk-db.com%2Fstocks%2F7312-T.utf8.html"
 test03'  =  (Just "[7312 東証1部] タカタ （輸送用機器）", test03'')
 test03'' :: [Ohlcvt]
 test03'' =
@@ -722,7 +722,7 @@ test03'' =
 --
 -- [8306 東証1部] 三菱UFJフィナンシャル・グループ （銀行業）
 --
-test04   = "04k-db.com_stocks_8306-T_1h.utf8.html"
+test04   = "http%3A%2F%2Fk-db.com%2Fstocks%2F8306-T%2F1h.utf8.html"
 test04'  =  (Just "[8306 東証1部] 三菱UFJフィナンシャル・グループ （銀行業）", test04'')
 test04'' :: [Ohlcvt]
 test04'' =
@@ -911,19 +911,19 @@ spec =
     --
     describe "kdbcomScreenScraper" $ do
         --
-        it "test 01" $ do
+        it "http://k-db.com/indices/I101/1h" $ do
             html <- BL.readFile ("test/" ++ test01)
             kdbcomScreenScraper TSNI225 TF1h (Just "http://k-db.com/indices/I101/1h") html `shouldBe` Right test01'
         --
-        it "test 02" $ do
+        it "http://k-db.com/indices/I101" $ do
             html <- BL.readFile ("test/" ++ test02)
             kdbcomScreenScraper TSNI225 TF1d (Just "http://k-db.com/indices/I101") html `shouldBe` Right test02'
         --
-        it "test 03" $ do
+        it "http://k-db.com/stocks/7312-T" $ do
             html <- BL.readFile ("test/" ++ test03)
             kdbcomScreenScraper (TSTYO 7312) TF1d (Just "http://k-db.com/stocks/7312-T") html `shouldBe` Right test03'
         --
-        it "test 04" $ do
+        it "http://k-db.com/stocks/8306-T/1h" $ do
             html <- BL.readFile ("test/" ++ test04)
             kdbcomScreenScraper (TSTYO 8306) TF1h (Just "http://k-db.com/stocks/8306-T/1h") html `shouldBe` Right test04'
 

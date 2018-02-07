@@ -16,7 +16,7 @@ import qualified ScraperBackend     as SB
 --
 -- マーケット情報ページ
 --
-test01MarketPage = "01k.sbisec.co.jp_bsite_market_indexDetail.do.utf8.html"
+test01MarketPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmarket%2Fmenu.do.utf8.html"
 test01MarketPage' = Just S.MarketInfoPage
  { S.miCaption = "国内指標"
  , S.miPrice = Just 23631.88
@@ -34,7 +34,7 @@ test01MarketPage' = Just S.MarketInfoPage
 --
 -- ログインページ
 --
-test01LoginPage = "01k.sbisec.co.jp_bsite_visitor_top.do.utf8.html"
+test01LoginPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fvisitor%2Ftop.do.utf8.html"
 test01LoginPage' = SB.FormTag
  { SB.formAction = "https://k.sbisec.co.jp/bsite/visitor/loginUserCheck.do"
  , SB.formMethod = Just "POST"
@@ -49,7 +49,7 @@ test01LoginPage' = SB.FormTag
 --
 -- トップページ
 --
-test01TopPage = "01k.sbisec.co.jp_bsite_member_menu.do.utf8.html"
+test01TopPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Fmenu.do.utf8.html"
 test01TopPage' = S.TopPage
  [ ("ログアウト","/bsite/member/logout.do")
  , ("取引／株価照会","/bsite/price/search.do")
@@ -90,7 +90,7 @@ test01TopPage' = S.TopPage
 --
 -- 口座管理ページ
 --
-test01AccMenuPage = "01k.sbisec.co.jp_bsite_member_acc_menu.do.utf8.html"
+test01AccMenuPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2Fmenu.do.utf8.html"
 test01AccMenuPage' = S.AccMenuPage
  [ ("トップ","/bsite/member/menu.do")
  , ("ログアウト","/bsite/member/logout.do")
@@ -112,7 +112,7 @@ test01AccMenuPage' = S.AccMenuPage
 --
 -- 買付余力ページ
 --
-test01AccPurchaseMarginListPage = "01k.sbisec.co.jp_bsite_member_acc_purchaseMarginList.do.utf8.html"
+test01AccPurchaseMarginListPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FpurchaseMarginList.do.utf8.html"
 test01AccPurchaseMarginListPage' = S.PurchaseMarginListPage
  [ ("詳細","/bsite/member/acc/purchaseMarginDetail.do?no=3&account_type=1")
  , ("詳細","/bsite/member/acc/purchaseMarginDetail.do?no=4&account_type=1")
@@ -121,7 +121,7 @@ test01AccPurchaseMarginListPage' = S.PurchaseMarginListPage
 --
 -- 買付余力詳細ページ
 --
-test01AccPurchaseMarginDetailPage = "01k.sbisec.co.jp_bsite_member_acc_purchaseMarginDetail.do.utf8.html"
+test01AccPurchaseMarginDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FpurchaseMarginDetail.do%3Fno%3D3%26account_type%3D1.utf8.html"
 test01AccPurchaseMarginDetailPage' = Just S.PurchaseMarginDetailPage
  { pmdUserid = "Z12-1234567"
  , pmdDay = "2018/01/26"
@@ -132,7 +132,7 @@ test01AccPurchaseMarginDetailPage' = Just S.PurchaseMarginDetailPage
 --
 -- 保有証券一覧ページ
 --
-test01AccHoldStockListPage = "01k.sbisec.co.jp_bsite_member_acc_holdStockList.do.utf8.html"
+test01AccHoldStockListPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockList.do.utf8.html"
 test01AccHoldStockListPage' = Just S.HoldStockListPage
  { S.hslUserid = "Z12-1234567"
  , S.hslNthPages = "1～2件(2件中)"
@@ -147,7 +147,7 @@ test01AccHoldStockListPage' = Just S.HoldStockListPage
 --
 -- 保有証券詳細ページ
 --
-test01AccHoldStockDetailPage = "01k.sbisec.co.jp_bsite_member_acc_holdStockDetail.do.utf8.html"
+test01AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D1111.utf8.html"
 test01AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
  , hsdTicker = TSTYO 1111
@@ -158,7 +158,7 @@ test01AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  , hsdPrice = 120
 }
 
-test02AccHoldStockDetailPage = "02k.sbisec.co.jp_bsite_member_acc_holdStockDetail.do.utf8.html"
+test02AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D2222.utf8.html"
 test02AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
  , hsdTicker = TSTYO 2222
@@ -175,48 +175,48 @@ test02AccHoldStockDetailPage' = Just S.HoldStockDetailPage
 spec :: Spec
 spec = do
     --
-    describe "market information page" $
-        it "test 01" $ do
+    describe "marketInfoPage" $
+        it "https://k.sbisec.co.jp/bsite/market/menu.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01MarketPage)
             S.marketInfoPage html `shouldBe` test01MarketPage'
     --
-    describe "formLogin page" $
-        it "test 01" $ do
+    describe "formLoginPage" $
+        it "https://k.sbisec.co.jp/bsite/visitor/top.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01LoginPage)
             case S.formLoginPage html of
                 Left l  -> TL.putStrLn l
                 Right r -> r `shouldBe` test01LoginPage'
     --
-    describe "top page" $
-        it "test 01" $ do
+    describe "topPage" $
+        it "https://k.sbisec.co.jp/bsite/member/menu.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01TopPage)
             S.topPage html `shouldBe` test01TopPage'
     --
-    describe "acc/menu page" $
-        it "test 01" $ do
+    describe "accMenuPage" $
+        it "https://k.sbisec.co.jp/bsite/member/acc/menu.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01AccMenuPage)
             S.accMenuPage html `shouldBe` test01AccMenuPage'
     --
-    describe "acc/purchaseMarginList page" $
-        it "test 01" $ do
+    describe "purchaseMarginListPage" $
+        it "https://k.sbisec.co.jp/bsite/member/acc/purchaseMarginList.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01AccPurchaseMarginListPage)
             S.purchaseMarginListPage html `shouldBe` test01AccPurchaseMarginListPage'
     --
-    describe "acc/purchaseMarginDetail page" $
-        it "test 01" $ do
+    describe "purchaseMarginDetailPage" $
+        it "https://k.sbisec.co.jp/bsite/member/acc/purchaseMarginDetail.do?no=3&account_type=1" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01AccPurchaseMarginDetailPage)
             S.purchaseMarginDetailPage html `shouldBe` test01AccPurchaseMarginDetailPage'
     --
-    describe "acc/holdStockList page" $
-        it "test 01" $ do
+    describe "holdStockListPage" $
+        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockList.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01AccHoldStockListPage)
             S.holdStockListPage html `shouldBe` test01AccHoldStockListPage'
     --
     describe "acc/holdStockDetail page" $ do
-        it "test 01" $ do
+        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=1111" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01AccHoldStockDetailPage)
             S.holdStockDetailPage html `shouldBe` test01AccHoldStockDetailPage'
-        it "test 02" $ do
+        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=2222" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test02AccHoldStockDetailPage)
             S.holdStockDetailPage html `shouldBe` test02AccHoldStockDetailPage'
 --            print $ S.holdStockDetailPage html

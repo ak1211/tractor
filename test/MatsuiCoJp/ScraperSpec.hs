@@ -9,7 +9,7 @@ import           Test.Hspec
 --
 -- "ホーム" -> "お知らせ" のページ
 --
-test01HomeAnnounce = "01www.deal.matsui.co.jp_servlet_ITS_home_Announce.utf8.html"
+test01HomeAnnounce = "https%3A%2F%2Fwww.deal.matsui.co.jp%2Fservlet%2FITS%2Fhome%2FAnnounce.utf8.html"
 test01HomeAnnounce' = FraHomeAnnounce
  { announceDeriverTime   = "2017年12月18日 23:25 現在"
  , announceLastLoginTime = "前回ログイン：2017年12月18日 23:25"
@@ -43,7 +43,7 @@ test01HomeAnnounce' = FraHomeAnnounce
 --  "株式取引" -> "現物売" のページ
 --
 -- 保有株式1つの場合
-test01StkHavingList = "01www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
+test01StkHavingList = "https%3A%2F%2Fwww.deal.matsui.co.jp%2Fservlet%2FITS%2Fstock%2FStkHavingList.utf8.01.html"
 test01StkSell = FraStkSell
  { evaluation    = 561.0
  , profit        = -6.0
@@ -60,7 +60,7 @@ test01StkSell = FraStkSell
  }
 
 -- 保有株式なしの場合
-test02StkHavingList = "02www.deal.matsui.co.jp_servlet_ITS_stock_StkHavingList.utf8.html"
+test02StkHavingList = "https%3A%2F%2Fwww.deal.matsui.co.jp%2Fservlet%2FITS%2Fstock%2FStkHavingList.utf8.02.html"
 test02StkSell = FraStkSell
  { evaluation    = 0.0
  , profit        = 0.0
@@ -70,7 +70,7 @@ test02StkSell = FraStkSell
 --
 -- 資産状況 -> 余力情報のページ
 --
-test01AstSpare = "01www.deal.matsui.co.jp_servlet_ITS_asset_MoneyToSpare.utf8.html"
+test01AstSpare = "https%3A%2F%2Fwww.deal.matsui.co.jp%2Fservlet%2FITS%2Fasset%2FMoneyToSpare.utf8.html"
 test01AstSpare' = FraAstSpare
  { moneySpare    = 402
  , cashBalance   = 1482

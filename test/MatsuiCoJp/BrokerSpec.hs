@@ -87,8 +87,8 @@ spec = do
     describe "fetchUpdatedPriceAndStore" $
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let broker = head $ Conf.brokers conf
-            fetchUpdatedPriceAndStore broker conf `shouldReturn` ()
+            let broker = take 1 [a | a@(Conf.MatsuiCoJp _)<-Conf.brokers conf]
+            M.mapM (\b -> fetchUpdatedPriceAndStore b conf) broker  `shouldReturn` [()]
     --
 --    describe "sellStock" $ do
 --        it "may successful" $
@@ -103,14 +103,14 @@ spec = do
     describe "noticeOfCurrentAssets" $
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let broker = head $ Conf.brokers conf
-            noticeOfCurrentAssets broker conf `shouldReturn` ()
+            let broker = take 1 [a | a@(Conf.MatsuiCoJp _)<-Conf.brokers conf]
+            M.mapM (\b -> noticeOfCurrentAssets b conf) broker  `shouldReturn` [()]
     --
     describe "noticeOfBrokerageAnnouncement" $
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
-            let broker = head $ Conf.brokers conf
-            noticeOfBrokerageAnnouncement broker conf `shouldReturn` ()
+            let broker = take 1 [a | a@(Conf.MatsuiCoJp _)<-Conf.brokers conf]
+            M.mapM (\b -> noticeOfBrokerageAnnouncement b conf) broker `shouldReturn` [()]
 --
 -- ここまでHspecテスト
 --
