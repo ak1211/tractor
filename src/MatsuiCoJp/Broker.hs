@@ -160,7 +160,7 @@ noticeOfCurrentAssets connInfo = do
         Tm.zonedTimeToUTC
         . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
             (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
-        . Tm.utcToZonedTime Lib.tzJST
+        . Tm.utcToZonedTime Lib.tzAsiaTokyo
     -- |
     -- レポートを作る関数
     makeReport yesterday (DB.Entity key asset) = do

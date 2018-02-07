@@ -69,7 +69,7 @@ sameDayOfJST :: Ohlcvt -> Ohlcvt -> Bool
 sameDayOfJST a b =
     jstDay a == jstDay b
     where
-    jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzJST . ohlcvtAt
+    jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzAsiaTokyo . ohlcvtAt
 
 -- |
 -- 始値, 高値, 安値, 終値, 出来高, 売買代金を集計する関数
@@ -152,8 +152,8 @@ aggregate connInfo tickerSymbol =
     -- | 集計後の値は(00:00:00 JST)をUTCに変換した日付(15:00:00 UTC)にする
     decisionOfDailyPrices :: Ohlcvt -> Maybe Ohlcvt
     decisionOfDailyPrices val =
-        let timeOfJST = Tm.utcToLocalTime Lib.tzJST $ ohlcvtAt val in
-        let timeOfUTC = Tm.localTimeToUTC Lib.tzJST $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
+        let timeOfJST = Tm.utcToLocalTime Lib.tzAsiaTokyo $ ohlcvtAt val in
+        let timeOfUTC = Tm.localTimeToUTC Lib.tzAsiaTokyo $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
         Just $ val {ohlcvtTf = TF1d, ohlcvtAt = timeOfUTC}
 
 -- |

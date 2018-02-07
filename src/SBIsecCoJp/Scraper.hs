@@ -130,17 +130,20 @@ newline =
 
 -- |
 -- トップページの内容
-newtype TopPage = TopPage [TextAndHref]
+newtype TopPage = TopPage
+    { getTopPage :: [TextAndHref] }
     deriving (Eq, Show)
 
 -- |
 -- 口座管理ページの内容
-newtype AccMenuPage = AccMenuPage [TextAndHref]
+newtype AccMenuPage = AccMenuPage
+    { getAccMenuPage :: [TextAndHref] }
     deriving (Eq, Show)
 
 -- |
 -- 買付余力ページの内容
-newtype PurchaseMarginListPage = PurchaseMarginListPage [TextAndHref]
+newtype PurchaseMarginListPage = PurchaseMarginListPage
+    { getPurchaseMarginListPage :: [TextAndHref] }
     deriving (Eq, Show)
 
 -- |
@@ -166,7 +169,8 @@ data HoldStockDetailPage = HoldStockDetailPage
 
 -- |
 -- 保有証券詳細ページへのリンク
-newtype HoldStockDetailLink = HoldStockDetailLink [TextAndHref]
+newtype HoldStockDetailLink = HoldStockDetailLink
+    { getHoldStockDetailLink :: [TextAndHref] }
     deriving (Eq, Show)
 
 -- |

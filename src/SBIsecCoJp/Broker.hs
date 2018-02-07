@@ -94,8 +94,7 @@ noticeOfBrokerageAnnouncement conf _ userAgent = do
             . MR.runResourceT
             . siteConn conf userAgent $ \session -> do
         -- トップ -> マーケット情報を見に行く
-        info <- maybe "" show <$> runMaybeT (goMarketInfoPage session)
-        return (TL.pack info)
+        TL.pack . maybe "マーケット情報がありません。" show <$> runMaybeT (goMarketInfoPage session)
     C.yield r
     where
     -- |
@@ -134,7 +133,7 @@ noticeOfCurrentAssets connInfo = do
         Tm.zonedTimeToUTC
         . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
             (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
-        . Tm.utcToZonedTime Lib.tzJST
+        . Tm.utcToZonedTime Lib.tzAsiaTokyo
     -- |
     -- レポートを作る関数
     makeReport yesterday (DB.Entity key asset) = do
@@ -289,9 +288,8 @@ fetch BB.HTTPSession{..} =
 -- トップページ上のリンクテキストに対応したURIを返す
 lookupLinkOnTopPage :: BB.HTTPSession -> T.Text -> Maybe N.URI
 lookupLinkOnTopPage BB.HTTPSession{..} linktext =
-    let (S.TopPage tp) = S.topPage sTopPageHTML in
-    lookup linktext tp
-    >>= BB.toAbsoluteURI sLoginPageURI . T.unpack
+    BB.toAbsoluteURI sLoginPageURI . T.unpack
+    =<< lookup linktext (S.getTopPage $ S.topPage sTopPageHTML)
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
