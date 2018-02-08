@@ -45,35 +45,34 @@ module BrokerBackend
     , mkCustomPostReq
     , failureAtScraping
     ) where
-import qualified Codec.Text.IConv             as IConv
-import qualified Control.Applicative          as App
-import           Control.Exception            (Exception, throwIO)
-import qualified Control.Monad                as M
-import qualified Control.Monad.Logger         as ML
-import qualified Control.Monad.Reader         as M
-import qualified Control.Monad.Trans.Resource as MR
-import qualified Data.ByteString.Char8        as B8
-import qualified Data.ByteString.Lazy.Char8   as BL8
-import qualified Data.List                    as List
-import qualified Data.Maybe                   as Mb
-import           Data.Monoid                  (mempty, (<>))
-import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TLB
-import qualified Data.Text.Lazy.Encoding      as TLE
-import qualified Data.Time                    as Tm
+import qualified Codec.Text.IConv                 as IConv
+import           Control.Applicative              ((<|>))
+import           Control.Exception                (Exception, throwIO)
+import qualified Control.Monad                    as M
+import qualified Control.Monad.Logger             as ML
+import qualified Control.Monad.Reader             as M
+import qualified Control.Monad.Trans.Resource     as MR
+import qualified Data.Attoparsec.ByteString.Char8 as Ap
+import qualified Data.ByteString.Char8            as B8
+import qualified Data.ByteString.Lazy.Char8       as BL8
+import           Data.Char                        (Char)
+import qualified Data.List                        as List
+import qualified Data.Maybe                       as Mb
+import           Data.Monoid                      (mempty, (<>))
+import qualified Data.Text.Lazy                   as TL
+import qualified Data.Text.Lazy.Builder           as TLB
+import qualified Data.Text.Lazy.Encoding          as TLE
+import qualified Data.Time                        as Tm
 import qualified Data.Typeable
-import qualified Database.Persist             as DB
-import qualified Database.Persist.MySQL       as MySQL
-import qualified Database.Persist.Sql         as DB
-import qualified Network.HTTP.Conduit         as N
-import qualified Network.HTTP.Types.Header    as N
-import qualified Network.URI                  as N
-import           Text.Parsec                  ((<?>), (<|>))
-import qualified Text.Parsec                  as P
-import qualified Text.Parsec.ByteString.Lazy  as P
+import qualified Database.Persist                 as DB
+import qualified Database.Persist.MySQL           as MySQL
+import qualified Database.Persist.Sql             as DB
+import qualified Network.HTTP.Conduit             as N
+import qualified Network.HTTP.Types.Header        as N
+import qualified Network.URI                      as N
 
 import qualified Conf
-import qualified GenScraper                   as GB
+import qualified GenScraper                       as GB
 import           Model
 
 -- |
@@ -191,13 +190,14 @@ fetchPage manager header cookieJar postReq url =
 
 --
 --
-type HtmlCharset = String
+type HtmlCharset = B8.ByteString
 
 -- |
 --
 -- HTMLから文字コードを取り出す関数
 -- 先頭より1024バイトまでで
 -- <meta http-equiv="Content-Type" content="text/html; charset=shift_jis"> とか
+-- <meta HTTP-EQUIV="Content-type" CONTENT="text/html; charset=x-sjis"> とか
 -- <meta charset="shift_jis">とかを探す
 --
 -- >>> takeCharsetFromHTML "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head>"
@@ -208,62 +208,46 @@ type HtmlCharset = String
 -- Right "utf-8"
 -- >>> takeCharsetFromHTML "<html><head><meta charset=\"shift_jis\"></head></html>"
 -- Right "shift_jis"
-takeCharsetFromHTML :: BL8.ByteString -> Either P.ParseError HtmlCharset
+-- >>> takeCharsetFromHTML "<html><head><meta HTTP-EQUIV=\"Content-type\" CONTENT=\"text/html; charset=x-sjis\"></head></html>"
+-- Right "x-sjis"
+-- >>> takeCharsetFromHTML "<HTML><HEAD><META HTTP-EQUIV=\"CONTENT-TYPE\" CONTENT=\"TEXT/HTML; CHARSET=X-SJIS\"></HEAD></HTML>"
+-- Right "X-SJIS"
+--
+takeCharsetFromHTML :: BL8.ByteString -> Either String HtmlCharset
 takeCharsetFromHTML =
-    P.parse html "(parse html header)"
-    . first1024Bytes
+    Ap.parseOnly tag . first1024Bytes
     where
     -- |
     -- 先頭より1024バイト
-    first1024Bytes :: BL8.ByteString -> BL8.ByteString
-    first1024Bytes = BL8.take 1024
-    -- |
-    -- htmlをパースする関数
-    html :: P.Parser HtmlCharset
-    html =
-        P.try (P.spaces *> tag)
-        <|> P.try (next *> html)
-        <?> "end of html"
-    -- |
-    -- 次のタグまで読み飛ばす関数
-    next :: P.Parser ()
-    next = P.skipMany1 (P.noneOf ">") <* P.char '>'
+    first1024Bytes :: BL8.ByteString -> B8.ByteString
+    first1024Bytes = BL8.toStrict . BL8.take 1024
     -- |
     -- タグをパースする関数
-    tag :: P.Parser HtmlCharset
-    tag = P.char '<' *> meta
+    tag :: Ap.Parser HtmlCharset
+    tag =
+        Ap.skipSpace *> Ap.char '<' *> (html401meta <|> html5meta)
+        <|>
+        next *> tag
+        Ap.<?> "tag"
     -- |
-    -- ダブルクオート
-    wquote = P.many (P.char '\"')
+    -- 次のタグまで読み飛ばす関数
+    next = Ap.skipWhile (/= '>') *> Ap.char '>'
     -- |
-    -- metaタグをパースする関数
-    meta :: P.Parser HtmlCharset
-    meta =
-        P.string "meta" *> P.spaces
-        *> (P.try charset5 <|> P.try httpEquiv)
-        where
-        -- |
-        -- meta http-equivタグをパースする関数
-        --
-        -- 例 : http-equiv="Content-Type" content="text/html; charset=shift_jis"
-        -- https://www.w3.org/TR/html5/document-metadata.html#meta
-        httpEquiv :: P.Parser HtmlCharset
-        httpEquiv =
-            P.string "http-equiv=" *> contentType
-        -- |
-        -- meta http-equiv Content-Typeをパースする関数
-        contentType :: P.Parser HtmlCharset
-        contentType =
-            P.string "\"Content-Type\"" *> P.spaces
-            *> P.string "content=" *> wquote *> content <* wquote
-    --
-    -- 例 : charset="utf-8"
+    -- HTML 4.01 の meta タグをパースする関数
+    -- https://www.w3.org/TR/html401/struct/global.html#edef-META
+    html401meta =
+        Ap.stringCI "meta"
+        *> Ap.skipSpace
+        *> Ap.stringCI "http-equiv" *> equal *> wquote *> Ap.stringCI "Content-Type" *> wquote
+        *> Ap.skipSpace
+        *> Ap.stringCI "content" *> equal *> wquote *> mediaType <* wquote
+    -- |
+    -- HTML 5 の meta タグをパースする関数
     -- https://www.w3.org/TR/html5/document-metadata.html#meta
-    charset5 :: P.Parser HtmlCharset
-    charset5 =
-        P.string "charset=" *> wquote *> description <* wquote
-        where
-        description = P.many (P.alphaNum <|> P.char '_' <|> P.char '-')
+    html5meta =
+        Ap.stringCI "meta"
+        *> Ap.skipSpace
+        *> Ap.stringCI "charset" *> equal *> wquote *> token1 <* wquote
 
 --
 -- 例 : "text/html; charset=shift_jis"
@@ -272,23 +256,19 @@ takeCharsetFromHTML =
 -- media-type     = type "/" subtype *( ";" parameter )
 -- type           = token
 -- subtype        = token
-content :: P.Parser HtmlCharset
-content =
-    typesubtype *> P.spaces *> P.char ';' *> parameter
-    <?> "broken content"
-    where
-    typesubtype = P.many (P.alphaNum <|> P.char '/')
-    --
-    --
-    parameter :: P.Parser HtmlCharset
-    parameter =
-        P.spaces *> charset <?> "missing charset"
-    --
-    --
-    charset :: P.Parser HtmlCharset
-    charset =
-        P.string "charset="
-        *> P.many (P.alphaNum <|> P.char '_' <|> P.char '-')
+mediaType :: Ap.Parser HtmlCharset
+mediaType =
+    token1 *> Ap.char '/' *> token1
+    *> Ap.char ';' *> Ap.skipSpace
+    *> Ap.stringCI "charset" *> equal *> token1
+    Ap.<?> "media-type"
+
+wquote :: Ap.Parser Char
+wquote = Ap.char '\"'
+equal :: Ap.Parser Char
+equal = Ap.char '='
+token1 :: Ap.Parser B8.ByteString
+token1 = Ap.takeWhile1 (Ap.inClass "0-9a-zA-Z_-")
 
 -- |
 -- HTTPヘッダからcharsetを得る
@@ -301,12 +281,13 @@ content =
 -- Just "UTF-8"
 -- >>> takeCharsetFromHTTPHeader [("Content-Length","5962")]
 -- Nothing
-takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Maybe HtmlCharset
+--
+takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Maybe B8.ByteString
 takeCharsetFromHTTPHeader headers = do
     -- HTTPヘッダから"Content-Type"を得る
-    ct <- BL8.fromStrict <$> lookup "Content-Type" headers
+    ct <- lookup "Content-Type" headers
     -- "Content-Type"からcontentを得る
-    case P.parse content "(http header)" ct of
+    case Ap.parseOnly mediaType ct of
         Left   _ -> Nothing
         Right "" -> Nothing
         Right  r -> Just r
@@ -325,9 +306,9 @@ takeBodyFromResponse resp =
         -- HTTPレスポンスヘッダから文字コードを得る
         csetResp = takeCharsetFromHTTPHeader $ N.responseHeaders resp
         -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
-        charset = csetHtml App.<|> csetResp
+        charset = csetHtml <|> csetResp
         -- UTF-8テキスト
-        utf8txt = flip toUtf8 html =<< charset
+        utf8txt = flip toUtf8 html . B8.unpack =<< charset
     in
     -- デコードの失敗はあきらめて文字化けで返却
     Mb.fromMaybe (forcedConv html) utf8txt
