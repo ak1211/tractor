@@ -35,6 +35,7 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE LambdaCase #-}
 module SBIsecCoJp.Scraper
     ( MarketInfoPage(..)
     , TopPage(..)
@@ -79,10 +80,10 @@ import           ModelDef                         (TickerSymbol (..))
 data MarketInfoPage = MarketInfoPage
     { miCaption     :: T.Text       -- ^ マーケット情報名
     , miPrice       :: Maybe Double -- ^ 現在値
-    , miMonth       :: Int          -- ^ 時間(月)
-    , miDay         :: Int          -- ^ 時間(日)
-    , miHour        :: Int          -- ^ 時間(時間)
-    , miMinute      :: Int          -- ^ 時間(分)
+    , miMonth       :: Maybe Int    -- ^ 時間(月)
+    , miDay         :: Maybe Int    -- ^ 時間(日)
+    , miHour        :: Maybe Int    -- ^ 時間(時間)
+    , miMinute      :: Maybe Int    -- ^ 時間(分)
     , miDifference  :: Maybe Double -- ^ 前日比
     , miDiffPercent :: Maybe Double -- ^ 前日比(%)
     , miOpen        :: Maybe Double -- ^ 始値
@@ -99,20 +100,20 @@ instance Show MarketInfoPage where
         in
         TL.unpack . TLB.toLazyText $ mempty
         <> TLB.fromText miCaption <> newline
-        <> "現在値: " <> maybe mempty TLB.realFloat miPrice
-            <> " (" <> TLB.decimal miMonth
-            <> "/" <> TLB.decimal miDay
-            <> " " <> TLB.decimal miHour
-            <> ":" <> TLB.decimal miMinute
+        <> "現在値: " <> maybe "-" TLB.realFloat miPrice
+            <> " (" <> maybe "--" TLB.decimal miMonth
+            <> "/" <> maybe "--" TLB.decimal miDay
+            <> " " <> maybe "--" TLB.decimal miHour
+            <> ":" <> maybe "--" TLB.decimal miMinute
             <> ")"
             <> "\n"
-        <> "前日比: " <> maybe mempty frf miDifference
-            <> " " <> maybe mempty frf miDiffPercent
+        <> "前日比: " <> maybe "-" frf miDifference
+            <> " " <> maybe "-" frf miDiffPercent
             <> "%"
             <> newline
-        <> "open " <> maybe mempty frf miOpen <> newline
-        <> "high " <> maybe mempty frf miHigh <> newline
-        <> "low " <> maybe mempty frf miLow <> newline
+        <> "open " <> maybe "-" frf miOpen <> newline
+        <> "high " <> maybe "-" frf miHigh <> newline
+        <> "low " <> maybe "-" frf miLow <> newline
 
 -- |
 -- 改行文字
@@ -156,7 +157,7 @@ data HoldStockDetailPage = HoldStockDetailPage
     { hsdUserid        :: T.Text       -- ^ ユーザーID
     , hsdTicker        :: TickerSymbol -- ^ ティッカーシンボル
     , hsdCaption       :: T.Text       -- ^ 名前
-    , hsdDiff          :: Double       -- ^ 前日比
+    , hsdDiff          :: Maybe Double -- ^ 前日比(取引がない場合はNothing)
     , hsdCount         :: Int32        -- ^ 保有数
     , hsdPurchasePrice :: Double       -- ^ 取得単価
     , hsdPrice         :: Double       -- ^ 現在値
@@ -438,7 +439,7 @@ holdStockDetailPage html =
             _  -> toDouble . T.concat $ map T.strip xs
     --
     --
-    diffCountGain :: X.Cursor -> Maybe (Double, Int32, Double)
+    diffCountGain :: X.Cursor -> Maybe (Maybe Double, Int32, Double)
     diffCountGain cursor =
         let
             xs = cursor
@@ -449,10 +450,12 @@ holdStockDetailPage html =
                 . concatMap ($// X.content)
                 . take 1 $ drop 2 xs
         in do
-        d <- toDouble =<< (Maybe.listToMaybe . drop 1 $ ys)
+        d <- Maybe.listToMaybe . drop 1 $ ys
         c <- toDecimal =<< (Maybe.listToMaybe . drop 3 $ ys)
         g <- toDouble =<< (Maybe.listToMaybe . drop 5 $ ys)
-        Just (d,c,g)
+        case d of
+            "-" -> Just (Nothing,c,g)       -- 現在取引無し
+            x   -> Just (toDouble x,c,g)
     --
     --
     pack :: X.Cursor -> Maybe HoldStockDetailPage
@@ -476,22 +479,43 @@ holdStockDetailPage html =
 marketInfoPage :: TL.Text -> Maybe MarketInfoPage
 marketInfoPage html = do
     cap <- caption
-    (pr,mo,da,ho,mi,df,dp) <- priceAtDiffPercent =<< Maybe.listToMaybe (take 1 $ drop 1 tables)
-    (o,h,l) <- openHighLow =<< Maybe.listToMaybe (take 1 $ drop 2 tables)
-    Just MarketInfoPage
-        { miCaption = cap
-        , miPrice = pr
-        , miMonth = mo
-        , miDay = da
-        , miHour = ho
-        , miMinute = mi
-        , miDifference = df
-        , miDiffPercent = dp
-        , miOpen = o
-        , miHigh = h
-        , miLow = l
-        }
+    Just $ go cap
     where
+    --
+    --
+    go :: T.Text -> MarketInfoPage
+    go cap =
+        \case
+            Nothing ->  MarketInfoPage
+                            { miCaption = cap
+                            , miPrice = Nothing
+                            , miMonth = Nothing
+                            , miDay = Nothing
+                            , miHour = Nothing
+                            , miMinute = Nothing
+                            , miDifference = Nothing
+                            , miDiffPercent = Nothing
+                            , miOpen = Nothing
+                            , miHigh = Nothing
+                            , miLow = Nothing
+                            }
+            Just x -> x
+        $ do
+            (pr,mo,da,ho,mi,df,dp) <- priceAtDiffPercent =<< Maybe.listToMaybe (take 1 $ drop 1 tables)
+            (o,h,l) <- openHighLow =<< Maybe.listToMaybe (take 1 $ drop 2 tables)
+            Just MarketInfoPage
+                { miCaption = cap
+                , miPrice = pr
+                , miMonth = mo
+                , miDay = da
+                , miHour = ho
+                , miMinute = mi
+                , miDifference = df
+                , miDiffPercent = dp
+                , miOpen = o
+                , miHigh = h
+                , miLow = l
+                }
     --
     --
     root = X.fromDocument (H.parseLT html)
@@ -512,7 +536,7 @@ marketInfoPage html = do
         root $// X.attributeIs "class" "titletext" &// X.content
     --
     --
-    priceAtDiffPercent :: X.Cursor -> Maybe (Maybe Double, Int, Int, Int, Int, Maybe Double, Maybe Double)
+    priceAtDiffPercent :: X.Cursor -> Maybe (Maybe Double, Maybe Int, Maybe Int, Maybe Int, Maybe Int, Maybe Double, Maybe Double)
     priceAtDiffPercent cursor = do
         let tds = map T.strip $
                     cursor
@@ -522,18 +546,17 @@ marketInfoPage html = do
         -- 時間
         tm <- Maybe.listToMaybe . take 1 . drop 2 $ tds
         let tms = T.split (`elem` ['/',' ',':']) . T.init . T.tail $ T.strip tm
-        at <- M.mapM toDecimal tms
-        M.guard (length at == 4)
-        let [month, day, hour, minute] = at
+        M.guard (length tms == 4)
+        let [month, day, hour, minute] = tms
         -- 前日比
         df <- Maybe.listToMaybe . take 1 . drop 4 $ tds
         -- 前日比(%)
         dp <- Maybe.listToMaybe . take 1 . drop 6 $ tds
         Just( toDouble pr
-            , month
-            , day
-            , hour
-            , minute
+            , toDecimal month
+            , toDecimal day
+            , toDecimal hour
+            , toDecimal minute
             , toDouble df
             , toDouble dp
             )

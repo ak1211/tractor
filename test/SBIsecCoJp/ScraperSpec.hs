@@ -9,21 +9,21 @@ import qualified Data.Text.Lazy.IO  as TL
 import           Test.Hspec
 
 import qualified BrokerBackend      as BB
+import qualified GenScraper         as GB
 import           ModelDef           (TickerSymbol (..))
 import qualified SBIsecCoJp.Scraper as S
-import qualified ScraperBackend     as SB
 
 --
 -- マーケット情報ページ
 --
-test01MarketPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmarket%2Fmenu.do.utf8.html"
+test01MarketPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmarket%2Fmenu.do.utf8.01.html"
 test01MarketPage' = Just S.MarketInfoPage
  { S.miCaption = "国内指標"
  , S.miPrice = Just 23631.88
- , S.miMonth = 1
- , S.miDay = 26
- , S.miHour = 15
- , S.miMinute = 15
+ , S.miMonth = Just 1
+ , S.miDay = Just 26
+ , S.miHour = Just 15
+ , S.miMinute = Just 15
  , S.miDifference = Just (-37.61)
  , S.miDiffPercent = Just (-0.16)
  , S.miOpen = Just 23757.34
@@ -31,18 +31,34 @@ test01MarketPage' = Just S.MarketInfoPage
  , S.miLow = Just 23592.28
  }
 
+-- マーケット情報ページ (まだ取引のない場合)
+test02MarketPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmarket%2Fmenu.do.utf8.02.html"
+test02MarketPage' = Just S.MarketInfoPage
+ { S.miCaption = "国内指標"
+ , S.miPrice = Nothing
+ , S.miMonth = Nothing
+ , S.miDay = Nothing
+ , S.miHour = Nothing
+ , S.miMinute = Nothing
+ , S.miDifference = Nothing
+ , S.miDiffPercent = Nothing
+ , S.miOpen = Nothing
+ , S.miHigh = Nothing
+ , S.miLow = Nothing
+ }
+
 --
 -- ログインページ
 --
 test01LoginPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fvisitor%2Ftop.do.utf8.html"
-test01LoginPage' = SB.FormTag
- { SB.formAction = "https://k.sbisec.co.jp/bsite/visitor/loginUserCheck.do"
- , SB.formMethod = Just "POST"
- , SB.formInputTag =
-  [ SB.InputTag (Just "text") (Just "username") (Just "")
-  , SB.InputTag (Just "password") (Just "password") (Just "")
-  , SB.InputTag (Just "submit") (Just "login") (Just "&nbsp;ログイン&nbsp;")
-  , SB.InputTag (Just "button") (Just "cancel") (Just "キャンセル")
+test01LoginPage' = GB.FormTag
+ { GB.formAction = "https://k.sbisec.co.jp/bsite/visitor/loginUserCheck.do"
+ , GB.formMethod = Just "POST"
+ , GB.formInputTag =
+  [ GB.InputTag (Just "text") (Just "username") (Just "")
+  , GB.InputTag (Just "password") (Just "password") (Just "")
+  , GB.InputTag (Just "submit") (Just "login") (Just "&nbsp;ログイン&nbsp;")
+  , GB.InputTag (Just "button") (Just "cancel") (Just "キャンセル")
   ]
  }
 
@@ -147,23 +163,35 @@ test01AccHoldStockListPage' = Just S.HoldStockListPage
 --
 -- 保有証券詳細ページ
 --
-test01AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D1111.utf8.html"
+test01AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D1111.utf8.01.html"
 test01AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
  , hsdTicker = TSTYO 1111
  , hsdCaption = "ヨロシサン製薬"
- , hsdDiff = -1
+ , hsdDiff = Just (-1)
  , hsdCount = 100
  , hsdPurchasePrice = 100
  , hsdPrice = 120
 }
 
-test02AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D2222.utf8.html"
+-- 保有証券詳細ページ(まだ取引のない場合)
+test02AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D1111.utf8.02.html"
 test02AccHoldStockDetailPage' = Just S.HoldStockDetailPage
+ { S.hsdUserid = "Z12-1234567"
+ , hsdTicker = TSTYO 1111
+ , hsdCaption = "ヨロシサン製薬"
+ , hsdDiff = Nothing
+ , hsdCount = 100
+ , hsdPurchasePrice = 100
+ , hsdPrice = 120
+}
+
+test03AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D2222.utf8.html"
+test03AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
  , hsdTicker = TSTYO 2222
  , hsdCaption = "オムラ・インダストリ"
- , hsdDiff = 100
+ , hsdDiff = Just 100
  , hsdCount = 100
  , hsdPurchasePrice = 1000
  , hsdPrice = 1035
@@ -175,10 +203,13 @@ test02AccHoldStockDetailPage' = Just S.HoldStockDetailPage
 spec :: Spec
 spec = do
     --
-    describe "marketInfoPage" $
-        it "https://k.sbisec.co.jp/bsite/market/menu.do" $ do
+    describe "marketInfoPage" $ do
+        it "https://k.sbisec.co.jp/bsite/market/menu.do 01" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01MarketPage)
             S.marketInfoPage html `shouldBe` test01MarketPage'
+        it "https://k.sbisec.co.jp/bsite/market/menu.do 02" $ do
+            html <- TL.readFile ("test/SBIsecCoJp/" ++ test02MarketPage)
+            S.marketInfoPage html `shouldBe` test02MarketPage'
     --
     describe "formLoginPage" $
         it "https://k.sbisec.co.jp/bsite/visitor/top.do" $ do
@@ -213,12 +244,15 @@ spec = do
             S.holdStockListPage html `shouldBe` test01AccHoldStockListPage'
     --
     describe "acc/holdStockDetail page" $ do
-        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=1111" $ do
+        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=1111 01" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01AccHoldStockDetailPage)
             S.holdStockDetailPage html `shouldBe` test01AccHoldStockDetailPage'
-        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=2222" $ do
+        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=1111 02" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test02AccHoldStockDetailPage)
             S.holdStockDetailPage html `shouldBe` test02AccHoldStockDetailPage'
+        it "https://k.sbisec.co.jp/bsite/member/acc/holdStockDetail.do?company_code=2222" $ do
+            html <- TL.readFile ("test/SBIsecCoJp/" ++ test03AccHoldStockDetailPage)
+            S.holdStockDetailPage html `shouldBe` test03AccHoldStockDetailPage'
 --            print $ S.holdStockDetailPage html
 --            M.mapM_ (TL.putStrLn . TL.fromStrict {-. T.unwords-}) $ S.holdStockDetailPage html
 

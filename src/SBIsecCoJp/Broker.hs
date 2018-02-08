@@ -95,7 +95,7 @@ noticeOfBrokerageAnnouncement conf _ userAgent = do
     where
     go :: BB.HTTPSession -> IO TL.Text
     go sess =
-        TL.pack . maybe "マーケット情報がありません。" show
+        TL.pack . maybe "マーケット情報の取得に失敗しました。" show
         <$> runMaybeT (goMarketInfoPage sess)
     -- |
     -- トップ -> マーケット情報を見に行く関数
