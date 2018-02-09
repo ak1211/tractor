@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.3.5
+version:            0.3.6
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -59,7 +59,6 @@ executables:
     main:               Main.hs
     source-dirs:        app
     ghc-options:
-    - -dynamic
     - -rtsopts
     - -threaded
     - -Wall

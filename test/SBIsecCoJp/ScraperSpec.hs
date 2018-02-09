@@ -6,6 +6,7 @@ import qualified Control.Monad      as M
 import qualified Data.Text          as T
 import qualified Data.Text.Lazy     as TL
 import qualified Data.Text.Lazy.IO  as TL
+import qualified Data.Time          as Tm
 import           Test.Hspec
 
 import qualified BrokerBackend      as BB
@@ -17,35 +18,20 @@ import qualified SBIsecCoJp.Scraper as S
 -- マーケット情報ページ
 --
 test01MarketPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmarket%2Fmenu.do.utf8.01.html"
-test01MarketPage' = Just S.MarketInfoPage
- { S.miCaption = "国内指標"
- , S.miPrice = Just 23631.88
- , S.miMonth = Just 1
- , S.miDay = Just 26
- , S.miHour = Just 15
- , S.miMinute = Just 15
- , S.miDifference = Just (-37.61)
- , S.miDiffPercent = Just (-0.16)
- , S.miOpen = Just 23757.34
- , S.miHigh = Just 23797.96
- , S.miLow = Just 23592.28
- }
+test01MarketPage' = Just $ S.MInikkei225
+ $ Just S.MarketInfo
+  { S.miPrice = 23631.88
+  , S.miAt = Tm.parseTimeOrError False Tm.defaultTimeLocale "%m/%d %H:%M%z" $ "01/26 15:15+0900"
+  , S.miDifference = (-37.61)
+  , S.miDiffPercent = (-0.16)
+  , S.miOpen = 23757.34
+  , S.miHigh = 23797.96
+  , S.miLow = 23592.28
+  }
 
 -- マーケット情報ページ (まだ取引のない場合)
 test02MarketPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmarket%2Fmenu.do.utf8.02.html"
-test02MarketPage' = Just S.MarketInfoPage
- { S.miCaption = "国内指標"
- , S.miPrice = Nothing
- , S.miMonth = Nothing
- , S.miDay = Nothing
- , S.miHour = Nothing
- , S.miMinute = Nothing
- , S.miDifference = Nothing
- , S.miDiffPercent = Nothing
- , S.miOpen = Nothing
- , S.miHigh = Nothing
- , S.miLow = Nothing
- }
+test02MarketPage' = Just (S.MInikkei225 Nothing)
 
 --
 -- ログインページ
@@ -166,6 +152,7 @@ test01AccHoldStockListPage' = Just S.HoldStockListPage
 test01AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D1111.utf8.01.html"
 test01AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
+ , hsdAt = Just (Tm.parseTimeOrError False Tm.defaultTimeLocale "%m/%d %H:%M%z" $ "01/22 15:00+0900")
  , hsdTicker = TSTYO 1111
  , hsdCaption = "ヨロシサン製薬"
  , hsdDiff = Just (-1)
@@ -178,6 +165,7 @@ test01AccHoldStockDetailPage' = Just S.HoldStockDetailPage
 test02AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D1111.utf8.02.html"
 test02AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
+ , hsdAt = Nothing
  , hsdTicker = TSTYO 1111
  , hsdCaption = "ヨロシサン製薬"
  , hsdDiff = Nothing
@@ -189,6 +177,7 @@ test02AccHoldStockDetailPage' = Just S.HoldStockDetailPage
 test03AccHoldStockDetailPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FholdStockDetail.do%3Fcompany_code%3D2222.utf8.html"
 test03AccHoldStockDetailPage' = Just S.HoldStockDetailPage
  { S.hsdUserid = "Z12-1234567"
+ , hsdAt = Just (Tm.parseTimeOrError False Tm.defaultTimeLocale "%m/%d %H:%M%z" $ "01/22 15:00+0900")
  , hsdTicker = TSTYO 2222
  , hsdCaption = "オムラ・インダストリ"
  , hsdDiff = Just 100

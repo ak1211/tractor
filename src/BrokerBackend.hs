@@ -193,7 +193,6 @@ fetchPage manager header cookieJar postReq url =
 type HtmlCharset = B8.ByteString
 
 -- |
---
 -- HTMLから文字コードを取り出す関数
 -- 先頭より1024バイトまでで
 -- <meta http-equiv="Content-Type" content="text/html; charset=shift_jis"> とか
@@ -274,60 +273,42 @@ token1 = Ap.takeWhile1 (Ap.inClass "0-9a-zA-Z_-")
 -- HTTPヘッダからcharsetを得る
 --
 -- >>> takeCharsetFromHTTPHeader [("Content-Length","5962"),("Content-Type","text/html; charset=Shift_JIS")]
--- Just "Shift_JIS"
+-- Right "Shift_JIS"
 -- >>> takeCharsetFromHTTPHeader [("Content-Length","5962"),("Content-Type","text/html; charset=utf-8")]
--- Just "utf-8"
+-- Right "utf-8"
 -- >>> takeCharsetFromHTTPHeader [("Content-Encoding","gzip"),("Content-Type","text/html;charset=UTF-8")]
--- Just "UTF-8"
+-- Right "UTF-8"
 -- >>> takeCharsetFromHTTPHeader [("Content-Length","5962")]
--- Nothing
+-- Left "Content-Type is none"
 --
-takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Maybe B8.ByteString
+takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Either String HtmlCharset
 takeCharsetFromHTTPHeader headers = do
     -- HTTPヘッダから"Content-Type"を得る
-    ct <- lookup "Content-Type" headers
+    ct <- maybe (Left "Content-Type is none") Right $ lookup "Content-Type" headers
     -- "Content-Type"からcontentを得る
-    case Ap.parseOnly mediaType ct of
-        Left   _ -> Nothing
-        Right "" -> Nothing
-        Right  r -> Just r
+    Ap.parseOnly mediaType ct
 
 -- |
 -- HTTP ResponseからUtf8 HTMLを取り出す関数
 takeBodyFromResponse :: N.Response BL8.ByteString -> TL.Text
 takeBodyFromResponse resp =
-    let
-        html = N.responseBody resp
-        -- HTMLから文字コードを得る
-        csetHtml = case takeCharsetFromHTML html of
-                    Left   _ -> Nothing
-                    Right "" -> Nothing
-                    Right  r -> Just r
-        -- HTTPレスポンスヘッダから文字コードを得る
-        csetResp = takeCharsetFromHTTPHeader $ N.responseHeaders resp
-        -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
-        charset = csetHtml <|> csetResp
-        -- UTF-8テキスト
-        utf8txt = flip toUtf8 html . B8.unpack =<< charset
-    in
-    -- デコードの失敗はあきらめて文字化けで返却
-    Mb.fromMaybe (forcedConv html) utf8txt
+    -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
+    let cs = charsetHeader <|> charsetBody in
+    case toUtf8 =<< cs of
+        -- デコードの失敗はあきらめて文字化けで返却
+        Left _  -> TL.pack . BL8.unpack $ html
+        Right x -> x
     where
+    httpHeader = N.responseHeaders resp
+    html = N.responseBody resp
+    charsetBody = takeCharsetFromHTML html
+    charsetHeader = takeCharsetFromHTTPHeader httpHeader
     --
     --
-    toUtf8  :: IConv.EncodingName
-            -> BL8.ByteString
-            -> Maybe TL.Text
+    toUtf8 :: B8.ByteString -> Either String TL.Text
     toUtf8 charset =
-        either
-        (const Nothing)
-        Just
-        . TLE.decodeUtf8'
-        . IConv.convert charset "UTF-8"
-    -- |
-    -- 文字化けでも無理やり返す関数
-    forcedConv :: BL8.ByteString -> TL.Text
-    forcedConv = TL.pack . BL8.unpack
+        either (Left . show) Right
+        . TLE.decodeUtf8' $ IConv.convert (B8.unpack charset) "UTF-8" html
 
 -- |
 -- 絶対リンクへ変換する関数

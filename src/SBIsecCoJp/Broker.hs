@@ -206,8 +206,8 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         DB.runMigration migrateSBIsecCoJp
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm hslPage pmdPage
-        -- 保有株式テーブルへ格納する
-        M.mapM_ (DB.insert . stock key) stocks
+        -- 保有株式テーブルへ格納する(寄っている場合のみ)
+        M.mapM_ DB.insert . Mb.catMaybes . map (stock key) $ stocks
     where
     --
     --
@@ -222,15 +222,19 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         }
     --
     --
-    stock :: DB.Key SbiseccojpAsset -> S.HoldStockDetailPage -> SbiseccojpStock
-    stock key S.HoldStockDetailPage{..} = SbiseccojpStock
-        { sbiseccojpStockAsset      = key
-        , sbiseccojpStockTicker     = hsdTicker
-        , sbiseccojpStockCaption    = T.unpack hsdCaption
-        , sbiseccojpStockCount      = hsdCount
-        , sbiseccojpStockPurchase   = hsdPurchasePrice
-        , sbiseccojpStockPrice      = hsdPrice
-        }
+    stock :: DB.Key SbiseccojpAsset -> S.HoldStockDetailPage -> Maybe SbiseccojpStock
+    stock key S.HoldStockDetailPage{..} =
+        case hsdAt of
+            Just _ -> Just SbiseccojpStock
+                        { sbiseccojpStockAsset      = key
+                        , sbiseccojpStockTicker     = hsdTicker
+                        , sbiseccojpStockCaption    = T.unpack hsdCaption
+                        , sbiseccojpStockCount      = hsdCount
+                        , sbiseccojpStockPurchase   = hsdPurchasePrice
+                        , sbiseccojpStockPrice      = hsdPrice
+                        }
+            -- まだ寄っていない
+            Nothing -> Nothing
     -- |
     -- トップ / 保有証券一覧を見に行く関数
     goHoldStockListPage :: MaybeT IO S.HoldStockListPage
