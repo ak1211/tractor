@@ -64,6 +64,7 @@ import qualified Data.Text                        as T
 import qualified Data.Text.Lazy                   as TL
 import qualified Data.Text.Lazy.Builder           as TLB
 import qualified Data.Text.Lazy.Builder.RealFloat as TLB
+import qualified Data.Text.Lazy.Builder.Int       as TLB
 import qualified Data.Text.Read                   as Read
 import qualified Data.Time                        as Tm
 import           System.IO                        (Newline (..), nativeNewline)
@@ -72,6 +73,7 @@ import           Text.XML.Cursor                  (($/), ($//), (&/), (&//),
                                                    (&|))
 import qualified Text.XML.Cursor                  as X
 
+import qualified Lib
 import qualified GenScraper                       as GS
 import           ModelDef                         (TickerSymbol (..))
 
@@ -99,17 +101,19 @@ data MarketInfoPage
 -- MarketInfoのshow
 instance Show MarketInfo where
     show MarketInfo{..} =
-        let
-            frf = TLB.formatRealFloat TLB.Fixed (Just 2)
-            ftm = TLB.fromString . show
-        in
         TL.unpack . TLB.toLazyText $ mempty
-        <> "現在値: " <> frf miPrice <> " " <> ftm miAt <> newline
+        <> "現在値: " <> frf miPrice <> " (" <> ftm (local miAt) <> ")" <> newline
         <> "前日比: " <> frf miDifference <> " " <> frf miDiffPercent <> "%" <> newline
         <> "open " <> frf miOpen <> newline
         <> "high " <> frf miHigh <> newline
         <> "low " <> frf miLow
-
+        where
+        frf = TLB.formatRealFloat TLB.Fixed (Just 2)
+        local = Tm.utcToLocalTime Lib.tzAsiaTokyo
+        ftm Tm.LocalTime{..} =
+            let (_,m,d) = Tm.toGregorian localDay in
+            TLB.decimal m <> "/" <> TLB.decimal d <> " "
+            <> (TLB.fromString . show $ localTimeOfDay)
 -- |
 -- MarketInfoPageのshow
 instance Show MarketInfoPage where
