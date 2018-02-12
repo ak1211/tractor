@@ -30,6 +30,7 @@ Portability :  POSIX
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 module Conf
     ( readJSONFile
@@ -57,7 +58,7 @@ import qualified Data.Text.Lazy.Builder.Int as TLB
 import           Data.Word                  (Word16)
 import qualified Database.Persist.MySQL     as MySQL
 import           GHC.Exts                   (fromList)
-import           System.IO                  (nativeNewline, Newline(..))
+import           System.IO                  (Newline (..), nativeNewline)
 
 type UserAgent = String
 
@@ -126,7 +127,7 @@ newline :: TLB.Builder
 newline =
     TLB.fromString $
     case nativeNewline of
-        LF -> "\n"
+        LF   -> "\n"
         CRLF -> "\r\n"
 
 -- |

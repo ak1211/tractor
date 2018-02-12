@@ -26,6 +26,7 @@ Portability :  POSIX
 
 -}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 module Lib
     ( greetingsMessage
     , tzAsiaTokyo

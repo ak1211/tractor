@@ -27,6 +27,7 @@ Portability :  POSIX
 アプリケーション「Tractor」のメインモジュールです。
 -}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 module Main where
 import qualified Control.Concurrent           as CC
 import qualified Control.Concurrent.Async     as CCA
@@ -133,7 +134,8 @@ announceHolidaySchedule conf day =
     [(t, act) | t<-Scd.announceHolidayTime day]
     where
     act = C.yield (TB.toLazyText msg) $$ slack
-    msg = "本日 " <> TB.fromString (show day) <> " は市場の休日です。"
+    msg = "本日 " <> today <> " は市場の休日です。"
+    today = TB.fromString . show $ Scd.getAsiaTokyoDay day
     slack = simpleTextMsg conf =$ sinkSlack conf
 
 -- |

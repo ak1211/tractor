@@ -30,6 +30,7 @@ MariaDBデータベースに入れる
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE StrictData            #-}
 module StockQuotesCrawler
     ( kdbcomScreenScraper
     , runWebCrawlingPortfolios

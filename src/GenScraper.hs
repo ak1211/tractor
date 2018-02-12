@@ -32,6 +32,7 @@ Portability :  POSIX
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TypeFamilies          #-}
 module GenScraper
     ( TextAndHref
@@ -54,8 +55,8 @@ import qualified Text.XML.Cursor       as X
 -- |
 -- input タグの内容
 data InputTag = InputTag
-    { inputType :: Maybe T.Text
-    , inputName :: Maybe T.Text
+    { inputType  :: Maybe T.Text
+    , inputName  :: Maybe T.Text
     , inputValue:: Maybe T.Text
     } deriving (Eq, Show)
 
@@ -123,9 +124,9 @@ takeNVpairs c =
 -- |
 -- form タグの内容
 data FormTag = FormTag
-    { formAction    :: T.Text
-    , formMethod    :: Maybe T.Text
-    , formInputTag  :: [InputTag]
+    { formAction   :: T.Text
+    , formMethod   :: Maybe T.Text
+    , formInputTag :: [InputTag]
     } deriving (Eq, Show)
 
 -- |

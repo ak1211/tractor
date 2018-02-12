@@ -31,6 +31,7 @@ Portability :  POSIX
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TypeFamilies          #-}
 module MatsuiCoJp.Scraper
     ( FraAstSpare (..)

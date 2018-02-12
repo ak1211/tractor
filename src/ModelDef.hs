@@ -25,8 +25,8 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
+{-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
-
 module ModelDef where
 
 import           Data.Word           (Word16)

@@ -26,6 +26,7 @@ Portability :  POSIX
 
 -}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StrictData #-}
 module TechnicalIndicators
     ( rolling
     , mean

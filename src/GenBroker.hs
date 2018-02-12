@@ -27,6 +27,7 @@ Portability :  POSIX
 証券会社とやりとりするモジュールです。
 -}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StrictData #-}
 module GenBroker
     ( Broker(..)
     ) where

@@ -33,6 +33,7 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TypeFamilies          #-}
 module SBIsecCoJp.Broker
     ( siteConn
@@ -64,6 +65,7 @@ import qualified Safe
 import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified GenScraper                   as GS
+import           Lib                          (tzAsiaTokyo)
 import qualified Lib
 import           SBIsecCoJp.Model
 import qualified SBIsecCoJp.Scraper           as S
@@ -147,7 +149,7 @@ noticeOfCurrentAssets connInfo = do
             , Slack.reportGrowthToday   = (\y -> allAsset asset - allAsset y) <$> yesterday
             , Slack.reportAllProfit     = sbiseccojpAssetProfit asset
             , Slack.reportStockDigests  =
-                [Slack.StockDigest (sbiseccojpStockGain s) (sbiseccojpStockDigest s) | s<-stocks]
+                [Slack.StockDigest (sbiseccojpStockAt s) (sbiseccojpStockGain s) (sbiseccojpStockDigest s) | s<-stocks]
             }
     -- |
     -- DBから最新の資産評価を取り出す
@@ -201,13 +203,14 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     stocks <- mbfn "保有証券詳細ページの取得に失敗しました" $ goHoldStockDetailPage hslPage
     -- 受信時間
     tm <- Tm.getCurrentTime
+    let (year,_,_) = Tm.toGregorian (Tm.utctDay tm)
     -- 全てをデーターベースへ
     ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateSBIsecCoJp
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm hslPage pmdPage
         -- 保有株式テーブルへ格納する(寄っている場合のみ)
-        M.mapM_ DB.insert . Mb.catMaybes . map (stock key) $ stocks
+        M.mapM_ DB.insert . Mb.mapMaybe (stock year key) $ stocks
     where
     --
     --
@@ -221,20 +224,22 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         , sbiseccojpAssetCashBalance= S.pmdCashBalance pmdp
         }
     --
-    --
-    stock :: DB.Key SbiseccojpAsset -> S.HoldStockDetailPage -> Maybe SbiseccojpStock
-    stock key S.HoldStockDetailPage{..} =
-        case hsdAt of
-            Just _ -> Just SbiseccojpStock
-                        { sbiseccojpStockAsset      = key
-                        , sbiseccojpStockTicker     = hsdTicker
-                        , sbiseccojpStockCaption    = T.unpack hsdCaption
-                        , sbiseccojpStockCount      = hsdCount
-                        , sbiseccojpStockPurchase   = hsdPurchasePrice
-                        , sbiseccojpStockPrice      = hsdPrice
-                        }
-            -- まだ寄っていない
-            Nothing -> Nothing
+    -- まだ寄っていない値を元に作らない
+    stock :: Integer -> DB.Key SbiseccojpAsset -> S.HoldStockDetailPage -> Maybe SbiseccojpStock
+    stock year key S.HoldStockDetailPage{..} = do
+        (month, day, hour, minute) <- hsdMDHourMin
+        d <- Tm.fromGregorianValid year month day
+        t <- Tm.makeTimeOfDayValid hour minute 0
+        let lt = Tm.LocalTime {Tm.localDay = d, Tm.localTimeOfDay = t}
+        Just SbiseccojpStock
+            { sbiseccojpStockAsset      = key
+            , sbiseccojpStockAt         = Tm.localTimeToUTC tzAsiaTokyo lt
+            , sbiseccojpStockTicker     = hsdTicker
+            , sbiseccojpStockCaption    = T.unpack hsdCaption
+            , sbiseccojpStockCount      = hsdCount
+            , sbiseccojpStockPurchase   = hsdPurchasePrice
+            , sbiseccojpStockPrice      = hsdPrice
+            }
     -- |
     -- トップ / 保有証券一覧を見に行く関数
     goHoldStockListPage :: MaybeT IO S.HoldStockListPage

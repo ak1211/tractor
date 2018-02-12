@@ -34,6 +34,7 @@ SBI証券サイトデータベースのモデル
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE StrictData                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 module SBIsecCoJp.Model
@@ -67,6 +68,7 @@ SbiseccojpAsset
 -- 保有株式テーブル
 SbiseccojpStock
     asset           SbiseccojpAssetId   -- ^ 紐付け
+    at              UTCTime             -- ^ 日付時間
     ticker          TickerSymbol        -- ^ ティッカー
     caption         String              -- ^ 名前
     count           Int32               -- ^ 保有数

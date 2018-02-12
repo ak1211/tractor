@@ -35,6 +35,7 @@ Portability :  POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TypeFamilies          #-}
 module SBIsecCoJp.Scraper
     ( MarketInfo(..)
@@ -55,6 +56,7 @@ module SBIsecCoJp.Scraper
     , holdStockDetailPage
     , marketInfoPage
     ) where
+import           Control.Monad                    as M
 import           Control.Monad                    ((>=>))
 import qualified Data.Char                        as C
 import           Data.Int                         (Int32)
@@ -63,30 +65,31 @@ import           Data.Monoid                      (mempty, (<>))
 import qualified Data.Text                        as T
 import qualified Data.Text.Lazy                   as TL
 import qualified Data.Text.Lazy.Builder           as TLB
-import qualified Data.Text.Lazy.Builder.RealFloat as TLB
 import qualified Data.Text.Lazy.Builder.Int       as TLB
+import qualified Data.Text.Lazy.Builder.RealFloat as TLB
 import qualified Data.Text.Read                   as Read
-import qualified Data.Time                        as Tm
 import           System.IO                        (Newline (..), nativeNewline)
 import qualified Text.HTML.DOM                    as H
 import           Text.XML.Cursor                  (($/), ($//), (&/), (&//),
                                                    (&|))
 import qualified Text.XML.Cursor                  as X
 
-import qualified Lib
 import qualified GenScraper                       as GS
 import           ModelDef                         (TickerSymbol (..))
 
 -- |
 -- マーケット情報
 data MarketInfo = MarketInfo
-    { miPrice       :: Double       -- ^ 現在値
-    , miAt          :: Tm.UTCTime   -- ^ 時間
-    , miDifference  :: Double       -- ^ 前日比
-    , miDiffPercent :: Double       -- ^ 前日比(%)
-    , miOpen        :: Double       -- ^ 始値
-    , miHigh        :: Double       -- ^ 高値
-    , miLow         :: Double       -- ^ 安値
+    { miPrice       :: Double   -- ^ 現在値
+    , miMonth       :: Int      -- ^ 月
+    , miDay         :: Int      -- ^ 日
+    , miHour        :: Int      -- ^ 時間
+    , miMin         :: Int      -- ^ 時間
+    , miDifference  :: Double   -- ^ 前日比
+    , miDiffPercent :: Double   -- ^ 前日比(%)
+    , miOpen        :: Double   -- ^ 始値
+    , miHigh        :: Double   -- ^ 高値
+    , miLow         :: Double   -- ^ 安値
     } deriving Eq
 
 -- |
@@ -102,18 +105,17 @@ data MarketInfoPage
 instance Show MarketInfo where
     show MarketInfo{..} =
         TL.unpack . TLB.toLazyText $ mempty
-        <> "現在値: " <> frf miPrice <> " (" <> ftm (local miAt) <> ")" <> newline
+        <> "現在値: " <> frf miPrice
+        <> " (" <> md <> " " <> time <> ")" <> newline
         <> "前日比: " <> frf miDifference <> " " <> frf miDiffPercent <> "%" <> newline
         <> "open " <> frf miOpen <> newline
         <> "high " <> frf miHigh <> newline
         <> "low " <> frf miLow
         where
         frf = TLB.formatRealFloat TLB.Fixed (Just 2)
-        local = Tm.utcToLocalTime Lib.tzAsiaTokyo
-        ftm Tm.LocalTime{..} =
-            let (_,m,d) = Tm.toGregorian localDay in
-            TLB.decimal m <> "/" <> TLB.decimal d <> " "
-            <> (TLB.fromString . show $ localTimeOfDay)
+        md = TLB.decimal miMonth <> "/" <> TLB.decimal miDay
+        time = TLB.decimal miHour <> ":" <> TLB.decimal miMin
+
 -- |
 -- MarketInfoPageのshow
 instance Show MarketInfoPage where
@@ -140,20 +142,20 @@ newline =
 -- |
 -- トップページの内容
 newtype TopPage = TopPage
-    { getTopPage :: [GS.TextAndHref] }
-    deriving (Eq, Show)
+    { getTopPage :: [GS.TextAndHref]
+    } deriving (Eq, Show)
 
 -- |
 -- 口座管理ページの内容
 newtype AccMenuPage = AccMenuPage
-    { getAccMenuPage :: [GS.TextAndHref] }
-    deriving (Eq, Show)
+    { getAccMenuPage :: [GS.TextAndHref]
+    } deriving (Eq, Show)
 
 -- |
 -- 買付余力ページの内容
 newtype PurchaseMarginListPage = PurchaseMarginListPage
-    { getPurchaseMarginListPage :: [GS.TextAndHref] }
-    deriving (Eq, Show)
+    { getPurchaseMarginListPage :: [GS.TextAndHref]
+    } deriving (Eq, Show)
 
 -- |
 -- 買付余力詳細ページの内容
@@ -167,21 +169,21 @@ data PurchaseMarginDetailPage = PurchaseMarginDetailPage
 -- |
 -- 保有証券詳細ページの内容
 data HoldStockDetailPage = HoldStockDetailPage
-    { hsdUserid        :: T.Text            -- ^ ユーザーID
-    , hsdAt            :: Maybe Tm.UTCTime  -- ^ 時間(取引がない場合はNothing)
-    , hsdTicker        :: TickerSymbol      -- ^ ティッカーシンボル
-    , hsdCaption       :: T.Text            -- ^ 名前
-    , hsdDiff          :: Maybe Double      -- ^ 前日比(取引がない場合はNothing)
-    , hsdCount         :: Int32             -- ^ 保有数
-    , hsdPurchasePrice :: Double            -- ^ 取得単価
-    , hsdPrice         :: Double            -- ^ 現在値
+    { hsdUserid        :: T.Text                    -- ^ ユーザーID
+    , hsdMDHourMin     :: Maybe (Int,Int,Int,Int)   -- ^ 時間(取引がない場合はNothing)
+    , hsdTicker        :: TickerSymbol              -- ^ ティッカーシンボル
+    , hsdCaption       :: T.Text                    -- ^ 名前
+    , hsdDiff          :: Maybe Double              -- ^ 前日比(取引がない場合はNothing)
+    , hsdCount         :: Int32                     -- ^ 保有数
+    , hsdPurchasePrice :: Double                    -- ^ 取得単価
+    , hsdPrice         :: Double                    -- ^ 現在値
     } deriving (Eq, Show)
 
 -- |
 -- 保有証券詳細ページへのリンク
 newtype HoldStockDetailLink = HoldStockDetailLink
-    { getHoldStockDetailLink :: [GS.TextAndHref] }
-    deriving (Eq, Show)
+    { getHoldStockDetailLink :: [GS.TextAndHref]
+    } deriving (Eq, Show)
 
 -- |
 -- 保有証券一覧ページの内容
@@ -444,8 +446,8 @@ holdStockDetailPage html =
                 Just (TSTYO code, T.strip c)
     --
     -- (現在値, 時間)
-    priceAt :: X.Cursor -> Maybe (Double, Maybe Tm.UTCTime)
-    priceAt cursor =
+    priceMDHourMin :: X.Cursor -> Maybe (Double, Maybe (Int,Int,Int,Int))
+    priceMDHourMin cursor =
         let
             xs = filter (/= T.empty) . map T.strip $
                 cursor
@@ -455,11 +457,11 @@ holdStockDetailPage html =
         -- 現在値
         pr <- toDouble =<< Mb.listToMaybe . drop 4 =<< pure xs
         -- 時間
-        tm <- T.unpack . T.init . T.tail . T.dropWhile (/= '(')
+        chunk <- T.init . T.tail . T.dropWhile (/= '(')
                 <$> (Mb.listToMaybe . drop 5 $ xs)
-        Just( pr
-            , Tm.parseTimeM True Tm.defaultTimeLocale "%m/%d %H:%M%z" $ tm ++ "+0900"
-            )
+        case M.mapM toDecimal . T.split (`elem` ['/',' ',':']) . T.strip $ chunk of
+            Just [month,day,hour,minute] -> Just (pr, Just (month,day,hour,minute))
+            _ -> Just (pr, Nothing)
     --
     --
     diffCountGain :: X.Cursor -> Maybe (Maybe Double, Int32, Double)
@@ -484,11 +486,11 @@ holdStockDetailPage html =
     pack cursor = do
         uid <- userid cursor
         (ts,ca) <- tickerCaption cursor
-        (pr,at) <- priceAt cursor
+        (pr,at) <- priceMDHourMin cursor
         (d,c,g) <- diffCountGain cursor
         Just HoldStockDetailPage
             { hsdUserid = uid
-            , hsdAt = at
+            , hsdMDHourMin = at
             , hsdTicker = ts
             , hsdCaption = ca
             , hsdDiff = d
@@ -515,11 +517,14 @@ marketInfoPage html =
     --
     marketInfo :: Maybe MarketInfo
     marketInfo = do
-        (pr,at,df,dp) <- priceAtDiffPercent =<< Mb.listToMaybe (take 1 $ drop 1 tables)
+        (pr,month,day,hour,minute,df,dp) <- priceMonthDayHourMinDiffPercent =<< Mb.listToMaybe (take 1 $ drop 1 tables)
         (o,h,l) <- openHighLow =<< Mb.listToMaybe (take 1 $ drop 2 tables)
         Just MarketInfo
             { miPrice = pr
-            , miAt = at
+            , miMonth = month
+            , miDay = day
+            , miHour = hour
+            , miMin = minute
             , miDifference = df
             , miDiffPercent = dp
             , miOpen = o
@@ -546,21 +551,23 @@ marketInfoPage html =
         root $// X.attributeIs "class" "titletext" &// X.content
     --
     --
-    priceAtDiffPercent :: X.Cursor -> Maybe (Double, Tm.UTCTime, Double, Double)
-    priceAtDiffPercent cursor = do
+    priceMonthDayHourMinDiffPercent :: X.Cursor -> Maybe (Double, Int, Int, Int, Int, Double, Double)
+    priceMonthDayHourMinDiffPercent cursor = do
         let tds = map T.strip $
                     cursor
                     $/ X.element "tr" &/ X.element "td" &// X.content
         -- 現在値
         pr <- toDouble =<< Mb.listToMaybe . take 1 . drop 1 =<< pure tds
         -- 時間
-        tm <- T.unpack . T.init . T.tail . T.strip <$> (Mb.listToMaybe . drop 2 $ tds)
-        at <- Tm.parseTimeM True Tm.defaultTimeLocale "%m/%d %H:%M%z" $ tm ++ "+0900"
+        chunk <- T.init . T.tail . T.strip <$> (Mb.listToMaybe . drop 2 $ tds)
+        parts <- M.mapM toDecimal . T.split (`elem` ['/',' ',':']) . T.strip $ chunk
+        M.guard (length parts == 4)
+        let [month, day, hour, minute] = parts
         -- 前日比
         df <- toDouble =<< Mb.listToMaybe . drop 4 =<< pure tds
         -- 前日比(%)
         dp <- toDouble =<< Mb.listToMaybe . drop 6 =<< pure tds
-        Just (pr, at, df, dp)
+        Just (pr, month, day, hour, minute, df, dp)
     --
     --
     openHighLow :: X.Cursor -> Maybe (Double, Double, Double)

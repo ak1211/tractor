@@ -33,6 +33,7 @@ Portability :  POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TypeFamilies          #-}
 module MatsuiCoJp.Broker
     ( siteConn
@@ -166,15 +167,16 @@ noticeOfCurrentAssets connInfo = do
     makeReport yesterday (DB.Entity key asset) = do
         -- 保有株式を取り出す
         stocks <- takeStocks key
+        let at = matsuicojpAssetAt asset
         --
         return Slack.Report
-            { Slack.reportAt            = matsuicojpAssetAt asset
+            { Slack.reportAt            = at
             , Slack.reportAllAsset      = allAsset asset
             -- 現在値 - 前営業日値
             , Slack.reportGrowthToday   = (\y -> allAsset asset - allAsset y) <$> yesterday
             , Slack.reportAllProfit     = matsuicojpAssetProfit asset
             , Slack.reportStockDigests  =
-                [Slack.StockDigest (matsuicojpStockGain s) (matsuicojpStockDigest s) | s<-stocks]
+                [Slack.StockDigest at (matsuicojpStockGain s) (matsuicojpStockDigest s) | s<-stocks]
             }
     -- |
     -- DBから最新の資産評価を取り出す

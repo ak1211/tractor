@@ -29,8 +29,8 @@ SlackとAPI接続するモジュールです。
 -}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 {-# LANGUAGE TemplateHaskell   #-}
-
 module SinkSlack
     ( StockDigest (..)
     , WebHook (..)
@@ -88,7 +88,8 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 
 
 data StockDigest = StockDigest
-    { stockDigestGain :: Double
+    { stockDigestAt   :: Tm.UTCTime
+    , stockDigestGain :: Double
     , stockDigestMsg  :: String
     }
 
@@ -170,7 +171,7 @@ reportMsg conf =
     webHook report = WebHook
         { channel       = Conf.channel conf
         , username      = Conf.userName conf
-        , attachments   = [packAttach (reportAt report) d | d<-reportStockDigests report]
+        , attachments   = map packAttach $ reportStockDigests report
         , hText         = headline report
         , icon_emoji    = ":tractor:"
         }
@@ -192,15 +193,15 @@ reportMsg conf =
         upEmoji = ":chart_with_downwards_trend:"
     --
     --
-    packAttach :: Tm.UTCTime -> StockDigest -> Attachment
-    packAttach at stock = Attachment
+    packAttach :: StockDigest -> Attachment
+    packAttach stock = Attachment
         { color         = colorUpdown
         , pretext       = Nothing
         , title         = Nothing
         , text          = stockDigestMsg stock
         , footer        = Conf.userName conf
         , footer_icon   = "https://platform.slack-edge.com/img/default_application_icon.png"
-        , ts            = round $ Tm.utcTimeToPOSIXSeconds at
+        , ts            = round . Tm.utcTimeToPOSIXSeconds $ stockDigestAt stock
         }
         where
         --

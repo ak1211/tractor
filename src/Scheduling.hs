@@ -29,6 +29,7 @@ Portability :  POSIX
 >>> :set -XOverloadedStrings
 -}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StrictData #-}
 module Scheduling
     ( AsiaTokyoDay(..)
     , JobFunc
@@ -60,7 +61,7 @@ import           Lib                    (tzAsiaTokyo)
 
 newtype AsiaTokyoDay = AsiaTokyoDay
     { getAsiaTokyoDay :: Tm.Day }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
 
 type JobFunc = IO ()
 type JobTime = Tm.UTCTime

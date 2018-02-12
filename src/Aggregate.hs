@@ -28,6 +28,7 @@ Portability :  POSIX
 -}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Aggregate
     (runAggregateOfPortfolios
