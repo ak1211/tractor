@@ -38,7 +38,7 @@ module StockQuotesCrawler
 
 import           Control.Applicative          ((<|>))
 import qualified Control.Concurrent           as CC
-import           Control.Exception            (throwIO)
+import           Control.Exception.Safe
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
@@ -153,11 +153,11 @@ fetchStockPrices :: Conf.Info -> TickerSymbol -> TimeFrame -> IO (Maybe T.Text, 
 fetchStockPrices conf ticker tf = do
     let aUri = accessURI ticker
     manager <- N.newManager N.tlsManagerSettings
-    uri <- maybe (throwIO $ userError "access uri parse error") pure $ N.parseURIReference aUri
-    response <- BB.fetchPage manager customHeader Nothing [] uri
+    uri <- maybe (throwString "access uri parse error") pure $ N.parseURIReference aUri
+    response <- BB.fetchHTTP manager customHeader Nothing [] uri
     --
     let body = N.responseBody response
-    either (throwIO . userError) pure $
+    either throwString pure $
         kdbcomScreenScraper ticker tf (Just $ T.pack aUri) body
     where
     -- |

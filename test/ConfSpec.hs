@@ -44,6 +44,11 @@ confInfoBrokers =
         , loginPassword = "sbisec.co.jp loginPassword"
         , dealingsPassword = "sbisec.co.jp dealingsPassword"
         }
+    , KabuCom . InfoKabuCom $ InfoAccount
+        { loginID   = "kabu.com loginID"
+        , loginPassword = "kabu.com loginPassword"
+        , dealingsPassword = "kabu.com dealingsPassword"
+        }
     ]
 
 --

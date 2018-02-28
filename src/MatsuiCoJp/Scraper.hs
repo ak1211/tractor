@@ -38,27 +38,25 @@ module MatsuiCoJp.Scraper
     , FraHomeAnnounce (..)
     , FraStkSell (..)
     , HoldStock (..)
-    , nonScraping
     , OrderConfirmed (..)
     , scrapingFraAstSpare
     , scrapingFraHomeAnnounce
     , scrapingFraStkSell
     , scrapingOrderConfirmed
     ) where
-
+import           Control.Exception.Safe
 import           Control.Monad          ((>=>))
 import qualified Control.Monad          as M
 import qualified Data.Char
 import           Data.Int               (Int32)
 import qualified Data.List              as List
-import           Data.Monoid            ((<>))
 import qualified Data.Text.Lazy         as TL
-import qualified Data.Text.Lazy.Builder as TLB
 import qualified Data.Text.Lazy.Read    as Read
-import qualified Safe
 import qualified Text.HTML.DOM          as H
 import           Text.XML.Cursor        (($/), ($//), (&/), (&//), (&|))
 import qualified Text.XML.Cursor        as X
+
+import qualified GenScraper             as GS
 
 -- |
 -- ホーム -> お知らせの内容
@@ -117,36 +115,31 @@ onlySignDigit = TL.filter isSignDigit
 
 --
 --
-doubleFromTxt :: TL.Text -> Either TL.Text Double
+doubleFromTxt :: MonadThrow m => TL.Text -> m Double
 doubleFromTxt t =
-    either (const . Left $ TLB.toLazyText "文字から数字への変換に失敗:\"" <> t <> "\"") Right
-    (fst <$> Read.signed Read.double (onlySignDigit t))
+    case Read.signed Read.double $ onlySignDigit t of
+    Right v -> pure $ fst v
+    Left _ -> GS.throwScrapingEx "文字から数字への変換に失敗:"
 
 --
 --
-decimalFromTxt :: Integral a => TL.Text -> Either TL.Text a
+decimalFromTxt :: (MonadThrow m, Integral a) => TL.Text -> m a
 decimalFromTxt t =
-    either (const . Left $ TLB.toLazyText "文字から数字への変換に失敗:\"" <> t <> "\"") Right
-    (fst <$> Read.signed Read.decimal (onlySignDigit t))
-
--- |
--- そのままページを返す関数
-nonScraping :: [TL.Text] -> Either TL.Text TL.Text
-nonScraping []    = Left "ページを受け取れていません。"
-nonScraping (h:_) = Right h
-
+    case Read.signed Read.decimal $ onlySignDigit t of
+    Right v -> pure $ fst v
+    Left _ -> GS.throwScrapingEx $ "文字から数字への変換に失敗"
 
 -- |
 -- "ホーム" -> "お知らせ" のページをスクレイピングする関数
-scrapingFraHomeAnnounce :: [TL.Text] -> Either TL.Text FraHomeAnnounce
-scrapingFraHomeAnnounce [] = Left "お知らせページを受け取れていません。"
+scrapingFraHomeAnnounce :: MonadThrow m => [TL.Text] -> m FraHomeAnnounce
+scrapingFraHomeAnnounce [] = GS.throwScrapingEx "お知らせページを受け取れていません。"
 scrapingFraHomeAnnounce (html:_) = do
     --
     -- お知らせには次のページが無いので先頭ページのみが対象
     --
     at <- deriverAt
     ll <- lastLogin
-    Right FraHomeAnnounce
+    pure FraHomeAnnounce
         { announceDeriverTime   = at
         , announceLastLoginTime = ll
         , announces             = [u | t<-anns, let u = TL.dropAround (== '\n') t, not $ TL.null u]
@@ -162,16 +155,16 @@ scrapingFraHomeAnnounce (html:_) = do
         root $// X.element "B" &/ X.content
     --
     -- 配信時間 (<B></B>で囲まれた要素の2番目)
-    deriverAt :: Either TL.Text TL.Text
     deriverAt =
-        Safe.headDef (Left "お知らせ配信時間の取得に失敗")
-            . map Right . drop 1 $ bolds
+        case bolds of
+        _ : v : _ -> pure v
+        _ -> GS.throwScrapingEx "お知らせ配信時間の取得に失敗"
     --
     -- 前回ログイン時間 (<B></B>で囲まれた要素の3番目)
-    lastLogin :: Either TL.Text TL.Text
     lastLogin =
-        Safe.headDef (Left "前回ログイン時間の取得に失敗")
-            . map Right . drop 2 $ bolds
+        case bolds of
+        _ : _ : v : _ -> pure v
+        _ -> GS.throwScrapingEx "前回ログイン時間の取得に失敗"
     --
     -- おしらせの内容
     anns :: [TL.Text]
@@ -180,8 +173,8 @@ scrapingFraHomeAnnounce (html:_) = do
 
 -- |
 --  "株式取引" -> "現物売" のページをスクレイピングする関数
-scrapingFraStkSell :: [TL.Text] -> Either TL.Text FraStkSell
-scrapingFraStkSell [] = Left "現物売ページを受け取れていません。"
+scrapingFraStkSell :: MonadThrow m => [TL.Text] -> m FraStkSell
+scrapingFraStkSell [] = GS.throwScrapingEx "現物売ページを受け取れていません。"
 scrapingFraStkSell (html:_) = do
     --
     -- TODO: 現物売ページの次のページを確認したことが無いのでいまは後続ページを無視する
@@ -190,16 +183,16 @@ scrapingFraStkSell (html:_) = do
     thisEvaluation <- takeEvaluation . take 1 . drop 6 $ tblSummary
     if emptyCondition myHoldStocks
     then
-        Right FraStkSell    { evaluation = thisEvaluation
-                            , profit = thisProfit
-                            , stocks = []
-                            }
+        pure FraStkSell { evaluation = thisEvaluation
+                        , profit = thisProfit
+                        , stocks = []
+                        }
     else do
         thisStocks <- M.mapM takeHoldStock myHoldStocks
-        Right FraStkSell    { evaluation = thisEvaluation
-                            , profit = thisProfit
-                            , stocks = thisStocks
-                            }
+        pure FraStkSell { evaluation = thisEvaluation
+                        , profit = thisProfit
+                        , stocks = thisStocks
+                        }
     where
     --
     --
@@ -216,14 +209,14 @@ scrapingFraStkSell (html:_) = do
         &// X.content
     -- |
     -- 株式評価損益を取り出す
-    sumProfit :: [TL.Text] -> Either TL.Text Double
+    sumProfit :: MonadThrow m => [TL.Text] -> m Double
     sumProfit [t] = doubleFromTxt t
-    sumProfit _   = Left "株式評価損益の取得に失敗"
+    sumProfit _   = GS.throwScrapingEx "株式評価損益の取得に失敗"
     --
     -- 株式時価評価額を取り出す
-    takeEvaluation :: [TL.Text] -> Either TL.Text Double
+    takeEvaluation :: MonadThrow m => [TL.Text] -> m Double
     takeEvaluation [t] = doubleFromTxt t
-    takeEvaluation _   = Left "株式時価評価額の取得に失敗"
+    takeEvaluation _   = GS.throwScrapingEx "株式時価評価額の取得に失敗"
     --
     -- 保有株式が書いてあるテーブルのリスト
     myHoldStocks :: [[(TL.Text, TL.Text, TL.Text)]]
@@ -261,7 +254,7 @@ scrapingFraStkSell (html:_) = do
     emptyCondition _ = False
     --
     -- 保有株式リストから株式情報を得る
-    takeHoldStock :: [(TL.Text, TL.Text, TL.Text)] -> Either TL.Text HoldStock
+    takeHoldStock :: MonadThrow m => [(TL.Text, TL.Text, TL.Text)] -> m HoldStock
     takeHoldStock = go
         where
         --
@@ -278,7 +271,7 @@ scrapingFraStkSell (html:_) = do
             count'      <- decimalFromTxt (first3 cnt)
             purchase'   <- doubleFromTxt (first3 purchase)
             price'      <- doubleFromTxt (first3 prc)
-            Right HoldStock
+            pure HoldStock
                 { sellOrderUrl  = url'
                 , code          = code'
                 , caption       = first3 captioncode
@@ -286,7 +279,7 @@ scrapingFraStkSell (html:_) = do
                 , purchasePrice = purchase'
                 , price         = price'
                 }
-        go _ = Left "保有株式の取得に失敗"
+        go _ = GS.throwScrapingEx "保有株式の取得に失敗"
     --
     --
     first3 (x,_,_) = x
@@ -295,8 +288,8 @@ scrapingFraStkSell (html:_) = do
 
 -- |
 -- 資産状況 -> 余力情報のページをスクレイピングする関数
-scrapingFraAstSpare :: [TL.Text] -> Either TL.Text FraAstSpare
-scrapingFraAstSpare [] = Left "余力情報ページを受け取れていません。"
+scrapingFraAstSpare :: MonadThrow m => [TL.Text] -> m FraAstSpare
+scrapingFraAstSpare [] = GS.throwScrapingEx "余力情報ページを受け取れていません。"
 scrapingFraAstSpare (html:_) = do
     --
     -- 余力情報には次のページが無いので先頭ページのみ
@@ -312,7 +305,7 @@ scrapingFraAstSpare (html:_) = do
     fee     <- takeBindingFee   . take 1 . drop 8 $ mySpares
     tax     <- takeBindingTax   . take 1 . drop 9 $ mySpares
     cash    <- takeFreeCash     . take 1 . drop 10 $ mySpares
-    Right FraAstSpare
+    pure FraAstSpare
         { moneySpare    = spare
         , cashBalance   = balance
         , depositInc    = inc
@@ -327,39 +320,39 @@ scrapingFraAstSpare (html:_) = do
     root = X.fromDocument $ H.parseLT html
     -- |
     -- 現物買付余力を取り出す
-    takeMoneySpare :: Integral a => [TL.Text] -> Either TL.Text a
+    takeMoneySpare :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeMoneySpare [t] = decimalFromTxt t
-    takeMoneySpare _   = Left "現物買付余力の取得に失敗"
+    takeMoneySpare _   = GS.throwScrapingEx "現物買付余力の取得に失敗"
     -- |
     -- 現金残高を取り出す
-    takeCashBalance :: Integral a => [TL.Text] -> Either TL.Text a
+    takeCashBalance :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeCashBalance [t] = decimalFromTxt t
-    takeCashBalance _   = Left "現金残高の取得に失敗"
+    takeCashBalance _   = GS.throwScrapingEx "現金残高の取得に失敗"
     -- |
     -- 預り増加額を取り出す
-    takeDepositInc :: Integral a => [TL.Text] -> Either TL.Text a
+    takeDepositInc :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeDepositInc [t] = decimalFromTxt t
-    takeDepositInc _   = Left "預り増加額の取得に失敗"
+    takeDepositInc _   = GS.throwScrapingEx "預り増加額の取得に失敗"
     -- |
     -- 預り減少額を取り出す
-    takeDepositDec :: Integral a => [TL.Text] -> Either TL.Text a
+    takeDepositDec :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeDepositDec [t] = decimalFromTxt t
-    takeDepositDec _   = Left "預り減少額の取得に失敗"
+    takeDepositDec _   = GS.throwScrapingEx "預り減少額の取得に失敗"
     -- |
     -- ボックスレート手数料拘束金を取り出す
-    takeBindingFee :: Integral a => [TL.Text] -> Either TL.Text a
+    takeBindingFee :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeBindingFee [t] = decimalFromTxt t
-    takeBindingFee _   = Left "ボックスレート手数料拘束金の取得に失敗"
+    takeBindingFee _   = GS.throwScrapingEx "ボックスレート手数料拘束金の取得に失敗"
     -- |
     -- 源泉徴収税拘束金（仮計算）を取り出す
-    takeBindingTax :: Integral a => [TL.Text] -> Either TL.Text a
+    takeBindingTax :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeBindingTax [t] = decimalFromTxt t
-    takeBindingTax _   = Left "源泉徴収税拘束金（仮計算）の取得に失敗"
+    takeBindingTax _   = GS.throwScrapingEx "源泉徴収税拘束金（仮計算）の取得に失敗"
     -- |
     -- 使用可能現金を取り出す
-    takeFreeCash :: Integral a => [TL.Text] -> Either TL.Text a
+    takeFreeCash :: (MonadThrow m, Integral a) => [TL.Text] -> m a
     takeFreeCash [t] = decimalFromTxt t
-    takeFreeCash _   = Left "使用可能現金の取得に失敗"
+    takeFreeCash _   = GS.throwScrapingEx "使用可能現金の取得に失敗"
     --
     -- 余力情報リスト
     mySpares :: [TL.Text]
@@ -371,11 +364,11 @@ scrapingFraAstSpare (html:_) = do
 
 -- |
 --  "ご注文を受け付けました"のページをスクレイピングする関数
-scrapingOrderConfirmed :: [TL.Text] -> Either TL.Text OrderConfirmed
-scrapingOrderConfirmed [] = Left "注文終了ページを受け取れていません。"
+scrapingOrderConfirmed :: MonadThrow m => [TL.Text] -> m OrderConfirmed
+scrapingOrderConfirmed [] = GS.throwScrapingEx "注文終了ページを受け取れていません。"
 scrapingOrderConfirmed (html:_) =
     --
     -- 注文終了ページには次のページが無いので先頭ページのみ
     --
-    Right OrderConfirmed { contents = html }
+    pure OrderConfirmed { contents = html }
 

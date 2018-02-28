@@ -41,8 +41,7 @@ module SBIsecCoJp.Broker
     , noticeOfCurrentAssets
     , fetchUpdatedPriceAndStore
     ) where
-import qualified Control.Concurrent           as CC
-import           Control.Exception            (throwIO)
+import           Control.Exception.Safe
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
 import qualified Control.Monad.Reader         as M
@@ -103,7 +102,7 @@ noticeOfBrokerageAnnouncement conf _ userAgent = do
     -- トップ -> マーケット情報を見に行く関数
     goMarketInfoPage :: BB.HTTPSession -> MaybeT IO S.MarketInfoPage
     goMarketInfoPage sess =
-        MaybeT . return . S.marketInfoPage =<< fetchLinkPage sess "マーケット情報"
+        MaybeT . return . S.marketInfoPage =<< fetchLinkPage noWaitFetch sess "マーケット情報"
 
 -- |
 -- DBから最新の資産評価を取り出してSlackへレポートを送る
@@ -184,7 +183,7 @@ fetchUpdatedPriceAndStore   :: MySQL.ConnectInfo
                             -> BB.HTTPSession
                             -> IO ()
 fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
-    let mbfn a b = maybe (throwIO $ userError a) return =<< runMaybeT b
+    let mbfn a b = maybe (throwString a) return =<< runMaybeT b
     -- トップ -> 買付余力を見に行く
     pmlPages <- mbfn "買付余力ページの取得に失敗しました"goPurchaseMarginListPage
     -- 先頭の買付余力しかいらないので
@@ -193,10 +192,10 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     -- トップ -> 買付余力 -> 詳細を見に行く関数
     pmdPages <- mbfn "買付余力 -> 詳細ページの取得に失敗しました" $ goPurchaseMarginDetailPage pmlist
     let pmdPage = Safe.headNote "買付余力/詳細の数が不足" pmdPages
-    --
+
     -- サーバーに対して過度なアクセスを控えるための時間待ち
-    CC.threadDelay (600 * 1000)
-    --
+    BB.waitMS 600
+
     -- トップ -> 保有証券一覧を見に行く
     hslPage <- mbfn "保有証券一覧ページの取得に失敗しました" goHoldStockListPage
     -- トップ -> 保有証券一覧 -> 保有証券詳細ページを見に行く
@@ -244,7 +243,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     -- トップ / 保有証券一覧を見に行く関数
     goHoldStockListPage :: MaybeT IO S.HoldStockListPage
     goHoldStockListPage =
-        MaybeT . return . S.holdStockListPage =<< fetchLinkPage sess "保有証券一覧"
+        MaybeT . return . S.holdStockListPage =<< fetchLinkPage slowlyFetch sess "保有証券一覧"
     -- |
     -- トップ -> 保有証券一覧 -> 保有証券詳細ページを見に行く関数
     goHoldStockDetailPage   :: S.HoldStockListPage
@@ -253,16 +252,13 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         -- 詳細ページをスクレイピングする
         MaybeT . return . M.mapM S.holdStockDetailPage
         -- 詳細ページへアクセスする
-        =<< M.mapM (fetch sess) . mapAbsUri . unpack =<< pure page
-        where
-        unpack p =
-            let (S.HoldStockDetailLink xs) = S.hslLinks p in
-            xs
+        =<< M.mapM (slowlyFetch sess) . mapAbsUri . S.getHoldStockDetailLink . S.hslLinks
+        =<< pure page
     -- |
     -- トップ -> 買付余力を見に行く関数
     goPurchaseMarginListPage :: MaybeT IO S.PurchaseMarginListPage
     goPurchaseMarginListPage =
-        S.purchaseMarginListPage <$> fetchLinkPage sess "買付余力"
+        S.purchaseMarginListPage <$> fetchLinkPage slowlyFetch sess "買付余力"
     -- |
     -- トップ -> 買付余力 -> 詳細を見に行く関数
     goPurchaseMarginDetailPage  :: S.PurchaseMarginListPage
@@ -271,58 +267,63 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         -- 詳細ページをスクレイピングする
         MaybeT . return . M.mapM S.purchaseMarginDetailPage
         -- 詳細ページへアクセスする
-        =<< M.mapM (fetch sess) . mapAbsUri . unpack =<< pure page
+        =<< M.mapM (slowlyFetch sess) . mapAbsUri . unpack =<< pure page
         where
         unpack (S.PurchaseMarginListPage x) = x
     -- |
     -- リンク情報からURIに写す
-    mapAbsUri :: [GS.TextAndHref] -> [N.URI]
+    mapAbsUri :: [GS.AnchorTag] -> [N.URI]
     mapAbsUri =
-        Mb.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . snd)
+        Mb.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . GS.aHref)
 
 -- |
 -- リンクのページへアクセスする関数
-fetchLinkPage :: BB.HTTPSession -> T.Text -> MaybeT IO TL.Text
-fetchLinkPage sess t =
-    fetch sess =<< MaybeT . return . lookupLinkOnTopPage sess =<< pure t
-
--- |
--- 引数のページへアクセスしてページを返す
-fetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
-fetch BB.HTTPSession{..} =
-    fmap BB.takeBodyFromResponse
-    . BB.fetchPage sManager sReqHeaders (Just sRespCookies) []
+fetchLinkPage   :: (BB.HTTPSession -> N.URI -> MaybeT IO TL.Text)
+                -> BB.HTTPSession -> T.Text -> MaybeT IO TL.Text
+fetchLinkPage fetcher sess t =
+    fetcher sess =<< MaybeT . return . lookupLinkOnTopPage sess =<< pure t
 
 -- |
 -- トップページ上のリンクテキストに対応したURIを返す
 lookupLinkOnTopPage :: BB.HTTPSession -> T.Text -> Maybe N.URI
 lookupLinkOnTopPage BB.HTTPSession{..} linktext =
     BB.toAbsoluteURI sLoginPageURI . T.unpack
-    =<< lookup linktext (S.getTopPage $ S.topPage sTopPageHTML)
+    =<< lookup linktext [(GS.aText a, GS.aHref a) | a<-S.getTopPage $ S.topPage sTopPageHTML]
+
+-- |
+-- 通常のfetch
+noWaitFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
+noWaitFetch =
+    BB.fetchPageWithSession
+
+-- |
+-- 時間待ち付きfetch
+slowlyFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
+slowlyFetch x y = noWaitFetch x y <* M.liftIO (BB.waitMS 300)
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
 login :: Conf.InfoSBIsecCoJp -> Conf.UserAgent -> String -> IO BB.HTTPSession
-login (Conf.InfoSBIsecCoJp conf) userAgent loginPageURL = do
+login conf userAgent loginPageURL = do
     loginURI <- maybe errInvalidUrl return (N.parseURI loginPageURL)
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセスする
     loginPage <- BB.takeBodyFromResponse <$>
-                    BB.fetchPage manager reqHeader Nothing [] loginURI
+                    BB.fetchHTTP manager reqHeader Nothing [] loginURI
     -- ログインページをスクレイピングする
-    loginForm <- either BB.failureAtScraping return $ S.formLoginPage loginPage
+    loginForm <- S.formLoginPage loginPage
     -- IDとパスワードを入力する
     let postMsg = BB.mkCustomPostReq
                     (map GS.toPairNV $ GS.formInputTag loginForm)
-                    [ ("username", Conf.loginID conf)
-                    , ("password", Conf.loginPassword conf)
+                    [ ("username", Conf.loginID $ Conf.getInfoSBIsecCoJp conf)
+                    , ("password", Conf.loginPassword $ Conf.getInfoSBIsecCoJp conf)
                     ]
     -- フォームのaction属性ページ
     let formAction = T.unpack $ GS.formAction loginForm
     postto <- maybe loginFail return $ BB.toAbsoluteURI loginURI formAction
     -- 提出
-    resp <- BB.fetchPage manager reqHeader Nothing postMsg postto
+    resp <- BB.fetchHTTP manager reqHeader Nothing postMsg postto
     -- 受け取ったセッションクッキーとトップページを返却する
     return BB.HTTPSession
         { BB.sLoginPageURI = loginURI
@@ -338,27 +339,29 @@ login (Conf.InfoSBIsecCoJp conf) userAgent loginPageURL = do
     --
     --
     errInvalidUrl =
-        throwIO $ userError (loginPageURL ++ " は有効なURLではありません")
+        throwString $ loginPageURL ++ " は有効なURLではありません"
     --
     --
     loginFail =
-       throwIO $ userError (loginPageURL ++ " にログインできませんでした")
+       throwString $ loginPageURL ++ " にログインできませんでした"
 
 -- |
 -- ログアウトする関数
 logout :: BB.HTTPSession -> IO ()
-logout BB.HTTPSession{..} =
-    let
-        (S.TopPage xs) = S.topPage sTopPageHTML
-    in do
-    uri <- maybe logoutFail return $
-            BB.toAbsoluteURI sLoginPageURI . T.unpack =<< lookup "ログアウト" xs
-    -- ログアウトページへアクセスする
-    M.void $ BB.fetchPage sManager sReqHeaders (Just sRespCookies) [] uri
+logout sess@BB.HTTPSession{..} =
+    let topPageLinks = S.topPage sTopPageHTML
+        logoutLink = lookup "ログアウト" [(GS.aText a, GS.aHref a) | a<-S.getTopPage topPageLinks]
+        toLogoutURI = BB.toAbsoluteURI sLoginPageURI . T.unpack
+    in
+    case toLogoutURI =<< logoutLink of
+    Nothing -> logoutFail
+    Just uri ->
+        -- ログアウトページへアクセスする
+        M.void $ BB.fetchPageWithSession sess uri
     where
     --
     --
     logoutFail =
-       throwIO $ userError "ログアウトリンクがわかりませんでした"
+       throwString "ログアウトリンクがわかりませんでした"
 
 

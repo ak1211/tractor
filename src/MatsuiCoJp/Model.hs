@@ -102,18 +102,12 @@ matsuicojpAssetDigest MatsuicojpAsset{..} =
 matsuicojpStockDigest :: MatsuicojpStock -> String
 matsuicojpStockDigest stk@MatsuicojpStock{..} =
     TL.unpack . TLB.toLazyText $ mempty
-    <> ticker matsuicojpStockTicker <> " "
+    <> TLB.fromString (showTickerSymbol matsuicojpStockTicker) <> " "
     <> TLB.fromString matsuicojpStockCaption <> ", "
     <> "保有 " <> TLB.decimal matsuicojpStockCount <> ", "
     <> "取得 " <> TLB.realFloat matsuicojpStockPurchase <> ", "
     <> "現在 " <> TLB.realFloat matsuicojpStockPrice <> ", "
     <> "損益 " <> TLB.realFloat (matsuicojpStockGain stk)
-    where
-    ticker :: TickerSymbol -> TLB.Builder
-    ticker (TSTYO c)  = TLB.fromString (show c)
-    ticker TSNI225    = "日経平均株価"
-    ticker TSTOPIX    = "東証株価指数"
-    ticker TSJPXNI400 = "JPX400"
 
 -- |
 -- 保有株式の損益

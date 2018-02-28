@@ -67,11 +67,11 @@ import qualified Data.Text.Lazy                   as TL
 import qualified Data.Text.Lazy.Builder           as TLB
 import qualified Data.Text.Lazy.Builder.Int       as TLB
 import qualified Data.Text.Lazy.Builder.RealFloat as TLB
-import qualified Data.Text.Read                   as Read
 import           System.IO                        (Newline (..), nativeNewline)
 import qualified Text.HTML.DOM                    as H
 import           Text.XML.Cursor                  (($/), ($//), (&/), (&//),
                                                    (&|))
+import           Control.Exception.Safe
 import qualified Text.XML.Cursor                  as X
 
 import qualified GenScraper                       as GS
@@ -142,19 +142,19 @@ newline =
 -- |
 -- トップページの内容
 newtype TopPage = TopPage
-    { getTopPage :: [GS.TextAndHref]
+    { getTopPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
 -- 口座管理ページの内容
 newtype AccMenuPage = AccMenuPage
-    { getAccMenuPage :: [GS.TextAndHref]
+    { getAccMenuPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
 -- 買付余力ページの内容
 newtype PurchaseMarginListPage = PurchaseMarginListPage
-    { getPurchaseMarginListPage :: [GS.TextAndHref]
+    { getPurchaseMarginListPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
@@ -182,7 +182,7 @@ data HoldStockDetailPage = HoldStockDetailPage
 -- |
 -- 保有証券詳細ページへのリンク
 newtype HoldStockDetailLink = HoldStockDetailLink
-    { getHoldStockDetailLink :: [GS.TextAndHref]
+    { getHoldStockDetailLink :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
@@ -196,92 +196,34 @@ data HoldStockListPage = HoldStockListPage
     } deriving (Eq, Show)
 
 -- |
---
--- >>> toDecimal "1,000"
--- Just 1000
--- >>> toDecimal "10,000円"
--- Just 10000
--- >>> toDecimal "+1,000円"
--- Just 1000
--- >>> toDecimal "-5,000円"
--- Just (-5000)
--- >>> toDecimal "-5,a00"
--- Just (-5)
--- >>> toDecimal "-a00"
--- Nothing
-toDecimal :: Integral a => T.Text -> Maybe a
-toDecimal x =
-    either (const Nothing) (Just . fst)
-    $ Read.signed Read.decimal $ T.filter (/= ',') x
-
--- |
---
--- >>> toDouble "10,000.34"
--- Just 10000.34
--- >>> toDouble "+1,000.45"
--- Just 1000.45
--- >>> toDouble "-5,000"
--- Just (-5000.0)
--- >>> toDouble "-5,a00"
--- Just (-5.0)
--- >>> toDouble "-a00"
--- Nothing
-toDouble :: T.Text -> Maybe Double
-toDouble x =
-    either (const Nothing) (Just . fst)
-    $ Read.signed Read.double $ T.filter (/= ',') x
-
--- |
 -- ログインページをスクレイピングする関数
-formLoginPage :: TL.Text -> Either TL.Text GS.FormTag
+formLoginPage :: MonadThrow m => TL.Text -> m GS.FormTag
 formLoginPage html =
-    maybe
-        (Left "\"form1\" form or \"action\" attribute is not present.")
-        Right
-        . Mb.listToMaybe
-        . concat
-        $ X.fromDocument (H.parseLT html)
-        $// X.element "form" >=> X.attributeIs "name" "form1"
-        &| GS.takeFormTag
-
--- |
--- リンクを取り出す関数
-takeAnchorTag :: X.Cursor -> [GS.TextAndHref]
-takeAnchorTag cursor =
-    concat (cursor $// X.element "a" &| pair)
-    where
-    --
-    --
-    pair c =
-        zip (txt c) (href c)
-    --
-    -- href属性を取り出す
-    href = X.attribute "href"
-    --
-    -- リンクテキストを取り出す
-    txt c = c $// X.content
+    let tag = X.fromDocument (H.parseLT html)
+            $// X.element "form" >=> X.attributeIs "name" "form1"
+            &| GS.takeFormTag
+    in
+    case concat tag of
+    [] -> GS.throwScrapingEx "\"form1\" form or \"action\" attribute is not present."
+    x:_ -> pure x
 
 -- |
 -- トップページをスクレイピングする関数
 topPage :: TL.Text -> TopPage
-topPage html =
-    TopPage (takeAnchorTag root)
-    where
-    root = X.fromDocument (H.parseLT html)
+topPage =
+    TopPage . GS.takeAnchorTag . X.fromDocument . H.parseLT
 
 -- |
 -- 口座管理ページをスクレイピングする関数
 accMenuPage :: TL.Text -> AccMenuPage
-accMenuPage html =
-    AccMenuPage (takeAnchorTag root)
-    where
-    root = X.fromDocument (H.parseLT html)
+accMenuPage =
+    AccMenuPage . GS.takeAnchorTag . X.fromDocument . H.parseLT
 
 -- |
 -- 買付余力ページをスクレイピングする関数
 purchaseMarginListPage :: TL.Text -> PurchaseMarginListPage
 purchaseMarginListPage html =
-    PurchaseMarginListPage (concatMap takeAnchorTag table)
+    PurchaseMarginListPage (concatMap GS.takeAnchorTag table)
     where
     --
     -- <div class="titletext">買付余力</div> 以下のtable
@@ -289,8 +231,8 @@ purchaseMarginListPage html =
     table =
         X.fromDocument (H.parseLT html)
         $// X.attributeIs "class" "titletext"
-        >=> X.followingSibling >=> X.element "div"
-        &/ X.element "table"
+        >=> X.followingSibling >=> X.laxElement "div"
+        &/ X.laxElement "table"
 
 -- |
 -- 買付余力詳細ページをスクレイピングする関数
@@ -310,7 +252,7 @@ purchaseMarginDetailPage html =
     --
     userid :: X.Cursor -> Maybe T.Text
     userid cursor =
-        Mb.listToMaybe . drop 1 $ map T.strip (cursor $/ X.content)
+        Just . T.strip =<< Mb.listToMaybe . drop 1 =<< pure (cursor $/ X.content)
     --
     --
     pack :: X.Cursor -> Maybe PurchaseMarginDetailPage
@@ -320,9 +262,9 @@ purchaseMarginDetailPage html =
                 &// X.content
         in do
         uid <- userid cursor
-        day <- Mb.listToMaybe . drop 1 $ map T.strip xs
-        mts <- toDecimal =<<  (Mb.listToMaybe . drop 3 $ map T.strip xs)
-        cb <- toDecimal =<< (Mb.listToMaybe . drop 5 $ map T.strip xs)
+        day <- Just . T.strip =<< Mb.listToMaybe . drop 1 =<< pure xs
+        mts <- GS.toDecimal . T.strip =<< Mb.listToMaybe . drop 3 =<< pure xs
+        cb <- GS.toDecimal . T.strip =<< Mb.listToMaybe . drop 5 =<< pure xs
         Just PurchaseMarginDetailPage
             { pmdUserid = uid
             , pmdDay = day
@@ -347,7 +289,7 @@ holdStockListPage html =
     --
     userid :: X.Cursor -> Maybe T.Text
     userid cursor =
-        Mb.listToMaybe . drop 1 $ map T.strip (cursor $/ X.content)
+        Just . T.strip =<< Mb.listToMaybe . drop 1 =<< pure (cursor $/ X.content)
     --
     --
     nthPages :: X.Cursor -> Maybe T.Text
@@ -359,13 +301,12 @@ holdStockListPage html =
         in
         case xs of
             [] -> Nothing
-            _  -> Just $ T.concat $ map T.strip xs
+            _  -> Just . T.concat $ map T.strip xs
     --
     --
     summary :: X.Cursor -> Maybe (T.Text, T.Text)
     summary cursor =
-        let
-            xs = cursor
+        let xs = cursor
                 $/ X.element "table" &/ X.element "tr" &/ X.element "td"
                 &/ X.element "table" &/ X.element "tr" &/ X.element "td"
                 >=> X.descendant
@@ -377,13 +318,13 @@ holdStockListPage html =
     --
     --
     links cursor =
-        HoldStockDetailLink
-        ( filter (\(a,_) -> a /= "気配")    -- 気配リンクはいらない
-          . concatMap takeAnchorTag
-            $ cursor
+        let xs = cursor
                 $/ X.element "table" &/ X.element "tr" &/ X.element "td"
                 &/ X.element "table" &/ X.element "tr" &/ X.element "td"
-        )
+            ys = concatMap GS.takeAnchorTag xs
+            dropKehai = filter ((/=) "気配" . GS.aText)
+        in
+        HoldStockDetailLink $ dropKehai ys  -- 気配リンクは不要
     --
     --
     pack :: X.Cursor -> Maybe HoldStockListPage
@@ -391,8 +332,8 @@ holdStockListPage html =
         uid <- userid cursor
         nth <- nthPages cursor
         sm <- summary cursor
-        ev <- toDouble $ fst sm
-        pf <- toDouble $ snd sm
+        ev <- GS.toDouble $ fst sm
+        pf <- GS.toDouble $ snd sm
         Just HoldStockListPage
             { hslUserid = uid
             , hslNthPages = nth
@@ -442,7 +383,7 @@ holdStockDetailPage html =
                     spaceSeparated = T.concat $ map T.strip xs
                     (t,c) = T.break C.isSpace spaceSeparated
                 in do
-                code <- toDecimal t
+                code <- GS.toDecimal t
                 Just (TSTYO code, T.strip c)
     --
     -- (現在値, 時間)
@@ -455,11 +396,11 @@ holdStockDetailPage html =
                 &// X.content
         in do
         -- 現在値
-        pr <- toDouble =<< Mb.listToMaybe . drop 4 =<< pure xs
+        pr <- GS.toDouble =<< Mb.listToMaybe . drop 4 =<< pure xs
         -- 時間
         chunk <- T.init . T.tail . T.dropWhile (/= '(')
                 <$> (Mb.listToMaybe . drop 5 $ xs)
-        case M.mapM toDecimal . T.split (`elem` ['/',' ',':']) . T.strip $ chunk of
+        case M.mapM GS.toDecimal . T.split (`elem` ['/',' ',':']) . T.strip $ chunk of
             Just [month,day,hour,minute] -> Just (pr, Just (month,day,hour,minute))
             _ -> Just (pr, Nothing)
     --
@@ -476,9 +417,9 @@ holdStockDetailPage html =
                 . take 1 $ drop 2 xs
         in do
         -- "-" は現在取引無し
-        d <- \case{"-"->Nothing; x->toDouble x} <$> (Mb.listToMaybe . drop 1 $ ys)
-        c <- toDecimal =<< Mb.listToMaybe . drop 3 =<< pure ys
-        g <- toDouble =<< Mb.listToMaybe . drop 5 =<< pure ys
+        d <- \case{"-"->Nothing; x->GS.toDouble x} <$> (Mb.listToMaybe . drop 1 $ ys)
+        c <- GS.toDecimal =<< Mb.listToMaybe . drop 3 =<< pure ys
+        g <- GS.toDouble =<< Mb.listToMaybe . drop 5 =<< pure ys
         Just (d, c, g)
     --
     --
@@ -517,8 +458,8 @@ marketInfoPage html =
     --
     marketInfo :: Maybe MarketInfo
     marketInfo = do
-        (pr,month,day,hour,minute,df,dp) <- priceMonthDayHourMinDiffPercent =<< Mb.listToMaybe (take 1 $ drop 1 tables)
-        (o,h,l) <- openHighLow =<< Mb.listToMaybe (take 1 $ drop 2 tables)
+        (pr,month,day,hour,minute,df,dp) <- priceMonthDayHourMinDiffPercent =<< Mb.listToMaybe . drop 1 =<< pure tables
+        (o,h,l) <- openHighLow =<< Mb.listToMaybe . drop 2 =<< pure tables
         Just MarketInfo
             { miPrice = pr
             , miMonth = month
@@ -557,16 +498,16 @@ marketInfoPage html =
                     cursor
                     $/ X.element "tr" &/ X.element "td" &// X.content
         -- 現在値
-        pr <- toDouble =<< Mb.listToMaybe . take 1 . drop 1 =<< pure tds
+        pr <- GS.toDouble =<< Mb.listToMaybe . drop 1 =<< pure tds
         -- 時間
         chunk <- T.init . T.tail . T.strip <$> (Mb.listToMaybe . drop 2 $ tds)
-        parts <- M.mapM toDecimal . T.split (`elem` ['/',' ',':']) . T.strip $ chunk
+        parts <- M.mapM GS.toDecimal . T.split (`elem` ['/',' ',':']) . T.strip $ chunk
         M.guard (length parts == 4)
         let [month, day, hour, minute] = parts
         -- 前日比
-        df <- toDouble =<< Mb.listToMaybe . drop 4 =<< pure tds
+        df <- GS.toDouble =<< Mb.listToMaybe . drop 4 =<< pure tds
         -- 前日比(%)
-        dp <- toDouble =<< Mb.listToMaybe . drop 6 =<< pure tds
+        dp <- GS.toDouble =<< Mb.listToMaybe . drop 6 =<< pure tds
         Just (pr, month, day, hour, minute, df, dp)
     --
     --
@@ -576,10 +517,10 @@ marketInfoPage html =
                     cursor
                     $/ X.element "tr" &/ X.element "td" &// X.content
         -- 始値
-        open <- toDouble =<< Mb.listToMaybe . drop 1 =<< pure tds
+        open <- GS.toDouble =<< Mb.listToMaybe . drop 1 =<< pure tds
         -- 高値
-        high <- toDouble =<< Mb.listToMaybe . drop 3 =<< pure tds
+        high <- GS.toDouble =<< Mb.listToMaybe . drop 3 =<< pure tds
         -- 安値
-        low <- toDouble =<< Mb.listToMaybe . drop 5 =<< pure tds
+        low <- GS.toDouble =<< Mb.listToMaybe . drop 5 =<< pure tds
         Just (open, high, low)
 

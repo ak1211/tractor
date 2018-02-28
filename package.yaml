@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.3.6
+version:            0.3.7
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -29,6 +29,7 @@ dependencies:
 - text
 - time
 - utf8-string
+- safe-exceptions
 
 library:
   source-dirs: src
@@ -38,6 +39,7 @@ library:
   - attoparsec
   - base >=4.7 && <5
   - bytestring
+  - case-insensitive
   - conduit-extra
   - connection
   - containers

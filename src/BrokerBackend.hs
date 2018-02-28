@@ -37,18 +37,19 @@ Portability :  POSIX
 {-# LANGUAGE TypeFamilies          #-}
 module BrokerBackend
     ( HTTPSession(..)
-    , UnexpectedHTMLException(..)
     , DontHaveStocksToSellException (..)
-    , fetchPage
+    , fetchHTTP
     , takeBodyFromResponse
     , toAbsoluteURI
-    , fetchInRelativePath
+    , fetchHTTPInRelativePath
     , mkCustomPostReq
-    , failureAtScraping
+    , waitMS
+    , fetchPageWithSession
     ) where
 import qualified Codec.Text.IConv                 as IConv
 import           Control.Applicative              ((<|>))
-import           Control.Exception                (Exception, throwIO)
+import qualified Control.Concurrent               as CC
+import           Control.Exception.Safe
 import qualified Control.Monad                    as M
 import qualified Control.Monad.Logger             as ML
 import qualified Control.Monad.Reader             as M
@@ -73,19 +74,8 @@ import qualified Network.HTTP.Types.Header        as N
 import qualified Network.URI                      as N
 
 import qualified Conf
-import qualified GenScraper                       as GB
+import qualified GenScraper                       as GS
 import           Model
-
--- |
--- 実行時例外 : 予想外のHTML
-newtype UnexpectedHTMLException
-    = UnexpectedHTMLException TL.Text
-    deriving (Data.Typeable.Typeable, Eq)
-
-instance Show UnexpectedHTMLException where
-    show (UnexpectedHTMLException msg) = TL.unpack msg
-
-instance Exception UnexpectedHTMLException
 
 -- |
 -- HTTP / HTTPSセッション情報
@@ -127,14 +117,14 @@ storeAccessLog logMessage = M.liftIO $
 -- |
 -- urlに接続して結果を得る
 -- アクセスログはDBに記録する
-fetchPage   :: M.MonadIO m
+fetchHTTP   :: M.MonadIO m
             => N.Manager
             -> N.RequestHeaders
             -> Maybe N.CookieJar
             -> [(B8.ByteString, B8.ByteString)]
             -> N.URI
             -> m (N.Response BL8.ByteString)
-fetchPage manager header cookieJar postReq url =
+fetchHTTP manager header cookieJar postReq url =
     M.liftIO $ do
         -- 指定のHTTPヘッダでHTTPリクエストを作る
         let custom = customRequest postReq . customHeader cookieJar
@@ -295,7 +285,7 @@ takeBodyFromResponse :: N.Response BL8.ByteString -> TL.Text
 takeBodyFromResponse resp =
     -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
     let cs = charsetHeader <|> charsetBody in
-    case toUtf8 =<< cs of
+    case toUtf8Specialized =<< cs of
         -- デコードの失敗はあきらめて文字化けで返却
         Left _  -> TL.pack . BL8.unpack $ html
         Right x -> x
@@ -304,6 +294,11 @@ takeBodyFromResponse resp =
     html = N.responseBody resp
     charsetBody = takeCharsetFromHTML html
     charsetHeader = takeCharsetFromHTTPHeader httpHeader
+    --
+    --
+    toUtf8Specialized :: B8.ByteString -> Either String TL.Text
+    toUtf8Specialized "x-sjis" = toUtf8 "shift-jis"
+    toUtf8Specialized charset  = toUtf8 charset
     --
     --
     toUtf8 :: B8.ByteString -> Either String TL.Text
@@ -318,13 +313,13 @@ toAbsoluteURI baseURI href =
     fmap (`N.relativeTo` baseURI) (N.parseURIReference href)
 
 -- |
--- fetchPage関数の相対リンク版
-fetchInRelativePath :: HTTPSession -> String -> IO (N.Response BL8.ByteString)
-fetchInRelativePath HTTPSession{..} relativePath = do
+-- fetchHTTP関数の相対リンク版
+fetchHTTPInRelativePath :: HTTPSession -> String -> IO (N.Response BL8.ByteString)
+fetchHTTPInRelativePath HTTPSession{..} relativePath = do
     uri <- case toAbsoluteURI sLoginPageURI relativePath of
-        Nothing -> throwIO $ userError "link url is not valid"
+        Nothing -> throwString "link url is not valid"
         Just x  -> return x
-    fetchPage sManager sReqHeaders (Just sRespCookies) [] uri
+    fetchHTTP sManager sReqHeaders (Just sRespCookies) [] uri
 
 -- |
 -- サーバーに提出するPost情報を組み立てる
@@ -335,7 +330,7 @@ fetchInRelativePath HTTPSession{..} relativePath = do
 -- >>>      [("JS_FLG","1"), ("user_id","myname"), ("password","mypass")]
 -- >>> :}
 -- [("JS_FLG","1"),("user_id","myname"),("password","mypass")]
-mkCustomPostReq :: [GB.PairNV B8.ByteString]
+mkCustomPostReq :: [GS.PairNV B8.ByteString]
                 -> [(B8.ByteString, B8.ByteString)]
                 -> [(B8.ByteString, B8.ByteString)]
 mkCustomPostReq original custom =
@@ -346,8 +341,18 @@ mkCustomPostReq original custom =
         $ Mb.mapMaybe (\(a,b) -> (,) <$> a <*> b) original
 
 -- |
--- スクレイピングに失敗した場合の例外送出
-failureAtScraping :: M.MonadIO m => TL.Text -> m a
-failureAtScraping =
-    M.liftIO . throwIO . UnexpectedHTMLException
+-- ミリ秒待ち
+waitMS :: Int -> IO ()
+waitMS milliSec =
+    CC.threadDelay (milliSec * 1000)
+
+-- |
+-- 引数のページへアクセス
+fetchPageWithSession :: M.MonadIO m => HTTPSession -> N.URI -> m TL.Text
+fetchPageWithSession HTTPSession{..} uri =
+    takeBodyFromResponse
+    <$>
+    fetchHTTP sManager sReqHeaders (Just sRespCookies) [] uri
+
+
 

@@ -60,8 +60,8 @@ import qualified Data.Time.Clock.System as Tm
 import           Lib                    (tzAsiaTokyo)
 
 newtype AsiaTokyoDay = AsiaTokyoDay
-    { getAsiaTokyoDay :: Tm.Day }
-    deriving (Eq, Ord)
+    { getAsiaTokyoDay :: Tm.Day
+    } deriving (Eq, Ord, Show)
 
 type JobFunc = IO ()
 type JobTime = Tm.UTCTime

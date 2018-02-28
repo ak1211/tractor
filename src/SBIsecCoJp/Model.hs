@@ -93,18 +93,12 @@ sbiseccojpAssetDigest SbiseccojpAsset{..} =
 sbiseccojpStockDigest :: SbiseccojpStock -> String
 sbiseccojpStockDigest stk@SbiseccojpStock{..} =
     TL.unpack . TLB.toLazyText $ mempty
-    <> ticker sbiseccojpStockTicker <> " "
+    <> TLB.fromString (showTickerSymbol sbiseccojpStockTicker) <> " "
     <> TLB.fromString sbiseccojpStockCaption <> ", "
     <> "保有 " <> TLB.decimal sbiseccojpStockCount <> ", "
     <> "取得 " <> TLB.realFloat sbiseccojpStockPurchase <> ", "
     <> "現在 " <> TLB.realFloat sbiseccojpStockPrice <> ", "
     <> "損益 " <> TLB.realFloat (sbiseccojpStockGain stk)
-    where
-    ticker :: TickerSymbol -> TLB.Builder
-    ticker (TSTYO c)  = TLB.fromString (show c)
-    ticker TSNI225    = "日経平均株価"
-    ticker TSTOPIX    = "東証株価指数"
-    ticker TSJPXNI400 = "JPX400"
 
 -- |
 -- 保有株式の損益

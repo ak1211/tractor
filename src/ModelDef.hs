@@ -45,6 +45,14 @@ derivePersistField "TickerSymbol"
 
 --
 --
+showTickerSymbol :: TickerSymbol -> String
+showTickerSymbol (TSTYO c)  = "東" ++ show c
+showTickerSymbol TSNI225    = "日経平均株価"
+showTickerSymbol TSTOPIX    = "東証株価指数"
+showTickerSymbol TSJPXNI400 = "JPX400"
+
+--
+--
 data TimeFrame
     = TF1h  -- ^ 1時間足
     | TF1d  -- ^ 日足

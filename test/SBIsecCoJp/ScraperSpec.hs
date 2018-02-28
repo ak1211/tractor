@@ -9,7 +9,7 @@ import qualified Data.Text.Lazy.IO  as TL
 import           Test.Hspec
 
 import qualified BrokerBackend      as BB
-import qualified GenScraper         as GB
+import qualified GenScraper         as GS
 import           ModelDef           (TickerSymbol (..))
 import qualified SBIsecCoJp.Scraper as S
 
@@ -39,14 +39,14 @@ test02MarketPage' = Just (S.MInikkei225 Nothing)
 -- ログインページ
 --
 test01LoginPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fvisitor%2Ftop.do.utf8.html"
-test01LoginPage' = GB.FormTag
- { GB.formAction = "https://k.sbisec.co.jp/bsite/visitor/loginUserCheck.do"
- , GB.formMethod = Just "POST"
- , GB.formInputTag =
-  [ GB.InputTag (Just "text") (Just "username") (Just "")
-  , GB.InputTag (Just "password") (Just "password") (Just "")
-  , GB.InputTag (Just "submit") (Just "login") (Just "&nbsp;ログイン&nbsp;")
-  , GB.InputTag (Just "button") (Just "cancel") (Just "キャンセル")
+test01LoginPage' = GS.FormTag
+ { GS.formAction = "https://k.sbisec.co.jp/bsite/visitor/loginUserCheck.do"
+ , GS.formMethod = Just "POST"
+ , GS.formInputTag =
+  [ GS.InputTag (Just "text") (Just "username") (Just "") GS.Unchecked
+  , GS.InputTag (Just "password") (Just "password") (Just "") GS.Unchecked
+  , GS.InputTag (Just "submit") (Just "login") (Just "&nbsp;ログイン&nbsp;") GS.Unchecked
+  , GS.InputTag (Just "button") (Just "cancel") (Just "キャンセル") GS.Unchecked
   ]
  }
 
@@ -55,40 +55,41 @@ test01LoginPage' = GB.FormTag
 --
 test01TopPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Fmenu.do.utf8.html"
 test01TopPage' = S.TopPage
- [ ("ログアウト","/bsite/member/logout.do")
- , ("取引／株価照会","/bsite/price/search.do")
- , ("注文照会","/bsite/member/stock/orderList.do")
- , ("注文取消／訂正","/bsite/member/stock/orderList.do?cayen.comboOff=1")
- , ("口座管理","/bsite/member/acc/menu.do")
- , ("保有証券一覧","/bsite/member/acc/holdStockList.do")
- , ("買付余力","/bsite/member/acc/purchaseMarginList.do")
- , ("信用建玉一覧","/bsite/member/acc/positionList.do")
- , ("信用建余力","/bsite/member/acc/positionMargin.do")
- , ("出金／振替指示","/bsite/member/banking/withdrawMenu.do")
- , ("ATMカード","/bsite/member/acc/atmwithdrawMax.do")
- , ("重要なお知らせ","javascript:openJmsg('/bsite/member/jmsg/JMsgRedirect.do?categoryId=03')")
- , ("当社からのお知らせ","javascript:openETrade('/bsite/member/jmsg/JMsgRedirect.do?categoryId=02')")
- , ("登録銘柄","/bsite/member/portfolio/registeredStockList.do")
- , ("銘柄登録","/bsite/member/portfolio/stockSearch.do")
- , ("銘柄一括登録／編集","/bsite/member/portfolio/lumpStockEntry.do")
- , ("銘柄削除","/bsite/member/portfolio/registeredStockDelete.do")
- , ("リスト作成／変更","/bsite/member/portfolio/listEdit.do")
- , ("マーケット情報","/bsite/market/menu.do")
- , ("ランキング","/bsite/market/rankingListM.do")
- , ("海外指標","/bsite/market/foreignIndexDetail.do")
- , ("外国為替","/bsite/market/forexDetail.do")
- , ("市況コメント","/bsite/market/marketInfoList.do")
- , ("ニュース","/bsite/market/newsList.do")
- , ("取引パスワード／注文確認省略設定","/bsite/member/setting/omissionSetting.do")
- , ("手数料","/bsite/info/productGroupList.do?service_info_id=commission")
- , ("取扱商品","/bsite/info/productGroupList.do?service_info_id=goodsList")
- , ("新着情報/キャンペーン","/bsite/info/campaignInfoList.do")
- , ("お問い合わせ","/bsite/info/inquiryList.do")
- , ("ログイン履歴","/bsite/member/loginHistory.do")
- , ("！ポリシー／免責事項","/bsite/info/policyList.do")
- , ("システムメンテナンス","/bsite/info/systemInfoDetail.do?sortation_id=maintenance")
- , ("ログアウト","/bsite/member/logout.do")
- , ("金融商品取引法に係る表示","/bsite/info/policyDetail.do?list=title&policy_info_id=salesLaw&text_no=1")
+ [ GS.AnchorTag {GS.aText="SBI証券　バックアップサイト",GS.aHref="/bsite/member/menu.do"}
+ , GS.AnchorTag {GS.aText="ログアウト",GS.aHref="/bsite/member/logout.do"}
+ , GS.AnchorTag {GS.aText="取引／株価照会",GS.aHref="/bsite/price/search.do"}
+ , GS.AnchorTag {GS.aText="注文照会",GS.aHref="/bsite/member/stock/orderList.do"}
+ , GS.AnchorTag {GS.aText="注文取消／訂正",GS.aHref="/bsite/member/stock/orderList.do?cayen.comboOff=1"}
+ , GS.AnchorTag {GS.aText="口座管理",GS.aHref="/bsite/member/acc/menu.do"}
+ , GS.AnchorTag {GS.aText="保有証券一覧",GS.aHref="/bsite/member/acc/holdStockList.do"}
+ , GS.AnchorTag {GS.aText="買付余力",GS.aHref="/bsite/member/acc/purchaseMarginList.do"}
+ , GS.AnchorTag {GS.aText="信用建玉一覧",GS.aHref="/bsite/member/acc/positionList.do"}
+ , GS.AnchorTag {GS.aText="信用建余力",GS.aHref="/bsite/member/acc/positionMargin.do"}
+ , GS.AnchorTag {GS.aText="出金／振替指示",GS.aHref="/bsite/member/banking/withdrawMenu.do"}
+ , GS.AnchorTag {GS.aText="ATMカード",GS.aHref="/bsite/member/acc/atmwithdrawMax.do"}
+ , GS.AnchorTag {GS.aText="重要なお知らせ",GS.aHref="javascript:openJmsg('/bsite/member/jmsg/JMsgRedirect.do?categoryId=03')"}
+ , GS.AnchorTag {GS.aText="当社からのお知らせ",GS.aHref="javascript:openETrade('/bsite/member/jmsg/JMsgRedirect.do?categoryId=02')"}
+ , GS.AnchorTag {GS.aText="登録銘柄",GS.aHref="/bsite/member/portfolio/registeredStockList.do"}
+ , GS.AnchorTag {GS.aText="銘柄登録",GS.aHref="/bsite/member/portfolio/stockSearch.do"}
+ , GS.AnchorTag {GS.aText="銘柄一括登録／編集",GS.aHref="/bsite/member/portfolio/lumpStockEntry.do"}
+ , GS.AnchorTag {GS.aText="銘柄削除",GS.aHref="/bsite/member/portfolio/registeredStockDelete.do"}
+ , GS.AnchorTag {GS.aText="リスト作成／変更",GS.aHref="/bsite/member/portfolio/listEdit.do"}
+ , GS.AnchorTag {GS.aText="マーケット情報",GS.aHref="/bsite/market/menu.do"}
+ , GS.AnchorTag {GS.aText="ランキング",GS.aHref="/bsite/market/rankingListM.do"}
+ , GS.AnchorTag {GS.aText="海外指標",GS.aHref="/bsite/market/foreignIndexDetail.do"}
+ , GS.AnchorTag {GS.aText="外国為替",GS.aHref="/bsite/market/forexDetail.do"}
+ , GS.AnchorTag {GS.aText="市況コメント",GS.aHref="/bsite/market/marketInfoList.do"}
+ , GS.AnchorTag {GS.aText="ニュース",GS.aHref="/bsite/market/newsList.do"}
+ , GS.AnchorTag {GS.aText="取引パスワード／注文確認省略設定",GS.aHref="/bsite/member/setting/omissionSetting.do"}
+ , GS.AnchorTag {GS.aText="手数料",GS.aHref="/bsite/info/productGroupList.do?service_info_id=commission"}
+ , GS.AnchorTag {GS.aText="取扱商品",GS.aHref="/bsite/info/productGroupList.do?service_info_id=goodsList"}
+ , GS.AnchorTag {GS.aText="新着情報/キャンペーン",GS.aHref="/bsite/info/campaignInfoList.do"}
+ , GS.AnchorTag {GS.aText="お問い合わせ",GS.aHref="/bsite/info/inquiryList.do"}
+ , GS.AnchorTag {GS.aText="ログイン履歴",GS.aHref="/bsite/member/loginHistory.do"}
+ , GS.AnchorTag {GS.aText="！ポリシー／免責事項",GS.aHref="/bsite/info/policyList.do"}
+ , GS.AnchorTag {GS.aText="システムメンテナンス",GS.aHref="/bsite/info/systemInfoDetail.do?sortation_id=maintenance"}
+ , GS.AnchorTag {GS.aText="ログアウト",GS.aHref="/bsite/member/logout.do"}
+ , GS.AnchorTag {GS.aText="金融商品取引法に係る表示",GS.aHref="/bsite/info/policyDetail.do?list=title&policy_info_id=salesLaw&text_no=1"}
  ]
 
 --
@@ -96,21 +97,22 @@ test01TopPage' = S.TopPage
 --
 test01AccMenuPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2Fmenu.do.utf8.html"
 test01AccMenuPage' = S.AccMenuPage
- [ ("トップ","/bsite/member/menu.do")
- , ("ログアウト","/bsite/member/logout.do")
- , ("取引／株価照会","/bsite/price/search.do")
- , ("登録銘柄","/bsite/member/portfolio/registeredStockList.do")
- , ("口座管理","/bsite/member/acc/menu.do")
- , ("マーケット情報","/bsite/market/menu.do")
- , ("保有証券一覧","/bsite/member/acc/holdStockList.do")
- , ("買付余力","/bsite/member/acc/purchaseMarginList.do")
- , ("信用建玉一覧","/bsite/member/acc/positionList.do")
- , ("信用建余力","/bsite/member/acc/positionMargin.do")
- , ("出金／振替指示","/bsite/member/banking/withdrawMenu.do")
- , ("ATMカード","/bsite/member/acc/atmMenu.do")
- , ("トップ","/bsite/member/menu.do")
- , ("ログアウト","/bsite/member/logout.do")
- , ("金融商品取引法に係る表示","/bsite/info/policyDetail.do?list=title&policy_info_id=salesLaw&text_no=1")
+ [ GS.AnchorTag {GS.aText="SBI証券　バックアップサイト",GS.aHref="/bsite/member/menu.do"}
+ , GS.AnchorTag {GS.aText="トップ",GS.aHref="/bsite/member/menu.do"}
+ , GS.AnchorTag {GS.aText="ログアウト",GS.aHref="/bsite/member/logout.do"}
+ , GS.AnchorTag {GS.aText="取引／株価照会",GS.aHref="/bsite/price/search.do"}
+ , GS.AnchorTag {GS.aText="登録銘柄",GS.aHref="/bsite/member/portfolio/registeredStockList.do"}
+ , GS.AnchorTag {GS.aText="口座管理",GS.aHref="/bsite/member/acc/menu.do"}
+ , GS.AnchorTag {GS.aText="マーケット情報",GS.aHref="/bsite/market/menu.do"}
+ , GS.AnchorTag {GS.aText="保有証券一覧",GS.aHref="/bsite/member/acc/holdStockList.do"}
+ , GS.AnchorTag {GS.aText="買付余力",GS.aHref="/bsite/member/acc/purchaseMarginList.do"}
+ , GS.AnchorTag {GS.aText="信用建玉一覧",GS.aHref="/bsite/member/acc/positionList.do"}
+ , GS.AnchorTag {GS.aText="信用建余力",GS.aHref="/bsite/member/acc/positionMargin.do"}
+ , GS.AnchorTag {GS.aText="出金／振替指示",GS.aHref="/bsite/member/banking/withdrawMenu.do"}
+ , GS.AnchorTag {GS.aText="ATMカード",GS.aHref="/bsite/member/acc/atmMenu.do"}
+ , GS.AnchorTag {GS.aText="トップ",GS.aHref="/bsite/member/menu.do"}
+ , GS.AnchorTag {GS.aText="ログアウト",GS.aHref="/bsite/member/logout.do"}
+ , GS.AnchorTag {GS.aText="金融商品取引法に係る表示",GS.aHref="/bsite/info/policyDetail.do?list=title&policy_info_id=salesLaw&text_no=1"}
  ]
 
 --
@@ -118,8 +120,8 @@ test01AccMenuPage' = S.AccMenuPage
 --
 test01AccPurchaseMarginListPage = "https%3A%2F%2Fk.sbisec.co.jp%2Fbsite%2Fmember%2Facc%2FpurchaseMarginList.do.utf8.html"
 test01AccPurchaseMarginListPage' = S.PurchaseMarginListPage
- [ ("詳細","/bsite/member/acc/purchaseMarginDetail.do?no=3&account_type=1")
- , ("詳細","/bsite/member/acc/purchaseMarginDetail.do?no=4&account_type=1")
+ [ GS.AnchorTag {GS.aText="詳細",GS.aHref="/bsite/member/acc/purchaseMarginDetail.do?no=3&account_type=1"}
+ , GS.AnchorTag {GS.aText="詳細",GS.aHref="/bsite/member/acc/purchaseMarginDetail.do?no=4&account_type=1"}
  ]
 
 --
@@ -143,8 +145,8 @@ test01AccHoldStockListPage' = Just S.HoldStockListPage
  , S.hslEvaluation = 123456.0
  , S.hslProfit = 1500.0
  , S.hslLinks = S.HoldStockDetailLink
-  [ ("ヨロシサン製薬","/bsite/member/acc/holdStockDetail.do?company_code=1111&new_old_id=+&hitokutei_kbn=0&st_right_id=+&")
-  , ("オムラ・インダストリ","/bsite/member/acc/holdStockDetail.do?company_code=2222&new_old_id=+&hitokutei_kbn=0&st_right_id=+&")
+  [ GS.AnchorTag {GS.aText="ヨロシサン製薬",GS.aHref="/bsite/member/acc/holdStockDetail.do?company_code=1111&new_old_id=+&hitokutei_kbn=0&st_right_id=+&"}
+  , GS.AnchorTag {GS.aText="オムラ・インダストリ",GS.aHref="/bsite/member/acc/holdStockDetail.do?company_code=2222&new_old_id=+&hitokutei_kbn=0&st_right_id=+&"}
   ]
 }
 
@@ -205,9 +207,7 @@ spec = do
     describe "formLoginPage" $
         it "https://k.sbisec.co.jp/bsite/visitor/top.do" $ do
             html <- TL.readFile ("test/SBIsecCoJp/" ++ test01LoginPage)
-            case S.formLoginPage html of
-                Left l  -> TL.putStrLn l
-                Right r -> r `shouldBe` test01LoginPage'
+            S.formLoginPage html >>= shouldBe test01LoginPage'
     --
     describe "topPage" $
         it "https://k.sbisec.co.jp/bsite/member/menu.do" $ do

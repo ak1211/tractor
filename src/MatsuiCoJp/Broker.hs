@@ -43,10 +43,9 @@ module MatsuiCoJp.Broker
     , SellOrder(..)
     , sellStock
     ) where
-
+import           Control.Exception.Safe
 import qualified Control.Arrow                as A
 import qualified Control.Concurrent           as CC
-import           Control.Exception            (throwIO)
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
@@ -72,6 +71,7 @@ import qualified Network.URI                  as N
 import qualified Text.HTML.TagSoup            as TS
 import qualified Text.HTML.TagSoup.Tree       as TS
 
+import qualified GenScraper                   as GS
 import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified Lib
@@ -95,10 +95,10 @@ siteConn conf userAgent f =
     url = "https://www.deal.matsui.co.jp/ITS/login/MemberLogin.jsp"
     --
     --
-    invalidUrl = throwIO . userError $ url ++ " は有効なURLではありません"
+    invalidUrl = throwString $ url ++ " は有効なURLではありません"
     --
     --
-    loginFail = throwIO . userError $ url ++ " にログインできませんでした"
+    loginFail = throwString $ url ++ " にログインできませんでした"
     -- |
     -- 証券会社のサイトにログインする関数
     login' =
@@ -295,7 +295,7 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
             -- POSTリクエストを送信するURL
             let postActionURL = BB.toAbsoluteURI pageURI . TL.unpack =<< fmAction
             -- フォームのaction属性ページへアクセス
-            M.mapM (BB.fetchPage manager reqHeader cookie postReqBody) (postActionURL :: Maybe N.URI)
+            M.mapM (BB.fetchHTTP manager reqHeader cookie postReqBody) (postActionURL :: Maybe N.URI)
         _ -> return Nothing
     --
     --
@@ -367,12 +367,12 @@ doPostActionOnSession s customPostReq =
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
 login :: Conf.InfoMatsuiCoJp -> Conf.UserAgent -> N.URI -> IO (Maybe BB.HTTPSession)
-login (Conf.InfoMatsuiCoJp conf) userAgent loginUri = do
+login conf userAgent loginUri = do
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセス
     loginPageBody <- BB.takeBodyFromResponse
-                        <$> BB.fetchPage manager reqHeader Nothing [] loginUri
+                        <$> BB.fetchHTTP manager reqHeader Nothing [] loginUri
     -- ログインページでID&パスワードをsubmit
     resp <- doPostAction manager reqHeader Nothing customPostReq loginUri loginPageBody
     let session = mkSession manager <$> resp
@@ -385,8 +385,8 @@ login (Conf.InfoMatsuiCoJp conf) userAgent loginUri = do
     -- |
     -- ログインID&パスワード
     customPostReq =
-        [ ("clientCD", Conf.loginID conf)
-        , ("passwd", Conf.loginPassword conf)
+        [ ("clientCD", Conf.loginID $ Conf.getInfoMatsuiCoJp conf)
+        , ("passwd", Conf.loginPassword $ Conf.getInfoMatsuiCoJp conf)
         ]
     -- |
     -- 返値組み立て
@@ -409,7 +409,7 @@ clickLinkText session linkText htmls =
     linkPaths = Maybe.mapMaybe (lookup linkText . getPageCaptionAndLink) htmls
     --
     fetch relativePath =
-        BB.takeBodyFromResponse <$> BB.fetchInRelativePath session (TL.unpack relativePath)
+        BB.takeBodyFromResponse <$> BB.fetchHTTPInRelativePath session (TL.unpack relativePath)
 
 -- |
 -- GM / LMページからリンクテキストとリンクのタプルを取り出す関数
@@ -440,7 +440,7 @@ dispatchFrameSet session htmls (targetFrmName, action) =
             case List.lookup targetFrmName frames of
                 Nothing -> return []
                 Just linkPath -> do
-                    html <- BB.takeBodyFromResponse <$> BB.fetchInRelativePath session (TL.unpack linkPath)
+                    html <- BB.takeBodyFromResponse <$> BB.fetchHTTPInRelativePath session (TL.unpack linkPath)
                     r <- action [html]
                     s <- dispatchFrameSet session hs (targetFrmName, action)
                     return (r ++ s)
@@ -453,7 +453,7 @@ dispatchFrameSet session htmls (targetFrmName, action) =
         src  <- Maybe.listToMaybe [v | (k, v) <- attrList, "src"==TL.toLower k]
         Just (name, src)
 
-type Scraper a      = ([TL.Text] -> Either TL.Text a)
+type Scraper a      = ([TL.Text] -> IO a)
 type ClickAction    = (BB.HTTPSession -> [TL.Text] -> IO [TL.Text])
 type PathOfContents = [(TL.Text, ClickAction)]
 
@@ -464,8 +464,13 @@ data ScrapingSet a  = ScrapingSet (Scraper a) PathOfContents
 setLogout :: ScrapingSet TL.Text
 setLogout =
     ScrapingSet
-        MatsuiCoJp.Scraper.nonScraping
+        nonScraping
         [ ("GM", flip clickLinkText "■ログアウト"), ("CT", const return) ]
+    where
+    -- |
+    -- そのままページを返す関数
+    nonScraping []    = GS.throwScrapingEx "ページを受け取れていません。"
+    nonScraping (h:_) = pure h
 
 -- |
 -- "お知らせ"
@@ -507,8 +512,9 @@ setSellStock order =
 fetchSomethingPage  :: BB.HTTPSession
                     -> ScrapingSet a
                     -> IO a
-fetchSomethingPage session (ScrapingSet scraper pathes) =
-    either BB.failureAtScraping return =<< scraper <$> fetchTargetPage
+fetchSomethingPage session (ScrapingSet scraper pathes) = do
+    pages <- fetchTargetPage
+    scraper pages
     where
     -- |
     -- フレームのパスに従って目的のページを取得する関数
@@ -571,7 +577,7 @@ doSellOrder order session orderPage =
     clickSellOrderLink :: [TL.Text] -> IO [TL.Text]
     clickSellOrderLink htmls =
         (\x -> return [BB.takeBodyFromResponse x])
-        =<< BB.fetchInRelativePath session . TL.unpack
+        =<< BB.fetchHTTPInRelativePath session . TL.unpack
         =<< takeSellOrderUrl
         =<< takeHoldStocks
         where
@@ -584,33 +590,33 @@ doSellOrder order session orderPage =
         takeSellOrderUrl:: [MatsuiCoJp.Scraper.HoldStock] -> IO TL.Text
         takeSellOrderUrl stocks =
             case List.find matchCode stocks of
-                Nothing -> M.liftIO $ throwIO donothaveStockSellEx
+                Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の株式を所有してないので売れません"
                 Just v ->
                     case MatsuiCoJp.Scraper.sellOrderUrl v of
-                        Nothing -> M.liftIO $ throwIO cannotgotoSellPageEx
-                        Just y  -> return y
+                        Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の株式注文ページに行けません"
+                        Just x  -> pure x
         --
         -- 売り注文ページから所有株式リストを取り出す
-        takeHoldStocks :: IO [MatsuiCoJp.Scraper.HoldStock]
-        takeHoldStocks =
-            case MatsuiCoJp.Scraper.scrapingFraStkSell htmls of
-                Left l  -> M.liftIO . throwIO $ BB.UnexpectedHTMLException l
-                Right r -> return (MatsuiCoJp.Scraper.stocks r)
+        takeHoldStocks :: MonadThrow m => m [MatsuiCoJp.Scraper.HoldStock]
+        takeHoldStocks = do
+            MatsuiCoJp.Scraper.stocks <$> MatsuiCoJp.Scraper.scrapingFraStkSell htmls
     -- |
     -- 売り注文ページに注文を入力して送信する
     submitSellOrderPage :: [TL.Text] -> IO [TL.Text]
     submitSellOrderPage pages =
-        either (M.liftIO . throwIO) return =<< go pages
-        where
-        go [] = return (Left cannotgetSellOrderPageEx)
+        case pages of
         --
         -- 売り注文ページには次のページが無いので先頭のみを取り出す
-        go (firstPage:_) =
-            maybe   (Left cannotgotoConfirmPageEx)
-                    (Right . replicate 1 . BB.takeBodyFromResponse)
-            <$>
+        firstPage : _ ->
             -- 売り注文ページのフォームを提出する
             doPostActionOnSession session customPostReq firstPage
+            >>= \case
+                Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の注文確認ページに行けません"
+                Just v -> pure [BB.takeBodyFromResponse v]
+        --
+        --
+        [] -> GS.throwScrapingEx "株式売り注文ページを受け取れていません。"
+        where
         --
         -- 売り注文ページのPOSTリクエストを組み立てる
         -- 以下は初期値のまま
@@ -627,44 +633,35 @@ doSellOrder order session orderPage =
     -- 注文確認ページに取引暗証番号を入力して送信する
     submitConfirmPage :: [TL.Text] -> IO [TL.Text]
     submitConfirmPage pages =
-        either (M.liftIO . throwIO) return =<< go pages
-        where
-        go [] = return (Left cannotgetConfirmPageEx)
+        case pages of
         --
         -- 注文確認ページには次のページが無いので１ページ目のみが対象
-        go (firstPage:_) =
-            maybe   (Left cannotgotoAcceptedPageEx)
-                    (Right . replicate 1 . BB.takeBodyFromResponse)
-            <$>
+        firstPage : _ ->
             doPostActionOnSession session customPostReq firstPage
+            >>= \case
+                Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の注文終了ページに行けません"
+                Just v -> pure [BB.takeBodyFromResponse v]
+        --
+        --
+        [] -> GS.throwScrapingEx "注文確認ページを受け取れていません。"
+        where
         --
         -- 注文確認ページのPOSTリクエスト
         customPostReq =
             [("pinNo", sellOrderPassword order)]  -- 取引暗証番号
     --
     --
+{-
     txtSellCode = TL.pack . show $ sellOrderCode order
-    --
-    cannotgetSellOrderPageEx = BB.UnexpectedHTMLException
-        "株式売り注文ページを受け取れていません。"
-    --
-    --
     donothaveStockSellEx = BB.DontHaveStocksToSellException $ TLB.toLazyText
         "証券コード" <> txtSellCode <> "の株式を所有してないので売れません"
-    --
-    --
-    cannotgotoSellPageEx = BB.UnexpectedHTMLException $ TLB.toLazyText
+    cannotgotoSellPageEx = GS.UnexpectedHTMLException $ TLB.toLazyText
         "証券コード" <> txtSellCode <> "の株式注文ページに行けません"
-    --
-    --
-    cannotgetConfirmPageEx = BB.UnexpectedHTMLException
+    cannotgetConfirmPageEx = GS.UnexpectedHTMLException
         "注文確認ページを受け取れていません。"
-    --
-    --
-    cannotgotoConfirmPageEx = BB.UnexpectedHTMLException $ TLB.toLazyText
+    cannotgotoConfirmPageEx = GS.UnexpectedHTMLException $ TLB.toLazyText
         "証券コード" <> txtSellCode <> "の注文確認ページに行けません"
-    --
-    --
-    cannotgotoAcceptedPageEx = BB.UnexpectedHTMLException $ TLB.toLazyText
+    cannotgotoAcceptedPageEx = GS.UnexpectedHTMLException $ TLB.toLazyText
         "証券コード" <> txtSellCode <> "の注文終了ページに行けません"
 
+        -}

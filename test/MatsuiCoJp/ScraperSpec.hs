@@ -90,25 +90,19 @@ spec = do
     describe "scrapingFraHomeAnnounce" $
         it "test 01" $ do
             html <- TL.readFile ("test/MatsuiCoJp/" ++ test01HomeAnnounce)
-            case scrapingFraHomeAnnounce [html] of
-                Left l  -> TL.putStrLn l
-                Right r -> r `shouldBe` test01HomeAnnounce'
+            scrapingFraHomeAnnounce [html] >>= shouldBe test01HomeAnnounce'
     --
     describe "scrapingFraStkSell" $ do
         it "test 01" $ do
             html <- TL.readFile ("test/MatsuiCoJp/" ++ test01StkHavingList)
-            case scrapingFraStkSell [html] of
-                Left l  -> TL.putStrLn l
-                Right r -> r `shouldBe` test01StkSell
+            scrapingFraStkSell [html] >>= shouldBe test01StkSell
         --
         it "test 02" $ do
             html <- TL.readFile ("test/MatsuiCoJp/" ++ test02StkHavingList)
-            scrapingFraStkSell [html] `shouldBe` Right test02StkSell
+            scrapingFraStkSell [html] >>= shouldBe test02StkSell
     --
     describe "scrapingFraAstSpare" $
         it "test 01" $ do
             html <- TL.readFile ("test/MatsuiCoJp/" ++ test01AstSpare)
-            case scrapingFraAstSpare [html] of
-                Left l  -> TL.putStrLn l
-                Right r -> r `shouldBe` test01AstSpare'
+            scrapingFraAstSpare [html] >>= shouldBe test01AstSpare'
 

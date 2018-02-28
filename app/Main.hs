@@ -31,16 +31,15 @@ Portability :  POSIX
 module Main where
 import qualified Control.Concurrent           as CC
 import qualified Control.Concurrent.Async     as CCA
-import qualified Control.Exception            as Ex
+import           Control.Exception            (AsyncException (UserInterrupt))
+import           Control.Exception.Safe
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Trans.Resource as M
 import           Data.Conduit                 (($$), ($=), (=$))
 import qualified Data.Conduit                 as C
 import           Data.Monoid                  ((<>))
-import qualified Data.Semigroup               as Sg
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TB
 import qualified Data.Text.Lazy.IO            as TL
 import qualified Data.Time                    as Tm
 import qualified Data.Time.Calendar.WeekDate  as Tm
@@ -51,6 +50,7 @@ import qualified Aggregate
 import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified GenBroker                    as GB
+import qualified GenScraper                   as GS
 import qualified Lib
 import qualified Scheduling                   as Scd
 import qualified SinkSlack                    as Slack
@@ -133,9 +133,9 @@ announceHolidaySchedule :: Conf.Info -> Scd.AsiaTokyoDay -> Scd.ZonedTimeJobs
 announceHolidaySchedule conf day =
     [(t, act) | t<-Scd.announceHolidayTime day]
     where
-    act = C.yield (TB.toLazyText msg) $$ slack
-    msg = "本日 " <> today <> " は市場の休日です。"
-    today = TB.fromString . show $ Scd.getAsiaTokyoDay day
+    act = C.yield (TL.pack msg) $$ slack
+    msg = "本日 " ++ today ++ " は市場の休日です。"
+    today = Tm.showGregorian $ Scd.getAsiaTokyoDay day
     slack = simpleTextMsg conf =$ sinkSlack conf
 
 -- |
@@ -157,26 +157,26 @@ tradingTimeSchedule conf broker times =
     onePass =
         M.runResourceT . GB.siteConn broker (Conf.userAgent conf) $ \sess ->
             Scd.executeZT (fetchPriceJobs sess updateSeconds ++ reportJobs noticeSeconds)
-        `Ex.catches`
+        `catches`
         --
         -- ここの例外ハンドラは例外再送出しないので、
         -- 例外処理の後は関数から抜ける
         -- つまりこのスレッドの終了
         --
-        [ Ex.Handler $ \(BB.UnexpectedHTMLException ex) ->
+        [ Handler $ \(GS.UnexpectedHTMLException ex) ->
             toSlack (Conf.slack conf) $ toText ex "予想外のHTML例外 "
         --
-        , Ex.Handler $ \(BB.DontHaveStocksToSellException ex) ->
+        , Handler $ \(BB.DontHaveStocksToSellException ex) ->
             toSlack (Conf.slack conf) $ toText ex "未保有株の売却指示 "
         --
-        , Ex.Handler $ \(Ex.SomeException ex) ->
+        , Handler $ \(SomeException ex) ->
             toSlack (Conf.slack conf) $ toText ex mempty
         ]
     --
     --
     toText ex m =
-        TB.toLazyText $ m
-        <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
+        let wq = "\"" in
+        TL.pack (m ++ wq ++ show ex ++ wq)
     --
     --
     conn = Conf.connInfoDB $ Conf.mariaDB conf
@@ -231,23 +231,22 @@ applicationBody cmdLineOpts conf =
             M.forM_ threads $
                 CCA.waitCatch M.>=>
                 either
-                (\ex -> M.forM_ threads CCA.cancel >> Ex.throwIO ex)
+                (\ex -> M.forM_ threads CCA.cancel >> throwIO ex)
                 return
         --
         -- foreverによって繰り返す
         --
-    `Ex.catches`
+    `catchesAsync`
     -- ユーザー例外ハンドラ
-    [ Ex.Handler $ \Ex.UserInterrupt ->
-        toSlack (Conf.slack conf) "User Interrupt (pressed Ctrl-C) caught"
+    [ Handler $ \UserInterrupt ->
+        toSlack (Conf.slack conf) "user interrupt (pressed Ctrl-C) caught"
     --
     -- 全ての例外ハンドラ
-    , Ex.Handler $ \(Ex.SomeException ex) -> do
+    , Handler $ \(SomeException ex) -> do
         -- Slackへエラーメッセージを送る
-        let msg = TB.toLazyText
-                    $ "Some exception caught (at mainloop), "
-                    <> TB.singleton '\"' <> TB.fromString (show ex) <> TB.singleton '\"'
-        toSlack (Conf.slack conf) msg
+        let wq = "\""
+        let msg = "some exception caught (at mainloop), " ++ wq ++ show ex ++ wq
+        toSlack (Conf.slack conf) $ TL.pack msg
         -- 一定時間待機後に実行時例外からの再開
         CC.threadDelay (300 * 1000 * 1000)
         applicationBody cmdLineOpts conf
@@ -336,13 +335,13 @@ main = do
     commandLineOption = CommandLineOption
         Opt.<$> Opt.flag RunNormal RunBatch
             (  Opt.long "batch"
-            Sg.<> Opt.help "Perform batch process now"
+            <> Opt.help "Perform batch process now"
             )
         Opt.<*> Opt.strOption
             ( Opt.long "conf"
-            Sg.<> Opt.help "Read configuration file"
-            Sg.<> Opt.metavar "CONFIG_FILE"
-            Sg.<> Opt.value "conf.json" -- default file path
-            Sg.<> Opt.help "config file path"
+            <> Opt.help "Read configuration file"
+            <> Opt.metavar "CONFIG_FILE"
+            <> Opt.value "conf.json" -- default file path
+            <> Opt.help "config file path"
             )
 

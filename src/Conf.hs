@@ -41,6 +41,7 @@ module Conf
     , InfoAccount(..)
     , InfoMatsuiCoJp(..)
     , InfoSBIsecCoJp(..)
+    , InfoKabuCom(..)
     , InfoBroker(..)
     , InfoSlack(..)
     , InfoMariaDB(..)
@@ -101,19 +102,28 @@ data InfoAccount = InfoAccount
 
 -- |
 -- 松井証券
-newtype InfoMatsuiCoJp = InfoMatsuiCoJp InfoAccount
-    deriving Eq
+newtype InfoMatsuiCoJp = InfoMatsuiCoJp
+    { getInfoMatsuiCoJp :: InfoAccount
+    } deriving Eq
 
 -- |
 -- SBI証券
-newtype InfoSBIsecCoJp = InfoSBIsecCoJp InfoAccount
-    deriving Eq
+newtype InfoSBIsecCoJp = InfoSBIsecCoJp
+    { getInfoSBIsecCoJp :: InfoAccount
+    } deriving Eq
+
+-- |
+-- KabuCom証券
+newtype InfoKabuCom = InfoKabuCom
+    { getInfoKabuCom :: InfoAccount
+    } deriving Eq
 
 -- |
 -- 証券会社の設定情報
 data InfoBroker
     = MatsuiCoJp InfoMatsuiCoJp
     | SBIsecCoJp InfoSBIsecCoJp
+    | KabuCom InfoKabuCom
     deriving Eq
 
 -- |
@@ -181,12 +191,18 @@ instance Show InfoMatsuiCoJp where
 instance Show InfoSBIsecCoJp where
     show (InfoSBIsecCoJp v) = "SBI証券: " ++ show v
 
+--- |
+-- InfoKabuComのshow
+instance Show InfoKabuCom where
+    show (InfoKabuCom v) = "Kabu.Com証券: " ++ show v
+
 -- |
 -- InfoBrokerのshow
 instance Show InfoBroker where
     show = \case
         (MatsuiCoJp v) -> show v
         (SBIsecCoJp v) -> show v
+        (KabuCom v) -> show v
 
 -- |
 -- InfoAccountのparseJSON
@@ -214,20 +230,19 @@ instance Aeson.FromJSON InfoBroker where
         case name of
             "matsui.co.jp" -> MatsuiCoJp . InfoMatsuiCoJp <$> Aeson.parseJSON (Aeson.Object o)
             "sbisec.co.jp" -> SBIsecCoJp . InfoSBIsecCoJp <$> Aeson.parseJSON (Aeson.Object o)
+            "kabu.com" -> KabuCom . InfoKabuCom <$> Aeson.parseJSON (Aeson.Object o)
             _              -> fail ("unknown broker: " ++ name)
 
 -- |
 -- InfoBrokerのtoJSON
 instance Aeson.ToJSON InfoBroker where
     toJSON = \case
-        (MatsuiCoJp o) ->
-            let (InfoMatsuiCoJp v) = o in
-            Aeson.Object $
-            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject v
-        (SBIsecCoJp o) ->
-            let (InfoSBIsecCoJp v) = o in
-            Aeson.Object $
-            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject v
+        (MatsuiCoJp o) -> Aeson.Object $
+            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject (getInfoMatsuiCoJp o)
+        (SBIsecCoJp o) -> Aeson.Object $
+            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject (getInfoSBIsecCoJp o)
+        (KabuCom o) -> Aeson.Object $
+            fromList [ ("name", Aeson.String "kabu.com") ] <> toObject (getInfoKabuCom o)
 
 --
 --

@@ -40,8 +40,10 @@ import qualified Database.Persist.MySQL       as MySQL
 
 import qualified BrokerBackend                as BB
 import           Conf                         (InfoBroker (..),
+                                               InfoKabuCom (..),
                                                InfoMatsuiCoJp (..),
                                                InfoSBIsecCoJp (..))
+import qualified KabuCom.Broker               as KabuCom
 import qualified MatsuiCoJp.Broker            as MatsuiCoJp
 import qualified SBIsecCoJp.Broker            as SBIsecCoJp
 import qualified SinkSlack
@@ -83,6 +85,7 @@ instance Broker InfoMatsuiCoJp where
     noticeOfBrokerageAnnouncement = MatsuiCoJp.noticeOfBrokerageAnnouncement
     noticeOfCurrentAssets _ = MatsuiCoJp.noticeOfCurrentAssets
     fetchUpdatedPriceAndStore _ = MatsuiCoJp.fetchUpdatedPriceAndStore
+
 --
 --
 instance Broker InfoSBIsecCoJp where
@@ -93,17 +96,29 @@ instance Broker InfoSBIsecCoJp where
 
 --
 --
+instance Broker InfoKabuCom where
+    siteConn = KabuCom.siteConn
+    noticeOfBrokerageAnnouncement = KabuCom.noticeOfBrokerageAnnouncement
+    noticeOfCurrentAssets _ = KabuCom.noticeOfCurrentAssets
+    fetchUpdatedPriceAndStore _ = KabuCom.fetchUpdatedPriceAndStore
+
+--
+--
 instance Broker InfoBroker where
     siteConn = \case
         (MatsuiCoJp a) -> siteConn a
         (SBIsecCoJp a) -> siteConn a
+        (KabuCom a) -> siteConn a
     noticeOfBrokerageAnnouncement = \case
         (MatsuiCoJp a) -> noticeOfBrokerageAnnouncement a
         (SBIsecCoJp a) -> noticeOfBrokerageAnnouncement a
+        (KabuCom a) -> noticeOfBrokerageAnnouncement a
     noticeOfCurrentAssets = \case
         (MatsuiCoJp a) -> noticeOfCurrentAssets a
         (SBIsecCoJp a) -> noticeOfCurrentAssets a
+        (KabuCom a) -> noticeOfCurrentAssets a
     fetchUpdatedPriceAndStore = \case
         (MatsuiCoJp a) -> fetchUpdatedPriceAndStore a
         (SBIsecCoJp a) -> fetchUpdatedPriceAndStore a
+        (KabuCom a) -> fetchUpdatedPriceAndStore a
 

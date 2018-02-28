@@ -24,6 +24,11 @@
         ,"loginID"          : "sbisec.co.jp loginID"
         ,"loginPassword"    : "sbisec.co.jp loginPassword"
         ,"dealingsPassword" : "sbisec.co.jp dealingsPassword"
+        },
+        {"name"             : "kabu.com"
+        ,"loginID"          : "kabu.com loginID"
+        ,"loginPassword"    : "kabu.com loginPassword"
+        ,"dealingsPassword" : "kabu.com dealingsPassword"
         }
     ]
 }
