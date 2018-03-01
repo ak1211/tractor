@@ -254,8 +254,11 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
 
 -- |
 -- リンクのページへアクセスする関数
-fetchLinkPage :: MonadThrow m => (BB.HTTPSession -> N.URI -> m TL.Text)
-                -> BB.HTTPSession -> T.Text -> m TL.Text
+fetchLinkPage   :: MonadThrow m
+                => (BB.HTTPSession -> N.URI -> m TL.Text)
+                -> BB.HTTPSession
+                -> T.Text
+                -> m TL.Text
 fetchLinkPage fetcher sess t =
     fetcher sess =<< lookupLinkOnTopPage sess =<< pure t
 
