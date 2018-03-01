@@ -43,9 +43,9 @@ module MatsuiCoJp.Broker
     , SellOrder(..)
     , sellStock
     ) where
-import           Control.Exception.Safe
 import qualified Control.Arrow                as A
 import qualified Control.Concurrent           as CC
+import           Control.Exception.Safe
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
@@ -57,9 +57,7 @@ import qualified Data.Conduit                 as C
 import qualified Data.Conduit.List            as CL
 import qualified Data.List                    as List
 import qualified Data.Maybe                   as Maybe
-import           Data.Monoid                  ((<>))
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TLB
 import qualified Data.Time                    as Tm
 import           Database.Persist             ((<.), (==.))
 import qualified Database.Persist             as DB
@@ -71,9 +69,9 @@ import qualified Network.URI                  as N
 import qualified Text.HTML.TagSoup            as TS
 import qualified Text.HTML.TagSoup.Tree       as TS
 
-import qualified GenScraper                   as GS
 import qualified BrokerBackend                as BB
 import qualified Conf
+import qualified GenScraper                   as GS
 import qualified Lib
 import           MatsuiCoJp.Model
 import qualified MatsuiCoJp.Scraper
@@ -590,15 +588,15 @@ doSellOrder order session orderPage =
         takeSellOrderUrl:: [MatsuiCoJp.Scraper.HoldStock] -> IO TL.Text
         takeSellOrderUrl stocks =
             case List.find matchCode stocks of
-                Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の株式を所有してないので売れません"
+                Nothing -> GS.throwScrapingEx $ "証券コード" ++ show (sellOrderCode order) ++ "の株式を所有してないので売れません"
                 Just v ->
                     case MatsuiCoJp.Scraper.sellOrderUrl v of
-                        Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の株式注文ページに行けません"
+                        Nothing -> GS.throwScrapingEx $ "証券コード" ++ show (sellOrderCode order) ++ "の株式注文ページに行けません"
                         Just x  -> pure x
         --
         -- 売り注文ページから所有株式リストを取り出す
         takeHoldStocks :: MonadThrow m => m [MatsuiCoJp.Scraper.HoldStock]
-        takeHoldStocks = do
+        takeHoldStocks =
             MatsuiCoJp.Scraper.stocks <$> MatsuiCoJp.Scraper.scrapingFraStkSell htmls
     -- |
     -- 売り注文ページに注文を入力して送信する
@@ -611,7 +609,7 @@ doSellOrder order session orderPage =
             -- 売り注文ページのフォームを提出する
             doPostActionOnSession session customPostReq firstPage
             >>= \case
-                Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の注文確認ページに行けません"
+                Nothing -> GS.throwScrapingEx $ "証券コード" ++ show (sellOrderCode order) ++ "の注文確認ページに行けません"
                 Just v -> pure [BB.takeBodyFromResponse v]
         --
         --
@@ -639,7 +637,7 @@ doSellOrder order session orderPage =
         firstPage : _ ->
             doPostActionOnSession session customPostReq firstPage
             >>= \case
-                Nothing -> GS.throwScrapingEx $ "証券コード" ++ (show $ sellOrderCode order) ++ "の注文終了ページに行けません"
+                Nothing -> GS.throwScrapingEx $ "証券コード" ++ show (sellOrderCode order) ++ "の注文終了ページに行けません"
                 Just v -> pure [BB.takeBodyFromResponse v]
         --
         --

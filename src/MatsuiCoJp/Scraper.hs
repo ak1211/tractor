@@ -119,7 +119,7 @@ doubleFromTxt :: MonadThrow m => TL.Text -> m Double
 doubleFromTxt t =
     case Read.signed Read.double $ onlySignDigit t of
     Right v -> pure $ fst v
-    Left _ -> GS.throwScrapingEx "文字から数字への変換に失敗:"
+    Left _  -> GS.throwScrapingEx "文字から数字への変換に失敗:"
 
 --
 --
@@ -127,7 +127,7 @@ decimalFromTxt :: (MonadThrow m, Integral a) => TL.Text -> m a
 decimalFromTxt t =
     case Read.signed Read.decimal $ onlySignDigit t of
     Right v -> pure $ fst v
-    Left _ -> GS.throwScrapingEx $ "文字から数字への変換に失敗"
+    Left _  -> GS.throwScrapingEx "文字から数字への変換に失敗"
 
 -- |
 -- "ホーム" -> "お知らせ" のページをスクレイピングする関数
@@ -158,13 +158,13 @@ scrapingFraHomeAnnounce (html:_) = do
     deriverAt =
         case bolds of
         _ : v : _ -> pure v
-        _ -> GS.throwScrapingEx "お知らせ配信時間の取得に失敗"
+        _         -> GS.throwScrapingEx "お知らせ配信時間の取得に失敗"
     --
     -- 前回ログイン時間 (<B></B>で囲まれた要素の3番目)
     lastLogin =
         case bolds of
         _ : _ : v : _ -> pure v
-        _ -> GS.throwScrapingEx "前回ログイン時間の取得に失敗"
+        _             -> GS.throwScrapingEx "前回ログイン時間の取得に失敗"
     --
     -- おしらせの内容
     anns :: [TL.Text]

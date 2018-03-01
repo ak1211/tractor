@@ -136,7 +136,7 @@ data StockDetailPage = StockDetailPage
     , sdpSellLink       :: GS.AnchorTag         -- ^ 売りリンク
     , sdpPetitBuyLink   :: Maybe GS.AnchorTag   -- ^ プチ株買いリンク
     , sdpPetitSellLink  :: Maybe GS.AnchorTag   -- ^ プチ株売りリンク
-    , sdpPurchasePrice  :: Int32                -- ^ 約定金額
+    , sdpAskPrice       :: Int32                -- ^ 約定金額
     , sdpTicker         :: TickerSymbol         -- ^ ティッカーシンボル
     , sdpClass          :: StockClassification  -- ^ 貸借銘柄／信用銘柄
     , sdpCaption        :: T.Text               -- ^ 銘柄名
@@ -243,7 +243,7 @@ purchaseMarginPage html =
 -- 保有証券一覧ページをスクレイピングする関数
 stockPositionListPage :: MonadThrow m => TL.Text -> m StockPositionListPage
 stockPositionListPage html =
-    case take 7 $ tables of
+    case take 7 tables of
     [headline, _, summary, _, _, _, ps] -> do
         (cap, tim) <- captionMonthDayHourMin headline
         (ev, pro, ppc) <- evaluationProfitProfitPc summary
@@ -346,9 +346,9 @@ stockPositionListPage html =
 -- 個別銘柄詳細ページをスクレイピングする関数
 stockDetailPage :: MonadThrow m => TL.Text -> m StockDetailPage
 stockDetailPage html =
-    case take 7 $ tables of
+    case take 7 tables of
     [_, headline, subhead, instruments, article, _, history] -> do
-        (chl, bol, buyl, sell, pbl, psl, ppr) <- chartBoardBuySellPebuyPesellPurchase headline
+        (chl, bol, buyl, sell, pbl, psl, ask) <- chartBoardBuySellPebuyPesellAsk headline
         --
         (ts, cls, cap) <- tickerClassCaption subhead
         --
@@ -365,7 +365,7 @@ stockDetailPage html =
             , sdpSellLink = sell
             , sdpPetitBuyLink = pbl
             , sdpPetitSellLink = psl
-            , sdpPurchasePrice = ppr
+            , sdpAskPrice = ask
             , sdpTicker = ts
             , sdpClass = cls
             , sdpCaption = cap
@@ -404,32 +404,32 @@ stockDetailPage html =
         &/ X.laxElement "tr"
     --
     --
-    chartBoardBuySellPebuyPesellPurchase :: MonadThrow m
+    chartBoardBuySellPebuyPesellAsk :: MonadThrow m
         => X.Cursor
         -> m( GS.AnchorTag, GS.AnchorTag, GS.AnchorTag, GS.AnchorTag
             , Maybe GS.AnchorTag, Maybe GS.AnchorTag, Int32)
-    chartBoardBuySellPebuyPesellPurchase cursor =
+    chartBoardBuySellPebuyPesellAsk cursor =
         case concatMap GS.takeAnchorTag $ take 1 tds of
             -- 通常の銘柄
             [a1, a2, a3, a4, a5, a6] ->
-                (,,,,,,) a1 a2 a3 a4 (Just a5) (Just a6) <$> purchasePrice
+                (,,,,,,) a1 a2 a3 a4 (Just a5) (Just a6) <$> askPrice
             -- プチ株がない銘柄の場合
             [a1, a2, a3, a4] ->
-                (,,,,,,) a1 a2 a3 a4 Nothing Nothing <$> purchasePrice
+                (,,,,,,) a1 a2 a3 a4 Nothing Nothing <$> askPrice
             --
-            t -> GS.throwScrapingEx $ "chartBoardBuySellPebuyPesellPurchase: length mismatch ("++ show (length t) ++ ")"
+            t -> GS.throwScrapingEx $ "chartBoardBuySellPebuyPesellAsk: length mismatch ("++ show (length t) ++ ")"
         where
         --
         --
         tds = cursor $/ X.laxElement "tr" &/ X.laxElement "td"
         --
         --
-        purchasePrice =
+        askPrice =
             case concatMap scraping $ take 1 tds of
             -- このリストにはこんな情報が入っている
             -- ["約定金額", 値, "円"]
             [_, v, _] -> GS.toDecimal v
-            t -> GS.throwScrapingEx $ "purchasePrice: length mismatch ("++ show (length t) ++ ")"
+            t -> GS.throwScrapingEx $ "askPrice: length mismatch ("++ show (length t) ++ ")"
     --
     --
     leftTable :: MonadThrow m
@@ -473,7 +473,7 @@ stockDetailPage html =
         -- このリストにはこんな情報が入っている
         --  [説明, 値]
         [_, v]  | T.isPrefixOf "--" v -> pure Nothing           -- 寄り付いていない
-                | otherwise -> fmap Just $ GS.toDouble v
+                | otherwise -> Just <$> GS.toDouble v
         t      -> GS.throwScrapingEx $ "value: length mismatch ("++ show (length t) ++ ")"
     --
     --
@@ -530,7 +530,7 @@ stockDetailPage html =
         case cursor $/ X.laxElement "tr" of
             -- [取扱商品, 時価情報]
             [_, jika] ->
-                case scraping $ jika of
+                case scraping jika of
                     -- ["時価情報", 日付]
                     [_, day] -> parseDay day
                     t -> GS.throwScrapingEx $ "finantialInstruments: length mismatch ("++ show (length t) ++ ")"

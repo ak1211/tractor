@@ -56,6 +56,7 @@ module SBIsecCoJp.Scraper
     , holdStockDetailPage
     , marketInfoPage
     ) where
+import           Control.Exception.Safe
 import           Control.Monad                    as M
 import           Control.Monad                    ((>=>))
 import qualified Data.Char                        as C
@@ -71,7 +72,6 @@ import           System.IO                        (Newline (..), nativeNewline)
 import qualified Text.HTML.DOM                    as H
 import           Text.XML.Cursor                  (($/), ($//), (&/), (&//),
                                                    (&|))
-import           Control.Exception.Safe
 import qualified Text.XML.Cursor                  as X
 
 import qualified GenScraper                       as GS

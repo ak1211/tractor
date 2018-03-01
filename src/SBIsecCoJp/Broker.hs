@@ -211,8 +211,8 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         -- 保有株式テーブルへ格納する(寄っている場合のみ)
         M.mapM_ DB.insert . Mb.mapMaybe (stock year key) $ stocks
     where
-    --
-    --
+    -- |
+    -- 資産テーブル情報を組み立てる
     asset :: Tm.UTCTime -> S.HoldStockListPage -> S.PurchaseMarginDetailPage -> SbiseccojpAsset
     asset at hslp pmdp = SbiseccojpAsset
         { sbiseccojpAssetAt         = at
@@ -222,7 +222,8 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         , sbiseccojpAssetMoneySpare = S.pmdMoneyToSpare pmdp
         , sbiseccojpAssetCashBalance= S.pmdCashBalance pmdp
         }
-    --
+    -- |
+    -- 保有株式テーブル情報を組み立てる
     -- まだ寄っていない値を元に作らない
     stock :: Integer -> DB.Key SbiseccojpAsset -> S.HoldStockDetailPage -> Maybe SbiseccojpStock
     stock year key S.HoldStockDetailPage{..} = do

@@ -41,6 +41,7 @@ module KabuCom.Broker
     , noticeOfCurrentAssets
     , fetchUpdatedPriceAndStore
     ) where
+import qualified Control.Arrow                as A
 import           Control.Exception.Safe
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
@@ -66,6 +67,7 @@ import           KabuCom.Model
 import qualified KabuCom.Scraper              as S
 import           Lib                          (tzAsiaTokyo)
 import qualified Lib
+import           Scheduling                   (AsiaTokyoDay (..))
 import qualified SinkSlack                    as Slack
 
 -- |
@@ -174,12 +176,11 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     pmPage <- goPurchaseMarginPage
     --
     -- サーバーに対して過度なアクセスを控えるための時間待ち
---    BB.waitMS 600
+    BB.waitMS 600
     -- トップ -> 残高照会 を見に行く
     splPage <- goStockPositionListPage
     -- トップ -> 残高照会 -> 個別銘柄詳細ページを見に行く
     stocks <- goStockDetailPage splPage
-
     -- 受信時間
     tm <- Tm.getCurrentTime
     -- 全てをデーターベースへ
@@ -188,7 +189,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm splPage pmPage
         -- 保有株式テーブルへ格納する(寄っている場合のみ)
-        M.mapM_ DB.insert . Mb.mapMaybe (stock tm key) $ S.splPositions splPage
+        M.mapM_ DB.insert . Mb.mapMaybe (stock key) $ stocks
     where
     -- |
     -- トップ -> 買付出金可能額 を見に行く
@@ -202,20 +203,25 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         S.stockPositionListPage =<< fetchLinkPage slowlyFetch sess "残高照会"
     -- |
     -- トップ -> 残高照会 -> 個別銘柄詳細ページを見に行く関数
-    goStockDetailPage :: (M.MonadIO m, MonadThrow m) => S.StockPositionListPage -> m [S.StockDetailPage]
+    goStockDetailPage   :: (M.MonadIO m, MonadThrow m)
+                        => S.StockPositionListPage
+                        -> m [(S.StockPositionItem, S.StockDetailPage)]
     goStockDetailPage page =
-        -- 詳細ページをスクレイピングする
-        M.mapM S.stockDetailPage
-        -- 詳細ページへアクセスする
-        =<< M.mapM (slowlyFetch sess) . mapAbsUri
-        =<< pure (map S.spCaptionAnchor . S.splPositions $ page)
+        let ps = S.splPositions page
+        in
+        M.mapM (\i -> (,) <$> pure i <*> go i) ps
+        where
+        go :: (M.MonadIO m, MonadThrow m) => S.StockPositionItem -> m S.StockDetailPage
+        go spi =
+            let href = T.unpack . GS.aHref $ S.spCaptionAnchor spi
+            in
+            case BB.toAbsoluteURI sLoginPageURI href of
+                Nothing -> throwString $ href ++" の絶対リンクを取得できませんでした"
+                Just uri ->
+                    -- 詳細ページへアクセスしてスクレイピングする
+                    S.stockDetailPage =<< slowlyFetch sess uri
     -- |
-    -- リンク情報からURIに写す
-    mapAbsUri :: [GS.AnchorTag] -> [N.URI]
-    mapAbsUri =
-        Mb.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . GS.aHref)
-    --
-    --
+    -- 資産テーブル情報を組み立てる
     asset :: Tm.UTCTime -> S.StockPositionListPage -> S.PurchaseMarginPage -> KabucomAsset
     asset at splp pmp = KabucomAsset
         { kabucomAssetAt         = at
@@ -225,60 +231,26 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         , kabucomAssetMoneySpare = S.pmMoneyToSpare pmp
         , kabucomAssetCashBalance= S.pmCashBalance pmp
         }
-    --
+    -- |
+    -- 保有株式テーブル情報を組み立てる
     -- まだ寄っていない値を元に作らない
-    stock :: Tm.UTCTime -> DB.Key KabucomAsset -> S.StockPositionItem -> Maybe KabucomStock
-    stock at key S.StockPositionItem{..} =
+    stock   :: DB.Key KabucomAsset
+            -> (S.StockPositionItem, S.StockDetailPage)
+            -> Maybe KabucomStock
+    stock key (sp, sdp) = do
+        (pr, (h,m)) <- A.second S.getHourMinute <$> S.sdpPrice sdp
+        t <- Tm.makeTimeOfDayValid h m 0
+        let lt = Tm.LocalTime   { Tm.localDay = getAsiaTokyoDay (S.sdpDay sdp)
+                                , Tm.localTimeOfDay = t }
         Just KabucomStock
             { kabucomStockAsset      = key
-            , kabucomStockAt         = at
-            , kabucomStockTicker     = spTicker
-            , kabucomStockCaption    = T.unpack $ GS.aText spCaptionAnchor
-            , kabucomStockCount      = spCount
-            , kabucomStockPurchase   = spPurchasePrice
-            , kabucomStockPrice      = spPrice
+            , kabucomStockAt         = Tm.localTimeToUTC tzAsiaTokyo lt
+            , kabucomStockTicker     = S.sdpTicker sdp
+            , kabucomStockCaption    = T.unpack $ S.sdpCaption sdp
+            , kabucomStockCount      = S.spCount sp
+            , kabucomStockPurchase   = S.spPurchasePrice sp
+            , kabucomStockPrice      = pr
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{-
-    -- トップ -> 保有証券一覧 -> 保有証券詳細ページを見に行く
-    stocks <- mbfn "保有証券詳細ページの取得に失敗しました" $ goHoldStockDetailPage hslPage
-    where
-    -- |
-    -- トップ -> 保有証券一覧 -> 保有証券詳細ページを見に行く関数
-    goHoldStockDetailPage   :: S.HoldStockListPage
-                            -> MaybeT IO [S.HoldStockDetailPage]
-    goHoldStockDetailPage page =
-        -- 詳細ページをスクレイピングする
-        MaybeT . return . M.mapM S.holdStockDetailPage
-        -- 詳細ページへアクセスする
-        =<< M.mapM (slowlyFetch sess) . mapAbsUri . unpack =<< pure page
-        where
-        unpack p =
-            let (S.HoldStockDetailLink xs) = S.hslLinks p in
-            xs
-    -- |
-    -- リンク情報からURIに写す
-    mapAbsUri :: [GS.TextAndHref] -> [N.URI]
-    mapAbsUri =
-        Mb.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . snd)
--}
 
 -- |
 -- リンクのページへアクセスする関数
@@ -318,8 +290,6 @@ noWaitFetch =
 slowlyFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
 slowlyFetch x y = noWaitFetch x y <* M.liftIO (BB.waitMS 300)
 
-
-
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
 login :: Conf.InfoKabuCom -> Conf.UserAgent -> String -> IO BB.HTTPSession
@@ -332,7 +302,6 @@ login conf userAgent loginPageURL = do
                     BB.fetchHTTP manager reqHeader Nothing [] loginURI
     -- ログインページをスクレイピングする
     loginForm <- S.formLoginPage loginPage
---    loginForm <- either BB.failureAtScraping return $ S.formLoginPage loginPage
     -- IDとパスワードを入力する
     let postMsg = BB.mkCustomPostReq
                     (map GS.toPairNV $ GS.formInputTag loginForm)

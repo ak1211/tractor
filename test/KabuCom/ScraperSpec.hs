@@ -182,7 +182,7 @@ test01StockDetailPage' = Just StockDetailPage
  , sdpSellLink = AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=1343&FilterType=1"}
  , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=1343&Market=20"}
  , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=1343&FilterType=1&Market=20"}
- , sdpPurchasePrice = 18110
+ , sdpAskPrice = 18110
  , sdpTicker = TSTYO 1343
  , sdpClass = SC貸借銘柄
  , sdpCaption = "ＮＥＸＴＦＵＮＤＳ東証ＲＥＩＴ指数連動型上場投信"
@@ -213,7 +213,7 @@ test02StockDetailPage' = Just StockDetailPage
  , sdpSellLink = AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=1540&FilterType=1"}
  , sdpPetitBuyLink = Nothing
  , sdpPetitSellLink = Nothing
- , sdpPurchasePrice = 4430
+ , sdpAskPrice = 4430
  , sdpTicker = TSTYO 1540
  , sdpClass = SC貸借銘柄
  , sdpCaption = "純金上場信託（現物国内保管型）"
@@ -244,7 +244,7 @@ test03StockDetailPage' = Just StockDetailPage
  , sdpSellLink = AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=8411&FilterType=1"}
  , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=8411&Market=20"}
  , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=8411&FilterType=1&Market=20"}
- , sdpPurchasePrice = 19970
+ , sdpAskPrice = 19970
  , sdpTicker = TSTYO 8411
  , sdpClass = SC貸借銘柄
  , sdpCaption = "みずほフィナンシャルグループ"
@@ -276,7 +276,7 @@ test04StockDetailPage' = Just StockDetailPage
  , sdpSellLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=8411&FilterType=1"}
  , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=8411&Market=20"}
  , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=8411&FilterType=1&Market=20"}
- , sdpPurchasePrice = 20260
+ , sdpAskPrice = 20260
  , sdpTicker = TSTYO 8411
  , sdpClass = SC貸借銘柄
  , sdpCaption = "みずほフィナンシャルグループ"
@@ -307,7 +307,7 @@ test05StockDetailPage' = Just StockDetailPage
  , sdpSellLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=6911&FilterType=1"}
  , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=6911&Market=20"}
  , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=6911&FilterType=1&Market=20"}
- , sdpPurchasePrice = 90400
+ , sdpAskPrice = 90400
  , sdpTicker = TSTYO 6911
  , sdpClass = SC貸借銘柄
  , sdpCaption = "新日本無線"
