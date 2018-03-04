@@ -57,7 +57,7 @@ import qualified Control.Arrow          as A
 import           Control.Exception.Safe
 import           Control.Monad          ((>=>))
 import qualified Control.Monad          as M
-import           Data.Int               (Int32)
+import           Data.Int               (Int32, Int64)
 import qualified Data.Text              as T
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Time              as Tm
@@ -120,7 +120,7 @@ data DailyStockPrice = DailyStockPrice
     , dspLow    :: Maybe Double
     , dspClose  :: Maybe Double
     , dspDiff   :: Maybe Double
-    , dspVolume :: Integer
+    , dspVolume :: Int64
     } deriving (Eq, Show)
 
 type PriceAt t = (Double, t)
@@ -346,53 +346,61 @@ stockPositionListPage html =
 -- 個別銘柄詳細ページをスクレイピングする関数
 stockDetailPage :: MonadThrow m => TL.Text -> m StockDetailPage
 stockDetailPage html =
-    case take 7 tables of
-    [_, headline, subhead, instruments, article, _, history] -> do
-        (chl, bol, buyl, sell, pbl, psl, ask) <- chartBoardBuySellPebuyPesellAsk headline
+    case go html of
+    Right a -> pure a
+    Left _ ->
         --
-        (ts, cls, cap) <- tickerClassCaption subhead
+        -- "※この銘柄は取引制限銘柄です。"が注入されたページのHTMLは壊れているので修復する。
         --
-        day <- finantialInstruments instruments
-        --
-        (pri, dif, dpc, cly, opn, hig, low, oaf, std) <- leftTable article
-        --
-        hist <- dailyStockPrices history
-        --
-        pure StockDetailPage
-            { sdpChartLink = chl
-            , sdpBoardLink = bol
-            , sdpBuyLink = buyl
-            , sdpSellLink = sell
-            , sdpPetitBuyLink = pbl
-            , sdpPetitSellLink = psl
-            , sdpAskPrice = ask
-            , sdpTicker = ts
-            , sdpClass = cls
-            , sdpCaption = cap
-            , sdpDay = day
-            , sdpPrice = pri
-            , sdpDiff = dif
-            , sdpDiffPc = dpc
-            , sdpCloseYesterday = cly
-            , sdpOpen = opn
-            , sdpHigh = hig
-            , sdpLow = low
-            , sdpOpenAfternoon = oaf
-            , sdpStdPrice = std
-            , sdpDailyHistories = hist
-            }
-    t -> GS.throwScrapingEx $ "stockDetailPage: length mismatch ("++ show (length t) ++ "\""
+        -- 不必要な情報なのでこの行ごと消去する。
+        let text = "<tr><td valign=\"middle\" align=\"left\" colspan=\"2\"><br><b><FONT SIZE=2>※この銘柄は取引制限銘柄です。</FONT></b>"
+            patcher = TL.unlines . filter (not . TL.isPrefixOf text) . TL.lines
+        in
+        go $ patcher html
     where
     --
     --
-    root = X.fromDocument $ H.parseLT html
-    --
-    --
-    tables :: [X.Cursor]
-    tables =
-        root
-        $/ X.laxElement "body"
-        &/ X.laxElement "table"
+    go html' =
+        let tables = X.fromDocument (H.parseLT html')
+                        $/ X.laxElement "body"
+                        &/ X.laxElement "table"
+        in
+        case (tables :: [X.Cursor]) of
+        [_, headline, subhead, instruments, article, _, history, _, _] -> do
+            (chl, bol, buyl, sell, pbl, psl, ask) <- chartBoardBuySellPebuyPesellAsk headline
+            --
+            (ts, cls, cap) <- tickerClassCaption subhead
+            --
+            day <- finantialInstruments instruments
+            --
+            (pri, dif, dpc, cly, opn, hig, low, oaf, std) <- leftTable article
+            --
+            hist <- dailyStockPrices history
+            --
+            pure StockDetailPage
+                { sdpChartLink = chl
+                , sdpBoardLink = bol
+                , sdpBuyLink = buyl
+                , sdpSellLink = sell
+                , sdpPetitBuyLink = pbl
+                , sdpPetitSellLink = psl
+                , sdpAskPrice = ask
+                , sdpTicker = ts
+                , sdpClass = cls
+                , sdpCaption = cap
+                , sdpDay = day
+                , sdpPrice = pri
+                , sdpDiff = dif
+                , sdpDiffPc = dpc
+                , sdpCloseYesterday = cly
+                , sdpOpen = opn
+                , sdpHigh = hig
+                , sdpLow = low
+                , sdpOpenAfternoon = oaf
+                , sdpStdPrice = std
+                , sdpDailyHistories = hist
+                }
+        t -> GS.throwScrapingEx $ "stockDetailPage: length mismatch ("++ show (length t) ++ ")"
     --
     --
     leftTableRows :: X.Cursor -> [X.Cursor]

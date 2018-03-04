@@ -40,8 +40,8 @@ module Model
     ( module Model
     , module ModelDef
     ) where
-
 import           Data.ByteString.Char8 (ByteString)
+import           Data.Int              (Int64)
 import           Data.Text             (Text)
 import           Data.Time             (UTCTime)
 import           Database.Persist.TH
@@ -55,30 +55,27 @@ share [mkPersist sqlSettings, mkMigrate "migrateQuotes"] [persistLowerCase|
 -- |
 -- 株式銘柄テーブル
 Portfolio
-    ticker      TickerSymbol        -- ^ ティッカー
-    caption     Text Maybe          -- ^ 銘柄名
+    ticker      TickerSymbol    -- ^ ティッカー
+    caption     Text Maybe      -- ^ 銘柄名
     updateAt    UTCTime Maybe   -- ^ 価格情報を取り込んだ日付時間
     deriving Show Eq
-
 -- |
--- 初値, 高値, 安値, 終値, 出来高, 売買代金テーブル
-Ohlcvt
-    ticker      TickerSymbol        -- ^ ティッカー
-    tf          TimeFrame           -- ^ 時間枠
-    at          UTCTime             -- ^ 日付時間
-    open        Double Maybe        -- ^ 初値
-    high        Double Maybe        -- ^ 高値
-    low         Double Maybe        -- ^ 安値
-    close       Double Maybe        -- ^ 終値
-    volume      Double Maybe        -- ^ 出来高
-    turnover    Double Maybe        -- ^ 売買代金
-    source      Text Maybe          -- ^ 情報の入手元
+-- 初値, 高値, 安値, 終値, 出来高テーブル
+Ohlcv
+    ticker      TickerSymbol    -- ^ ティッカー
+    tf          TimeFrame       -- ^ 時間枠
+    at          UTCTime         -- ^ 日付時間
+    open        Double Maybe    -- ^ 初値
+    high        Double Maybe    -- ^ 高値
+    low         Double Maybe    -- ^ 安値
+    close       Double Maybe    -- ^ 終値
+    volume      Int64           -- ^ 出来高
+    source      Text Maybe      -- ^ 情報の入手元
     deriving Show Eq
-
 -- |
 -- テクニカル指標テーブル
 TechInds
-    ohlcvt      OhlcvtId        -- ^ 紐付け
+    ohlcv       OhlcvId          -- ^ 紐付け
     ind         TechnicalInds   -- ^ テクニカル指標
     val         Double          -- ^ 値
     deriving Show Eq

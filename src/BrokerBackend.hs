@@ -317,7 +317,7 @@ toAbsoluteURI baseURI href =
 fetchHTTPInRelativePath :: HTTPSession -> String -> IO (N.Response BL8.ByteString)
 fetchHTTPInRelativePath HTTPSession{..} relativePath = do
     uri <- case toAbsoluteURI sLoginPageURI relativePath of
-        Nothing -> throwString "link url is not valid"
+        Nothing -> throwString "fetchHTTPInRelativePath: link url is not valid"
         Just x  -> return x
     fetchHTTP sManager sReqHeaders (Just sRespCookies) [] uri
 

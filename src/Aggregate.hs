@@ -31,9 +31,8 @@ Portability :  POSIX
 {-# LANGUAGE StrictData        #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Aggregate
-    (runAggregateOfPortfolios
+    ( runAggregateOfPortfolios
     ) where
-
 import qualified Control.Arrow                as A
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
@@ -66,36 +65,35 @@ import qualified TechnicalIndicators          as TI
 
 -- |
 -- UTCの日付時間のうち、日本時間の日付のみ比較
-sameDayOfJST :: Ohlcvt -> Ohlcvt -> Bool
+sameDayOfJST :: Ohlcv -> Ohlcv -> Bool
 sameDayOfJST a b =
     jstDay a == jstDay b
     where
-    jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzAsiaTokyo . ohlcvtAt
+    jstDay = Tm.localDay . Tm.utcToLocalTime Lib.tzAsiaTokyo . ohlcvAt
 
 -- |
--- 始値, 高値, 安値, 終値, 出来高, 売買代金を集計する関数
-aggregateOfOHLCVT   :: (Ohlcvt -> Maybe Ohlcvt)
+-- 始値, 高値, 安値, 終値, 出来高を集計する関数
+aggregateOfOHLCV    :: (Ohlcv -> Maybe Ohlcv)
                     -- ^ 値の判定関数
-                    -> [Ohlcvt]
+                    -> [Ohlcv]
                     -- ^ 時系列通りで与えること
-                    -> Maybe Ohlcvt
-aggregateOfOHLCVT _ [] = Nothing
+                    -> Maybe Ohlcv
+aggregateOfOHLCV _ [] = Nothing
 -- ^ 空リストの結果は未定義
-aggregateOfOHLCVT decide serials@(first:_) =
+aggregateOfOHLCV decide serials@(first:_) =
     decide -- 集計結果が有効か無効かの判定をゆだねる。
-        Ohlcvt
-            { ohlcvtTicker      = ohlcvtTicker first
-            , ohlcvtTf          = ohlcvtTf first
-            , ohlcvtAt          = ohlcvtAt first
+        Ohlcv
+            { ohlcvTicker   = ohlcvTicker first
+            , ohlcvTf       = ohlcvTf first
+            , ohlcvAt       = ohlcvAt first
             -- 6本値は欠損値を許容する
-            , ohlcvtOpen        = open  $ Mb.mapMaybe ohlcvtOpen serials
-            , ohlcvtHigh        = high  $ Mb.mapMaybe ohlcvtHigh serials
-            , ohlcvtLow         = low   $ Mb.mapMaybe ohlcvtLow serials
-            , ohlcvtClose       = close $ Mb.mapMaybe ohlcvtClose serials
-            , ohlcvtVolume      = vtSum $ Mb.mapMaybe ohlcvtVolume serials
-            , ohlcvtTurnover    = vtSum $ Mb.mapMaybe ohlcvtTurnover serials
+            , ohlcvOpen     = open  $ Mb.mapMaybe ohlcvOpen serials
+            , ohlcvHigh     = high  $ Mb.mapMaybe ohlcvHigh serials
+            , ohlcvLow      = low   $ Mb.mapMaybe ohlcvLow serials
+            , ohlcvClose    = close $ Mb.mapMaybe ohlcvClose serials
+            , ohlcvVolume   = sum $ map ohlcvVolume serials
             --
-            , ohlcvtSource      = T.append "agg from " <$> ohlcvtSource first
+            , ohlcvSource   = T.append "agg from " <$> ohlcvSource first
             }
     where
     -- | 集計期間中の初値
@@ -110,10 +108,6 @@ aggregateOfOHLCVT decide serials@(first:_) =
     -- | 集計期間中の終値
     close :: [Double] -> Maybe Double
     close = Safe.headMay . reverse
-    -- | 集計期間中の総和
-    vtSum :: [Double] -> Maybe Double
-    vtSum [] = Nothing
-    vtSum xs = Just $ sum xs
 
 -- |
 -- 1時間足を日足にする集計処理
@@ -123,23 +117,23 @@ aggregate connInfo tickerSymbol =
         DB.runMigration migrateQuotes
         -- 最新の日足を取り出す
         latestDaily <- DB.selectFirst
-                        [ OhlcvtTicker  ==. tickerSymbol
-                        , OhlcvtTf      ==. TF1d ]
-                        [ DB.Desc OhlcvtAt, DB.LimitTo 1 ]
+                        [ OhlcvTicker  ==. tickerSymbol
+                        , OhlcvTf      ==. TF1d ]
+                        [ DB.Desc OhlcvAt, DB.LimitTo 1 ]
         -- 最新の日足の次の日以降を取り出すフィルター
-        let filtTomorrow =  [ OhlcvtAt  >=. nday
+        let filtTomorrow =  [ OhlcvAt  >=. nday
                             | e<-Mb.maybeToList latestDaily
-                            , let nday = nextDay . ohlcvtAt $ DB.entityVal e
+                            , let nday = nextDay . ohlcvAt $ DB.entityVal e
                             ]
         -- 1時間足の歩み値を取り出すフィルター
-        let filtHourly =    [ OhlcvtTicker  ==. tickerSymbol
-                            , OhlcvtTf      ==. TF1h    -- 1時間足
+        let filtHourly =    [ OhlcvTicker   ==. tickerSymbol
+                            , OhlcvTf       ==. TF1h    -- 1時間足
                             ] ++ filtTomorrow
         -- 1時間足を日足に集計する処理
-        timeAndSales <- DB.selectSource (filtHourly :: [DB.Filter Ohlcvt]) [DB.Desc OhlcvtAt]
+        timeAndSales <- DB.selectSource (filtHourly :: [DB.Filter Ohlcv]) [DB.Desc OhlcvAt]
                         $= CL.map DB.entityVal
                         $= CL.groupBy sameDayOfJST
-                        $= CL.map (aggregateOfOHLCVT decisionOfDailyPrices)
+                        $= CL.map (aggregateOfOHLCV decisionOfDailyPrices)
                         $= CL.catMaybes
                         $$ CL.consume
         -- 集計後の日足をデーターベースへ
@@ -151,11 +145,11 @@ aggregate connInfo tickerSymbol =
     nextDay :: Tm.UTCTime -> Tm.UTCTime
     nextDay (Tm.UTCTime day time) = Tm.UTCTime (Tm.addDays 1 day) time
     -- | 集計後の値は(00:00:00 JST)をUTCに変換した日付(15:00:00 UTC)にする
-    decisionOfDailyPrices :: Ohlcvt -> Maybe Ohlcvt
+    decisionOfDailyPrices :: Ohlcv -> Maybe Ohlcv
     decisionOfDailyPrices val =
-        let timeOfJST = Tm.utcToLocalTime Lib.tzAsiaTokyo $ ohlcvtAt val in
+        let timeOfJST = Tm.utcToLocalTime Lib.tzAsiaTokyo $ ohlcvAt val in
         let timeOfUTC = Tm.localTimeToUTC Lib.tzAsiaTokyo $ timeOfJST {Tm.localTimeOfDay = Tm.midnight} in
-        Just $ val {ohlcvtTf = TF1d, ohlcvtAt = timeOfUTC}
+        Just $ val {ohlcvTf = TF1d, ohlcvAt = timeOfUTC}
 
 -- |
 -- データーベースにテクニカル指標を問い合わせる
@@ -163,24 +157,24 @@ queryIndicatorsDesc :: MySQL.ConnectInfo
                     -> TickerSymbol
                     -> TimeFrame
                     -> TechnicalInds
-                    -> IO [(DB.Entity Ohlcvt, Double)]
+                    -> IO [(DB.Entity Ohlcv, Double)]
 queryIndicatorsDesc connInfo tickerSymbol timeFrame indicator =
     ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         E.select $
-            E.from $ \(ohlcvt `E.InnerJoin` ti) -> do
+            E.from $ \(ohlcv `E.InnerJoin` ti) -> do
                 E.on
-                        (ohlcvt E.^. OhlcvtId E.==. ti E.^. TechIndsOhlcvt)
+                        (ohlcv E.^. OhlcvId E.==. ti E.^. TechIndsOhlcv)
                 E.where_ $
-                        ohlcvt E.^. OhlcvtTicker E.==. E.val tickerSymbol
+                        ohlcv E.^. OhlcvTicker E.==. E.val tickerSymbol
                         E.&&.
-                        ohlcvt E.^. OhlcvtTf E.==. E.val timeFrame
+                        ohlcv E.^. OhlcvTf E.==. E.val timeFrame
                         E.&&.
                         ti E.^. TechIndsInd E.==. E.val indicator
                 E.orderBy
-                        [E.desc (ohlcvt E.^. OhlcvtAt)]
+                        [E.desc (ohlcv E.^. OhlcvAt)]
                 return
-                    ( ohlcvt
+                    ( ohlcv
                     , ti        E.^. TechIndsVal
                     )
     >>= return . map (A.second E.unValue)
@@ -212,7 +206,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
                     ) fast slow
         -- データーベースに入れる
         prevItem <- queryPrevItem
-        let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        let prevAt  = ohlcvAt . DB.entityVal . fst <$> prevItem
         ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             M.mapM_ (DB.insert . uncurry packTI) $ takeWhile (isNewEntry prevAt . fst) macd
@@ -225,7 +219,7 @@ calculate connInfo tickerSymbol timeFrame indicator =
                         ) (TIMACD fastP slowP)
         -- テクニカル指標テーブルのMACDSIGを取り出す
         prevItem <- queryPrevItem
-        let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        let prevAt  = ohlcvAt . DB.entityVal . fst <$> prevItem
         -- テクニカル指標テーブルのMACDよりMACDSIGの計算
         let formula = case snd <$> prevItem of
                         Nothing -> TI.ema1 sigP
@@ -243,73 +237,73 @@ calculate connInfo tickerSymbol timeFrame indicator =
     --
     calculateOfIndicatorsFromOhlcvtTable = do
         prevItem <- queryPrevItem
-        let prevAt  = ohlcvtAt . DB.entityVal . fst <$> prevItem
+        let prevAt  = ohlcvAt . DB.entityVal . fst <$> prevItem
         let prevVal = snd <$> prevItem
         ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
             DB.runMigration migrateQuotes
             -- 計算に必要な値を取り出す
-            let filt =  [ OhlcvtTicker  ==. tickerSymbol
-                        , OhlcvtTf      ==. timeFrame
+            let filt =  [ OhlcvTicker  ==. tickerSymbol
+                        , OhlcvTf      ==. timeFrame
                         ]
-            source <- DB.selectList filt [DB.Desc OhlcvtAt]
+            source <- DB.selectList filt [DB.Desc OhlcvAt]
             -- 指定の指標を計算する
             let values = takeWhile (isNewEntry prevAt . fst) $ calc indicator prevVal source
             -- データーベースに入れる
             M.mapM_ (DB.insert . snd) values
     -- データーベースに前回のEMAがあればそれを種にして計算を始める。
     calc (TIEMA period) prevVal
-        | Mb.isNothing prevVal  = apply ohlcvtClose $ TI.ema1 period
-        | otherwise             = apply ohlcvtClose $ TI.ema period (Mb.fromJust prevVal)
+        | Mb.isNothing prevVal  = apply ohlcvClose $ TI.ema1 period
+        | otherwise             = apply ohlcvClose $ TI.ema period (Mb.fromJust prevVal)
     --
-    calc (TISMA period) _       = apply ohlcvtClose $ TI.sma period
+    calc (TISMA period) _       = apply ohlcvClose $ TI.sma period
     --
-    calc (TIRSI period) _       = apply ohlcvtClose $ TI.rsi period
+    calc (TIRSI period) _       = apply ohlcvClose $ TI.rsi period
     -- ここのMACD,MACDSIGは最初から全計算する場合のもの
     -- 通常は使わない
-    calc (TIMACD fa sl) _       = apply ohlcvtClose $ TI.macd fa sl
-    calc (TIMACDSIG fa sl sg) _ = apply ohlcvtClose $ TI.macdSignal fa sl sg
+    calc (TIMACD fa sl) _       = apply ohlcvClose $ TI.macd fa sl
+    calc (TIMACDSIG fa sl sg) _ = apply ohlcvClose $ TI.macdSignal fa sl sg
     --
-    calc (TIBBLOW3 period) _    = apply ohlcvtClose $ map (\(a,_,_,_,_,_,_) -> a) . TI.bollingerBands period
-    calc (TIBBLOW2 period) _    = apply ohlcvtClose $ map (\(_,b,_,_,_,_,_) -> b) . TI.bollingerBands period
-    calc (TIBBLOW1 period) _    = apply ohlcvtClose $ map (\(_,_,c,_,_,_,_) -> c) . TI.bollingerBands period
-    calc (TIBBMIDDLE period) _  = apply ohlcvtClose $ map (\(_,_,_,d,_,_,_) -> d) . TI.bollingerBands period
-    calc (TIBBUP1 period) _     = apply ohlcvtClose $ map (\(_,_,_,_,e,_,_) -> e) . TI.bollingerBands period
-    calc (TIBBUP2 period) _     = apply ohlcvtClose $ map (\(_,_,_,_,_,f,_) -> f) . TI.bollingerBands period
-    calc (TIBBUP3 period) _     = apply ohlcvtClose $ map (\(_,_,_,_,_,_,g) -> g) . TI.bollingerBands period
+    calc (TIBBLOW3 period) _    = apply ohlcvClose $ map (\(a,_,_,_,_,_,_) -> a) . TI.bollingerBands period
+    calc (TIBBLOW2 period) _    = apply ohlcvClose $ map (\(_,b,_,_,_,_,_) -> b) . TI.bollingerBands period
+    calc (TIBBLOW1 period) _    = apply ohlcvClose $ map (\(_,_,c,_,_,_,_) -> c) . TI.bollingerBands period
+    calc (TIBBMIDDLE period) _  = apply ohlcvClose $ map (\(_,_,_,d,_,_,_) -> d) . TI.bollingerBands period
+    calc (TIBBUP1 period) _     = apply ohlcvClose $ map (\(_,_,_,_,e,_,_) -> e) . TI.bollingerBands period
+    calc (TIBBUP2 period) _     = apply ohlcvClose $ map (\(_,_,_,_,_,f,_) -> f) . TI.bollingerBands period
+    calc (TIBBUP3 period) _     = apply ohlcvClose $ map (\(_,_,_,_,_,_,g) -> g) . TI.bollingerBands period
     --
-    calc (TIPSYCHOLO period) _  = apply ohlcvtClose $ TI.psycologicalLine period
+    calc (TIPSYCHOLO period) _  = apply ohlcvClose $ TI.psycologicalLine period
     --
     calc (TIDIPOS period) _     = apply priceHiLoClo $ (\(a,_,_) -> a) . unzip3 . TI.dmi period
     calc (TIDINEG period) _     = apply priceHiLoClo $ (\(_,b,_) -> b) . unzip3 . TI.dmi period
     calc (TIADX period) _       = apply priceHiLoClo $ (\(_,_,c) -> c) . unzip3 . TI.dmi period
     --
-    priceHiLoClo :: Ohlcvt -> Maybe TI.PriceHiLoClo
+    priceHiLoClo :: Ohlcv -> Maybe TI.PriceHiLoClo
     priceHiLoClo val = do
-        hi <- ohlcvtHigh val
-        lo <- ohlcvtLow val
-        clo <- ohlcvtClose val
+        hi <- ohlcvHigh val
+        lo <- ohlcvLow val
+        clo <- ohlcvClose val
         Just (hi,lo,clo)
     --
     apply   :: (Typeable t)
-            => (Ohlcvt -> Maybe t)
+            => (Ohlcv -> Maybe t)
             -> ([t] -> [Double])
-            -> [DB.Entity Ohlcvt]
-            -> [(DB.Entity Ohlcvt, TechInds)]
+            -> [DB.Entity Ohlcv]
+            -> [(DB.Entity Ohlcv, TechInds)]
     apply price formula entities =
         let ents = filter (Mb.isJust . price . DB.entityVal) entities in
         let values = formula $ map (Mb.fromJust . price . DB.entityVal) ents in
         zipWith (\e v -> (e, packTI e v)) ents values
     --
     packTI e v =
-        TechInds    { techIndsOhlcvt    = DB.entityKey e
-                    , techIndsInd       = indicator
-                    , techIndsVal       = v
-                    }
+        TechInds { techIndsOhlcv = DB.entityKey e
+                 , techIndsInd   = indicator
+                 , techIndsVal   = v
+                 }
     -- | データーベースに入れるべきか？
-    isNewEntry :: Maybe Tm.UTCTime -> DB.Entity Ohlcvt -> Bool
+    isNewEntry :: Maybe Tm.UTCTime -> DB.Entity Ohlcv -> Bool
     isNewEntry Nothing _                    = True
     isNewEntry (Just timeOfPrevItem) entity =
-        case ohlcvtAt $ DB.entityVal entity of
+        case ohlcvAt $ DB.entityVal entity of
         curTime | timeOfPrevItem < curTime  -> True
                 | otherwise                 -> False
     -- 前回までの実行でどこまで計算を進めたかをデーターベースに問い合わせる
@@ -392,4 +386,3 @@ runAggregateOfPortfolios conf = do
             , MySQL.connectPassword = Conf.password mdb
             , MySQL.connectDatabase = Conf.database mdb
             }
-

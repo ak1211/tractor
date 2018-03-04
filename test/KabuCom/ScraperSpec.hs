@@ -2,19 +2,20 @@
 {-# LANGUAGE OverloadedStrings     #-}
 module KabuCom.ScraperSpec (spec) where
 
-import qualified Control.Monad     as M
-import           Data.Maybe        (fromJust)
-import qualified Data.Text         as T
-import qualified Data.Text.IO      as T
-import qualified Data.Text.Lazy    as TL
-import qualified Data.Text.Lazy.IO as TL
-import qualified Data.Time         as Tm
+import           Control.Exception.Safe
+import qualified Control.Monad          as M
+import           Data.Maybe             (fromJust)
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as T
+import qualified Data.Text.Lazy         as TL
+import qualified Data.Text.Lazy.IO      as TL
+import qualified Data.Time              as Tm
 import           Test.Hspec
 
 import           GenScraper
 import           KabuCom.Scraper
-import           ModelDef          (TickerSymbol (..))
-import           Scheduling        (AsiaTokyoDay (..))
+import           ModelDef               (TickerSymbol (..))
+import           Scheduling             (AsiaTokyoDay (..))
 
 --
 -- ログインページ
@@ -96,7 +97,7 @@ test01TopPage' = TopPage
 -- 買付出金可能額ページ
 --
 test01PurchaseMarginPage = "https%3A%2F%2Fs20.si0.kabu.co.jp%2Fap%2Flight%2FAssets%2FKanougaku%2FStock.utf8.html"
-test01PurchaseMarginPage' = Just PurchaseMarginPage
+test01PurchaseMarginPage' = PurchaseMarginPage
  { pmMoneyToSpare = 1024
  , pmCashBalance = 2048
  }
@@ -105,7 +106,7 @@ test01PurchaseMarginPage' = Just PurchaseMarginPage
 -- 残高照会ページ
 --
 test01StockPositionListPage = "https%3A%2F%2Fs20.si0.kabu.co.jp%2Fap%2Flight%2FStocks%2FStock%2FPosition%2FList.utf8.html"
-test01StockPositionListPage' = Just StockPositionListPage
+test01StockPositionListPage' = StockPositionListPage
  { splCaption = "国内株式(特定預り)"
  , splMDHourMin = (2,19,23,35)
  , splEvaluation = 134410
@@ -175,7 +176,7 @@ test01StockPositionListPage' = Just StockPositionListPage
 -- 個別銘柄の詳細ページ
 --
 test01StockDetailPage = "https%3A%2F%2Fs20.si0.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=1343%26Market=1.utf8.html"
-test01StockDetailPage' = Just StockDetailPage
+test01StockDetailPage' = StockDetailPage
  { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s20.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=1343&Market=1"}
  , sdpBoardLink = AnchorTag {aText="板",aHref="https://s20.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=1343&Market=1"}
  , sdpBuyLink = AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=1343&exchange=1"}
@@ -206,7 +207,7 @@ test01StockDetailPage' = Just StockDetailPage
  }
 
 test02StockDetailPage = "https%3A%2F%2Fs20.si0.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=1540%26Market=1.utf8.html"
-test02StockDetailPage' = Just StockDetailPage
+test02StockDetailPage' = StockDetailPage
  { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s20.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=1540&Market=1"}
  , sdpBoardLink = AnchorTag {aText="板",aHref="https://s20.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=1540&Market=1"}
  , sdpBuyLink = AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=1540&exchange=1"}
@@ -237,7 +238,7 @@ test02StockDetailPage' = Just StockDetailPage
  }
 
 test03StockDetailPage = "https%3A%2F%2Fs20.si0.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=8411%26Market=1.utf8.01.html"
-test03StockDetailPage' = Just StockDetailPage
+test03StockDetailPage' = StockDetailPage
  { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s20.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=8411&Market=1"}
  , sdpBoardLink = AnchorTag {aText="板",aHref="https://s20.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=8411&Market=1"}
  , sdpBuyLink = AnchorTag {aText="",aHref="https://s20.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=8411&exchange=1"}
@@ -269,7 +270,7 @@ test03StockDetailPage' = Just StockDetailPage
 
 -- 前場のテストケース
 test04StockDetailPage = "https%3A%2F%2Fs10.si0.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=8411%26Market=1.utf8.02.html"
-test04StockDetailPage' = Just StockDetailPage
+test04StockDetailPage' = StockDetailPage
  { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=8411&Market=1"}
  , sdpBoardLink = AnchorTag {aText="板",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=8411&Market=1"}
  , sdpBuyLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=8411&exchange=1"}
@@ -300,7 +301,7 @@ test04StockDetailPage' = Just StockDetailPage
  }
 
 test05StockDetailPage = "https%3A%2F%2Fs10.si0.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=6911%26Market=1.utf8.html"
-test05StockDetailPage' = Just StockDetailPage
+test05StockDetailPage' = StockDetailPage
  { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=6911&Market=1"}
  , sdpBoardLink = AnchorTag {aText="板",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=6911&Market=1"}
  , sdpBuyLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=6911&exchange=1"}
@@ -330,6 +331,37 @@ test05StockDetailPage' = Just StockDetailPage
   ]
  }
 
+test06StockDetailPage = "https%3A%2F%2Fs10.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=3788%26Market=1.utf8.html"
+test06StockDetailPage' = StockDetailPage
+ { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=3788&Market=1"}
+ , sdpBoardLink = AnchorTag {aText="板",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=3788&Market=1"}
+ , sdpBuyLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=3788&exchange=1"}
+ , sdpSellLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=3788&FilterType=1"}
+ , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=3788&Market=20"}
+ , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=3788&FilterType=1&Market=20"}
+ , sdpAskPrice = 237000
+ , sdpTicker = TSTYO 3788
+ , sdpClass = SC貸借銘柄
+ , sdpCaption = "ＧＭＯクラウド"
+ , sdpDay = parseAsiaTokyoDay "2018/03/02"
+ , sdpPrice = Just (2370,HourMinute (15,00))
+ , sdpDiff = Just (-15)
+ , sdpDiffPc = Just (-0.62)
+ , sdpCloseYesterday = Just 2385
+ , sdpOpen = Just (2335,HourMinute (09,00))
+ , sdpHigh = Just (2386,HourMinute (12,58))
+ , sdpLow = Just (2333,HourMinute (09,10))
+ , sdpOpenAfternoon = Just (2336,HourMinute (12,30))
+ , sdpStdPrice = Just (2370,DayHourMinute (parseAsiaTokyoDay "2018/03/02",HourMinute (15,00)))
+ , sdpDailyHistories =
+  [ DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/01",dspOpen=Just 2400,dspHigh=Just 2406,dspLow=Just 2335,dspClose=Just 2385,dspDiff=Just 9,dspVolume=57700}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/02/28",dspOpen=Just 2389,dspHigh=Just 2470,dspLow=Just 2374,dspClose=Just 2376,dspDiff=Just (-35),dspVolume=71500}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/02/27",dspOpen=Just 2460,dspHigh=Just 2467,dspLow=Just 2360,dspClose=Just 2411,dspDiff=Just (-31),dspVolume=56300}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/02/26",dspOpen=Just 2435,dspHigh=Just 2473,dspLow=Just 2421,dspClose=Just 2442,dspDiff=Just 31,dspVolume=81000}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/02/23",dspOpen=Just 2341,dspHigh=Just 2447,dspLow=Just 2327,dspClose=Just 2411,dspDiff=Just 81,dspVolume=114600}
+  ]
+ }
+
 parseAsiaTokyoDay :: String -> AsiaTokyoDay
 parseAsiaTokyoDay =
     AsiaTokyoDay . Tm.parseTimeOrError True Tm.defaultTimeLocale "%Y/%m/%d"
@@ -343,7 +375,7 @@ spec = do
     describe "formLoginPage" $
         it "https://s10.kabu.co.jp/_mem_bin/light/login.asp?/light" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test01LoginPage)
-            formLoginPage html >>= shouldBe test01LoginPage'
+            formLoginPage html `shouldReturn` test01LoginPage'
     --
     describe "topPage" $
         it "https://s20.si0.kabu.co.jp/Light/" $ do
@@ -353,32 +385,35 @@ spec = do
     describe "purchaseMarginPage" $
         it "https://s20.si0.kabu.co.jp/ap/light/Assets/Kanougaku/Stock" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test01PurchaseMarginPage)
-            purchaseMarginPage html `shouldBe` test01PurchaseMarginPage'
+            purchaseMarginPage html `shouldReturn` test01PurchaseMarginPage'
     --
     describe "stockPositionListPage" $
         it "https://s20.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/List" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test01StockPositionListPage)
-            stockPositionListPage html `shouldBe` test01StockPositionListPage'
+            stockPositionListPage html `shouldReturn` test01StockPositionListPage'
     --
     describe "stockDetailPage" $ do
         it "https://s20.si0.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=1343&Market=1" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test01StockDetailPage)
-            stockDetailPage html `shouldBe` test01StockDetailPage'
+            stockDetailPage html `shouldReturn` test01StockDetailPage'
         --
         it "https://s20.si0.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=1540&Market=1" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test02StockDetailPage)
-            stockDetailPage html `shouldBe` test02StockDetailPage'
+            stockDetailPage html `shouldReturn` test02StockDetailPage'
         --
         it "https://s20.si0.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=8411&Market=1 01" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test03StockDetailPage)
-            stockDetailPage html `shouldBe` test03StockDetailPage'
+            stockDetailPage html `shouldReturn` test03StockDetailPage'
         --
         it "https://s10.si0.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=8411&Market=1 02" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test04StockDetailPage)
-            stockDetailPage html `shouldBe` test04StockDetailPage'
+            stockDetailPage html `shouldReturn` test04StockDetailPage'
         --
         it "https://s10.si0.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=6911&Market=1" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test05StockDetailPage)
-            a <- stockDetailPage html
-            stockDetailPage html `shouldBe` test05StockDetailPage'
+            stockDetailPage html `shouldReturn` test05StockDetailPage'
+        --
+        it "https://s10.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=3788&Market=1" $ do
+            html <- TL.readFile ("test/KabuCom/" ++ test06StockDetailPage)
+            stockDetailPage html `shouldReturn` test06StockDetailPage'
 

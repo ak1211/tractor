@@ -211,5 +211,6 @@ announceHolidayTime day =
 batchProcessTime :: AsiaTokyoDay -> [Tm.ZonedTime]
 batchProcessTime day =
     map (toZonedTime day)
-    []
+    [ Tm.TimeOfDay  5 30 00 ]
+
 

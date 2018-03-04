@@ -32,10 +32,8 @@ MariaDBデータベースに入れる
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StrictData            #-}
 module StockQuotesCrawler
-    ( kdbcomScreenScraper
-    , runWebCrawlingPortfolios
+    ( runWebCrawlingPortfolios
     ) where
-
 import           Control.Applicative          ((<|>))
 import qualified Control.Concurrent           as CC
 import           Control.Exception.Safe
@@ -43,268 +41,215 @@ import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
 import qualified Control.Monad.Trans.Resource as MR
-import qualified Data.ByteString.Lazy         as BL
+import           Data.Conduit                 (($$), (=$))
 import qualified Data.Conduit                 as C
 import qualified Data.List                    as List
-import           Data.Maybe                   (listToMaybe)
 import qualified Data.Maybe                   as Mb
 import           Data.Monoid                  ((<>))
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.Builder       as TLB
 import qualified Data.Text.Lazy.Builder.Int   as TLB
-import qualified Data.Text.Read               as T
-import qualified Data.Time.Clock              as Tm
+import qualified Data.Time                    as Tm
 import           Database.Persist             ((<=.), (=.), (==.), (||.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Database.Persist.Sql         as DB
-import qualified Network.HTTP.Conduit         as N
-import qualified Network.URI                  as N
-import qualified System.Random.MWC            as R
-import qualified Text.HTML.DOM                as H
-import qualified Text.XML                     as X
-import           Text.XML.Cursor              (($//), (&/))
-import qualified Text.XML.Cursor              as X
+import qualified System.Random.MWC            as Random
 
 import qualified BrokerBackend                as BB
-import           Conf
-import qualified Lib
+import qualified Conf
+import qualified GenBroker                    as GB
+import qualified KabuCom.Scraper              as S
+import           Lib                          (NthOfTotal, packNthOfTotal,
+                                               tzAsiaTokyo)
 import           Model
-
--- |
--- スクリーンスクレイピング関数(k-db.com用)
-kdbcomScreenScraper :: TickerSymbol
-                    -> TimeFrame
-                    -> Maybe T.Text
-                    -> BL.ByteString
-                    -> Either String (Maybe T.Text, [Ohlcvt])
-kdbcomScreenScraper ticker tf sourceName html = do
-    vs <- mapM packOHLCVT $ records xdoc
-    Right (caption xdoc, vs)
-    where
-    --
-    --
-    xdoc = X.fromDocument $ H.parseLBS html
-    --
-    --
-    rational :: Maybe T.Text -> Maybe Double
-    rational Nothing = Nothing
-    rational (Just t) =
-        either (const Nothing) (Just . fst) $ T.rational t
-    -- |
-    -- ohlcvtテーブルに変換する関数
-    packOHLCVT :: [Maybe T.Text] -> Either String Ohlcvt
-    packOHLCVT (d : tm : vs) = do
-        d' <- maybe (Left "Date field can't parsed.") (Right . T.unpack) d
-        let at = Lib.parseJSTDayTimeToUTCTime d' $ fmap T.unpack tm
-        case take 6 $ init vs of  -- 最終要素は未使用
-            ohlcvt@[_,_,_,_,_,_] -> Right $
-                -- 個別株は6本値
-                let [o, h, l, c, v, t] = map rational ohlcvt in
-                Ohlcvt  { ohlcvtTicker      = ticker
-                        , ohlcvtTf          = tf
-                        , ohlcvtAt          = at
-                        , ohlcvtOpen        = o
-                        , ohlcvtHigh        = h
-                        , ohlcvtLow         = l
-                        , ohlcvtClose       = c
-                        , ohlcvtVolume      = v
-                        , ohlcvtTurnover    = t
-                        , ohlcvtSource      = sourceName
-                        }
-            ohlc@[_,_,_,_] -> Right $
-                -- 指数は4本値
-                let [o, h, l, c] = map rational ohlc in
-                Ohlcvt  { ohlcvtTicker      = ticker
-                        , ohlcvtTf          = tf
-                        , ohlcvtAt          = at
-                        , ohlcvtOpen        = o
-                        , ohlcvtHigh        = h
-                        , ohlcvtLow         = l
-                        , ohlcvtClose       = c
-                        , ohlcvtVolume      = Nothing
-                        , ohlcvtTurnover    = Nothing
-                        , ohlcvtSource      = sourceName
-                        }
-            _ ->
-                Left "ohlcvt table can't parsed"
-    --
-    -- 株価情報ではない何かが表示されている場合
-    packOHLCVT _ = Left "This web page can't parsed"
-    -- |
-    -- 銘柄名のXPath ---> //*[@id="tablecaption"]
-    caption :: X.Cursor -> Maybe T.Text
-    caption doc = listToMaybe (doc$//X.attributeIs "id" "tablecaption"&/X.content)
-    -- |
-    -- 4,6本値のXPath ---> //*[@id="maintable"]/tbody/tr
-    records :: X.Cursor -> [[Maybe T.Text]]
-    records doc =
-        let tr = doc$//X.attributeIs "id" "maintable"&/X.element "tbody"&/X.element "tr" in
-        [   [ listToMaybe                                       -- Maybeで得る
-                [ content                                       -- contentの内容を
-                | (X.NodeContent content)<-X.elementNodes e' ]  -- content要素を取り出して
-            | (X.NodeElement e')<-X.elementNodes e ]            -- 要素を取り出して
-        | (X.NodeElement e)<-map X.node tr ]                    -- trの子の
+import           Scheduling                   (AsiaTokyoDay (..))
+import qualified SinkSlack                    as Slack
 
 -- |
 -- インターネット上の株価情報を取りに行く関数
-fetchStockPrices :: Conf.Info -> TickerSymbol -> TimeFrame -> IO (Maybe T.Text, [Ohlcvt])
-fetchStockPrices conf ticker tf = do
-    let aUri = accessURI ticker
-    manager <- N.newManager N.tlsManagerSettings
-    uri <- maybe (throwString "access uri parse error") pure $ N.parseURIReference aUri
-    response <- BB.fetchHTTP manager customHeader Nothing [] uri
-    --
-    let body = N.responseBody response
-    either throwString pure $
-        kdbcomScreenScraper ticker tf (Just $ T.pack aUri) body
+fetchStockPrices    :: (M.MonadIO m, MonadThrow m)
+                    => BB.HTTPSession
+                    -> TickerSymbol
+                    -> m (Maybe T.Text, [Ohlcv])
+fetchStockPrices sess ticker = do
+    href <- accessURI ticker
+    response <- M.liftIO $ BB.fetchHTTPInRelativePath sess href
+    page <- S.stockDetailPage . BB.takeBodyFromResponse $ response
+    let capt = S.sdpCaption page
+        ohlcv = map (pack href) $ S.sdpDailyHistories page
+    pure (Just capt, ohlcv)
     where
-    -- |
-    -- HTTPリクエストヘッダ
-    customHeader = Lib.httpRequestHeader $ Conf.userAgent (conf::Conf.Info)
+    --
+    --
+    pack :: String -> S.DailyStockPrice -> Ohlcv
+    pack href pr =
+        let closingTime = Tm.TimeOfDay 15 00 00
+            lt = Tm.LocalTime
+                    { Tm.localDay = getAsiaTokyoDay $ S.dspDay pr
+                    , Tm.localTimeOfDay = closingTime
+                    }
+        in
+        Ohlcv
+            { ohlcvTicker = ticker
+            , ohlcvTf = TF1d
+            , ohlcvAt = Tm.localTimeToUTC tzAsiaTokyo lt
+            , ohlcvOpen = S.dspOpen pr
+            , ohlcvHigh = S.dspHigh pr
+            , ohlcvLow = S.dspLow pr
+            , ohlcvClose = S.dspClose pr
+            , ohlcvVolume = S.dspVolume pr
+            , ohlcvSource = Just "kabu.com"     -- kabu.comより得た株価なので
+            }
     -- |
     -- アクセスURI
-    accessURI :: TickerSymbol -> String
-    accessURI symbol =
-        "http://k-db.com/"
-        ++ case symbol of
-            -- 東証:個別株
-            TSTYO c    -> "stocks/" ++ show c ++  "-T/"
-            -- 日経平均株価
-            TSNI225    -> "indices/I101/"
-            -- TOPIX
-            TSTOPIX    -> "indices/I102/"
-            -- JPX日経インデックス400
-            TSJPXNI400 -> "indices/I103/"
-        ++ case tf of
-            TF1h -> "1h"
-            TF1d -> ""      -- 何もつけないのが日足
-
+    accessURI :: MonadThrow m => TickerSymbol -> m String
+    -- 東証:個別株
+    accessURI (TSTYO c) =
+        let base = "/Light/TradeTool/StockDetail.asp"
+            code = "StockCode=" ++ show c
+            tokyo = "Market=1"
+            href = base ++ "?" ++ code ++ "&" ++ tokyo
+        in
+        pure href
+    -- 日経平均株価
+    accessURI TSNI225 = throwString "Nikkei 225 is not supported"
+    -- TOPIX
+    accessURI TSTOPIX = throwString "TOPIX is not supported"
+    -- JPX日経インデックス400
+    accessURI TSJPXNI400 = throwString "JPX Nikkei 400 is not supported"
 
 -- |
 -- ポートフォリオの株価情報を取りに行く関数
-runWebCrawlingPortfolios :: M.MonadIO m => Conf.Info -> C.Source m TL.Text
-runWebCrawlingPortfolios conf = do
-    limitTm <- M.liftIO $ diffTime <$> Tm.getCurrentTime
+runWebCrawlingPortfolios :: Conf.Info -> IO ()
+runWebCrawlingPortfolios conf =
+    case take 1 [x | (Conf.KabuCom x)<-Conf.brokers conf] of
+    [broker] ->
+        takeUpdateItems connInfo
+        >>= \case
+        [] -> C.yield "今回の更新は不要です。" $$ slack
+        xs ->
+            -- kabu.comへログインする
+            MR.runResourceT . GB.siteConn broker ua $ go xs
+    _ -> return ()
+    where
+    --
+    --
+    slack =
+        let c = Conf.slack conf
+        in
+        Slack.simpleTextMsg c =$ Slack.sink c
+    --
+    --
+    go :: [DB.Entity Portfolio] -> BB.HTTPSession -> IO ()
+    go items sess =
+        let msg = "更新対象は全部で" <> TLB.decimal (length items)  <> "個有ります。"
+            -- アクセス毎の停止アクションをリストに挟み込んで
+            -- アクション毎に停止しながら更新する
+            acts d = List.intersperse d . map (update sess) . packNthOfTotal $ items
+        in do
+        delay <- randomDelay <$> M.liftIO Random.createSystemRandom
+        C.yield (TLB.toLazyText msg) $$ slack
+        -- 更新アクション実行
+        M.sequence_ (acts delay) $$ slack
+        C.yield "以上で更新処理を終了します。" $$ slack
+    --
+    --
+    connInfo = Conf.connInfoDB $ Conf.mariaDB conf
+    --
+    --
+    ua = Conf.userAgent conf
+    --
+    -- アクセス毎の停止アクション
+    randomDelay rgen =
+        M.liftIO $ CC.threadDelay =<< Random.uniformR bound rgen
+        where
+        -- 307msから561msまでの乱数
+        bound = (lowerBound,upperBound)
+        lowerBound = 307*1000
+        upperBound = 561*1000
+    --
+    --
+    update  :: M.MonadIO m
+            => BB.HTTPSession
+            -> (DB.Entity Portfolio, NthOfTotal)
+            -> C.Source m TL.Text
+    update sess (pf,nth) = do
+        putDescription (DB.entityVal pf) nth    -- 更新処理対象銘柄を説明する
+        updateTimeAndSales sess conf pf         -- 更新処理本体
+
+--
+--
+updateTimeAndSales  :: M.MonadIO m
+                    => BB.HTTPSession
+                    -> Conf.Info
+                    -> DB.Entity Portfolio
+                    -> C.Source m TL.Text
+updateTimeAndSales sess conf (DB.Entity wKey wVal) =
+    M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+        DB.runMigration migrateQuotes
+        -- インターネットから株価情報を取得する
+        (caption, ohlcvs) <- M.liftIO $ fetchStockPrices sess (portfolioTicker wVal)
+        updateAt <- M.liftIO Tm.getCurrentTime
+        -- 6本値をohlcvテーブルに書き込む
+        M.forM_ ohlcvs $ \val ->
+            -- 同じ時間の物があるか探してみる
+            DB.selectFirst  [ OhlcvTicker ==. ohlcvTicker val
+                            , OhlcvTf ==. ohlcvTf val
+                            , OhlcvAt ==. ohlcvAt val] []
+            >>= \case
+            -- レコードが無かった場合は新規挿入する
+            Nothing -> M.void $ DB.insert val
+            -- レコードが有った場合は6本値とソース元だけ更新する
+            Just (DB.Entity updKey _) ->
+                DB.update updKey
+                    [ OhlcvOpen     =. ohlcvOpen val
+                    , OhlcvHigh     =. ohlcvHigh val
+                    , OhlcvLow      =. ohlcvLow val
+                    , OhlcvClose    =. ohlcvClose val
+                    , OhlcvVolume   =. ohlcvVolume val
+                    , OhlcvSource   =. ohlcvSource val
+                    ]
+        -- 更新日等をPortfolioテーブルに
+        DB.update wKey
+            [ PortfolioCaption  =. (portfolioCaption wVal <|> caption)  -- 以前から有る銘柄名を優先的に選択する
+            , PortfolioUpdateAt =. Just updateAt
+            ]
+    where
+    connInfo = Conf.connInfoDB $ Conf.mariaDB conf
+
+--
+--
+takeUpdateItems :: MySQL.ConnectInfo -> IO [DB.Entity Portfolio]
+takeUpdateItems connInfo = do
+    limitTm <- diffTime <$> Tm.getCurrentTime
     -- 前回の更新から一定時間以上経過した更新対象のリストを得る
-    ws <- M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         DB.selectList ([PortfolioUpdateAt ==. Nothing] ||. [PortfolioUpdateAt <=. Just limitTm]) []
-
-    case length ws of
-        0 ->
-            C.yield . TLB.toLazyText $ "今回の更新は不要です。"
-        counts -> do
-            C.yield . TLB.toLazyText $ "更新対象は全部で" <> TLB.decimal counts  <> "個有ります。"
-            rgen <- M.liftIO R.createSystemRandom
-            -- 更新作業毎に停止しながら更新する
-            M.sequence_
-                -- アクセス毎の停止アクションを挟み込む
-                . List.intersperse (randomWait rgen)
-                -- 更新アクションのリスト
-                . concatMap updateActs $ Lib.packNthOfTotal ws
-            C.yield "以上で更新処理を終了します。"
     where
     --
     -- (-12)時間の足し算は12時間の引き算になる
     diffTime :: Tm.UTCTime -> Tm.UTCTime
     diffTime = Tm.addUTCTime $ fromInteger (-12*60*60)
-    --
-    -- アクセス毎の停止アクション
-    randomWait rgen = M.liftIO $
-        -- 241秒(4分01秒)から277秒(4分37秒)までの停止アクション
-        CC.threadDelay =<< R.uniformR (lowerBound,upperBound) rgen
-        where
-        lowerBound = 241*1000*1000
-        upperBound = 277*1000*1000
-    --
-    --
-    connInfo :: MySQL.ConnectInfo
-    connInfo =
-        let mdb = Conf.mariaDB conf in
-        MySQL.defaultConnectInfo
-            { MySQL.connectHost = Conf.host mdb
-            , MySQL.connectPort = Conf.port mdb
-            , MySQL.connectUser = Conf.user mdb
-            , MySQL.connectPassword = Conf.password mdb
-            , MySQL.connectDatabase = Conf.database mdb
-            }
-    --
-    --
-    updateActs  :: M.MonadIO m
-                => (DB.Entity Portfolio, Lib.NthOfTotal)
-                -> [C.Source m TL.Text]
-    updateActs (pf,nth) =
-        -- 初取得(Nothing)の場合はfirstUpdate
-        maybe firstUpdate nextUpdate updateAt
-        where
-        --
-        updateAt = portfolioUpdateAt . DB.entityVal $ pf
-        -- 初取得の場合は日足と1時間足の両方を取得する
-        firstUpdate = [act TF1d pf, act TF1h pf]
-        -- 通常は１時間足のみ取得する
-        nextUpdate = const [act TF1h pf]
-        --
-        act tf e@(DB.Entity _ v) = do
-            putDescription tf v nth     -- 更新処理対象銘柄を説明する
-            updateTimeAndSales tf e     -- 更新処理本体
-    --
-    --
-    updateTimeAndSales  :: M.MonadIO m
-                        => TimeFrame
-                        -> DB.Entity Portfolio
-                        -> C.Source m TL.Text
-    updateTimeAndSales tf (DB.Entity wKey wVal) =
-        M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
-            DB.runMigration migrateQuotes
-            -- インターネットから株価情報を取得する
-            (caption, ohlcvts) <- M.liftIO $ fetchStockPrices conf (portfolioTicker wVal) tf
-            updateAt <- M.liftIO Tm.getCurrentTime
-            -- 6本値をohlcvtテーブルに書き込む
-            M.forM_ ohlcvts $ \val ->
-                -- 同じ時間の物があるか探してみる
-                DB.selectFirst  [ OhlcvtTicker ==. ohlcvtTicker val
-                                , OhlcvtTf ==. ohlcvtTf val
-                                , OhlcvtAt ==. ohlcvtAt val] []
-                >>= \case
-                -- レコードが無かった場合は新規挿入する
-                Nothing -> M.void $ DB.insert val
-                -- レコードが有った場合は6本値とソース元だけ更新する
-                Just (DB.Entity updKey _) ->
-                    DB.update updKey
-                        [ OhlcvtOpen    =. ohlcvtOpen val
-                        , OhlcvtHigh    =. ohlcvtHigh val
-                        , OhlcvtLow     =. ohlcvtLow val
-                        , OhlcvtClose   =. ohlcvtClose val
-                        , OhlcvtVolume  =. ohlcvtVolume val
-                        , OhlcvtTurnover=. ohlcvtTurnover val
-                        , OhlcvtSource  =. ohlcvtSource val
-                        ]
-            -- 更新日等をPortfolioテーブルに
-            DB.update wKey
-                [ PortfolioCaption  =. (portfolioCaption wVal <|> caption)  -- 以前から有る銘柄名を優先的に選択する
-                , PortfolioUpdateAt =. Just updateAt
-                ]
+
 
 -- |
 -- 更新銘柄の説明を送る関数
 putDescription  :: M.MonadIO m
-                => TimeFrame
-                -> Portfolio
-                -> Lib.NthOfTotal
+                => Portfolio
+                -> NthOfTotal
                 -> C.Source m TL.Text
-putDescription tf pf (current,total) =
+putDescription pf (current,total) =
     C.yield $ TLB.toLazyText msg
     where
-    defaultCaption = T.pack . show . portfolioTicker $ pf
+    defaultCaption = T.pack . showTickerSymbol $ portfolioTicker pf
     textCaption = Mb.fromMaybe defaultCaption $ portfolioCaption pf
-    c = TLB.fromText textCaption
-    t TF1h = "１時間足"
-    t TF1d = "日足"
-    s = TLB.singleton
-    d = TLB.decimal
-    body = c <> " の" <> t tf <> "を更新中。"
-    trailer = s '[' <> d current <> s '/' <> d total <> s ']'
-    msg = body <> trailer
+    caption = TLB.fromText textCaption
+    bracketL = TLB.singleton '['
+    bracketR = TLB.singleton ']'
+    nOfm n m = TLB.decimal n <> TLB.singleton '/' <> TLB.decimal m
+    trailer = bracketL <> nOfm current total <> bracketR
+    msg = caption <> "を更新中。" <> trailer
 

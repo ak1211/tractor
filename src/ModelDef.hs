@@ -40,7 +40,6 @@ data TickerSymbol
     | TSTOPIX       -- ^ TOPIX
     | TSJPXNI400    -- ^ JPX日経インデックス400
     deriving (Show, Read, Eq)
-
 derivePersistField "TickerSymbol"
 
 --
@@ -57,8 +56,13 @@ data TimeFrame
     = TF1h  -- ^ 1時間足
     | TF1d  -- ^ 日足
     deriving (Show, Read, Eq)
-
 derivePersistField "TimeFrame"
+
+--
+--
+showTimeFrame :: TimeFrame -> String
+showTimeFrame TF1h = "１時間足"
+showTimeFrame TF1d = "日足"
 
 --
 --

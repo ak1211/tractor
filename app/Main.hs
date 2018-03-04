@@ -83,7 +83,8 @@ simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 -- バッチ処理関数
 batchProcessing :: Conf.Info -> IO ()
 batchProcessing conf =
-    webCrawling <> aggregate $$ slack
+    webCrawling
+--    webCrawling <> aggregate $$ slack
     where
     --
     --
@@ -95,7 +96,7 @@ batchProcessing conf =
     webCrawling = Q.runWebCrawlingPortfolios conf
     -- |
     -- 集計
-    aggregate = Aggregate.runAggregateOfPortfolios conf
+--    aggregate = Aggregate.runAggregateOfPortfolios conf
 
 -- |
 -- バッチ処理スケジュール

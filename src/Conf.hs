@@ -191,7 +191,7 @@ instance Show InfoMatsuiCoJp where
 instance Show InfoSBIsecCoJp where
     show (InfoSBIsecCoJp v) = "SBI証券: " ++ show v
 
---- |
+-- |
 -- InfoKabuComのshow
 instance Show InfoKabuCom where
     show (InfoKabuCom v) = "Kabu.Com証券: " ++ show v

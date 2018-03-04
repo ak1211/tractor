@@ -68,9 +68,11 @@ import qualified Text.XML.Cursor        as X
 -- 実行時例外 : 予想外のHTML
 newtype UnexpectedHTMLException
     = UnexpectedHTMLException String
-    deriving (Data.Typeable.Typeable, Eq, Show)
+    deriving (Data.Typeable.Typeable, Eq)
 
 instance Exception UnexpectedHTMLException
+instance Show UnexpectedHTMLException where
+    show (UnexpectedHTMLException ex) = ex
 
 -- |
 -- スクレイピングに失敗した場合の例外送出
