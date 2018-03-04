@@ -54,19 +54,19 @@ spec = do
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
             let broker = take 1 [a | a@(Conf.SBIsecCoJp _)<-Conf.brokers conf]
-            M.mapM (\b -> fetchUpdatedPriceAndStore b conf) broker `shouldReturn` [()]
+            M.mapM (`fetchUpdatedPriceAndStore` conf) broker `shouldReturn` [()]
     --
     describe "noticeOfCurrentAssets" $
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
             let broker = take 1 [a | a@(Conf.SBIsecCoJp _)<-Conf.brokers conf]
-            M.mapM (\b -> noticeOfCurrentAssets b conf) broker `shouldReturn` [()]
+            M.mapM (`noticeOfCurrentAssets` conf) broker `shouldReturn` [()]
     --
     describe "noticeOfBrokerageAnnouncement" $
         it "may successful" $ do
             (Right conf) <- Conf.readJSONFile "conf.json"
             let broker = take 1 [a | a@(Conf.SBIsecCoJp _)<-Conf.brokers conf]
-            M.mapM (\b -> noticeOfBrokerageAnnouncement b conf) broker `shouldReturn` [()]
+            M.mapM (`noticeOfBrokerageAnnouncement` conf) broker `shouldReturn` [()]
 
 --
 -- ここまでHspecテスト
