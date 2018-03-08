@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+#
+
+if [ "$#" -eq "1" ]
+then
+    inputfile="$1"
+    outputfileprefix="$(basename -s csv $1)ta"
+    programfile="$(pwd)/mta"
+    echo "Input: $inputfile"
+    # build program
+    gcc makeTechnicalWithTA-lib.c -o "$programfile" -Wall -O2 -std=c11 -static -lta_lib -lm || exit 1
+
+    # 1,2行目のタイトル行を残して逆順にして
+    # Date,Time,Open,High,Low,Close,Volume,OI, ... の並びから
+    # Date,Time,Open,High,Low,Close,Volume を取り出して
+    # テクニカル指標を計算して
+    # 結果を分割してファイルに出力する
+    sed -n -e 's/,/\t/g;1,2p;1,2d;1!G;h;$p' "$inputfile" | cut -f1,2,3,4,5,6,7 | $programfile - | csplit -sz --prefix=$outputfileprefix --suffix-format=%02d.csv - /date/ {*}
+else
+    echo "Usage: $0 \"*.csv\""
+fi
+
+
