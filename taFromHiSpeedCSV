@@ -15,7 +15,7 @@ then
     # Date,Time,Open,High,Low,Close,Volume を取り出して
     # テクニカル指標を計算して
     # 結果を分割してファイルに出力する
-    sed -n -e 's/,/\t/g;1,2p;1,2d;1!G;h;$p' "$inputfile" | cut -f1,2,3,4,5,6,7 | $programfile - | csplit -sz --prefix=$outputfileprefix --suffix-format=%02d.csv - /date/ {*}
+    sed -n -e 's/,/\t/g;1,2p;1,2d;1!G;h;$p' "$inputfile" | cut -f1-7 | $programfile - | csplit -sz --prefix=$outputfileprefix --suffix-format=%02d.csv - /date/ {*}
 else
     echo "Usage: $0 \"*.csv\""
 fi

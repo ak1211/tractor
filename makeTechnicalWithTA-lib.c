@@ -278,7 +278,7 @@ fail:
     free(low);
     free(close);
     free(volume);
-    return errno;
+    return EXIT_FAILURE;
 }
 
 //
