@@ -141,17 +141,17 @@ void inject_column( int idx, const column_t* column )
 //
 void disp(  const row_caption_t caption[],
             int startIdx, int endIdx, const double inprice[],
-            int outCount, ... )
+            int columnCount, ... )
 {
     va_list ap;
-    va_start( ap, outCount );
+    va_start( ap, columnCount );
 
-    column_t** this_arg = calloc( outCount, sizeof(column_t*) );
+    column_t** this_arg = calloc( columnCount, sizeof(column_t*) );
     if( this_arg ) {
         // タイトル行の出力
         printf( "%10s,", "date" );
         printString( COLUMN_WIDTH_MIN, "price" );
-         for( int i=0; i<outCount; i++ ) {
+         for( int i=0; i<columnCount; i++ ) {
             this_arg[i] = va_arg( ap, column_t* );
             printString( COLUMN_WIDTH_MIN, this_arg[i]->col_capt );
         }
@@ -161,7 +161,7 @@ void disp(  const row_caption_t caption[],
         for( int i=startIdx; i<=endIdx; i++ ) {
             printf( "%10s,", caption[i] );
             printDouble( COLUMN_WIDTH_MIN, inprice[i] );
-            for( int k=0; k<outCount; k++ ) {
+            for( int k=0; k<columnCount; k++ ) {
                 inject_column( i, this_arg[k] );
             }
             printf("\n");
