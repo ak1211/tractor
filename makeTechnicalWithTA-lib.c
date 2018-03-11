@@ -166,8 +166,9 @@ void disp(  const row_caption_t caption[],
             }
             printf("\n");
         }
+        free( this_arg );
     }
-    free( this_arg );
+    va_end( ap );
 }
 
 //
