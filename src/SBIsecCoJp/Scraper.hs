@@ -163,7 +163,7 @@ data PurchaseMarginDetailPage = PurchaseMarginDetailPage
     { pmdUserid       :: T.Text    -- ^ ユーザーID
     , pmdDay          :: T.Text    -- ^ 受渡日
     , pmdMoneyToSpare :: Int32     -- ^ 買付余力
-    , pmdCashBalance  :: Int32     -- ^ 保証金現金
+    , pmdCashBalance  :: Int32     -- ^ 残高(保証金現金)
     } deriving (Eq, Show)
 
 -- |
@@ -264,7 +264,7 @@ purchaseMarginDetailPage html =
         uid <- userid cursor
         day <- Just . T.strip =<< Mb.listToMaybe . drop 1 =<< pure xs
         mts <- GS.toDecimal . T.strip =<< Mb.listToMaybe . drop 3 =<< pure xs
-        cb <- GS.toDecimal . T.strip =<< Mb.listToMaybe . drop 5 =<< pure xs
+        cb <- GS.toDecimal . T.strip =<< Mb.listToMaybe . drop 24 =<< pure xs
         Just PurchaseMarginDetailPage
             { pmdUserid = uid
             , pmdDay = day
