@@ -4,7 +4,6 @@ import qualified Control.Monad                as M
 import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as M
 import qualified Data.ByteString.Char8        as B8
-import           Data.Conduit                 (($$), (=$))
 import qualified Data.Conduit                 as C
 import           Data.Maybe                   (fromJust)
 import qualified Data.Text.Lazy               as TL
@@ -31,7 +30,7 @@ fetchUpdatedPriceAndStore broker conf =
 --
 noticeOfCurrentAssets :: Conf.InfoBroker -> Conf.Info -> IO ()
 noticeOfCurrentAssets broker@(Conf.KabuCom _) conf =
-    GenBroker.noticeOfCurrentAssets broker connInfo $$ sinkReport conf
+    C.runConduit $ GenBroker.noticeOfCurrentAssets broker connInfo C..| sinkReport conf
     where
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
 
@@ -39,7 +38,7 @@ noticeOfCurrentAssets broker@(Conf.KabuCom _) conf =
 --
 noticeOfBrokerageAnnouncement :: Conf.InfoBroker -> Conf.Info -> IO ()
 noticeOfBrokerageAnnouncement (Conf.KabuCom k) conf =
-    B.noticeOfBrokerageAnnouncement k connInfo ua $$ sinkText conf
+    C.runConduit $ B.noticeOfBrokerageAnnouncement k connInfo ua C..| sinkText conf
     where
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
     ua = Conf.userAgent conf
@@ -73,20 +72,17 @@ spec = do
 --
 
 -- レポートをsinkSlackで送信する形式に変換する関数
-reportMsg :: M.MonadIO m => Conf.Info -> C.Conduit Slack.Report m Slack.WebHook
 reportMsg = Slack.reportMsg . Conf.slack
 
 -- 組み立てられたメッセージをConf.Infoで指定されたSlackへ送る関数
-sinkSlack :: Conf.Info -> C.Sink Slack.WebHook IO ()
 sinkSlack = Slack.sink . Conf.slack
 
 -- テキストメッセージをsinkSlackで送信する形式に変換する関数
-simpleTextMsg :: M.MonadIO m => Conf.Info -> C.Conduit TL.Text m Slack.WebHook
 simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 
 --
 --
-sinkReport conf = reportMsg conf =$ sinkSlack conf
-sinkText conf = simpleTextMsg conf =$ sinkSlack conf
+sinkReport conf = reportMsg conf C..| sinkSlack conf
+sinkText conf = simpleTextMsg conf C..| sinkSlack conf
 
 

@@ -64,13 +64,13 @@ class Broker account where
                                     => account
                                     -> MySQL.ConnectInfo
                                     -> String
-                                    -> C.Source m TL.Text
+                                    -> C.ConduitT () TL.Text m ()
     -- |
     -- DBから最新の資産評価を取り出してSlackへレポートを送る
     noticeOfCurrentAssets   :: M.MonadIO m
                             => account
                             -> MySQL.ConnectInfo
-                            -> C.Source m SinkSlack.Report
+                            -> C.ConduitT () SinkSlack.Report m ()
     -- |
     -- 現在資産評価を証券会社のサイトから取得してDBへ
     fetchUpdatedPriceAndStore   :: account

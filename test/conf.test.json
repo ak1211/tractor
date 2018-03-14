@@ -5,6 +5,7 @@
     "slack" : {
         "webHookURL"    : "enter webHookURL",
         "channel"       : "enter channel",
+        "token"         : "enter token",
         "userName"      : "enter userName"
     },
     "mariaDB" : {

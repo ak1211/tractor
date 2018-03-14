@@ -78,6 +78,7 @@ data Info = Info
 -- 通知するSlackの設定情報
 data InfoSlack = InfoSlack
     { webHookURL :: String
+    , token      :: String
     , channel    :: String
     , userName   :: String
     } deriving Eq
@@ -158,6 +159,7 @@ instance Show InfoSlack where
     show InfoSlack{..} =
         TL.unpack . TLB.toLazyText $ mempty
         <> "Slack Webhook URL:<" <> TLB.fromString webHookURL <> newline
+        <> "Slack token:\"" <> TLB.fromString token <> "\"" <> newline
         <> "Slack channel:\"" <> TLB.fromString channel <> "\"" <> newline
         <> "Slack user name:\"" <> TLB.fromString userName <> "\"" <> newline
 

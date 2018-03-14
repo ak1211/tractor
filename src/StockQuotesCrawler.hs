@@ -41,7 +41,6 @@ import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
 import qualified Control.Monad.Trans.Resource as MR
-import           Data.Conduit                 (($$), (=$))
 import qualified Data.Conduit                 as C
 import qualified Data.List                    as List
 import qualified Data.Maybe                   as Mb
@@ -84,7 +83,7 @@ fetchStockPrices sess ticker = do
     --
     --
     pack :: String -> S.DailyStockPrice -> Ohlcv
-    pack href pr =
+    pack _ pr =
         let closingTime = Tm.TimeOfDay 15 00 00
             lt = Tm.LocalTime
                     { Tm.localDay = getAsiaTokyoDay $ S.dspDay pr
@@ -128,7 +127,7 @@ runWebCrawlingPortfolios conf =
     [broker] ->
         takeUpdateItems connInfo
         >>= \case
-        [] -> C.yield "今回の更新は不要です。" $$ slack
+        [] -> C.runConduit $ C.yield "今回の更新は不要です。" C..| slack
         xs ->
             -- kabu.comへログインする
             MR.runResourceT . GB.siteConn broker ua $ go xs
@@ -139,7 +138,7 @@ runWebCrawlingPortfolios conf =
     slack =
         let c = Conf.slack conf
         in
-        Slack.simpleTextMsg c =$ Slack.sink c
+        Slack.simpleTextMsg c C..| Slack.sink c
     --
     --
     go :: [DB.Entity Portfolio] -> BB.HTTPSession -> IO ()
@@ -150,10 +149,10 @@ runWebCrawlingPortfolios conf =
             acts d = List.intersperse d . map (update sess) . packNthOfTotal $ items
         in do
         delay <- randomDelay <$> M.liftIO Random.createSystemRandom
-        C.yield (TLB.toLazyText msg) $$ slack
+        C.runConduit $ C.yield (TLB.toLazyText msg) C..| slack
         -- 更新アクション実行
-        M.sequence_ (acts delay) $$ slack
-        C.yield "以上で更新処理を終了します。" $$ slack
+        C.runConduit $ M.sequence_ (acts delay) C..| slack
+        C.runConduit $ C.yield "以上で更新処理を終了します。" C..| slack
     --
     --
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
@@ -174,7 +173,7 @@ runWebCrawlingPortfolios conf =
     update  :: M.MonadIO m
             => BB.HTTPSession
             -> (DB.Entity Portfolio, NthOfTotal)
-            -> C.Source m TL.Text
+            -> C.ConduitT () TL.Text m ()
     update sess (pf,nth) = do
         putDescription (DB.entityVal pf) nth    -- 更新処理対象銘柄を説明する
         updateTimeAndSales sess conf pf         -- 更新処理本体
@@ -185,7 +184,7 @@ updateTimeAndSales  :: M.MonadIO m
                     => BB.HTTPSession
                     -> Conf.Info
                     -> DB.Entity Portfolio
-                    -> C.Source m TL.Text
+                    -> C.ConduitT () TL.Text m ()
 updateTimeAndSales sess conf (DB.Entity wKey wVal) =
     M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
@@ -240,7 +239,7 @@ takeUpdateItems connInfo = do
 putDescription  :: M.MonadIO m
                 => Portfolio
                 -> NthOfTotal
-                -> C.Source m TL.Text
+                -> C.ConduitT () TL.Text m ()
 putDescription pf (current,total) =
     C.yield $ TLB.toLazyText msg
     where

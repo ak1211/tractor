@@ -362,6 +362,68 @@ test06StockDetailPage' = StockDetailPage
   ]
  }
 
+test07StockDetailPage = "https%3A%2F%2Fs10.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=6770%26Market=1.utf8.html"
+test07StockDetailPage' = StockDetailPage
+ { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=6770&Market=1"}
+ , sdpBoardLink = AnchorTag {aText="板",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=6770&Market=1"}
+ , sdpBuyLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=6770&exchange=1"}
+ , sdpSellLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=6770&FilterType=1"}
+ , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=6770&Market=20"}
+ , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=6770&FilterType=1&Market=20"}
+ , sdpAskPrice = 278700
+ , sdpTicker = TSTYO 6770
+ , sdpClass = SC貸借銘柄
+ , sdpCaption = "アルプス電気"
+ , sdpDay = parseAsiaTokyoDay "2018/03/14"
+ , sdpPrice = Just (2787,HourMinute (15,00))
+ , sdpDiff = Just (-18)
+ , sdpDiffPc = Just (-0.64)
+ , sdpCloseYesterday = Just 2805
+ , sdpOpen = Just (2780,HourMinute (09,00))
+ , sdpHigh = Just (2815,HourMinute (09,49))
+ , sdpLow = Just (2756,HourMinute (09,03))
+ , sdpOpenAfternoon = Just (2791,HourMinute (12,30))
+ , sdpStdPrice = Just (2787,DayHourMinute (parseAsiaTokyoDay "2018/03/14",HourMinute (15,00)))
+ , sdpDailyHistories =
+  [ DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/13",dspOpen=Just 2748,dspHigh=Just 2810,dspLow=Just 2741,dspClose=Just 2805,dspDiff=Just 52,dspVolume=2941200}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/12",dspOpen=Just 2759,dspHigh=Just 2778,dspLow=Just 2729,dspClose=Just 2753,dspDiff=Just 52,dspVolume=3117500}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/09",dspOpen=Just 2719,dspHigh=Just 2760,dspLow=Just 2685,dspClose=Just 2701,dspDiff=Just (-10),dspVolume=4385700}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/08",dspOpen=Just 2737,dspHigh=Just 2739,dspLow=Just 2678,dspClose=Just 2711,dspDiff=Just 0,dspVolume=4255700}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/07",dspOpen=Just 2713,dspHigh=Just 2768,dspLow=Just 2703,dspClose=Just 2711,dspDiff=Just (-30),dspVolume=2702500}
+  ]
+ }
+
+test08StockDetailPage = "https%3A%2F%2Fs10.kabu.co.jp%2FLight%2FTradeTool%2FStockDetail.asp%3FStockCode=3038%26Market=1.utf8.html"
+test08StockDetailPage' = StockDetailPage
+ { sdpChartLink = AnchorTag {aText="チャート",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockchart.asp?chart=4&StockCode=3038&Market=1"}
+ , sdpBoardLink = AnchorTag {aText="板",aHref="https://s10.si0.kabu.co.jp/Light/tradetool/reuters/stockboardframe.asp?StockCode=3038&Market=1"}
+ , sdpBuyLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/Light/Stocks/Stock/Buy/Input?symbol=3038&exchange=1"}
+ , sdpSellLink = AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/ap/light/Stocks/Stock/Position/SellList?symbol=3038&FilterType=1"}
+ , sdpPetitBuyLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitBuy/BP01101.asp?StockCode=3038&Market=20"}
+ , sdpPetitSellLink = Just AnchorTag {aText="",aHref="https://s10.si0.kabu.co.jp/Light/Trade/PetitSell/SPetitSelect.asp?Brand=3038&FilterType=1&Market=20"}
+ , sdpAskPrice = 433000
+ , sdpTicker = TSTYO 3038
+ , sdpClass = SC融資銘柄
+ , sdpCaption = "神戸物産"
+ , sdpDay = parseAsiaTokyoDay "2018/03/14"
+ , sdpPrice = Just (4330,HourMinute (15,00))
+ , sdpDiff = Just (-45)
+ , sdpDiffPc = Just (-1.02)
+ , sdpCloseYesterday = Just 4375
+ , sdpOpen = Just (4360,HourMinute (09,00))
+ , sdpHigh = Just (4440,HourMinute (09,14))
+ , sdpLow = Just (4315,HourMinute (14,29))
+ , sdpOpenAfternoon = Just (4350,HourMinute (12,30))
+ , sdpStdPrice = Just (4330,DayHourMinute (parseAsiaTokyoDay "2018/03/14",HourMinute (15,00)))
+ , sdpDailyHistories =
+  [ DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/13",dspOpen=Just 4295,dspHigh=Just 4390,dspLow=Just 4295,dspClose=Just 4375,dspDiff=Just 45,dspVolume=141800}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/12",dspOpen=Just 4360,dspHigh=Just 4370,dspLow=Just 4295,dspClose=Just 4330,dspDiff=Just (-20),dspVolume=112300}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/09",dspOpen=Just 4370,dspHigh=Just 4415,dspLow=Just 4310,dspClose=Just 4350,dspDiff=Just 20,dspVolume=210600}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/08",dspOpen=Just 4320,dspHigh=Just 4340,dspLow=Just 4260,dspClose=Just 4330,dspDiff=Just 20,dspVolume=309100}
+  , DailyStockPrice {dspDay=parseAsiaTokyoDay "2018/03/07",dspOpen=Just 4290,dspHigh=Just 4375,dspLow=Just 4290,dspClose=Just 4310,dspDiff=Just (-20),dspVolume=125000}
+  ]
+ }
+
 parseAsiaTokyoDay :: String -> AsiaTokyoDay
 parseAsiaTokyoDay =
     AsiaTokyoDay . Tm.parseTimeOrError True Tm.defaultTimeLocale "%Y/%m/%d"
@@ -416,4 +478,12 @@ spec = do
         it "https://s10.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=3788&Market=1" $ do
             html <- TL.readFile ("test/KabuCom/" ++ test06StockDetailPage)
             stockDetailPage html `shouldReturn` test06StockDetailPage'
+        --
+        it "https://s10.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=6770&Market=1" $ do
+            html <- TL.readFile ("test/KabuCom/" ++ test07StockDetailPage)
+            stockDetailPage html `shouldReturn` test07StockDetailPage'
+        --
+        it "https://s10.kabu.co.jp/Light/TradeTool/StockDetail.asp?StockCode=3038&Market=1" $ do
+            html <- TL.readFile ("test/KabuCom/" ++ test08StockDetailPage)
+            stockDetailPage html `shouldReturn` test08StockDetailPage'
 

@@ -89,7 +89,7 @@ noticeOfBrokerageAnnouncement   :: M.MonadIO m
                                 => Conf.InfoSBIsecCoJp
                                 -> MySQL.ConnectInfo
                                 -> Conf.UserAgent
-                                -> C.Source m TL.Text
+                                -> C.ConduitT () TL.Text m ()
 noticeOfBrokerageAnnouncement conf _ userAgent = do
     r <- M.liftIO . MR.runResourceT . siteConn conf userAgent $ go
     C.yield r
@@ -108,7 +108,7 @@ noticeOfBrokerageAnnouncement conf _ userAgent = do
 -- DBから最新の資産評価を取り出してSlackへレポートを送る
 noticeOfCurrentAssets   :: M.MonadIO m
                         => MySQL.ConnectInfo
-                        -> C.Source m Slack.Report
+                        -> C.ConduitT () Slack.Report m ()
 noticeOfCurrentAssets connInfo = do
     -- 今日の前場開始時間
     openingTime <- todayOpeningTime <$> M.liftIO Tm.getCurrentTime

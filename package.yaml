@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.3.8
+version:            0.4.0
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -20,16 +20,17 @@ category:           Web
 description:         Please see the README on Github at <https://github.com/ak1211/tractor#readme>
 
 dependencies:
+- base >=4.7 && <5
+- bytestring
 - conduit
 - http-conduit
 - http-types
 - mtl
-- network-uri
 - resourcet
+- safe-exceptions
 - text
 - time
 - utf8-string
-- safe-exceptions
 
 library:
   source-dirs: src
@@ -37,23 +38,24 @@ library:
   dependencies:
   - aeson
   - attoparsec
-  - base >=4.7 && <5
-  - bytestring
   - case-insensitive
   - conduit-extra
   - connection
   - containers
-  - esqueleto
   - html-conduit
   - iconv
   - monad-logger
   - mwc-random
+  - network-uri
   - persistent
   - persistent-mysql
   - persistent-template
   - safe
+  - servant
+  - servant-server
   - tagsoup
   - transformers
+  - wai
   - xml-conduit
 
 executables:
@@ -66,7 +68,6 @@ executables:
     - -Wall
     - -with-rtsopts=-N
     dependencies:
-    - base
     - async
     - optparse-applicative
     - persistent-mysql
@@ -83,11 +84,8 @@ tests:
     - -rtsopts
     - -threaded
     dependencies:
-    - base
-    - bytestring
     - connection
     - hspec
     - QuickCheck
     - tractor
-    - utf8-string
 

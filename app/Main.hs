@@ -34,9 +34,7 @@ import qualified Control.Concurrent.Async     as CCA
 import           Control.Exception            (AsyncException (UserInterrupt))
 import           Control.Exception.Safe
 import qualified Control.Monad                as M
-import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Trans.Resource as M
-import           Data.Conduit                 (($$), ($=), (=$))
 import qualified Data.Conduit                 as C
 import           Data.Monoid                  ((<>))
 import qualified Data.Text.Lazy               as TL
@@ -46,7 +44,6 @@ import qualified Data.Time.Calendar.WeekDate  as Tm
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Options.Applicative          as Opt
 
-import qualified Aggregate
 import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified GenBroker                    as GB
@@ -58,25 +55,23 @@ import qualified StockQuotesCrawler           as Q
 
 -- |
 -- レポートをsinkSlackで送信する形式に変換する関数
-reportMsg :: M.MonadIO m => Conf.Info -> C.Conduit Slack.Report m Slack.WebHook
+reportMsg :: Conf.Info -> C.ConduitT Slack.Report Slack.WebHook IO ()
 reportMsg = Slack.reportMsg . Conf.slack
 
 -- |
 -- 組み立てられたメッセージをConf.Infoで指定されたSlackへ送る関数
-sinkSlack :: Conf.Info -> C.Sink Slack.WebHook IO ()
+sinkSlack :: Conf.Info -> C.ConduitT Slack.WebHook C.Void IO ()
 sinkSlack = Slack.sink . Conf.slack
 
 -- |
 -- テキストメッセージをConf.InfoSlackで指定されたslackへ送る関数
 toSlack :: Conf.InfoSlack -> TL.Text -> IO ()
 toSlack conf msg =
-    C.yield msg
-    $= Slack.simpleTextMsg conf
-    $$ Slack.sink conf
+    C.runConduit $ C.yield msg C..| Slack.simpleTextMsg conf C..| Slack.sink conf
 
 -- |
 -- テキストメッセージをsinkSlackで送信する形式に変換する関数
-simpleTextMsg :: M.MonadIO m => Conf.Info -> C.Conduit TL.Text m Slack.WebHook
+simpleTextMsg :: Conf.Info -> C.ConduitT TL.Text Slack.WebHook IO ()
 simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 
 -- |
@@ -84,13 +79,7 @@ simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 batchProcessing :: Conf.Info -> IO ()
 batchProcessing conf =
     webCrawling
---    webCrawling <> aggregate $$ slack
     where
-    --
-    --
-    slack =
-        Slack.simpleTextMsg (Conf.slack conf)
-        =$ Slack.sink (Conf.slack conf)
     -- |
     -- Webクローリング
     webCrawling = Q.runWebCrawlingPortfolios conf
@@ -112,8 +101,8 @@ announceWeekdaySchedule :: Conf.Info -> Scd.AsiaTokyoDay -> Conf.InfoBroker -> S
 announceWeekdaySchedule conf day broker =
     [(t, act) | t<-Scd.announceWeekdayTime day]
     where
-    act = GB.noticeOfBrokerageAnnouncement broker connInfo ua $$ slack
-    slack = simpleTextMsg conf =$ sinkSlack conf
+    act = C.runConduit $ GB.noticeOfBrokerageAnnouncement broker connInfo ua C..| slack
+    slack = simpleTextMsg conf C..| sinkSlack conf
     ua = Conf.userAgent conf
     --
     --
@@ -134,10 +123,10 @@ announceHolidaySchedule :: Conf.Info -> Scd.AsiaTokyoDay -> Scd.ZonedTimeJobs
 announceHolidaySchedule conf day =
     [(t, act) | t<-Scd.announceHolidayTime day]
     where
-    act = C.yield (TL.pack msg) $$ slack
+    act = C.runConduit $ C.yield (TL.pack msg) C..| slack
     msg = "本日 " ++ today ++ " は市場の休日です。"
     today = Tm.showGregorian $ Scd.getAsiaTokyoDay day
-    slack = simpleTextMsg conf =$ sinkSlack conf
+    slack = simpleTextMsg conf C..| sinkSlack conf
 
 -- |
 -- 立会時間のスケジュール
@@ -181,7 +170,7 @@ tradingTimeSchedule conf broker times =
     --
     --
     conn = Conf.connInfoDB $ Conf.mariaDB conf
-    report = reportMsg conf =$ sinkSlack conf
+    report = reportMsg conf C..| sinkSlack conf
     -- |
     -- 現在資産取得時間
     updateSeconds =
@@ -201,7 +190,7 @@ tradingTimeSchedule conf broker times =
     reportJobs ts =
         -- 同時間にならないために資産取得の実行より1分遅らせる仕掛け
         map (Scd.addTimeOfSecondsZT 60)
-        [(t, GB.noticeOfCurrentAssets broker conn $$ report) | t<-ts]
+        [(t, C.runConduit $ GB.noticeOfCurrentAssets broker conn C..| report) | t<-ts]
 
 -- |
 -- アプリケーションの本体

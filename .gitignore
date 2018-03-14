@@ -1,6 +1,5 @@
 /.stack-work/
 *.swp
 conf.json
-assets.sqlite3
-loghttp.sqlite3
+tractor.cabal
 

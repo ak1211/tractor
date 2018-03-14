@@ -119,7 +119,7 @@ send conf json =
 
 -- |
 --  Slackへ流す関数
-sink :: Conf.InfoSlack -> C.Sink WebHook IO ()
+sink :: Conf.InfoSlack -> C.ConduitT WebHook C.Void IO ()
 sink conf =
     C.await >>= go
     where
@@ -134,7 +134,7 @@ sink conf =
 
 -- |
 --  ただのテキストをSlackに送るJSONを組み立てる関数
-simpleTextMsg :: M.MonadIO m => Conf.InfoSlack -> C.Conduit TL.Text m WebHook
+simpleTextMsg :: M.MonadIO m => Conf.InfoSlack -> C.ConduitT TL.Text WebHook m ()
 simpleTextMsg conf =
     C.await >>= go
     where
@@ -157,7 +157,7 @@ simpleTextMsg conf =
 --  資産情報をSlackに送るJSONを組み立てる関数
 reportMsg   :: M.MonadIO m
             => Conf.InfoSlack
-            -> C.Conduit Report m WebHook
+            -> C.ConduitT Report WebHook m ()
 reportMsg conf =
     C.await >>= go
     where

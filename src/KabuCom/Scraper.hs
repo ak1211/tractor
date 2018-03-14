@@ -97,15 +97,17 @@ newtype HourMinute = HourMinute
 
 -- |
 -- 貸借信用区分
-data StockClassification = SC貸借銘柄 | SC信用銘柄 deriving Eq
+data StockClassification = SC貸借銘柄 | SC融資銘柄 | SC一般信用銘柄 deriving Eq
 instance Show StockClassification where
     show SC貸借銘柄 = "貸借銘柄"
-    show SC信用銘柄 = "信用銘柄"
+    show SC融資銘柄 = "融資銘柄"
+    show SC一般信用銘柄 = "一般信用銘柄"
 
 toStockClassification :: MonadThrow m => T.Text -> m StockClassification
 toStockClassification = \case
     "[貸]" -> pure SC貸借銘柄
-    "[信]" -> pure SC信用銘柄
+    "[融]" -> pure SC融資銘柄
+    "[一]" -> pure SC一般信用銘柄
     t ->
         let t' = T.unpack t
         in
@@ -350,10 +352,12 @@ stockDetailPage html =
     Right a -> pure a
     Left _ ->
         --
-        -- "※この銘柄は取引制限銘柄です。"が注入されたページのHTMLは壊れているので修復する。
+        -- "※この銘柄は取引制限銘柄です。"
+        -- "※この銘柄は取引注意銘柄です。"
+        -- が注入されたページのHTMLは壊れているので修復する。
         --
         -- 不必要な情報なのでこの行ごと消去する。
-        let text = "<tr><td valign=\"middle\" align=\"left\" colspan=\"2\"><br><b><FONT SIZE=2>※この銘柄は取引制限銘柄です。</FONT></b>"
+        let text = "<tr><td valign=\"middle\" align=\"left\" colspan=\"2\"><br><b><FONT SIZE=2>※この銘柄は取引"
             patcher = TL.unlines . filter (not . TL.isPrefixOf text) . TL.lines
         in
         go $ patcher html

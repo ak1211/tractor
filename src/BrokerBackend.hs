@@ -58,9 +58,11 @@ import qualified Data.Attoparsec.ByteString.Char8 as Ap
 import qualified Data.ByteString.Char8            as B8
 import qualified Data.ByteString.Lazy.Char8       as BL8
 import           Data.Char                        (Char)
+import qualified Data.Either                      as Either
 import qualified Data.List                        as List
 import qualified Data.Maybe                       as Mb
 import           Data.Monoid                      (mempty, (<>))
+import           Data.Text.Encoding.Error         (UnicodeException)
 import qualified Data.Text.Lazy                   as TL
 import qualified Data.Text.Lazy.Builder           as TLB
 import qualified Data.Text.Lazy.Encoding          as TLE
@@ -283,28 +285,28 @@ takeCharsetFromHTTPHeader headers = do
 -- HTTP ResponseからUtf8 HTMLを取り出す関数
 takeBodyFromResponse :: N.Response BL8.ByteString -> TL.Text
 takeBodyFromResponse resp =
-    -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
-    let cs = charsetHeader <|> charsetBody in
-    case toUtf8Specialized =<< cs of
-        -- デコードの失敗はあきらめて文字化けで返却
-        Left _  -> TL.pack . BL8.unpack $ html
-        Right x -> x
+    -- 失敗したらエラーの内容を返却する
+    either (TL.pack . show) id
+    . toUtf8Text (takeCharset resp) $ N.responseBody resp
     where
-    httpHeader = N.responseHeaders resp
-    html = N.responseBody resp
-    charsetBody = takeCharsetFromHTML html
-    charsetHeader = takeCharsetFromHTTPHeader httpHeader
+    --
+    -- HTTPレスポンスヘッダの指定 -> 本文中の指定の順番で文字コードを得る
+    takeCharset :: N.Response BL8.ByteString -> String
+    takeCharset rp =
+        let hdr = takeCharsetFromHTTPHeader $ N.responseHeaders rp
+            bdy = takeCharsetFromHTML $ N.responseBody rp
+        in
+        B8.unpack $ Either.fromRight "LATIN1" (hdr <|> bdy)
     --
     --
-    toUtf8Specialized :: B8.ByteString -> Either String TL.Text
-    toUtf8Specialized "x-sjis" = toUtf8 "shift-jis"
-    toUtf8Specialized charset  = toUtf8 charset
+    toUtf8Text :: String -> BL8.ByteString -> Either UnicodeException TL.Text
+    toUtf8Text "x-sjis" = TLE.decodeUtf8' . toUtf8BS "shift-jis"
+    toUtf8Text charset  = TLE.decodeUtf8' . toUtf8BS charset
     --
     --
-    toUtf8 :: B8.ByteString -> Either String TL.Text
-    toUtf8 charset =
-        either (Left . show) Right
-        . TLE.decodeUtf8' $ IConv.convert (B8.unpack charset) "UTF-8" html
+    toUtf8BS :: String -> BL8.ByteString -> BL8.ByteString
+    toUtf8BS charset =
+        IConv.convertFuzzy IConv.Transliterate charset "UTF-8"
 
 -- |
 -- 絶対リンクへ変換する関数
