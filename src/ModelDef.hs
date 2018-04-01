@@ -27,28 +27,80 @@ Portability :  POSIX
 -}
 {-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
-module ModelDef where
-
-import           Data.Word           (Word16)
-import           Database.Persist.TH (derivePersistField)
+module ModelDef
+    where
+import qualified Control.Arrow          as A
+import           Control.Exception.Safe
+import           Data.Char              (toUpper)
+import           Data.Word              (Word32)
+import           Database.Persist.TH    (derivePersistField)
+import           Text.Read              (readMaybe)
 
 --
 --
 data TickerSymbol
-    = TSTYO Word16  -- ^ 東証:個別株
+    = TSTYO Word32  -- ^ 東証:個別株
     | TSNI225       -- ^ 日経平均株価
     | TSTOPIX       -- ^ TOPIX
-    | TSJPXNI400    -- ^ JPX日経インデックス400
     deriving (Show, Read, Eq)
 derivePersistField "TickerSymbol"
 
 --
 --
 showTickerSymbol :: TickerSymbol -> String
-showTickerSymbol (TSTYO c)  = "東" ++ show c
-showTickerSymbol TSNI225    = "日経平均株価"
-showTickerSymbol TSTOPIX    = "東証株価指数"
-showTickerSymbol TSJPXNI400 = "JPX400"
+showTickerSymbol (TSTYO c) = "東" ++ show c
+showTickerSymbol TSNI225   = "日経平均株価"
+showTickerSymbol TSTOPIX   = "東証株価指数"
+
+-- |
+--
+-- >>> toTickerSymbol "998407.O"
+-- TSNI225
+-- >>> toTickerSymbol "998405.T"
+-- TSTOPIX
+-- >>> toTickerSymbol "8306.T"
+-- TSTYO 8306
+-- >>> toTickerSymbol "8306.t"
+-- TSTYO 8306
+-- >>> toTickerSymbol "8306t" :: Maybe TickerSymbol
+-- Nothing
+--
+toTickerSymbol :: MonadThrow m => String -> m TickerSymbol
+toTickerSymbol codeStr =
+    case go $ map toUpper codeStr of
+        Just a  -> pure a
+        Nothing-> throwString $ "toTickerSymbol: no parse of \"" ++ codeStr ++ "\""
+    where
+    --
+    --
+    go "998407.O" = Just TSNI225
+    go "998405.T" = Just TSTOPIX
+    go cs = do
+        (code, market) <- parse cs
+        case market of
+            "T" -> Just $ TSTYO code
+            _   -> Nothing
+    --
+    --
+    parse :: String -> Maybe (Word32, String)
+    parse cs =
+        let (c, m) = A.second (drop 1) $ span (/= '.') cs
+        in
+        (,) <$> readMaybe c <*> pure m
+
+-- |
+--
+-- >>> fromTickerSymbol TSNI225
+-- "998407.O"
+-- >>> fromTickerSymbol TSTOPIX
+-- "998405.T"
+-- >>> fromTickerSymbol (TSTYO 8306)
+-- "8306.T"
+--
+fromTickerSymbol :: TickerSymbol -> String
+fromTickerSymbol TSNI225    = "998407.O"
+fromTickerSymbol TSTOPIX    = "998405.T"
+fromTickerSymbol (TSTYO c)  = show c ++ ".T"
 
 --
 --

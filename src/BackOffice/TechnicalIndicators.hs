@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  TechnicalIndicators
+Module      :  BackOffice.TechnicalIndicators
 Description :
 Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
@@ -27,7 +27,7 @@ Portability :  POSIX
 -}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE StrictData #-}
-module TechnicalIndicators
+module BackOffice.TechnicalIndicators
     ( rolling
     , mean
     , sma

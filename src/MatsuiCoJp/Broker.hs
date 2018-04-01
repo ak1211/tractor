@@ -59,6 +59,7 @@ import qualified Data.List                    as List
 import qualified Data.Maybe                   as Maybe
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Time                    as Tm
+import           Data.Word                    (Word32)
 import           Database.Persist             ((<.), (==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
@@ -547,7 +548,7 @@ fetchFraAstSpare = flip fetchSomethingPage setFraAstSpare
 -- 注文情報
 data SellOrder = SellOrder
     { sellOrderPassword :: B8.ByteString
-    , sellOrderCode     :: Int
+    , sellOrderCode     :: Word32
     , sellOrderNominal  :: Int
     , sellOrderPrice    :: Double
     }

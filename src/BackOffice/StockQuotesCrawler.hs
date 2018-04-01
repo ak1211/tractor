@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  StockQuotesCrawler
+Module      :  BackOffice.StockQuotesCrawler
 Description :
 Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
@@ -31,7 +31,7 @@ MariaDBデータベースに入れる
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StrictData            #-}
-module StockQuotesCrawler
+module BackOffice.StockQuotesCrawler
     ( runWebCrawlingPortfolios
     ) where
 import           Control.Applicative          ((<|>))
@@ -116,8 +116,6 @@ fetchStockPrices sess ticker = do
     accessURI TSNI225 = throwString "Nikkei 225 is not supported"
     -- TOPIX
     accessURI TSTOPIX = throwString "TOPIX is not supported"
-    -- JPX日経インデックス400
-    accessURI TSJPXNI400 = throwString "JPX Nikkei 400 is not supported"
 
 -- |
 -- ポートフォリオの株価情報を取りに行く関数

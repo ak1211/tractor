@@ -32,11 +32,11 @@ module Lib
     , tzAsiaTokyo
     , httpRequestHeader
     , parseJSTDayTimeToUTCTime
+    , toISO8601DateTime
     , NthOfTotal
     , packNthOfTotal
     , every
     ) where
-
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Data.Maybe                 as Mb
 import qualified Data.Text.Lazy             as TL
@@ -83,6 +83,14 @@ parseJSTDayTimeToUTCTime date mTime =
         format = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
     in
     Tm.parseTimeOrError True Tm.defaultTimeLocale format dtm
+
+-- |
+-- 日本時間の日付時間へ
+toISO8601DateTime :: Tm.ZonedTime -> String
+toISO8601DateTime zt =
+    let format = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
+    in
+    Tm.formatTime Tm.defaultTimeLocale format zt
 
 -- | (nth, total)
 type NthOfTotal = (Int,Int)

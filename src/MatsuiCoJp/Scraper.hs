@@ -52,6 +52,7 @@ import           Data.Int               (Int32)
 import qualified Data.List              as List
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Read    as Read
+import           Data.Word              (Word32)
 import qualified Text.HTML.DOM          as H
 import           Text.XML.Cursor        (($/), ($//), (&/), (&//), (&|))
 import qualified Text.XML.Cursor        as X
@@ -70,7 +71,7 @@ data FraHomeAnnounce = FraHomeAnnounce
 -- 保有株(個別銘柄)情報
 data HoldStock = HoldStock
     { sellOrderUrl  :: Maybe TL.Text    -- ^ 売り注文ページurl
-    , code          :: Int              -- ^ 証券コード
+    , code          :: Word32              -- ^ 証券コード
     , caption       :: TL.Text          -- ^ 名前
     , count         :: Int              -- ^ 保有数
     , purchasePrice :: Double           -- ^ 取得単価

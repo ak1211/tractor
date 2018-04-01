@@ -33,7 +33,9 @@ Portability :  POSIX
 {-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 module Conf
-    ( readJSONFile
+    ( module ConfHpackageYaml
+    , myPackageYaml
+    , readJSONFile
     , loggingConnInfo
     , connInfoDB
     , UserAgent
@@ -46,7 +48,6 @@ module Conf
     , InfoSlack(..)
     , InfoMariaDB(..)
     ) where
-
 import           Data.Aeson                 ((.:), (.=))
 import qualified Data.Aeson                 as Aeson
 import qualified Data.Aeson.TH              as Aeson
@@ -57,9 +58,18 @@ import qualified Data.Text.Lazy             as TL
 import qualified Data.Text.Lazy.Builder     as TLB
 import qualified Data.Text.Lazy.Builder.Int as TLB
 import           Data.Word                  (Word16)
+import qualified Data.Yaml.TH               as Y
 import qualified Database.Persist.MySQL     as MySQL
 import           GHC.Exts                   (fromList)
 import           System.IO                  (Newline (..), nativeNewline)
+
+import           ConfHpackageYaml
+
+-- |
+-- TemplateHaskellによって埋め込まれる
+-- コンパイル時のpackage.yaml
+myPackageYaml :: MyPackageYaml
+myPackageYaml = $$(Y.decodeFile "package.yaml")
 
 type UserAgent = String
 

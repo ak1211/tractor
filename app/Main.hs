@@ -44,6 +44,7 @@ import qualified Data.Time.Calendar.WeekDate  as Tm
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Options.Applicative          as Opt
 
+import           BackOffice.Agency            (updateSomeRates)
 import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified GenBroker                    as GB
@@ -51,7 +52,7 @@ import qualified GenScraper                   as GS
 import qualified Lib
 import qualified Scheduling                   as Scd
 import qualified SinkSlack                    as Slack
-import qualified StockQuotesCrawler           as Q
+import           WebAPI.Server                (runWebAPI)
 
 -- |
 -- レポートをsinkSlackで送信する形式に変換する関数
@@ -75,25 +76,12 @@ simpleTextMsg :: Conf.Info -> C.ConduitT TL.Text Slack.WebHook IO ()
 simpleTextMsg = Slack.simpleTextMsg . Conf.slack
 
 -- |
--- バッチ処理関数
-batchProcessing :: Conf.Info -> IO ()
-batchProcessing conf =
-    webCrawling
-    where
-    -- |
-    -- Webクローリング
-    webCrawling = Q.runWebCrawlingPortfolios conf
-    -- |
-    -- 集計
---    aggregate = Aggregate.runAggregateOfPortfolios conf
-
--- |
 -- バッチ処理スケジュール
 batchProcessSchedule :: Conf.Info -> Scd.AsiaTokyoDay -> Scd.ZonedTimeJobs
 batchProcessSchedule conf day =
     [(t, act) | t<-Scd.batchProcessTime day]
     where
-    act = batchProcessing conf
+    act = updateSomeRates conf
 
 -- |
 -- 平日の報告スケジュール
@@ -196,36 +184,13 @@ tradingTimeSchedule conf broker times =
 -- アプリケーションの本体
 applicationBody :: CommandLineOption -> Conf.Info -> IO ()
 applicationBody cmdLineOpts conf =
+    --
+    -- コマンドラインオプションの指定で実行を替える
+    --
     case coptRunMode cmdLineOpts of
-    -- 強制的にバッチ処理スレッドを起動する
-    RunBatch -> do
-        -- バッチ処理の起動時の挨拶文をSlackへ送る
-        toSlack (Conf.slack conf) "今回はバッチ処理のみで終了します。"
-        batchProcessing conf
-    -- 通常処理を開始する
-    RunNormal -> do
-        -- 起動時の挨拶文をSlackへ送る
-        toSlack (Conf.slack conf) Lib.greetingsMessage
-        --
-        -- メインループ
-        --
-        M.forever $ do
-            assign <- toAssignThreads conf <$> getToday
-            -- 今日の作業スレッドを実行する
-            threads <- M.mapM (CCA.async . Scd.executeZT) assign
-            --
-            -- 作業スレッドの終了を待つ
-            -- 作業スレッドの異常終了を確認したら
-            -- 残りの作業スレッドをキャンセルして
-            -- 例外再送出する
-            M.forM_ threads $
-                CCA.waitCatch M.>=>
-                either
-                (\ex -> M.forM_ threads CCA.cancel >> throwIO ex)
-                return
-        --
-        -- foreverによって繰り返す
-        --
+        RunModeNormal     -> CCA.async (runWebAPI conf) >> mainLoop conf
+        RunModeStandalone -> mainLoop conf
+        RunModeOnlyWebApi -> runWebAPI conf
     `catchesAsync`
     -- ユーザー例外ハンドラ
     [ Handler $ \UserInterrupt ->
@@ -242,6 +207,30 @@ applicationBody cmdLineOpts conf =
         applicationBody cmdLineOpts conf
     ]
     where
+    --
+    -- メインループ
+    mainLoop :: Conf.Info -> IO ()
+    mainLoop conf' = do
+       -- 起動時の挨拶文をSlackへ送る
+        toSlack (Conf.slack conf) Lib.greetingsMessage
+        M.forever $ do
+            assign <- toAssignThreads conf' <$> getToday
+            -- 今日の作業スレッドを実行する
+            threads <- M.mapM (CCA.async . Scd.executeZT) assign
+            --
+            -- 作業スレッドの終了を待つ
+            -- 作業スレッドの異常終了を確認したら
+            -- 残りの作業スレッドをキャンセルして
+            -- 例外再送出する
+            M.forM_ threads $
+                CCA.waitCatch M.>=>
+                either
+                (\ex -> M.forM_ threads CCA.cancel >> throwIO ex)
+                return
+        --
+        -- foreverによって繰り返す
+        --
+    --
     -- 今日(日本時間)
     getToday :: IO Scd.AsiaTokyoDay
     getToday =
@@ -299,17 +288,23 @@ toAssignThreads conf day =
 --
 -- コマンドラインオプション
 --
-data ApplicationRunMode = RunNormal | RunBatch deriving Show
+data RunMode
+    = RunModeNormal
+    | RunModeStandalone
+    | RunModeOnlyWebApi
+
+data WebApiService = WebApiNormal | WebApiOff
+
 data CommandLineOption = CommandLineOption
-    { coptRunMode    :: ApplicationRunMode
-    , coptConfigFile :: String
-    } deriving Show
+    { coptConfigFile :: String
+    , coptRunMode    :: RunMode
+    }
 
 -- |
 -- エントリポイント
 main :: IO ()
 main = do
-    copts <- Opt.execParser (Opt.info commandLineOption mempty)
+    copts <- Opt.execParser opts
     -- 設定ファイルを読む
     configure <- Conf.readJSONFile $ coptConfigFile copts
     either
@@ -321,17 +316,43 @@ main = do
     where
     --
     --
+    opts :: Opt.ParserInfo CommandLineOption
+    opts = Opt.info commandLineOption mempty
+    --
+    --
+    runMode :: Opt.Parser RunMode
+    runMode =
+        rmOnlyWebApi Opt.<|> rmStandalone Opt.<|> rmNormal
+    --
+    --
+    rmNormal :: Opt.Parser RunMode
+    rmNormal = Opt.flag' RunModeNormal
+        ( Opt.long "normal"
+        <> Opt.help "normal run"
+        )
+    --
+    --
+    rmStandalone :: Opt.Parser RunMode
+    rmStandalone = Opt.flag' RunModeStandalone
+        ( Opt.long "standalone"
+        <> Opt.help "Exclude web api sevice as run"
+        )
+    --
+    --
+    rmOnlyWebApi :: Opt.Parser RunMode
+    rmOnlyWebApi = Opt.flag' RunModeOnlyWebApi
+        ( Opt.long "webapi"
+        <> Opt.help "run web api service only"
+        )
+    --
+    --
     commandLineOption :: Opt.Parser CommandLineOption
     commandLineOption = CommandLineOption
-        Opt.<$> Opt.flag RunNormal RunBatch
-            (  Opt.long "batch"
-            <> Opt.help "Perform batch process now"
-            )
-        Opt.<*> Opt.strOption
+        Opt.<$> Opt.strOption
             ( Opt.long "conf"
             <> Opt.help "Read configuration file"
             <> Opt.metavar "CONFIG_FILE"
             <> Opt.value "conf.json" -- default file path
             <> Opt.help "config file path"
             )
-
+        Opt.<*> runMode
