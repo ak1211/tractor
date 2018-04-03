@@ -81,8 +81,8 @@ data Attachment = Attachment
     , ts          :: Integer
     } deriving Show
 
-$(Aeson.deriveJSON Aeson.defaultOptions {
-        Aeson.fieldLabelModifier = \label -> if label == "hText" then "text" else label
+$(Aeson.deriveJSON Aeson.defaultOptions
+    { Aeson.fieldLabelModifier = \label -> if label == "hText" then "text" else label
     } ''WebHook)
 $(Aeson.deriveJSON Aeson.defaultOptions ''Attachment)
 

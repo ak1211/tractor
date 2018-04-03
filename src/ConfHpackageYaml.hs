@@ -15,7 +15,7 @@
     along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-Module      :  MyHpackConf
+Module      :  ConfHpackageYaml
 Description :  read 'hpack' configulation file
 Copyright   :  (c) 2016 Akihiro Yamamoto
 License     :  AGPLv3
@@ -25,15 +25,15 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE DeriveLift        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE StrictData        #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift    #-}
+{-# LANGUAGE StrictData    #-}
 module ConfHpackageYaml
     ( MyPackageYaml(..)
     ) where
-import           Data.Aeson.Types           (typeMismatch)
-import           Data.Yaml
+import           Data.Aeson
+import           Data.Char                  (toLower)
+import           GHC.Generics
 import           Language.Haskell.TH.Syntax (Lift)
 
 -- |
@@ -46,27 +46,11 @@ data MyPackageYaml = MyPackageYaml
     , myAuthor     :: String
     , myMaintainer :: String
     , myCopyright  :: String
-    } deriving (Lift, Eq, Show)
-
+    } deriving (Generic, Lift, Eq, Show)
 instance FromJSON MyPackageYaml where
-    parseJSON (Object v) = MyPackageYaml
-        <$> v .: "name"
-        <*> v .: "version"
-        <*> v .: "github"
-        <*> v .: "license"
-        <*> v .: "author"
-        <*> v .: "maintainer"
-        <*> v .: "copyright"
-    parseJSON invalid = typeMismatch "MyPackageYaml" invalid
-
+    parseJSON = genericParseJSON defaultOptions
+        { fieldLabelModifier = map toLower . drop 2 }
 instance ToJSON MyPackageYaml where
-    toJSON MyPackageYaml{..} = object
-        [ "name"        .= myName
-        , "version"     .= myVersion
-        , "github"      .= myGitHub
-        , "license"     .= myLicense
-        , "author"      .= myAuthor
-        , "maintainer"  .= myMaintainer
-        , "coypright"   .= myCopyright
-        ]
+    toJSON = genericToJSON defaultOptions
+        { fieldLabelModifier = map toLower . drop 2 }
 

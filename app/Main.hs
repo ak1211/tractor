@@ -31,6 +31,8 @@ Portability :  POSIX
 module Main where
 import qualified Control.Concurrent           as CC
 import qualified Control.Concurrent.Async     as CCA
+import           Control.Concurrent.STM       (atomically)
+import           Control.Concurrent.STM.TChan (newTChan)
 import           Control.Exception            (AsyncException (UserInterrupt))
 import           Control.Exception.Safe
 import qualified Control.Monad                as M
@@ -50,9 +52,10 @@ import qualified Conf
 import qualified GenBroker                    as GB
 import qualified GenScraper                   as GS
 import qualified Lib
+import           NetService.PubServer         (runPubServer)
+import           NetService.WebServer         (runWebServer)
 import qualified Scheduling                   as Scd
 import qualified SinkSlack                    as Slack
-import           WebAPI.Server                (runWebAPI)
 
 -- |
 -- レポートをsinkSlackで送信する形式に変換する関数
@@ -188,9 +191,9 @@ applicationBody cmdLineOpts conf =
     -- コマンドラインオプションの指定で実行を替える
     --
     case coptRunMode cmdLineOpts of
-        RunModeNormal     -> CCA.async (runWebAPI conf) >> mainLoop conf
+        RunModeNormal     -> CCA.async (runNetServices conf) >> mainLoop conf
         RunModeStandalone -> mainLoop conf
-        RunModeOnlyWebApi -> runWebAPI conf
+        RunModeOnlyWebApi -> runNetServices conf
     `catchesAsync`
     -- ユーザー例外ハンドラ
     [ Handler $ \UserInterrupt ->
@@ -207,6 +210,13 @@ applicationBody cmdLineOpts conf =
         applicationBody cmdLineOpts conf
     ]
     where
+    -- |
+    -- Publish / Web サーバーはペアで起動する必要があるので
+    runNetServices :: Conf.Info -> IO ()
+    runNetServices conf' = do
+        chan <- atomically $ newTChan
+        M.void . CCA.async $ runPubServer conf' chan
+        runWebServer conf' chan
     --
     -- メインループ
     mainLoop :: Conf.Info -> IO ()
@@ -292,8 +302,6 @@ data RunMode
     = RunModeNormal
     | RunModeStandalone
     | RunModeOnlyWebApi
-
-data WebApiService = WebApiNormal | WebApiOff
 
 data CommandLineOption = CommandLineOption
     { coptConfigFile :: String

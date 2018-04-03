@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.1
+version:            0.4.3
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -28,6 +28,7 @@ dependencies:
 - mtl
 - resourcet
 - safe-exceptions
+- stm
 - text
 - time
 - utf8-string
@@ -39,6 +40,7 @@ library:
   - aeson
   - attoparsec
   - case-insensitive
+  - cassava
   - conduit-extra
   - connection
   - containers
@@ -56,10 +58,12 @@ library:
   - tagsoup
   - template-haskell
   - transformers
+  - vector
   - wai
   - warp
   - xml-conduit
   - yaml
+  - zeromq4-haskell
 
 executables:
   tractor:
@@ -70,6 +74,7 @@ executables:
     - -threaded
     - -Wall
     - -with-rtsopts=-N
+    - -with-rtsopts=-T
     dependencies:
     - async
     - optparse-applicative
