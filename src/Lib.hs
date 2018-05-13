@@ -43,11 +43,13 @@ import qualified Data.Text.Lazy             as TL
 import qualified Data.Time                  as Tm
 import qualified Network.HTTP.Types.Header  as N
 
+import           VerRev                     (versionString)
+
 -- |
 -- 起動時の挨拶文
 greetingsMessage :: TL.Text
 greetingsMessage = TL.unlines
-    [ "tractorが起動しました"
+    [ TL.pack $ "tractor " ++ versionString ++ " が起動しました。"
     , "以降一定時間で通知します。"
     , "tractor is an Assets observation application."
     , "*tractor © 2016 Akihiro Yamamoto.*"

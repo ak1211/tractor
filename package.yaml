@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.3
+version:            0.4.5
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -23,11 +23,15 @@ dependencies:
 - base >=4.7 && <5
 - bytestring
 - conduit
+- directory
+- gitrev
+- elm-export
 - http-conduit
 - http-types
 - mtl
 - resourcet
 - safe-exceptions
+- servant-elm
 - stm
 - text
 - time
@@ -45,15 +49,21 @@ library:
   - connection
   - containers
   - html-conduit
+  - http-media
   - iconv
+  - lucid
   - monad-logger
   - mwc-random
   - network-uri
+  - optparse-simple
   - persistent
   - persistent-mysql
   - persistent-template
   - safe
   - servant
+  - servant-cassava
+  - servant-docs
+  - servant-lucid
   - servant-server
   - tagsoup
   - template-haskell
@@ -95,5 +105,16 @@ tests:
     - connection
     - hspec
     - QuickCheck
+    - tractor
+  code-gen:
+    main:               Main.hs
+    source-dirs:        code-generator
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -Wall
+    dependencies:
+    - servant-docs
+    - shelly
     - tractor
 

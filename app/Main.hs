@@ -52,8 +52,8 @@ import qualified Conf
 import qualified GenBroker                    as GB
 import qualified GenScraper                   as GS
 import qualified Lib
-import           NetService.PubServer         (runPubServer)
-import           NetService.WebServer         (runWebServer)
+import qualified NetService.PubServer
+import qualified NetService.WebServer
 import qualified Scheduling                   as Scd
 import qualified SinkSlack                    as Slack
 
@@ -215,8 +215,8 @@ applicationBody cmdLineOpts conf =
     runNetServices :: Conf.Info -> IO ()
     runNetServices conf' = do
         chan <- atomically $ newTChan
-        M.void . CCA.async $ runPubServer conf' chan
-        runWebServer conf' chan
+        M.void . CCA.async $ NetService.PubServer.runPubOverZmqServer conf' chan
+        NetService.WebServer.runWebServer conf' chan
     --
     -- メインループ
     mainLoop :: Conf.Info -> IO ()

@@ -162,10 +162,10 @@ runWebCrawlingPortfolios conf =
     randomDelay rgen =
         M.liftIO $ CC.threadDelay =<< Random.uniformR bound rgen
         where
-        -- 307msから561msまでの乱数
+        -- 3.07sから5.61sまでの乱数
         bound = (lowerBound,upperBound)
-        lowerBound = 307*1000
-        upperBound = 561*1000
+        lowerBound = 3070*1000
+        upperBound = 5610*1000
     --
     --
     update  :: M.MonadIO m

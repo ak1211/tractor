@@ -30,48 +30,46 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StrictData            #-}
 module NetService.PubServer
-    ( module NetService.Types
-    , runPubServer
+    ( runPubOverZmqServer
     ) where
-import           Control.Concurrent.STM       (atomically)
-import           Control.Concurrent.STM.TChan (readTChan)
-import qualified Control.Monad                as M
-import qualified Data.Aeson                   as Aeson
-import qualified Data.ByteString.Char8        as B8
-import qualified Data.ByteString.Lazy.Char8   as BL8
-import qualified Data.List.NonEmpty           as NE
-import qualified Data.Sequence                as Seq
-import           System.ZMQ4.Monadic          (Sender, Socket, ZMQ)
-import qualified System.ZMQ4.Monadic          as ZMQ4
+import qualified Control.Concurrent.STM     as STM
+import qualified Control.Monad              as M
+import qualified Data.Aeson                 as Aeson
+import qualified Data.ByteString.Char8      as B8
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import qualified Data.List.NonEmpty         as NonEmpty
+import qualified Data.Sequence              as Seq
+import           System.ZMQ4.Monadic        (ZMQ)
+import qualified System.ZMQ4.Monadic        as ZMQ4
 
 import qualified Conf
-import           NetService.Types
+import qualified NetService.ApiTypes        as ApiTypes
 
 --
-publish :: Sender t => Socket z t -> [ReplyOhlcv] -> ZMQ z ()
-publish sock prices =
+publishOverZmq :: ZMQ4.Sender t => ZMQ4.Socket z t -> [ApiTypes.Ohlcv] -> ZMQ z ()
+publishOverZmq sock prices =
     M.mapM_ (go "" . jsonPrices) ([ [x] | x<-prices ] ++ [ [] ])
     where
     --
     go topic contents =
-        ZMQ4.sendMulti sock $ NE.fromList [topic, contents]
+        ZMQ4.sendMulti sock $ NonEmpty.fromList [topic, contents]
     --
-    jsonPrices :: [ReplyOhlcv] -> B8.ByteString
+    jsonPrices :: [ApiTypes.Ohlcv] -> B8.ByteString
     jsonPrices =
         BL8.toStrict . Aeson.encode . Seq.fromList
 
 -- |
 --
-runPubServer :: Conf.Info -> ServerTChan -> IO ()
-runPubServer _ chan =
+runPubOverZmqServer :: Conf.Info -> ApiTypes.ServerTChan -> IO ()
+runPubOverZmqServer _ chan =
     ZMQ4.runZMQ $ do
         -- こちらはPublish側なのでbindする
         pubSocket <- ZMQ4.socket ZMQ4.Pub
         ZMQ4.bind pubSocket publishAddr
         --
         M.forever $ do
-            msg <- ZMQ4.liftIO . atomically . readTChan $ chan
-            publish pubSocket msg
+            msg <- ZMQ4.liftIO . STM.atomically . STM.readTChan $ chan
+            publishOverZmq pubSocket msg
     where
     publishAddr = "tcp://127.0.0.1:8740"
 

@@ -29,7 +29,6 @@ Portability :  POSIX
 {-# LANGUAGE TemplateHaskell #-}
 module ModelDef
     where
-import qualified Control.Arrow          as A
 import           Control.Exception.Safe
 import           Data.Char              (toUpper)
 import           Data.Word              (Word32)
@@ -54,15 +53,15 @@ showTickerSymbol TSTOPIX   = "東証株価指数"
 
 -- |
 --
--- >>> toTickerSymbol "998407.O"
+-- >>> toTickerSymbol "NI225"
 -- TSNI225
--- >>> toTickerSymbol "998405.T"
+-- >>> toTickerSymbol "TOPIX"
 -- TSTOPIX
--- >>> toTickerSymbol "8306.T"
+-- >>> toTickerSymbol "TYO8306"
 -- TSTYO 8306
--- >>> toTickerSymbol "8306.t"
+-- >>> toTickerSymbol "tyo8306"
 -- TSTYO 8306
--- >>> toTickerSymbol "8306t" :: Maybe TickerSymbol
+-- >>> toTickerSymbol "8306" :: Maybe TickerSymbol
 -- Nothing
 --
 toTickerSymbol :: MonadThrow m => String -> m TickerSymbol
@@ -73,34 +72,34 @@ toTickerSymbol codeStr =
     where
     --
     --
-    go "998407.O" = Just TSNI225
-    go "998405.T" = Just TSTOPIX
+    go "NI225" = Just TSNI225
+    go "TOPIX" = Just TSTOPIX
     go cs = do
-        (code, market) <- parse cs
+        (market, code) <- parse cs
         case market of
-            "T" -> Just $ TSTYO code
-            _   -> Nothing
+            "TYO" -> Just $ TSTYO code
+            _     -> Nothing
     --
     --
-    parse :: String -> Maybe (Word32, String)
+    parse :: String -> Maybe (String, Word32)
     parse cs =
-        let (c, m) = A.second (drop 1) $ span (/= '.') cs
+        let (m, c) = splitAt 3 cs
         in
-        (,) <$> readMaybe c <*> pure m
+        (,) <$> pure m <*> readMaybe c
 
 -- |
 --
 -- >>> fromTickerSymbol TSNI225
--- "998407.O"
+-- "NI225"
 -- >>> fromTickerSymbol TSTOPIX
--- "998405.T"
+-- "TOPIX"
 -- >>> fromTickerSymbol (TSTYO 8306)
--- "8306.T"
+-- "TYO8306"
 --
 fromTickerSymbol :: TickerSymbol -> String
-fromTickerSymbol TSNI225    = "998407.O"
-fromTickerSymbol TSTOPIX    = "998405.T"
-fromTickerSymbol (TSTYO c)  = show c ++ ".T"
+fromTickerSymbol TSNI225    = "NI225"
+fromTickerSymbol TSTOPIX    = "TOPIX"
+fromTickerSymbol (TSTYO c)  = "TYO" ++ show c
 
 --
 --

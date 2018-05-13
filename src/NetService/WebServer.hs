@@ -26,141 +26,204 @@ Portability :  POSIX
 
 REST API サーバーモジュールです
 -}
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE StrictData         #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE StrictData            #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NetService.WebServer
-    ( module NetService.Types
-    , runWebServer
+    ( runWebServer
+    , WebApi
+    , proxyWebApi
     ) where
-import           Control.Concurrent.STM       (atomically)
-import           Control.Concurrent.STM.TChan (writeTChan)
+import qualified Control.Concurrent.STM       as STM
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as ML
 import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.Aeson                   as Aeson
-import qualified Data.ByteString.Lazy.Char8   as BL8
-import qualified Data.Csv                     as Csv
 import           Data.Proxy                   (Proxy (..))
+import qualified Data.Text                    as T
 import           Database.Persist             ((==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Database.Persist.Sql         as DB
-import           GHC.Conc                     (getNumCapabilities,
-                                               getNumProcessors, numSparks)
+import qualified GHC.Conc                     as Conc
 import           GHC.Generics                 (Generic)
-import           GHC.Stats                    (GCDetails (..), RTSStats (..),
-                                               getRTSStats)
+import qualified GHC.Stats                    as Stats
+import           Lucid                        (body_, charset_, content_,
+                                               doctype_, head_, href_, html_,
+                                               lang_, link_, meta_, name_, rel_,
+                                               script_, src_, title_, type_)
+import qualified Lucid
 import qualified Network.Wai.Handler.Warp     as Warp
-import qualified Servant                      as S
-import           Servant.API
-import           System.Mem                   (performGC)
+import qualified Servant
+import           Servant.API                  ((:<|>) (..), (:>))
+import           Servant.API                  (Capture, Get, JSON, NoContent,
+                                               Post, Put, Raw)
+import           Servant.CSV.Cassava          (CSV)
+import qualified Servant.Docs
+import qualified Servant.Elm
+import           Servant.HTML.Lucid           (HTML)
+import qualified System.Mem                   as Mem
 
-import           BackOffice.Agency            (updateSomeRates)
-import           Conf
-import           Model
-import           NetService.Types
+import qualified BackOffice.Agency            as Agency
+import qualified Conf
+import qualified Model
+import qualified NetService.ApiTypes          as ApiTypes
+import           VerRev                       (VerRev)
+import qualified VerRev
 
-deriving instance Generic GCDetails
-instance Aeson.FromJSON GCDetails
-instance Aeson.ToJSON GCDetails
 
-deriving instance Generic RTSStats
-instance Aeson.FromJSON RTSStats
-instance Aeson.ToJSON RTSStats
+instance Servant.Elm.ElmType VerRev
+instance Servant.Docs.ToSample VerRev where
+    toSamples _ =
+        Servant.Docs.singleSample VerRev.versionRevision
+
+deriving instance Generic Stats.GCDetails
+instance Aeson.FromJSON Stats.GCDetails
+instance Aeson.ToJSON Stats.GCDetails
+
+deriving instance Generic Stats.RTSStats
+instance Aeson.FromJSON Stats.RTSStats
+instance Aeson.ToJSON Stats.RTSStats
 
 data Health = Health
     { hNumCapabilities :: Int
     , hNumProcessors   :: Int
     , hNumSparks       :: Int
-    , hStats           :: RTSStats
+    , hStats           :: Stats.RTSStats
     } deriving Generic
 instance Aeson.FromJSON Health
 instance Aeson.ToJSON Health
+instance Servant.Docs.ToSample Health where
+    toSamples _ = Servant.Docs.noSamples
 
 data Config = Config
     { cConf :: Conf.Info
     , cPool :: MySQL.ConnectionPool
-    , cChan :: ServerTChan
+    , cChan :: ApiTypes.ServerTChan
     }
 
---
---
-type WebAPI
-    =   "update" :> "rates" :> Get '[JSON] NoContent
-    :<|>"publish" :> QueryParam "code" String :> GetNoContent '[JSON] NoContent
-    :<|>"health" :> Get '[JSON] Health
-    :<|>"version" :> Get '[JSON] MyPackageYaml
-    :<|>"portfolio" :> Get '[JSON] [ReplyPortfolio]
-    :<|>"stocks" :> "history" :> "js" :> QueryParam "code" String :> Get '[JSON] [ReplyOhlcv]
-    :<|>"stocks" :> "history" :> "csv" :> QueryParam "code" String :> Get '[PlainText] String
+data HomePage = HomePage
+instance Lucid.ToHtml HomePage where
+    --
+    --
+    toHtml _ = do
+        doctype_
+        html_ [lang_ "ja"] $ do
+            head_ $ do
+                meta_ [charset_ "utf-8"]
+                meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
+                title_ $ Lucid.toHtmlRaw ("Dashboard &#8212; TRACTOR" :: T.Text)
+                link_ [rel_ "stylesheet", type_ "text/css", href_ "https://fonts.googleapis.com/css?family=Roboto:400,300,500|Roboto+Mono|Roboto+Condensed:400,700&subset=latin,latin-ext"]
+                link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/icon?family=Material+Icons"]
+                link_ [rel_ "stylesheet", href_ "https://code.getmdl.io/1.3.0/material.blue_grey-lime.min.css"]
+                link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/css?family=Gugi"]
+                --
+                script_ [src_ "https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.js"] T.empty
+                link_ [rel_ "stylesheet", type_ "text/css", href_ "https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.css"]
+                --
+                script_ [src_ "https://cdn.polyfill.io/v2/polyfill.js?features=Event.focusin"] T.empty
+                --
+            body_ $ do
+                script_ [src_ "public/main.js"] T.empty
+                script_ [] ("app = Elm.Main.fullscreen();" :: T.Text)
+    --
+    --
+    toHtmlRaw = Lucid.toHtml
 
-webAPI :: Proxy WebAPI
-webAPI = Proxy
+--
+-- for servant doc
+instance Servant.Docs.ToSample HomePage where
+    toSamples _ = Servant.Docs.singleSample HomePage
+
+instance Servant.Docs.ToCapture (Capture "code" String) where
+    toCapture _ =
+        Servant.Docs.DocCapture
+        "market code"
+        "NI225, TOPIX, TYO8306 etc..."
+
+-- |
+-- web front 接続用 JSON API
+type WebApi
+    = "api" :> "v1" :> "publish" :> "zmq" :> Capture "code" String :> Put '[JSON] NoContent
+ :<|> "api" :> "v1" :> "version" :> Get '[JSON] VerRev
+ :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiTypes.Portfolio]
+ :<|> "api" :> "v1" :> "quotes" :> "all" :> "update" :> Post '[JSON] NoContent
+ :<|> "api" :> "v1" :> "quotes" :> Capture "code" String :> Get '[JSON, CSV] [ApiTypes.Ohlcv]
+
+type WebApi'
+ = Get '[HTML] HomePage
+ :<|> "public" :> Raw
+ :<|> "api" :> "v1" :> "health" :> Get '[JSON] Health
+ :<|> WebApi
 
 --
 --
-webApiServer :: Config -> S.Server WebAPI
+webApiServer :: Config -> Servant.Server WebApi'
 webApiServer cnf =
-    update
-    :<|> publish
+    home
+    :<|> Servant.serveDirectoryFileServer "elm-src/public"
     :<|> health
+    --
+    :<|> publishZmq
     :<|> version
-    :<|> portfolio
-    :<|> stocksHistoryJS
-    :<|> stocksHistoryCSV
+    :<|> portfolios
+    --
+    :<|> updateAll :<|> histories
     where
-    update = updateRatesHandler cnf
-    publish = publishHandler (cPool cnf) (cChan cnf)
+    home = return HomePage
+    publishZmq = publishZmqHandler (cPool cnf) (cChan cnf)
     health = healthHandler
     version = versionHandler
-    portfolio = portfolioHandler (cPool cnf)
-    stocksHistoryJS = stocksHistoryJSHandler (cPool cnf)
-    stocksHistoryCSV = stocksHistoryCSVHandler (cPool cnf)
+    portfolios = portfolioHandler (cPool cnf)
+    updateAll = updateAllHandler cnf
+    histories = historiesHandler (cPool cnf)
 
 -- |
 --
-updateRatesHandler :: Config -> S.Handler NoContent
-updateRatesHandler cnf = do
-    M.liftIO . updateSomeRates $ cConf cnf
-    return NoContent
+updateAllHandler :: Config -> Servant.Handler Servant.NoContent
+updateAllHandler cnf = do
+    M.liftIO . Agency.updateSomeRates $ cConf cnf
+    return Servant.NoContent
 
 -- |
 --
-publishHandler :: MySQL.ConnectionPool -> ServerTChan -> Maybe String -> S.Handler NoContent
-publishHandler pool chan codeStr =
-    case toTickerSymbol =<< codeStr of
+publishZmqHandler :: MySQL.ConnectionPool -> ApiTypes.ServerTChan -> String -> Servant.Handler Servant.NoContent
+publishZmqHandler pool chan codeStr =
+    case Model.toTickerSymbol codeStr of
         Just ts -> do
             ps <- M.liftIO $ prices ts
-            M.liftIO . atomically $ writeTChan chan ps
-            return NoContent
-        Nothing -> S.throwError S.err400 { S.errBody = "error" }
+            M.liftIO . STM.atomically $ STM.writeTChan chan ps
+            return Servant.NoContent
+        Nothing -> Servant.throwError Servant.err400 { Servant.errBody = "error" }
     where
     --
     --
-    prices :: TickerSymbol -> IO [ReplyOhlcv]
+    prices :: Model.TickerSymbol -> IO [ApiTypes.Ohlcv]
     prices ticker =
         flip DB.runSqlPersistMPool pool $
-            toReps <$> DB.selectList [OhlcvTicker ==. ticker] [DB.Asc OhlcvAt]
+            fromInternal<$> DB.selectList [Model.OhlcvTicker ==. ticker] [DB.Asc Model.OhlcvAt]
     --
     --
-    toReps :: [DB.Entity Ohlcv] -> [ReplyOhlcv]
-    toReps = map (toReplyOhlcv . DB.entityVal)
+    fromInternal:: [DB.Entity Model.Ohlcv] -> [ApiTypes.Ohlcv]
+    fromInternal= map (ApiTypes.toOhlcv. DB.entityVal)
 
 -- |
 --
-healthHandler :: S.Handler Health
+healthHandler :: Servant.Handler Health
 healthHandler = do
-    M.liftIO performGC
-    sts <- M.liftIO getRTSStats
-    c <- M.liftIO getNumCapabilities
-    p <- M.liftIO getNumProcessors
-    s <- M.liftIO numSparks
-    return $ Health
+    M.liftIO Mem.performGC
+    sts <- M.liftIO Stats.getRTSStats
+    c <- M.liftIO Conc.getNumCapabilities
+    p <- M.liftIO Conc.getNumProcessors
+    s <- M.liftIO Conc.numSparks
+    return Health
         { hNumCapabilities = c
         , hNumProcessors = p
         , hNumSparks = s
@@ -169,67 +232,61 @@ healthHandler = do
 
 -- |
 --
-versionHandler :: S.Handler MyPackageYaml
+versionHandler :: Servant.Handler VerRev
 versionHandler =
-    return myPackageYaml
+    return VerRev.versionRevision
 
 -- |
 --
-portfolioHandler :: MySQL.ConnectionPool -> S.Handler [ReplyPortfolio]
+portfolioHandler :: MySQL.ConnectionPool -> Servant.Handler [ApiTypes.Portfolio]
 portfolioHandler pool =
     M.liftIO pf
     where
     --
     --
-    pf :: IO [ReplyPortfolio]
+    pf :: IO [ApiTypes.Portfolio]
     pf =
         flip DB.runSqlPersistMPool pool $
-            toReps <$> DB.selectList [] [DB.Asc PortfolioTicker]
+            fromInternal <$> DB.selectList [] [DB.Asc Model.PortfolioTicker]
     --
     --
-    toReps :: [DB.Entity Portfolio] -> [ReplyPortfolio]
-    toReps = map (toReplyPortfolio . DB.entityVal)
+    fromInternal :: [DB.Entity Model.Portfolio] -> [ApiTypes.Portfolio]
+    fromInternal = map (ApiTypes.toPortfolio . DB.entityVal)
 
 -- |
 --
-stocksHistoryJSHandler :: MySQL.ConnectionPool -> Maybe String -> S.Handler [ReplyOhlcv]
-stocksHistoryJSHandler pool codeStr =
-    case toTickerSymbol =<< codeStr of
-    Just ts -> M.liftIO $ do
-        print ts
-        takePrices pool ts
-    Nothing -> S.throwError S.err400 { S.errBody = "error" }
-
--- |
---
-stocksHistoryCSVHandler :: MySQL.ConnectionPool -> Maybe String -> S.Handler String
-stocksHistoryCSVHandler pool codeStr =
-    case toTickerSymbol =<< codeStr of
-    Just ts -> M.liftIO $ do
-        print ts
-        BL8.unpack . Csv.encodeByName replyOhlcvHeader <$> takePrices pool ts
-    Nothing -> S.throwError S.err400 { S.errBody = "error" }
+historiesHandler :: MySQL.ConnectionPool -> String -> Servant.Handler [ApiTypes.Ohlcv]
+historiesHandler pool codeStr =
+    case Model.toTickerSymbol codeStr of
+    Just ts -> M.liftIO $ takePrices pool ts
+    Nothing -> Servant.throwError Servant.err400 { Servant.errBody = "error" }
 
 --
 --
-takePrices :: MySQL.ConnectionPool -> TickerSymbol -> IO [ReplyOhlcv]
+takePrices :: MySQL.ConnectionPool -> Model.TickerSymbol -> IO [ApiTypes.Ohlcv]
 takePrices pool ticker =
     flip DB.runSqlPersistMPool pool $
-        toReps <$> DB.selectList [OhlcvTicker ==. ticker] [DB.Asc OhlcvAt]
+       fromInternal <$> DB.selectList [Model.OhlcvTicker ==. ticker] [DB.Asc Model.OhlcvAt]
     where
     --
     --
-    toReps :: [DB.Entity Ohlcv] -> [ReplyOhlcv]
-    toReps = map (toReplyOhlcv . DB.entityVal)
+    fromInternal:: [DB.Entity Model.Ohlcv] -> [ApiTypes.Ohlcv]
+    fromInternal= map (ApiTypes.toOhlcv . DB.entityVal)
 
 --
 --
-app :: Config -> S.Application
-app = S.serve webAPI . webApiServer
+proxyWebApi :: Proxy WebApi'
+proxyWebApi = Proxy
+
+--
+--
+app :: Config -> Servant.Application
+app c =
+    Servant.serve proxyWebApi $ webApiServer c
 
 -- |
 -- Web API サーバーを起動する
-runWebServer :: Conf.Info -> ServerTChan -> IO ()
+runWebServer :: Conf.Info -> ApiTypes.ServerTChan -> IO ()
 runWebServer conf chan = do
     pool <- ML.runNoLoggingT . MR.runResourceT $ MySQL.createMySQLPool connInfo poolSize
     Warp.runSettings settings . app $ Config conf pool chan
