@@ -5,10 +5,10 @@ if [ "$#" -eq "1" ]
 then
     inputfile="$1"
     outputfileprefix="$(basename -s csv $1)ta"
-    programfile="$(pwd)/mta"
+    programfile="mta-rust"
     echo "Input: $inputfile"
     # build program
-    gcc makeTechnicalWithTA-lib.c -o "$programfile" -Wall -O2 -std=c11 -static -lta_lib -lm || exit 1
+    cargo install --force
 
     # 1,2行目のタイトル行を残して逆順にして
     # Date,Time,Open,High,Low,Close,Volume,OI, ... の並びから

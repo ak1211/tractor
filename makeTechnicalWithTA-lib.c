@@ -23,9 +23,10 @@
 typedef int errno_t;
 
 enum {
-    COLUMN_WIDTH_MIN = 9,   // 列の最小幅
-    COLUMN_WIDTH_MAX = 30,  // 列の最大幅
-    ONE_TIME_ROWS = 128,    // 漸進処理1回の行数
+    DATE_TIME_COLUMN_WIDTH = 24,    // 日付時刻列の幅
+    COLUMN_WIDTH_MIN = 9,           // 列の最小幅
+    COLUMN_WIDTH_MAX = 128,         // 列の最大幅(多めに)
+    ONE_TIME_ROWS = 128,            // 漸進処理1回の行数
 };
 
 int max( int a, int b )
@@ -107,7 +108,7 @@ column_t* new_column_t( col_caption_t incol_capt,
 //
 void printString( int colwidth, char* s ) {
     char fmt[COLUMN_WIDTH_MAX+1];
-    snprintf( fmt, COLUMN_WIDTH_MAX, "%%%ds,", colwidth );
+    snprintf( fmt, COLUMN_WIDTH_MAX, ",%%%ds", colwidth );
     printf( fmt, s );
 }
 
@@ -116,8 +117,8 @@ void printString( int colwidth, char* s ) {
 //
 void printDouble( int colwidth, double v ) {
     char fmt[COLUMN_WIDTH_MAX+1];
-    snprintf( fmt, COLUMN_WIDTH_MAX, "%%%d.2f,", colwidth );
-    printf( fmt, v );
+    snprintf( fmt, COLUMN_WIDTH_MAX, ",%%%d.2f", colwidth );
+    printf( fmt, double_equal_zero(v) ? 0.00 : v );
 }
 
 //
@@ -148,9 +149,11 @@ void disp(  const row_caption_t caption[],
 
     column_t** this_arg = calloc( columnCount, sizeof(column_t*) );
     if( this_arg ) {
+        char fmt[COLUMN_WIDTH_MAX+1];
+        snprintf( fmt, COLUMN_WIDTH_MAX, "%%%ds", DATE_TIME_COLUMN_WIDTH );
         // タイトル行の出力
-        printf( "%10s,", "date" );
-        printString( COLUMN_WIDTH_MIN, "price" );
+        printf( fmt, "DateTime" );
+        printString( COLUMN_WIDTH_MIN, "Close" );
          for( int i=0; i<columnCount; i++ ) {
             this_arg[i] = va_arg( ap, column_t* );
             printString( COLUMN_WIDTH_MIN, this_arg[i]->col_capt );
@@ -159,7 +162,7 @@ void disp(  const row_caption_t caption[],
 
         // データ行の出力
         for( int i=startIdx; i<=endIdx; i++ ) {
-            printf( "%10s,", caption[i] );
+            printf( fmt, caption[i] );
             printDouble( COLUMN_WIDTH_MIN, inprice[i] );
             for( int k=0; k<columnCount; k++ ) {
                 inject_column( i, this_arg[k] );
@@ -188,16 +191,19 @@ size_t read_part(   FILE* fp,
         row_caption_t date;
         char time[256];
         double o, h, l, c, v;
-        if( fscanf( fp,
+        char buff[256];
+        if( fgets( buff, sizeof(buff), fp) == NULL ) {break;}
+        if( sscanf( buff,
                     "%s%s" "%lf%lf%lf%lf%lf" "\n",
                     date, time,
                     &o, &h, &l, &c, &v )
-            == 0)
+            == EOF)
         {
             break;
         }
         if(errno) {goto fail;}
-        snprintf( caption[count], COLUMN_WIDTH_MAX, "%s", date );
+        // DateTimeを作る
+        snprintf( caption[count], COLUMN_WIDTH_MAX, "%sT%s+0900", date, time );
         open[count] = o;
         high[count] = h;
         low[count]  = l;
@@ -350,9 +356,9 @@ TA_RetCode calculate(   row_caption_t* caption,
         if((v.signal= new_column_t( "Signal", 12,26,9, length )) == NULL) {break;}
         if((v.hist  = new_column_t( "Hist", 12,26,9, length )) == NULL) {break;}
         //
-        if((v.bbup  = new_column_t( "BBUP", 25,2,2, length )) == NULL) {break;}
-        if((v.bbmid = new_column_t( "BBMID", 25,2,2, length )) == NULL) {break;}
-        if((v.bblow = new_column_t( "BBLOW", 25,2,2, length )) == NULL) {break;}
+        if((v.bbup  = new_column_t( "BBUP", 25,1.5,1.5, length )) == NULL) {break;}
+        if((v.bbmid = new_column_t( "BBMID", 25,1.5,1.5, length )) == NULL) {break;}
+        if((v.bblow = new_column_t( "BBLOW", 25,1.5,1.5, length )) == NULL) {break;}
         if((v.rsi   = new_column_t( "RSI", 14,0,0, length )) == NULL) {break;}
         if((v.roc   = new_column_t( "ROC", 14,0,0, length )) == NULL) {break;}
         if((v.mom   = new_column_t( "MOM", 14,0,0, length )) == NULL) {break;}

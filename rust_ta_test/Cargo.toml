@@ -1,0 +1,7 @@
+[package]
+name = "mta-rust"
+version = "0.1.0"
+authors = ["Akihiro Yamamoto <ak1211@mail.ak1211.com>"]
+
+[dependencies]
+ta-lib-wrapper = "0.1.1"
