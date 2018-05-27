@@ -35,19 +35,13 @@ struct AsiaTokyoDateTime {
     time: String,
 }
 
+///
+/// 日本時間型のフォーマット出力
+///
 impl fmt::Display for AsiaTokyoDateTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // timezone : Asia / Tokyo
         write!(f, "{}T{}+0900", self.date, self.time)
-    }
-}
-
-impl AsiaTokyoDateTime {
-    fn new(d: &str, t: &str) -> AsiaTokyoDateTime {
-        AsiaTokyoDateTime {
-            date: d.to_string(),
-            time: t.to_string(),
-        }
     }
 }
 
@@ -120,19 +114,16 @@ fn parse_line<T: FromStr>(line_number: u64, line: &str) -> Result<Row<T>, String
     let parts: Vec<&str> = line.split('\t').map(|a| a.trim()).collect();
     match parts.as_slice() {
         [d, t, o, h, l, c, v] => {
-            let date_time = AsiaTokyoDateTime::new(d, t);
-            let oo = try!(o.parse().map_err(|_| errmsg(o)));
-            let hh = try!(h.parse().map_err(|_| errmsg(h)));
-            let ll = try!(l.parse().map_err(|_| errmsg(l)));
-            let cc = try!(c.parse().map_err(|_| errmsg(c)));
-            let vv = try!(v.parse().map_err(|_| errmsg(v)));
             return Ok(Row {
-                date_time: date_time,
-                open: Open(oo),
-                high: High(hh),
-                low: Low(ll),
-                close: Close(cc),
-                volume: Volume(vv),
+                date_time: AsiaTokyoDateTime {
+                    date: d.to_string(),
+                    time: t.to_string(),
+                },
+                open: Open(o.parse().map_err(|_| errmsg(o))?),
+                high: High(h.parse().map_err(|_| errmsg(h))?),
+                low: Low(l.parse().map_err(|_| errmsg(l))?),
+                close: Close(c.parse().map_err(|_| errmsg(c))?),
+                volume: Volume(v.parse().map_err(|_| errmsg(v))?),
             });
         }
         _ => return Err(format!("line {}, Column mismatch.", line_number)),
