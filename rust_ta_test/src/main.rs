@@ -131,12 +131,18 @@ fn parse_line<T: FromStr>(line_number: u64, line: &str) -> Result<Row<T>, String
 }
 
 ///
-/// テクニカル指標のオプション
+/// テクニカル指標のオプションとフォーマット出力
 ///
 struct MacdPeriods {
     fast: u32,
     slow: u32,
     signal: u32,
+}
+
+impl fmt::Display for MacdPeriods {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:.2},{:.2},{:.2}", self.fast, self.slow, self.signal)
+    }
 }
 
 struct BbandsOpt {
@@ -145,14 +151,36 @@ struct BbandsOpt {
     dev_down: TA_Real,
 }
 
+impl fmt::Display for BbandsOpt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{:.2},{:.2},{:.2}",
+            self.period, self.dev_up, self.dev_down
+        )
+    }
+}
+
 struct SarOpt {
     acceleration: TA_Real,
     maximum: TA_Real,
 }
 
+impl fmt::Display for SarOpt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:.2},{:.2}", self.acceleration, self.maximum)
+    }
+}
+
 struct AdoscPeriods {
     fast: u32,
     slow: u32,
+}
+
+impl fmt::Display for AdoscPeriods {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:.2},{:.2}", self.fast, self.slow)
+    }
 }
 
 ///
@@ -194,9 +222,17 @@ struct Column {
 }
 
 impl Column {
-    fn new(name: &str, opt: Option<&str>, begin_idx: usize, values: Vec<TA_Real>) -> Column {
+    fn new(
+        name: &str,
+        opt: Option<&fmt::Display>,
+        begin_idx: usize,
+        values: Vec<TA_Real>,
+    ) -> Column {
         Column {
-            caption: name.to_string() + opt.unwrap_or(""),
+            caption: match opt {
+                None => name.to_string(),
+                Some(a) => format!("{}({})", name, a),
+            },
             begin_idx: begin_idx,
             values: values,
         }
@@ -411,12 +447,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                name,
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new(name, Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -452,14 +483,10 @@ impl Prices {
                 return Err(ret_code);
             }
         }
-        let s = format!(
-            "({:.2},{:.2},{:.2})",
-            period.fast, period.slow, period.signal
-        );
         return Ok(vec![
-            Column::new("MACD", Some(&s), out_begin as usize, macd_out),
-            Column::new("Signal", Some(&s), out_begin as usize, signal_out),
-            Column::new("Hist", Some(&s), out_begin as usize, histogram_out),
+            Column::new("MACD", Some(&period), out_begin as usize, macd_out),
+            Column::new("Signal", Some(&period), out_begin as usize, signal_out),
+            Column::new("Hist", Some(&period), out_begin as usize, histogram_out),
         ]);
     }
     ///
@@ -496,11 +523,10 @@ impl Prices {
                 return Err(ret_code);
             }
         }
-        let s = format!("({:.2},{:.2},{:.2})", opt.period, opt.dev_up, opt.dev_down);
         return Ok(vec![
-            Column::new("BBUP", Some(&s), out_begin as usize, up_out),
-            Column::new("BBMID", Some(&s), out_begin as usize, mid_out),
-            Column::new("BBLOW", Some(&s), out_begin as usize, low_out),
+            Column::new("BBUP", Some(&opt), out_begin as usize, up_out),
+            Column::new("BBMID", Some(&opt), out_begin as usize, mid_out),
+            Column::new("BBLOW", Some(&opt), out_begin as usize, low_out),
         ]);
     }
     ///
@@ -529,12 +555,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "RSI",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("RSI", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -563,12 +584,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "ROC",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("ROC", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -597,12 +613,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "MOM",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("MOM", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -633,8 +644,7 @@ impl Prices {
                 return Err(ret_code);
             }
         }
-        let s = format!("({:.2},{:.2})", opt.acceleration, opt.maximum);
-        return Ok(vec![Column::new("SAR", Some(&s), out_begin as usize, out)]);
+        return Ok(vec![Column::new("SAR", Some(opt), out_begin as usize, out)]);
     }
     ///
     /// WILLR - Williams %R
@@ -666,12 +676,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "Williams%R",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("Williams%R", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -704,12 +709,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "ADX",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("ADX", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -742,12 +742,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "ADXR",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("ADXR", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -780,12 +775,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "+DI",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("+DI", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -818,12 +808,7 @@ impl Prices {
             }
         }
         return Ok(vec![
-            Column::new(
-                "-DI",
-                Some(&format!("({:.2})", period)),
-                out_begin as usize,
-                out,
-            ),
+            Column::new("-DI", Some(&period), out_begin as usize, out),
         ]);
     }
     ///
@@ -895,7 +880,7 @@ impl Prices {
         return Ok(vec![
             Column::new(
                 "Chaikin A/D Oscillator",
-                Some(&format!("({:.2},{:.2})", period.fast, period.slow)),
+                Some(&period),
                 out_begin as usize,
                 out,
             ),
