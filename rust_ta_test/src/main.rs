@@ -86,14 +86,14 @@ struct Row<T> {
 /// 入力から行を読む
 ///
 fn read_file<T: FromStr>(stream: &mut BufRead) -> Vec<Row<T>> {
-    let mut built = Vec::new();
     let mut line = String::new();
-    let mut line_number: u64 = 1;
-
     // 先頭２行は読み捨てる
     let _ = stream.read_line(&mut line);
     let _ = stream.read_line(&mut line);
     line.clear();
+
+    let mut line_number: u64 = 3;
+    let mut built = Vec::new();
     //
     while stream.read_line(&mut line).unwrap() > 0 {
         // 空行は無視する
