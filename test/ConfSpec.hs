@@ -21,7 +21,7 @@ confInfo = Info
 
 confInfoSlack = InfoSlack
     { webHookURL = "enter webHookURL"
-    , token = "enter token"
+    , access_token = "enter access token"
     , channel = "enter channel"
     , userName = "enter userName"
     }

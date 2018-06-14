@@ -36,7 +36,7 @@ import Navigation
 import Material
 import Model exposing (Model)
 import Msg exposing (Msg)
-import Route exposing (Route)
+import Route exposing (Route, TickerSymbol)
 import View
 import Task
 import Dom.Scroll
@@ -47,129 +47,82 @@ import Generated.WebApi as Api
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg.Increase ->
-            ( { model | count = model.count + 1 }
-            , Cmd.none
-            )
-
-        Msg.Reset ->
-            ( { model | count = 0 }
-            , Cmd.none
-            )
-
         Msg.DropZoneEntered ->
-            ( { model | inDropZone = True }
-            , Cmd.none
-            )
+            { model | inDropZone = True } ! []
 
         Msg.DropZoneLeaved ->
-            ( { model | inDropZone = False }
-            , Cmd.none
-            )
+            { model | inDropZone = False } ! []
 
         Msg.FilesDropped files ->
-            ( { model | inDropZone = False, droppedFiles = files }
-            , Cmd.none
-            )
+            { model | inDropZone = False, droppedFiles = files } ! []
 
         Msg.UrlChange location ->
-            location |> Route.fromLocation |> urlUpdate model
+            urlUpdate model location
 
         Msg.NewUrl url ->
-            ( model
-            , Navigation.newUrl url
-            )
+            model ! [ Navigation.newUrl url ]
 
-        Msg.NewServerVersion (Ok version) ->
-            ( { model | serverVersion = Just version }
-            , Cmd.none
-            )
+        Msg.UpdateServerVersion res ->
+            { model | serverVersion = Result.toMaybe res } ! []
 
-        Msg.NewServerVersion (Err a) ->
-            ( { model | serverVersion = Nothing }
-            , Cmd.none
-            )
+        Msg.UpdatePortfolios res ->
+            { model | portfolios = Result.toMaybe res } ! []
 
-        Msg.NewPortfolios (Ok pf) ->
-            ( { model | portfolios = Just pf }
-            , Cmd.none
-            )
+        Msg.UpdateAnalytics res ->
+            { model | histories = Result.toMaybe res } ! []
 
-        Msg.NewPortfolios (Err _) ->
-            ( { model | portfolios = Nothing }
-            , Cmd.none
-            )
-
-        Msg.NewHistories (Ok hs) ->
-            update
-                (Route.toUrlPath Route.Analytics |> Msg.NewUrl)
-                { model | histories = Just hs }
-
-        Msg.NewHistories (Err _) ->
-            ( { model | histories = Nothing }
-            , Cmd.none
-            )
-
-        Msg.NewWebApiDocumentMd (Ok md) ->
-            ( { model | webApiDocumentMd = md }
-            , Cmd.none
-            )
-
-        Msg.NewWebApiDocumentMd (Err _) ->
-            ( { model | webApiDocumentMd = "Document file load error." }
-            , Cmd.none
-            )
-
-        Msg.RequestNewHistories code ->
-            model ! [ getHistories code ]
+        Msg.UpdateWebApiDocument res ->
+            { model | webApiDocument = Result.toMaybe res } ! []
 
         Msg.ScrollToTop ->
-            ( model
-            , Task.attempt (always Msg.Nop) <| Dom.Scroll.toTop Layout.mainId
-            )
+            model ! [ Task.attempt (always Msg.Nop) <| Dom.Scroll.toTop Layout.mainId ]
 
         Msg.Nop ->
-            model ! []
+            ( model, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Msg.Mdl msg_ ->
             Material.update Msg.Mdl msg_ model
 
 
-urlUpdate : Model -> Maybe Route -> ( Model, Cmd Msg )
-urlUpdate model route =
-    case route of
+urlUpdate : Model -> Navigation.Location -> ( Model, Cmd Msg )
+urlUpdate model location =
+    case Route.fromLocation location of
+        Just (Route.Analytics (Just ts)) ->
+            let
+                next =
+                    Route.Analytics (Just ts)
+            in
+                { model | pageHistory = next :: model.pageHistory }
+                    ! [ askHistories ts ]
+
         Just next ->
-            ( { model | pageHistory = next :: model.pageHistory }
-            , Task.attempt (always Msg.Nop) <| Dom.Scroll.toTop Layout.mainId
-            )
+            { model | pageHistory = next :: model.pageHistory }
+                ! [ Task.attempt (always Msg.Nop) <| Dom.Scroll.toTop Layout.mainId ]
 
         Nothing ->
             model ! []
 
 
-getWebApiDocumentMd : Cmd Msg
-getWebApiDocumentMd =
-    let
-        get =
-            Http.getString "public/WebApiDocument.md"
-    in
-        Http.send Msg.NewWebApiDocumentMd get
+askWebApiDocument : Cmd Msg
+askWebApiDocument =
+    Http.send Msg.UpdateWebApiDocument <|
+        Http.getString "public/WebApiDocument.md"
 
 
-getServerVersion : Cmd Msg
-getServerVersion =
-    Http.send Msg.NewServerVersion Api.getApiV1Version
+askServerVersion : Cmd Msg
+askServerVersion =
+    Http.send Msg.UpdateServerVersion Api.getApiV1Version
 
 
-getPortfolios : Cmd Msg
-getPortfolios =
-    Http.send Msg.NewPortfolios Api.getApiV1Portfolios
+askPortfolios : Cmd Msg
+askPortfolios =
+    Http.send Msg.UpdatePortfolios Api.getApiV1Portfolios
 
 
-getHistories : String -> Cmd Msg
-getHistories code =
-    Http.send Msg.NewHistories (Api.getApiV1QuotesByCode code)
+askHistories : TickerSymbol -> Cmd Msg
+askHistories ts =
+    Http.send Msg.UpdateAnalytics (Api.getApiV1QuotesByCode ts)
 
 
 subscriptions : Model -> Sub Msg
@@ -195,22 +148,19 @@ init location =
             , serverVersion = Nothing
             , portfolios = Nothing
             , histories = Nothing
-            , webApiDocumentMd = ""
+            , webApiDocument = Nothing
             , mdl =
                 Material.model
 
             -- Boilerplate: Always use this initial Mdl model store.
             }
-
-        cmd =
-            Cmd.batch
-                [ getServerVersion
-                , getPortfolios
-                , getWebApiDocumentMd
-                , Material.init Msg.Mdl
-                ]
     in
-        ( model, cmd )
+        model
+            ! [ askServerVersion
+              , askWebApiDocument
+              , askPortfolios
+              , Material.init Msg.Mdl
+              ]
 
 
 main : Program Never Model Msg

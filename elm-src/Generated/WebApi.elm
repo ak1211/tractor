@@ -105,7 +105,7 @@ putApiV1PublishZmqByCode capture_code =
             []
         , url =
             String.join "/"
-                [ "http://localhost:8739"
+                [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
                 , "publish"
@@ -137,7 +137,7 @@ getApiV1Version =
             []
         , url =
             String.join "/"
-                [ "http://localhost:8739"
+                [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
                 , "version"
@@ -161,7 +161,7 @@ getApiV1Portfolios =
             []
         , url =
             String.join "/"
-                [ "http://localhost:8739"
+                [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
                 , "portfolios"
@@ -185,7 +185,7 @@ postApiV1QuotesAllUpdate =
             []
         , url =
             String.join "/"
-                [ "http://localhost:8739"
+                [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
                 , "quotes"
@@ -217,7 +217,7 @@ getApiV1QuotesByCode capture_code =
             []
         , url =
             String.join "/"
-                [ "http://localhost:8739"
+                [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
                 , "quotes"

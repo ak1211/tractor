@@ -39,19 +39,15 @@ import Generated.WebApi as Api
 
 
 type Msg
-    = Increase
-    | Reset
-    | DropZoneEntered
+    = DropZoneEntered
     | DropZoneLeaved
     | FilesDropped (List FileReader.File)
     | UrlChange Navigation.Location
     | NewUrl String
-      --    | PageTransition Route
-    | NewServerVersion (Result Http.Error Api.VerRev)
-    | NewPortfolios (Result Http.Error Model.Portfolios)
-    | NewHistories (Result Http.Error Model.Histories)
-    | NewWebApiDocumentMd (Result Http.Error String)
-    | RequestNewHistories String
+    | UpdateServerVersion (Result Http.Error Api.VerRev)
+    | UpdatePortfolios (Result Http.Error Model.Portfolios)
+    | UpdateAnalytics (Result Http.Error Model.Histories)
+    | UpdateWebApiDocument (Result Http.Error String)
     | ScrollToTop
     | Nop
     | Mdl (Material.Msg Msg)

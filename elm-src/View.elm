@@ -52,7 +52,7 @@ import Material.Scheme
 import FileReader
 import Model exposing (Model)
 import Msg exposing (Msg)
-import Route exposing (Route)
+import Route exposing (Route, TickerSymbol)
 import Generated.WebApi as WebApi
 
 
@@ -119,10 +119,8 @@ view model =
 viewHeader : Model -> Html Msg
 viewHeader model =
     let
-        pageText =
-            List.head model.pageHistory
-                |> Maybe.map Route.routeCaption
-                |> Maybe.withDefault ""
+        thisItem r =
+            List.filter (\a -> a.route == r) menuItems |> List.head
 
         hrefGitHub =
             Layout.href "https://github.com/ak1211/tractor"
@@ -138,7 +136,10 @@ viewHeader model =
                 [ Options.center ]
                 [ Html.text "TRACTOR"
                 , Icon.i "chevron_right"
-                , Html.text pageText
+                , List.head model.pageHistory
+                    |> Maybe.map Route.showRoute
+                    |> Maybe.withDefault ""
+                    |> Html.text
                 ]
             , Layout.spacer
             , Layout.navigation [] [ Layout.link [ hrefGitHub ] [ imgGitHub ] ]
@@ -156,7 +157,7 @@ menuItems =
     [ { iconName = "dashboard", route = Route.Dashboard }
     , { iconName = "file_upload", route = Route.Upload }
     , { iconName = "list", route = Route.Portfolio }
-    , { iconName = "show_chart", route = Route.Analytics }
+    , { iconName = "show_chart", route = (Route.Analytics Nothing) }
     , { iconName = "note", route = Route.Reports }
     , { iconName = "account_balance", route = Route.AccBalance }
     , { iconName = "school", route = Route.ApiDocument }
@@ -195,7 +196,7 @@ viewDrawerMenuItem model menuItem =
                 [ Color.text <| Color.color Color.BlueGrey Color.S100
                 , Options.css "margin-right" "26px"
                 ]
-            , Html.text <| Route.routeCaption menuItem.route
+            , Html.text (Route.showRoute menuItem.route)
             ]
 
 
@@ -244,8 +245,8 @@ viewBody : Model -> Html Msg
 viewBody model =
     let
         page =
-            Maybe.withDefault Route.Dashboard <|
-                List.head model.pageHistory
+            List.head model.pageHistory
+                |> Maybe.withDefault Route.Dashboard
     in
         case page of
             Route.Dashboard ->
@@ -257,8 +258,8 @@ viewBody model =
             Route.Portfolio ->
                 viewPortfolio model
 
-            Route.Analytics ->
-                viewAnalytics model
+            Route.Analytics ts ->
+                viewAnalytics model ts
 
             Route.Reports ->
                 viewReports model
@@ -268,6 +269,10 @@ viewBody model =
 
             Route.ApiDocument ->
                 viewApiDocument model
+
+
+
+-- Dashboardページ
 
 
 viewDashboard : Model -> Html Msg
@@ -370,6 +375,10 @@ viewCell =
     Maybe.withDefault "Not Available"
 
 
+
+-- Uploadページ
+
+
 viewUpload : Model -> Html Msg
 viewUpload model =
     {-
@@ -416,7 +425,7 @@ viewUpload model =
                         , filesMsg = Msg.FilesDropped
                         }
                 )
-                [ Html.text "The CSV file to uplode."
+                [ Html.text "The CSV file to upload."
                 , Html.p [] [ Html.text "Drop files here." ]
                 ]
             , if List.length model.droppedFiles > 0 then
@@ -540,12 +549,22 @@ viewTable headlines viewRow data =
         ]
 
 
+
+-- Portfolioページ
+
+
 viewPortfolio : Model -> Html Msg
 viewPortfolio model =
     let
         viewRow : WebApi.Portfolio -> Html Msg
         viewRow item =
-            Table.tr [ Options.onClick <| Msg.RequestNewHistories item.code ]
+            --Table.tr [ Options.onClick <| Msg.GetHistories item.code ]
+            Table.tr
+                [ Route.Analytics (Just item.code)
+                    |> Route.toUrlPath
+                    |> Msg.NewUrl
+                    |> Options.onClick
+                ]
                 [ Table.td [ Table.numeric ] [ Html.text item.code ]
                 , Table.td [] [ Html.text <| viewCell item.caption ]
                 , Table.td [ Table.numeric ] [ Html.text <| viewCell item.updateAt ]
@@ -595,8 +614,12 @@ tableOhlcv data =
         viewTable headlines viewRow data
 
 
-viewAnalytics : Model -> Html Msg
-viewAnalytics model =
+
+-- Analyticsページ
+
+
+viewAnalytics : Model -> Maybe TickerSymbol -> Html Msg
+viewAnalytics model ticker =
     let
         def =
             pinkCard [ Html.text "No datasets available" ]
@@ -604,17 +627,30 @@ viewAnalytics model =
         model.histories |> Maybe.map tableOhlcv |> Maybe.withDefault def
 
 
+
+-- Reportsページ
+
+
 viewReports : Model -> Html Msg
 viewReports model =
     pinkCard [ Html.text "No Reports here." ]
 
 
+
+-- API Documentページ
+
+
 viewApiDocument : Model -> Html Msg
 viewApiDocument model =
-    let
-        attributes =
-            [ Attr.class "content"
-            , Attr.style [ ( "margin", "20px" ) ]
-            ]
-    in
-        Markdown.toHtml attributes model.webApiDocumentMd
+    case model.webApiDocument of
+        Just doc ->
+            let
+                attributes =
+                    [ Attr.class "content"
+                    , Attr.style [ ( "margin", "20px" ) ]
+                    ]
+            in
+                Markdown.toHtml attributes doc
+
+        Nothing ->
+            pinkCard [ Html.text "No document available." ]

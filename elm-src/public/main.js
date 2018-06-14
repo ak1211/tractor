@@ -6831,7 +6831,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Version = _elm_lang$http$Http$reque
 			'/',
 			{
 				ctor: '::',
-				_0: 'http://localhost:8739',
+				_0: 'https://tractor.ak1211.com',
 				_1: {
 					ctor: '::',
 					_0: 'api',
@@ -6877,7 +6877,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = _elm_lang$http$Http$re
 			'/',
 			{
 				ctor: '::',
-				_0: 'http://localhost:8739',
+				_0: 'https://tractor.ak1211.com',
 				_1: {
 					ctor: '::',
 					_0: 'api',
@@ -6945,7 +6945,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1QuotesByCode = function (capture_co
 				'/',
 				{
 					ctor: '::',
-					_0: 'http://localhost:8739',
+					_0: 'https://tractor.ak1211.com',
 					_1: {
 						ctor: '::',
 						_0: 'api',
@@ -6982,7 +6982,7 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByCode = function (captur
 				'/',
 				{
 					ctor: '::',
-					_0: 'http://localhost:8739',
+					_0: 'https://tractor.ak1211.com',
 					_1: {
 						ctor: '::',
 						_0: 'api',
@@ -7024,7 +7024,7 @@ var _ak1211$tractor$Generated_WebApi$postApiV1QuotesAllUpdate = _elm_lang$http$H
 			'/',
 			{
 				ctor: '::',
-				_0: 'http://localhost:8739',
+				_0: 'https://tractor.ak1211.com',
 				_1: {
 					ctor: '::',
 					_0: 'api',
@@ -16424,87 +16424,119 @@ var _evancz$url_parser$UrlParser$intParam = function (name) {
 	return A2(_evancz$url_parser$UrlParser$customParam, name, _evancz$url_parser$UrlParser$intParamHelp);
 };
 
-var _ak1211$tractor$Route$Item = F2(
-	function (a, b) {
-		return {caption: a, path: b};
-	});
-var _ak1211$tractor$Route$forwardLookup = function (rt) {
-	var _p0 = rt;
+var _ak1211$tractor$Route$toUrlPath = function (route) {
+	var _p0 = route;
 	switch (_p0.ctor) {
 		case 'Dashboard':
-			return A2(_ak1211$tractor$Route$Item, 'Dashboard', '');
+			return '/';
 		case 'Upload':
-			return A2(_ak1211$tractor$Route$Item, 'Upload', 'upload');
+			return '/#upload';
 		case 'Portfolio':
-			return A2(_ak1211$tractor$Route$Item, 'Portfolio', 'portfolio');
+			return '/#portfolio';
 		case 'Analytics':
-			return A2(_ak1211$tractor$Route$Item, 'Analytics', 'analytics');
+			if (_p0._0.ctor === 'Just') {
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'/?ticker=',
+					A2(_elm_lang$core$Basics_ops['++'], _p0._0._0, '#analytics'));
+			} else {
+				return '/#analytics';
+			}
 		case 'Reports':
-			return A2(_ak1211$tractor$Route$Item, 'Reports', 'reports');
+			return '/#reports';
 		case 'AccBalance':
-			return A2(_ak1211$tractor$Route$Item, 'Account Balance', 'acc-balance');
+			return '/#acc-balance';
 		default:
-			return A2(_ak1211$tractor$Route$Item, 'API document', 'api-document');
+			return '/#api-document';
 	}
 };
-var _ak1211$tractor$Route$routeCaption = function (route) {
-	return _ak1211$tractor$Route$forwardLookup(route).caption;
-};
-var _ak1211$tractor$Route$toUrlPath = function (route) {
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		'/',
-		_ak1211$tractor$Route$forwardLookup(route).path);
+var _ak1211$tractor$Route$showRoute = function (route) {
+	var _p1 = route;
+	switch (_p1.ctor) {
+		case 'Dashboard':
+			return 'Dashboard';
+		case 'Upload':
+			return 'Upload';
+		case 'Portfolio':
+			return 'Portfolio';
+		case 'Analytics':
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'Analytics ',
+				A2(
+					_elm_lang$core$Maybe$withDefault,
+					'',
+					A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, _p1._0)));
+		case 'Reports':
+			return 'Reports';
+		case 'AccBalance':
+			return 'Account Balance';
+		default:
+			return 'API Document';
+	}
 };
 var _ak1211$tractor$Route$ApiDocument = {ctor: 'ApiDocument'};
 var _ak1211$tractor$Route$AccBalance = {ctor: 'AccBalance'};
 var _ak1211$tractor$Route$Reports = {ctor: 'Reports'};
-var _ak1211$tractor$Route$Analytics = {ctor: 'Analytics'};
+var _ak1211$tractor$Route$Analytics = function (a) {
+	return {ctor: 'Analytics', _0: a};
+};
 var _ak1211$tractor$Route$Portfolio = {ctor: 'Portfolio'};
 var _ak1211$tractor$Route$Upload = {ctor: 'Upload'};
 var _ak1211$tractor$Route$Dashboard = {ctor: 'Dashboard'};
-var _ak1211$tractor$Route$parser = function () {
-	var top = A2(_evancz$url_parser$UrlParser$map, _ak1211$tractor$Route$Dashboard, _evancz$url_parser$UrlParser$top);
-	var f = function (route) {
-		return A2(
-			_evancz$url_parser$UrlParser$map,
-			route,
-			_evancz$url_parser$UrlParser$s(
-				_ak1211$tractor$Route$forwardLookup(route).path));
-	};
-	var paths = A2(
-		_elm_lang$core$List$map,
-		f,
+var _ak1211$tractor$Route$fromLocation = function (path) {
+	var parser = _evancz$url_parser$UrlParser$oneOf(
 		{
 			ctor: '::',
-			_0: _ak1211$tractor$Route$Upload,
+			_0: A2(_evancz$url_parser$UrlParser$map, _ak1211$tractor$Route$Dashboard, _evancz$url_parser$UrlParser$top),
 			_1: {
 				ctor: '::',
-				_0: _ak1211$tractor$Route$Portfolio,
+				_0: A2(
+					_evancz$url_parser$UrlParser$map,
+					_ak1211$tractor$Route$Upload,
+					_evancz$url_parser$UrlParser$s('upload')),
 				_1: {
 					ctor: '::',
-					_0: _ak1211$tractor$Route$Analytics,
+					_0: A2(
+						_evancz$url_parser$UrlParser$map,
+						_ak1211$tractor$Route$Portfolio,
+						_evancz$url_parser$UrlParser$s('portfolio')),
 					_1: {
 						ctor: '::',
-						_0: _ak1211$tractor$Route$Reports,
+						_0: A2(
+							_evancz$url_parser$UrlParser$map,
+							_ak1211$tractor$Route$Analytics,
+							A2(
+								_evancz$url_parser$UrlParser_ops['<?>'],
+								_evancz$url_parser$UrlParser$s('analytics'),
+								_evancz$url_parser$UrlParser$stringParam('ticker'))),
 						_1: {
 							ctor: '::',
-							_0: _ak1211$tractor$Route$AccBalance,
+							_0: A2(
+								_evancz$url_parser$UrlParser$map,
+								_ak1211$tractor$Route$Reports,
+								_evancz$url_parser$UrlParser$s('reports')),
 							_1: {
 								ctor: '::',
-								_0: _ak1211$tractor$Route$ApiDocument,
-								_1: {ctor: '[]'}
+								_0: A2(
+									_evancz$url_parser$UrlParser$map,
+									_ak1211$tractor$Route$AccBalance,
+									_evancz$url_parser$UrlParser$s('acc-balance')),
+								_1: {
+									ctor: '::',
+									_0: A2(
+										_evancz$url_parser$UrlParser$map,
+										_ak1211$tractor$Route$ApiDocument,
+										_evancz$url_parser$UrlParser$s('api-document')),
+									_1: {ctor: '[]'}
+								}
 							}
 						}
 					}
 				}
 			}
 		});
-	return _evancz$url_parser$UrlParser$oneOf(
-		{ctor: '::', _0: top, _1: paths});
-}();
-var _ak1211$tractor$Route$fromLocation = function (path) {
-	return A2(_evancz$url_parser$UrlParser$parsePath, _ak1211$tractor$Route$parser, path);
+	return A2(_evancz$url_parser$UrlParser$parseHash, parser, path);
 };
 
 var _norpan$elm_file_reader$FileReader$handleFiles = '\n    var fileObjects = [];\n    var index = 0;\n    var reader = new FileReader();\n    var dataFormat = event.target.dataset.format;\n    var encoding = event.target.dataset.encoding;\n    reader.onload = function() {\n        var data;\n        switch(dataFormat) {\n            case \'DataURL\':\n            case \'Text\':\n                data = reader.result;\n                break;\n            case \'Base64\':\n                data = reader.result.split(\',\')[1];\n                break;\n        }\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , data: data\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    reader.onerror = function () {\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , errorCode: reader.error.code\n            , errorName: reader.error.name\n            , errorMessage: reader.error.message\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    function readOne() {\n        var file = files[index];\n        if (file) {\n            switch(dataFormat) {\n                case \'DataURL\':\n                case \'Base64\':\n                    reader.readAsDataURL(file);\n                    break;\n                case \'Text\':\n                    reader.readAsText(file, encoding);\n                    break;\n            }\n        } else {\n            if (fileObjects.length > 0) {\n                var filesEvent;\n                try {\n                  filesEvent = new CustomEvent(\"files\", { detail: fileObjects });\n                } catch(e) {\n                  filesEvent = document.createEvent(\"CustomEvent\");\n                  filesEvent.initCustomEvent(\"files\", false, false, fileObjects);\n                }\n                event.target.dispatchEvent(filesEvent);\n            }\n        }\n      }\n    readOne();\n';
@@ -16726,7 +16758,7 @@ var _norpan$elm_file_reader$FileReader$dropZone = function (_p2) {
 
 var _ak1211$tractor$Model$Model = F9(
 	function (a, b, c, d, e, f, g, h, i) {
-		return {count: a, pageHistory: b, inDropZone: c, droppedFiles: d, serverVersion: e, portfolios: f, histories: g, webApiDocumentMd: h, mdl: i};
+		return {count: a, pageHistory: b, inDropZone: c, droppedFiles: d, serverVersion: e, portfolios: f, histories: g, webApiDocument: h, mdl: i};
 	});
 
 var _ak1211$tractor$Msg$Mdl = function (a) {
@@ -16734,20 +16766,17 @@ var _ak1211$tractor$Msg$Mdl = function (a) {
 };
 var _ak1211$tractor$Msg$Nop = {ctor: 'Nop'};
 var _ak1211$tractor$Msg$ScrollToTop = {ctor: 'ScrollToTop'};
-var _ak1211$tractor$Msg$RequestNewHistories = function (a) {
-	return {ctor: 'RequestNewHistories', _0: a};
+var _ak1211$tractor$Msg$UpdateWebApiDocument = function (a) {
+	return {ctor: 'UpdateWebApiDocument', _0: a};
 };
-var _ak1211$tractor$Msg$NewWebApiDocumentMd = function (a) {
-	return {ctor: 'NewWebApiDocumentMd', _0: a};
+var _ak1211$tractor$Msg$UpdateAnalytics = function (a) {
+	return {ctor: 'UpdateAnalytics', _0: a};
 };
-var _ak1211$tractor$Msg$NewHistories = function (a) {
-	return {ctor: 'NewHistories', _0: a};
+var _ak1211$tractor$Msg$UpdatePortfolios = function (a) {
+	return {ctor: 'UpdatePortfolios', _0: a};
 };
-var _ak1211$tractor$Msg$NewPortfolios = function (a) {
-	return {ctor: 'NewPortfolios', _0: a};
-};
-var _ak1211$tractor$Msg$NewServerVersion = function (a) {
-	return {ctor: 'NewServerVersion', _0: a};
+var _ak1211$tractor$Msg$UpdateServerVersion = function (a) {
+	return {ctor: 'UpdateServerVersion', _0: a};
 };
 var _ak1211$tractor$Msg$NewUrl = function (a) {
 	return {ctor: 'NewUrl', _0: a};
@@ -16760,8 +16789,6 @@ var _ak1211$tractor$Msg$FilesDropped = function (a) {
 };
 var _ak1211$tractor$Msg$DropZoneLeaved = {ctor: 'DropZoneLeaved'};
 var _ak1211$tractor$Msg$DropZoneEntered = {ctor: 'DropZoneEntered'};
-var _ak1211$tractor$Msg$Reset = {ctor: 'Reset'};
-var _ak1211$tractor$Msg$Increase = {ctor: 'Increase'};
 
 //import Maybe, Native.List //
 
@@ -18500,23 +18527,6 @@ var _debois$elm_mdl$Material_Scheme$top = function (content) {
 	return A3(_debois$elm_mdl$Material_Scheme$topWithScheme, _debois$elm_mdl$Material_Color$Grey, _debois$elm_mdl$Material_Color$Grey, content);
 };
 
-var _ak1211$tractor$View$viewApiDocument = function (model) {
-	var attributes = {
-		ctor: '::',
-		_0: _elm_lang$html$Html_Attributes$class('content'),
-		_1: {
-			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$style(
-				{
-					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: 'margin', _1: '20px'},
-					_1: {ctor: '[]'}
-				}),
-			_1: {ctor: '[]'}
-		}
-	};
-	return A2(_evancz$elm_markdown$Markdown$toHtml, attributes, model.webApiDocumentMd);
-};
 var _ak1211$tractor$View$viewTable = F3(
 	function (headlines, viewRow, data) {
 		return A2(
@@ -19068,7 +19078,7 @@ var _ak1211$tractor$View$viewUpload = function (model) {
 								})),
 						{
 							ctor: '::',
-							_0: _elm_lang$html$Html$text('The CSV file to uplode.'),
+							_0: _elm_lang$html$Html$text('The CSV file to upload.'),
 							_1: {
 								ctor: '::',
 								_0: A2(
@@ -19548,7 +19558,7 @@ var _ak1211$tractor$View$viewDrawerMenuItem = F2(
 				_1: {
 					ctor: '::',
 					_0: _elm_lang$html$Html$text(
-						_ak1211$tractor$Route$routeCaption(menuItem.route)),
+						_ak1211$tractor$Route$showRoute(menuItem.route)),
 					_1: {ctor: '[]'}
 				}
 			});
@@ -19564,7 +19574,10 @@ var _ak1211$tractor$View$menuItems = {
 			_0: {iconName: 'list', route: _ak1211$tractor$Route$Portfolio},
 			_1: {
 				ctor: '::',
-				_0: {iconName: 'show_chart', route: _ak1211$tractor$Route$Analytics},
+				_0: {
+					iconName: 'show_chart',
+					route: _ak1211$tractor$Route$Analytics(_elm_lang$core$Maybe$Nothing)
+				},
 				_1: {
 					ctor: '::',
 					_0: {iconName: 'note', route: _ak1211$tractor$Route$Reports},
@@ -19644,13 +19657,15 @@ var _ak1211$tractor$View$viewHeader = function (model) {
 		},
 		{ctor: '[]'});
 	var hrefGitHub = _debois$elm_mdl$Material_Layout$href('https://github.com/ak1211/tractor');
-	var pageText = A2(
-		_elm_lang$core$Maybe$withDefault,
-		'',
-		A2(
-			_elm_lang$core$Maybe$map,
-			_ak1211$tractor$Route$routeCaption,
-			_elm_lang$core$List$head(model.pageHistory)));
+	var thisItem = function (r) {
+		return _elm_lang$core$List$head(
+			A2(
+				_elm_lang$core$List$filter,
+				function (a) {
+					return _elm_lang$core$Native_Utils.eq(a.route, r);
+				},
+				_ak1211$tractor$View$menuItems));
+	};
 	return A2(
 		_debois$elm_mdl$Material_Layout$row,
 		{
@@ -19681,7 +19696,14 @@ var _ak1211$tractor$View$viewHeader = function (model) {
 						_0: _debois$elm_mdl$Material_Icon$i('chevron_right'),
 						_1: {
 							ctor: '::',
-							_0: _elm_lang$html$Html$text(pageText),
+							_0: _elm_lang$html$Html$text(
+								A2(
+									_elm_lang$core$Maybe$withDefault,
+									'',
+									A2(
+										_elm_lang$core$Maybe$map,
+										_ak1211$tractor$Route$showRoute,
+										_elm_lang$core$List$head(model.pageHistory)))),
 							_1: {ctor: '[]'}
 						}
 					}
@@ -19765,7 +19787,10 @@ var _ak1211$tractor$View$viewPortfolio = function (model) {
 			{
 				ctor: '::',
 				_0: _debois$elm_mdl$Material_Options$onClick(
-					_ak1211$tractor$Msg$RequestNewHistories(item.code)),
+					_ak1211$tractor$Msg$NewUrl(
+						_ak1211$tractor$Route$toUrlPath(
+							_ak1211$tractor$Route$Analytics(
+								_elm_lang$core$Maybe$Just(item.code))))),
 				_1: {ctor: '[]'}
 			},
 			{
@@ -19825,18 +19850,19 @@ var _ak1211$tractor$View$viewPortfolio = function (model) {
 			});
 	}
 };
-var _ak1211$tractor$View$viewAnalytics = function (model) {
-	var def = _ak1211$tractor$View$pinkCard(
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('No datasets available'),
-			_1: {ctor: '[]'}
-		});
-	return A2(
-		_elm_lang$core$Maybe$withDefault,
-		def,
-		A2(_elm_lang$core$Maybe$map, _ak1211$tractor$View$tableOhlcv, model.histories));
-};
+var _ak1211$tractor$View$viewAnalytics = F2(
+	function (model, ticker) {
+		var def = _ak1211$tractor$View$pinkCard(
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('No datasets available'),
+				_1: {ctor: '[]'}
+			});
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			def,
+			A2(_elm_lang$core$Maybe$map, _ak1211$tractor$View$tableOhlcv, model.histories));
+	});
 var _ak1211$tractor$View$viewReports = function (model) {
 	return _ak1211$tractor$View$pinkCard(
 		{
@@ -19845,13 +19871,40 @@ var _ak1211$tractor$View$viewReports = function (model) {
 			_1: {ctor: '[]'}
 		});
 };
+var _ak1211$tractor$View$viewApiDocument = function (model) {
+	var _p11 = model.webApiDocument;
+	if (_p11.ctor === 'Just') {
+		var attributes = {
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('content'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$style(
+					{
+						ctor: '::',
+						_0: {ctor: '_Tuple2', _0: 'margin', _1: '20px'},
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			}
+		};
+		return A2(_evancz$elm_markdown$Markdown$toHtml, attributes, _p11._0);
+	} else {
+		return _ak1211$tractor$View$pinkCard(
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('No document available.'),
+				_1: {ctor: '[]'}
+			});
+	}
+};
 var _ak1211$tractor$View$viewBody = function (model) {
 	var page = A2(
 		_elm_lang$core$Maybe$withDefault,
 		_ak1211$tractor$Route$Dashboard,
 		_elm_lang$core$List$head(model.pageHistory));
-	var _p11 = page;
-	switch (_p11.ctor) {
+	var _p12 = page;
+	switch (_p12.ctor) {
 		case 'Dashboard':
 			return _ak1211$tractor$View$viewDashboard(model);
 		case 'Upload':
@@ -19859,7 +19912,7 @@ var _ak1211$tractor$View$viewBody = function (model) {
 		case 'Portfolio':
 			return _ak1211$tractor$View$viewPortfolio(model);
 		case 'Analytics':
-			return _ak1211$tractor$View$viewAnalytics(model);
+			return A2(_ak1211$tractor$View$viewAnalytics, model, _p12._0);
 		case 'Reports':
 			return _ak1211$tractor$View$viewReports(model);
 		case 'AccBalance':
@@ -20040,37 +20093,19 @@ var _elm_lang$dom$Dom_Scroll$toTop = function (id) {
 var _ak1211$tractor$Main$subscriptions = function (model) {
 	return A2(_debois$elm_mdl$Material$subscriptions, _ak1211$tractor$Msg$Mdl, model);
 };
-var _ak1211$tractor$Main$getHistories = function (code) {
+var _ak1211$tractor$Main$askHistories = function (ts) {
 	return A2(
 		_elm_lang$http$Http$send,
-		_ak1211$tractor$Msg$NewHistories,
-		_ak1211$tractor$Generated_WebApi$getApiV1QuotesByCode(code));
+		_ak1211$tractor$Msg$UpdateAnalytics,
+		_ak1211$tractor$Generated_WebApi$getApiV1QuotesByCode(ts));
 };
-var _ak1211$tractor$Main$getPortfolios = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$NewPortfolios, _ak1211$tractor$Generated_WebApi$getApiV1Portfolios);
-var _ak1211$tractor$Main$getServerVersion = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$NewServerVersion, _ak1211$tractor$Generated_WebApi$getApiV1Version);
-var _ak1211$tractor$Main$getWebApiDocumentMd = function () {
-	var get = _elm_lang$http$Http$getString('public/WebApiDocument.md');
-	return A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$NewWebApiDocumentMd, get);
-}();
+var _ak1211$tractor$Main$askPortfolios = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdatePortfolios, _ak1211$tractor$Generated_WebApi$getApiV1Portfolios);
+var _ak1211$tractor$Main$askServerVersion = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdateServerVersion, _ak1211$tractor$Generated_WebApi$getApiV1Version);
+var _ak1211$tractor$Main$askWebApiDocument = A2(
+	_elm_lang$http$Http$send,
+	_ak1211$tractor$Msg$UpdateWebApiDocument,
+	_elm_lang$http$Http$getString('public/WebApiDocument.md'));
 var _ak1211$tractor$Main$init = function (location) {
-	var cmd = _elm_lang$core$Platform_Cmd$batch(
-		{
-			ctor: '::',
-			_0: _ak1211$tractor$Main$getServerVersion,
-			_1: {
-				ctor: '::',
-				_0: _ak1211$tractor$Main$getPortfolios,
-				_1: {
-					ctor: '::',
-					_0: _ak1211$tractor$Main$getWebApiDocumentMd,
-					_1: {
-						ctor: '::',
-						_0: _debois$elm_mdl$Material$init(_ak1211$tractor$Msg$Mdl),
-						_1: {ctor: '[]'}
-					}
-				}
-			}
-		});
 	var model = {
 		count: 0,
 		pageHistory: function () {
@@ -20090,27 +20125,67 @@ var _ak1211$tractor$Main$init = function (location) {
 		serverVersion: _elm_lang$core$Maybe$Nothing,
 		portfolios: _elm_lang$core$Maybe$Nothing,
 		histories: _elm_lang$core$Maybe$Nothing,
-		webApiDocumentMd: '',
+		webApiDocument: _elm_lang$core$Maybe$Nothing,
 		mdl: _debois$elm_mdl$Material$model
 	};
-	return {ctor: '_Tuple2', _0: model, _1: cmd};
+	return A2(
+		_elm_lang$core$Platform_Cmd_ops['!'],
+		model,
+		{
+			ctor: '::',
+			_0: _ak1211$tractor$Main$askServerVersion,
+			_1: {
+				ctor: '::',
+				_0: _ak1211$tractor$Main$askWebApiDocument,
+				_1: {
+					ctor: '::',
+					_0: _ak1211$tractor$Main$askPortfolios,
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material$init(_ak1211$tractor$Msg$Mdl),
+						_1: {ctor: '[]'}
+					}
+				}
+			}
+		});
 };
 var _ak1211$tractor$Main$urlUpdate = F2(
-	function (model, route) {
-		var _p1 = route;
+	function (model, location) {
+		var _p1 = _ak1211$tractor$Route$fromLocation(location);
 		if (_p1.ctor === 'Just') {
-			return {
-				ctor: '_Tuple2',
-				_0: _elm_lang$core$Native_Utils.update(
-					model,
+			if ((_p1._0.ctor === 'Analytics') && (_p1._0._0.ctor === 'Just')) {
+				var _p2 = _p1._0._0._0;
+				var next = _ak1211$tractor$Route$Analytics(
+					_elm_lang$core$Maybe$Just(_p2));
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							pageHistory: {ctor: '::', _0: next, _1: model.pageHistory}
+						}),
 					{
-						pageHistory: {ctor: '::', _0: _p1._0, _1: model.pageHistory}
-					}),
-				_1: A2(
-					_elm_lang$core$Task$attempt,
-					_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
-					_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId))
-			};
+						ctor: '::',
+						_0: _ak1211$tractor$Main$askHistories(_p2),
+						_1: {ctor: '[]'}
+					});
+			} else {
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							pageHistory: {ctor: '::', _0: _p1._0, _1: model.pageHistory}
+						}),
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Task$attempt,
+							_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
+							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
+						_1: {ctor: '[]'}
+					});
+			}
 		} else {
 			return A2(
 				_elm_lang$core$Platform_Cmd_ops['!'],
@@ -20120,166 +20195,92 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 	});
 var _ak1211$tractor$Main$update = F2(
 	function (msg, model) {
-		update:
-		while (true) {
-			var _p2 = msg;
-			switch (_p2.ctor) {
-				case 'Increase':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{count: model.count + 1}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'Reset':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{count: 0}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'DropZoneEntered':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{inDropZone: true}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'DropZoneLeaved':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{inDropZone: false}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'FilesDropped':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{inDropZone: false, droppedFiles: _p2._0}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'UrlChange':
-					return A2(
-						_ak1211$tractor$Main$urlUpdate,
+		var _p3 = msg;
+		switch (_p3.ctor) {
+			case 'DropZoneEntered':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
 						model,
-						_ak1211$tractor$Route$fromLocation(_p2._0));
-				case 'NewUrl':
-					return {
-						ctor: '_Tuple2',
-						_0: model,
-						_1: _elm_lang$navigation$Navigation$newUrl(_p2._0)
-					};
-				case 'NewServerVersion':
-					if (_p2._0.ctor === 'Ok') {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{
-									serverVersion: _elm_lang$core$Maybe$Just(_p2._0._0)
-								}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{serverVersion: _elm_lang$core$Maybe$Nothing}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					}
-				case 'NewPortfolios':
-					if (_p2._0.ctor === 'Ok') {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{
-									portfolios: _elm_lang$core$Maybe$Just(_p2._0._0)
-								}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{portfolios: _elm_lang$core$Maybe$Nothing}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					}
-				case 'NewHistories':
-					if (_p2._0.ctor === 'Ok') {
-						var _v3 = _ak1211$tractor$Msg$NewUrl(
-							_ak1211$tractor$Route$toUrlPath(_ak1211$tractor$Route$Analytics)),
-							_v4 = _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								histories: _elm_lang$core$Maybe$Just(_p2._0._0)
-							});
-						msg = _v3;
-						model = _v4;
-						continue update;
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{histories: _elm_lang$core$Maybe$Nothing}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					}
-				case 'NewWebApiDocumentMd':
-					if (_p2._0.ctor === 'Ok') {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{webApiDocumentMd: _p2._0._0}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{webApiDocumentMd: 'Document file load error.'}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					}
-				case 'RequestNewHistories':
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
+						{inDropZone: true}),
+					{ctor: '[]'});
+			case 'DropZoneLeaved':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{inDropZone: false}),
+					{ctor: '[]'});
+			case 'FilesDropped':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{inDropZone: false, droppedFiles: _p3._0}),
+					{ctor: '[]'});
+			case 'UrlChange':
+				return A2(_ak1211$tractor$Main$urlUpdate, model, _p3._0);
+			case 'NewUrl':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: _elm_lang$navigation$Navigation$newUrl(_p3._0),
+						_1: {ctor: '[]'}
+					});
+			case 'UpdateServerVersion':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							ctor: '::',
-							_0: _ak1211$tractor$Main$getHistories(_p2._0),
-							_1: {ctor: '[]'}
-						});
-				case 'ScrollToTop':
-					return {
-						ctor: '_Tuple2',
-						_0: model,
-						_1: A2(
+							serverVersion: _elm_lang$core$Result$toMaybe(_p3._0)
+						}),
+					{ctor: '[]'});
+			case 'UpdatePortfolios':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							portfolios: _elm_lang$core$Result$toMaybe(_p3._0)
+						}),
+					{ctor: '[]'});
+			case 'UpdateAnalytics':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							histories: _elm_lang$core$Result$toMaybe(_p3._0)
+						}),
+					{ctor: '[]'});
+			case 'UpdateWebApiDocument':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							webApiDocument: _elm_lang$core$Result$toMaybe(_p3._0)
+						}),
+					{ctor: '[]'});
+			case 'ScrollToTop':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: A2(
 							_elm_lang$core$Task$attempt,
 							_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
-							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId))
-					};
-				case 'Nop':
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
-						{ctor: '[]'});
-				default:
-					return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p2._0, model);
-			}
+							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
+						_1: {ctor: '[]'}
+					});
+			case 'Nop':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p3._0, model);
 		}
 	});
 var _ak1211$tractor$Main$main = A2(

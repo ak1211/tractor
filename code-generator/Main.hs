@@ -41,7 +41,7 @@ import           VerRev               (VerRev)
 elmOpts :: Servant.Elm.ElmOptions
 elmOpts =
     Servant.Elm.defElmOptions
-    { Servant.Elm.urlPrefix = Servant.Elm.Static "http://localhost:8739"
+    { Servant.Elm.urlPrefix = Servant.Elm.Static "https://tractor.ak1211.com"
     }
 
 spec :: Servant.Elm.Spec

@@ -44,6 +44,10 @@ type alias Histories =
     List WebApi.Ohlcv
 
 
+type alias DocMarkDown =
+    String
+
+
 type alias Model =
     { count : Int
     , pageHistory : List Route
@@ -54,7 +58,7 @@ type alias Model =
     , serverVersion : Maybe WebApi.VerRev
     , portfolios : Maybe Portfolios
     , histories : Maybe Histories
-    , webApiDocumentMd : String
+    , webApiDocument : Maybe DocMarkDown
     , mdl :
         Material.Model
 

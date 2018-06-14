@@ -28,86 +28,94 @@
 -}
 
 
-module Route exposing (Route(..), routeCaption, toUrlPath, fromLocation)
+module Route exposing (TickerSymbol, Route(..), showRoute, toUrlPath, fromLocation)
 
 import Navigation
-import UrlParser
-import List
+import UrlParser exposing (top, s, (<?>), stringParam)
+
+
+type alias TickerSymbol =
+    String
 
 
 type Route
     = Dashboard
     | Upload
     | Portfolio
-    | Analytics
+    | Analytics (Maybe TickerSymbol)
     | Reports
     | AccBalance
     | ApiDocument
 
 
-type alias Item =
-    { caption : String
-    , path : String
-    }
-
-
-forwardLookup : Route -> Item
-forwardLookup rt =
-    case rt of
+showRoute : Route -> String
+showRoute route =
+    case route of
         Dashboard ->
-            Item "Dashboard" ""
+            "Dashboard"
 
         Upload ->
-            Item "Upload" "upload"
+            "Upload"
 
         Portfolio ->
-            Item "Portfolio" "portfolio"
+            "Portfolio"
 
-        Analytics ->
-            Item "Analytics" "analytics"
+        Analytics a ->
+            "Analytics "
+                ++ (Maybe.withDefault "" <| Maybe.map toString a)
 
         Reports ->
-            Item "Reports" "reports"
+            "Reports"
 
         AccBalance ->
-            Item "Account Balance" "acc-balance"
+            "Account Balance"
 
         ApiDocument ->
-            Item "API document" "api-document"
-
-
-routeCaption : Route -> String
-routeCaption route =
-    (forwardLookup route).caption
+            "API Document"
 
 
 toUrlPath : Route -> String
 toUrlPath route =
-    "/" ++ (forwardLookup route).path
+    case route of
+        Dashboard ->
+            "/"
+
+        Upload ->
+            "/#upload"
+
+        Portfolio ->
+            "/#portfolio"
+
+        Analytics (Just ts) ->
+            "/?ticker=" ++ ts ++ "#analytics"
+
+        Analytics Nothing ->
+            "/#analytics"
+
+        Reports ->
+            "/#reports"
+
+        AccBalance ->
+            "/#acc-balance"
+
+        ApiDocument ->
+            "/#api-document"
 
 
 fromLocation : Navigation.Location -> Maybe Route
 fromLocation path =
-    UrlParser.parsePath parser path
-
-
-parser : UrlParser.Parser (Route -> a) a
-parser =
     let
-        f route =
-            UrlParser.map route <| UrlParser.s <| (forwardLookup route).path
-
-        paths =
-            List.map f
-                [ Upload
-                , Portfolio
-                , Analytics
-                , Reports
-                , AccBalance
-                , ApiDocument
+        parser =
+            UrlParser.oneOf
+                [ UrlParser.map Dashboard top
+                , UrlParser.map Upload (s "upload")
+                , UrlParser.map Portfolio (s "portfolio")
+                , UrlParser.map Analytics (s "analytics" <?> stringParam "ticker")
+                , UrlParser.map Reports (s "reports")
+                , UrlParser.map AccBalance (s "acc-balance")
+                , UrlParser.map ApiDocument (s "api-document")
                 ]
-
-        top =
-            UrlParser.map Dashboard UrlParser.top
     in
-        UrlParser.oneOf (top :: paths)
+        UrlParser.parseHash
+            parser
+            path
