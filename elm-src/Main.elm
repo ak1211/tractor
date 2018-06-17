@@ -36,9 +36,10 @@ import Navigation
 import Material
 import Model exposing (Model)
 import Msg exposing (Msg)
-import Route exposing (Route, TickerSymbol)
+import Route exposing (QueryCode, Route, TickerSymbol)
 import View
 import Task
+import Navigation
 import Dom.Scroll
 import Material.Layout as Layout
 import Generated.WebApi as Api
@@ -61,6 +62,20 @@ update msg model =
 
         Msg.NewUrl url ->
             model ! [ Navigation.newUrl url ]
+
+        Msg.DoneOAuthExchangeCode (Ok rep) ->
+            { model
+                | accessToken = Just rep.accessToken
+                , userName = Just rep.userName
+            }
+                ! [ askPortfolios rep.accessToken ]
+
+        Msg.DoneOAuthExchangeCode (Err _) ->
+            { model
+                | accessToken = Nothing
+                , userName = Nothing
+            }
+                ! []
 
         Msg.UpdateServerVersion res ->
             { model | serverVersion = Result.toMaybe res } ! []
@@ -92,9 +107,17 @@ urlUpdate model location =
             let
                 next =
                     Route.Analytics (Just ts)
+
+                history =
+                    case model.accessToken of
+                        Just token ->
+                            askHistories token ts
+
+                        Nothing ->
+                            Cmd.none
             in
                 { model | pageHistory = next :: model.pageHistory }
-                    ! [ askHistories ts ]
+                    ! [ history ]
 
         Just next ->
             { model | pageHistory = next :: model.pageHistory }
@@ -106,8 +129,12 @@ urlUpdate model location =
 
 askWebApiDocument : Cmd Msg
 askWebApiDocument =
-    Http.send Msg.UpdateWebApiDocument <|
-        Http.getString "public/WebApiDocument.md"
+    Http.send Msg.UpdateWebApiDocument (Http.getString "public/WebApiDocument.md")
+
+
+exchangeOAuthCodeForToken : String -> Cmd Msg
+exchangeOAuthCodeForToken code =
+    Http.send Msg.DoneOAuthExchangeCode (Api.getApiV1ExchangeTemporaryCodeByTempCode code)
 
 
 askServerVersion : Cmd Msg
@@ -115,14 +142,21 @@ askServerVersion =
     Http.send Msg.UpdateServerVersion Api.getApiV1Version
 
 
-askPortfolios : Cmd Msg
-askPortfolios =
-    Http.send Msg.UpdatePortfolios Api.getApiV1Portfolios
+toBearerToken : String -> String
+toBearerToken token =
+    "Bearer " ++ token
 
 
-askHistories : TickerSymbol -> Cmd Msg
-askHistories ts =
-    Http.send Msg.UpdateAnalytics (Api.getApiV1QuotesByCode ts)
+askPortfolios : String -> Cmd Msg
+askPortfolios token =
+    Http.send Msg.UpdatePortfolios <|
+        Api.getApiV1Portfolios (toBearerToken token)
+
+
+askHistories : String -> TickerSymbol -> Cmd Msg
+askHistories token ts =
+    Http.send Msg.UpdateAnalytics <|
+        Api.getApiV1QuotesByMarketCode (toBearerToken token) ts
 
 
 subscriptions : Model -> Sub Msg
@@ -130,35 +164,46 @@ subscriptions model =
     Material.subscriptions Msg.Mdl model
 
 
+initialModel : Model
+initialModel =
+    { accessToken = Nothing
+    , userName = Nothing
+    , pageHistory = []
+    , inDropZone = False
+    , droppedFiles = []
+    , serverVersion = Nothing
+    , portfolios = Nothing
+    , histories = Nothing
+    , webApiDocument = Nothing
+    , mdl = Material.model
+
+    -- Boilerplate: Always use this initial Mdl model store.
+    }
+
+
 init : Navigation.Location -> ( Model, Cmd Msg )
 init location =
     let
-        model : Model
         model =
-            { count = 0
-            , pageHistory =
-                case Route.fromLocation location of
-                    Just a ->
-                        [ a ]
+            case Route.fromLocation location of
+                Just a ->
+                    { initialModel | pageHistory = [ a ] }
 
-                    Nothing ->
-                        []
-            , inDropZone = False
-            , droppedFiles = []
-            , serverVersion = Nothing
-            , portfolios = Nothing
-            , histories = Nothing
-            , webApiDocument = Nothing
-            , mdl =
-                Material.model
+                Nothing ->
+                    initialModel
 
-            -- Boilerplate: Always use this initial Mdl model store.
-            }
+        exchangeCode =
+            case Route.fromLocation location of
+                Just (Route.Home Nothing (Just code) _) ->
+                    exchangeOAuthCodeForToken code
+
+                _ ->
+                    Cmd.none
     in
         model
             ! [ askServerVersion
               , askWebApiDocument
-              , askPortfolios
+              , exchangeCode
               , Material.init Msg.Mdl
               ]
 

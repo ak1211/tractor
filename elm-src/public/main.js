@@ -6741,6 +6741,34 @@ var _ak1211$tractor$Generated_WebApi$encodePortfolio = function (x) {
 			}
 		});
 };
+var _ak1211$tractor$Generated_WebApi$encodeOAuthReply = function (x) {
+	return _elm_lang$core$Json_Encode$object(
+		{
+			ctor: '::',
+			_0: {
+				ctor: '_Tuple2',
+				_0: 'accessToken',
+				_1: _elm_lang$core$Json_Encode$string(x.accessToken)
+			},
+			_1: {
+				ctor: '::',
+				_0: {
+					ctor: '_Tuple2',
+					_0: 'scope',
+					_1: _elm_lang$core$Json_Encode$string(x.scope)
+				},
+				_1: {
+					ctor: '::',
+					_0: {
+						ctor: '_Tuple2',
+						_0: 'userName',
+						_1: _elm_lang$core$Json_Encode$string(x.userName)
+					},
+					_1: {ctor: '[]'}
+				}
+			}
+		});
+};
 var _ak1211$tractor$Generated_WebApi$encodeVerRev = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
@@ -6851,6 +6879,66 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Version = _elm_lang$http$Http$reque
 		timeout: _elm_lang$core$Maybe$Nothing,
 		withCredentials: false
 	});
+var _ak1211$tractor$Generated_WebApi$OAuthReply = F3(
+	function (a, b, c) {
+		return {accessToken: a, scope: b, userName: c};
+	});
+var _ak1211$tractor$Generated_WebApi$decodeOAuthReply = A3(
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+	'userName',
+	_elm_lang$core$Json_Decode$string,
+	A3(
+		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+		'scope',
+		_elm_lang$core$Json_Decode$string,
+		A3(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+			'accessToken',
+			_elm_lang$core$Json_Decode$string,
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$OAuthReply))));
+var _ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode = function (capture_tempCode) {
+	return _elm_lang$http$Http$request(
+		{
+			method: 'GET',
+			headers: {ctor: '[]'},
+			url: A2(
+				_elm_lang$core$String$join,
+				'/',
+				{
+					ctor: '::',
+					_0: 'https://tractor.ak1211.com',
+					_1: {
+						ctor: '::',
+						_0: 'api',
+						_1: {
+							ctor: '::',
+							_0: 'v1',
+							_1: {
+								ctor: '::',
+								_0: 'exchange',
+								_1: {
+									ctor: '::',
+									_0: 'temporary',
+									_1: {
+										ctor: '::',
+										_0: 'code',
+										_1: {
+											ctor: '::',
+											_0: _elm_lang$http$Http$encodeUri(capture_tempCode),
+											_1: {ctor: '[]'}
+										}
+									}
+								}
+							}
+						}
+					}
+				}),
+			body: _elm_lang$http$Http$emptyBody,
+			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeOAuthReply),
+			timeout: _elm_lang$core$Maybe$Nothing,
+			withCredentials: false
+		});
+};
 var _ak1211$tractor$Generated_WebApi$Portfolio = F3(
 	function (a, b, c) {
 		return {code: a, caption: b, updateAt: c};
@@ -6868,36 +6956,42 @@ var _ak1211$tractor$Generated_WebApi$decodePortfolio = A3(
 			'code',
 			_elm_lang$core$Json_Decode$string,
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$Portfolio))));
-var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = _elm_lang$http$Http$request(
-	{
-		method: 'GET',
-		headers: {ctor: '[]'},
-		url: A2(
-			_elm_lang$core$String$join,
-			'/',
-			{
+var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = function (header_Authorization) {
+	return _elm_lang$http$Http$request(
+		{
+			method: 'GET',
+			headers: {
 				ctor: '::',
-				_0: 'https://tractor.ak1211.com',
-				_1: {
+				_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
+				_1: {ctor: '[]'}
+			},
+			url: A2(
+				_elm_lang$core$String$join,
+				'/',
+				{
 					ctor: '::',
-					_0: 'api',
+					_0: 'https://tractor.ak1211.com',
 					_1: {
 						ctor: '::',
-						_0: 'v1',
+						_0: 'api',
 						_1: {
 							ctor: '::',
-							_0: 'portfolios',
-							_1: {ctor: '[]'}
+							_0: 'v1',
+							_1: {
+								ctor: '::',
+								_0: 'portfolios',
+								_1: {ctor: '[]'}
+							}
 						}
 					}
-				}
-			}),
-		body: _elm_lang$http$Http$emptyBody,
-		expect: _elm_lang$http$Http$expectJson(
-			_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodePortfolio)),
-		timeout: _elm_lang$core$Maybe$Nothing,
-		withCredentials: false
-	});
+				}),
+			body: _elm_lang$http$Http$emptyBody,
+			expect: _elm_lang$http$Http$expectJson(
+				_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodePortfolio)),
+			timeout: _elm_lang$core$Maybe$Nothing,
+			withCredentials: false
+		});
+};
 var _ak1211$tractor$Generated_WebApi$Ohlcv = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {at: a, code: b, open: c, high: d, low: e, close: f, volume: g, source: h};
@@ -6935,11 +7029,105 @@ var _ak1211$tractor$Generated_WebApi$decodeOhlcv = A3(
 								'at',
 								_elm_lang$core$Json_Decode$string,
 								_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$Ohlcv)))))))));
-var _ak1211$tractor$Generated_WebApi$getApiV1QuotesByCode = function (capture_code) {
+var _ak1211$tractor$Generated_WebApi$getApiV1QuotesByMarketCode = F2(
+	function (header_Authorization, capture_marketCode) {
+		return _elm_lang$http$Http$request(
+			{
+				method: 'GET',
+				headers: {
+					ctor: '::',
+					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
+					_1: {ctor: '[]'}
+				},
+				url: A2(
+					_elm_lang$core$String$join,
+					'/',
+					{
+						ctor: '::',
+						_0: 'https://tractor.ak1211.com',
+						_1: {
+							ctor: '::',
+							_0: 'api',
+							_1: {
+								ctor: '::',
+								_0: 'v1',
+								_1: {
+									ctor: '::',
+									_0: 'quotes',
+									_1: {
+										ctor: '::',
+										_0: _elm_lang$http$Http$encodeUri(capture_marketCode),
+										_1: {ctor: '[]'}
+									}
+								}
+							}
+						}
+					}),
+				body: _elm_lang$http$Http$emptyBody,
+				expect: _elm_lang$http$Http$expectJson(
+					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeOhlcv)),
+				timeout: _elm_lang$core$Maybe$Nothing,
+				withCredentials: false
+			});
+	});
+var _ak1211$tractor$Generated_WebApi$NoContent = {};
+var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByMarketCode = F2(
+	function (header_Authorization, capture_marketCode) {
+		return _elm_lang$http$Http$request(
+			{
+				method: 'PUT',
+				headers: {
+					ctor: '::',
+					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
+					_1: {ctor: '[]'}
+				},
+				url: A2(
+					_elm_lang$core$String$join,
+					'/',
+					{
+						ctor: '::',
+						_0: 'https://tractor.ak1211.com',
+						_1: {
+							ctor: '::',
+							_0: 'api',
+							_1: {
+								ctor: '::',
+								_0: 'v1',
+								_1: {
+									ctor: '::',
+									_0: 'publish',
+									_1: {
+										ctor: '::',
+										_0: 'zmq',
+										_1: {
+											ctor: '::',
+											_0: _elm_lang$http$Http$encodeUri(capture_marketCode),
+											_1: {ctor: '[]'}
+										}
+									}
+								}
+							}
+						}
+					}),
+				body: _elm_lang$http$Http$emptyBody,
+				expect: _elm_lang$http$Http$expectStringResponse(
+					function (_p7) {
+						var _p8 = _p7;
+						return _elm_lang$core$String$isEmpty(_p8.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+					}),
+				timeout: _elm_lang$core$Maybe$Nothing,
+				withCredentials: false
+			});
+	});
+var _ak1211$tractor$Generated_WebApi$postApiV1QuotesAllUpdate = function (header_Authorization) {
 	return _elm_lang$http$Http$request(
 		{
-			method: 'GET',
-			headers: {ctor: '[]'},
+			method: 'POST',
+			headers: {
+				ctor: '::',
+				_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
+				_1: {ctor: '[]'}
+			},
 			url: A2(
 				_elm_lang$core$String$join,
 				'/',
@@ -6957,47 +7145,10 @@ var _ak1211$tractor$Generated_WebApi$getApiV1QuotesByCode = function (capture_co
 								_0: 'quotes',
 								_1: {
 									ctor: '::',
-									_0: _elm_lang$http$Http$encodeUri(capture_code),
-									_1: {ctor: '[]'}
-								}
-							}
-						}
-					}
-				}),
-			body: _elm_lang$http$Http$emptyBody,
-			expect: _elm_lang$http$Http$expectJson(
-				_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeOhlcv)),
-			timeout: _elm_lang$core$Maybe$Nothing,
-			withCredentials: false
-		});
-};
-var _ak1211$tractor$Generated_WebApi$NoContent = {};
-var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByCode = function (capture_code) {
-	return _elm_lang$http$Http$request(
-		{
-			method: 'PUT',
-			headers: {ctor: '[]'},
-			url: A2(
-				_elm_lang$core$String$join,
-				'/',
-				{
-					ctor: '::',
-					_0: 'https://tractor.ak1211.com',
-					_1: {
-						ctor: '::',
-						_0: 'api',
-						_1: {
-							ctor: '::',
-							_0: 'v1',
-							_1: {
-								ctor: '::',
-								_0: 'publish',
-								_1: {
-									ctor: '::',
-									_0: 'zmq',
+									_0: 'all',
 									_1: {
 										ctor: '::',
-										_0: _elm_lang$http$Http$encodeUri(capture_code),
+										_0: 'update',
 										_1: {ctor: '[]'}
 									}
 								}
@@ -7007,55 +7158,14 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByCode = function (captur
 				}),
 			body: _elm_lang$http$Http$emptyBody,
 			expect: _elm_lang$http$Http$expectStringResponse(
-				function (_p7) {
-					var _p8 = _p7;
-					return _elm_lang$core$String$isEmpty(_p8.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+				function (_p9) {
+					var _p10 = _p9;
+					return _elm_lang$core$String$isEmpty(_p10.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 				}),
 			timeout: _elm_lang$core$Maybe$Nothing,
 			withCredentials: false
 		});
 };
-var _ak1211$tractor$Generated_WebApi$postApiV1QuotesAllUpdate = _elm_lang$http$Http$request(
-	{
-		method: 'POST',
-		headers: {ctor: '[]'},
-		url: A2(
-			_elm_lang$core$String$join,
-			'/',
-			{
-				ctor: '::',
-				_0: 'https://tractor.ak1211.com',
-				_1: {
-					ctor: '::',
-					_0: 'api',
-					_1: {
-						ctor: '::',
-						_0: 'v1',
-						_1: {
-							ctor: '::',
-							_0: 'quotes',
-							_1: {
-								ctor: '::',
-								_0: 'all',
-								_1: {
-									ctor: '::',
-									_0: 'update',
-									_1: {ctor: '[]'}
-								}
-							}
-						}
-					}
-				}
-			}),
-		body: _elm_lang$http$Http$emptyBody,
-		expect: _elm_lang$http$Http$expectStringResponse(
-			function (_p9) {
-				var _p10 = _p9;
-				return _elm_lang$core$String$isEmpty(_p10.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
-			}),
-		timeout: _elm_lang$core$Maybe$Nothing,
-		withCredentials: false
-	});
 
 var _elm_lang$dom$Native_Dom = function() {
 
@@ -16427,6 +16537,8 @@ var _evancz$url_parser$UrlParser$intParam = function (name) {
 var _ak1211$tractor$Route$toUrlPath = function (route) {
 	var _p0 = route;
 	switch (_p0.ctor) {
+		case 'Home':
+			return '/';
 		case 'Dashboard':
 			return '/';
 		case 'Upload':
@@ -16453,6 +16565,8 @@ var _ak1211$tractor$Route$toUrlPath = function (route) {
 var _ak1211$tractor$Route$showRoute = function (route) {
 	var _p1 = route;
 	switch (_p1.ctor) {
+		case 'Home':
+			return 'Home';
 		case 'Dashboard':
 			return 'Dashboard';
 		case 'Upload':
@@ -16484,11 +16598,27 @@ var _ak1211$tractor$Route$Analytics = function (a) {
 var _ak1211$tractor$Route$Portfolio = {ctor: 'Portfolio'};
 var _ak1211$tractor$Route$Upload = {ctor: 'Upload'};
 var _ak1211$tractor$Route$Dashboard = {ctor: 'Dashboard'};
+var _ak1211$tractor$Route$Home = F3(
+	function (a, b, c) {
+		return {ctor: 'Home', _0: a, _1: b, _2: c};
+	});
 var _ak1211$tractor$Route$fromLocation = function (path) {
 	var parser = _evancz$url_parser$UrlParser$oneOf(
 		{
 			ctor: '::',
-			_0: A2(_evancz$url_parser$UrlParser$map, _ak1211$tractor$Route$Dashboard, _evancz$url_parser$UrlParser$top),
+			_0: A2(
+				_evancz$url_parser$UrlParser$map,
+				_ak1211$tractor$Route$Home,
+				A2(
+					_evancz$url_parser$UrlParser_ops['<?>'],
+					A2(
+						_evancz$url_parser$UrlParser_ops['<?>'],
+						A2(
+							_evancz$url_parser$UrlParser_ops['<?>'],
+							_evancz$url_parser$UrlParser$top,
+							_evancz$url_parser$UrlParser$stringParam('error')),
+						_evancz$url_parser$UrlParser$stringParam('code')),
+					_evancz$url_parser$UrlParser$stringParam('state'))),
 			_1: {
 				ctor: '::',
 				_0: A2(
@@ -16536,7 +16666,12 @@ var _ak1211$tractor$Route$fromLocation = function (path) {
 				}
 			}
 		});
-	return A2(_evancz$url_parser$UrlParser$parseHash, parser, path);
+	var _p2 = A2(_evancz$url_parser$UrlParser$parseHash, parser, path);
+	if (((((_p2.ctor === 'Just') && (_p2._0.ctor === 'Home')) && (_p2._0._0.ctor === 'Nothing')) && (_p2._0._1.ctor === 'Nothing')) && (_p2._0._2.ctor === 'Nothing')) {
+		return _elm_lang$core$Maybe$Just(_ak1211$tractor$Route$Dashboard);
+	} else {
+		return _p2;
+	}
 };
 
 var _norpan$elm_file_reader$FileReader$handleFiles = '\n    var fileObjects = [];\n    var index = 0;\n    var reader = new FileReader();\n    var dataFormat = event.target.dataset.format;\n    var encoding = event.target.dataset.encoding;\n    reader.onload = function() {\n        var data;\n        switch(dataFormat) {\n            case \'DataURL\':\n            case \'Text\':\n                data = reader.result;\n                break;\n            case \'Base64\':\n                data = reader.result.split(\',\')[1];\n                break;\n        }\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , data: data\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    reader.onerror = function () {\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , errorCode: reader.error.code\n            , errorName: reader.error.name\n            , errorMessage: reader.error.message\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    function readOne() {\n        var file = files[index];\n        if (file) {\n            switch(dataFormat) {\n                case \'DataURL\':\n                case \'Base64\':\n                    reader.readAsDataURL(file);\n                    break;\n                case \'Text\':\n                    reader.readAsText(file, encoding);\n                    break;\n            }\n        } else {\n            if (fileObjects.length > 0) {\n                var filesEvent;\n                try {\n                  filesEvent = new CustomEvent(\"files\", { detail: fileObjects });\n                } catch(e) {\n                  filesEvent = document.createEvent(\"CustomEvent\");\n                  filesEvent.initCustomEvent(\"files\", false, false, fileObjects);\n                }\n                event.target.dispatchEvent(filesEvent);\n            }\n        }\n      }\n    readOne();\n';
@@ -16756,10 +16891,27 @@ var _norpan$elm_file_reader$FileReader$dropZone = function (_p2) {
 		_norpan$elm_file_reader$FileReader$dataFormatAttributes(_p3.dataFormat));
 };
 
-var _ak1211$tractor$Model$Model = F9(
-	function (a, b, c, d, e, f, g, h, i) {
-		return {count: a, pageHistory: b, inDropZone: c, droppedFiles: d, serverVersion: e, portfolios: f, histories: g, webApiDocument: h, mdl: i};
-	});
+var _ak1211$tractor$Model$Model = function (a) {
+	return function (b) {
+		return function (c) {
+			return function (d) {
+				return function (e) {
+					return function (f) {
+						return function (g) {
+							return function (h) {
+								return function (i) {
+									return function (j) {
+										return {accessToken: a, userName: b, pageHistory: c, inDropZone: d, droppedFiles: e, serverVersion: f, portfolios: g, histories: h, webApiDocument: i, mdl: j};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
 
 var _ak1211$tractor$Msg$Mdl = function (a) {
 	return {ctor: 'Mdl', _0: a};
@@ -16777,6 +16929,9 @@ var _ak1211$tractor$Msg$UpdatePortfolios = function (a) {
 };
 var _ak1211$tractor$Msg$UpdateServerVersion = function (a) {
 	return {ctor: 'UpdateServerVersion', _0: a};
+};
+var _ak1211$tractor$Msg$DoneOAuthExchangeCode = function (a) {
+	return {ctor: 'DoneOAuthExchangeCode', _0: a};
 };
 var _ak1211$tractor$Msg$NewUrl = function (a) {
 	return {ctor: 'NewUrl', _0: a};
@@ -19246,6 +19401,155 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 			}
 		};
 	};
+	var state = 'abcdefg';
+	var clientid = '108727386418.336729839344';
+	var scope = 'identity.basic';
+	var authurl = 'https://slack.com/oauth/authorize';
+	var oauthAddr = _elm_lang$core$String$concat(
+		{
+			ctor: '::',
+			_0: authurl,
+			_1: {
+				ctor: '::',
+				_0: '?scope=',
+				_1: {
+					ctor: '::',
+					_0: scope,
+					_1: {
+						ctor: '::',
+						_0: '&client_id=',
+						_1: {
+							ctor: '::',
+							_0: clientid,
+							_1: {
+								ctor: '::',
+								_0: '&state=',
+								_1: {
+									ctor: '::',
+									_0: state,
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+	var oauthButton = A3(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$p,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Typography$center,
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$a,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$href(oauthAddr),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$img,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$alt('Sign in with Slack'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$height(40),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html_Attributes$width(172),
+									_1: {
+										ctor: '::',
+										_0: _elm_lang$html$Html_Attributes$src('https://platform.slack-edge.com/img/sign_in_with_slack.png'),
+										_1: {ctor: '[]'}
+									}
+								}
+							}
+						},
+						{ctor: '[]'}),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		});
+	var viewSigninUser = A2(
+		_elm_lang$core$Basics_ops['++'],
+		{
+			ctor: '::',
+			_0: A3(
+				_debois$elm_mdl$Material_Options$styled,
+				_elm_lang$html$Html$p,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Typography$title,
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Maido '),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A3(
+					_debois$elm_mdl$Material_Options$styled,
+					_elm_lang$html$Html$p,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Typography$display1,
+						_1: {
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Typography$center,
+							_1: {ctor: '[]'}
+						}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(
+							A2(_elm_lang$core$Maybe$withDefault, 'Unauthorized user', model.userName)),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A3(
+						_debois$elm_mdl$Material_Options$styled,
+						_elm_lang$html$Html$p,
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Typography$title,
+							_1: {
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Typography$right,
+								_1: {ctor: '[]'}
+							}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('san'),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
+			}
+		},
+		function () {
+			var _p6 = model.accessToken;
+			if (_p6.ctor === 'Just') {
+				return {ctor: '[]'};
+			} else {
+				return {
+					ctor: '::',
+					_0: oauthButton,
+					_1: {ctor: '[]'}
+				};
+			}
+		}());
 	var card = F3(
 		function (head, subhead, contents) {
 			return A2(
@@ -19268,7 +19572,7 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 									_1: {
 										ctor: '::',
 										_0: _debois$elm_mdl$Material_Color$background(
-											A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Amber, _debois$elm_mdl$Material_Color$S50)),
+											A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Brown, _debois$elm_mdl$Material_Color$S50)),
 										_1: {ctor: '[]'}
 									}
 								}
@@ -19292,10 +19596,12 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 							_debois$elm_mdl$Material_Card$title,
 							{
 								ctor: '::',
-								_0: _debois$elm_mdl$Material_Color$background(_debois$elm_mdl$Material_Color$primary),
+								_0: _debois$elm_mdl$Material_Color$background(
+									A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$BlueGrey, _debois$elm_mdl$Material_Color$S900)),
 								_1: {
 									ctor: '::',
-									_0: _debois$elm_mdl$Material_Color$text(_debois$elm_mdl$Material_Color$black),
+									_0: _debois$elm_mdl$Material_Color$text(
+										A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$BlueGrey, _debois$elm_mdl$Material_Color$S50)),
 									_1: {
 										ctor: '::',
 										_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '100%'),
@@ -19315,7 +19621,12 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 								ctor: '::',
 								_0: A2(
 									_debois$elm_mdl$Material_Card$head,
-									{ctor: '[]'},
+									{
+										ctor: '::',
+										_0: _debois$elm_mdl$Material_Color$text(
+											A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$BlueGrey, _debois$elm_mdl$Material_Color$S100)),
+										_1: {ctor: '[]'}
+									},
 									{
 										ctor: '::',
 										_0: A3(
@@ -19346,8 +19657,13 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 											_0: A2(_debois$elm_mdl$Material_Options$css, 'margin-top', '-10px'),
 											_1: {
 												ctor: '::',
-												_0: _debois$elm_mdl$Material_Typography$title,
-												_1: {ctor: '[]'}
+												_0: _debois$elm_mdl$Material_Color$text(
+													A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$BlueGrey, _debois$elm_mdl$Material_Color$S100)),
+												_1: {
+													ctor: '::',
+													_0: _debois$elm_mdl$Material_Typography$body1,
+													_1: {ctor: '[]'}
+												}
 											}
 										},
 										{
@@ -19376,19 +19692,7 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 				},
 				{
 					ctor: '::',
-					_0: A2(
-						_elm_lang$core$Maybe$withDefault,
-						viewNA,
-						A2(
-							_elm_lang$core$Maybe$map,
-							function (_p6) {
-								return A3(
-									card,
-									'Version',
-									'of server',
-									viewVersion(_p6));
-							},
-							model.serverVersion)),
+					_0: A3(card, 'user', 'Authorization information', viewSigninUser),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -19410,14 +19714,41 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 								function (_p7) {
 									return A3(
 										card,
-										'Revision',
+										'Version',
 										'of server',
-										viewRevision(_p7));
+										viewVersion(_p7));
 								},
 								model.serverVersion)),
 						_1: {ctor: '[]'}
 					}),
-				_1: {ctor: '[]'}
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Grid$cell,
+						{
+							ctor: '::',
+							_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 4),
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: A2(
+								_elm_lang$core$Maybe$withDefault,
+								viewNA,
+								A2(
+									_elm_lang$core$Maybe$map,
+									function (_p8) {
+										return A3(
+											card,
+											'Revision',
+											'of server',
+											viewRevision(_p8));
+									},
+									model.serverVersion)),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
 			}
 		});
 };
@@ -19495,16 +19826,16 @@ var _ak1211$tractor$View$drawerHeader = function (model) {
 var _ak1211$tractor$View$viewDrawerMenuItem = F2(
 	function (model, menuItem) {
 		var isCurrentLocation = function () {
-			var _p8 = _elm_lang$core$List$head(model.pageHistory);
-			if (_p8.ctor === 'Just') {
-				return _elm_lang$core$Native_Utils.eq(_p8._0, menuItem.route);
+			var _p9 = _elm_lang$core$List$head(model.pageHistory);
+			if (_p9.ctor === 'Just') {
+				return _elm_lang$core$Native_Utils.eq(_p9._0, menuItem.route);
 			} else {
 				return false;
 			}
 		}();
 		var onClickCmd = function () {
-			var _p9 = isCurrentLocation;
-			if (_p9 === true) {
+			var _p10 = isCurrentLocation;
+			if (_p10 === true) {
 				return _debois$elm_mdl$Material_Options$nop;
 			} else {
 				return _debois$elm_mdl$Material_Options$onClick(
@@ -19838,9 +20169,9 @@ var _ak1211$tractor$View$viewPortfolio = function (model) {
 				}
 			});
 	};
-	var _p10 = model.portfolios;
-	if (_p10.ctor === 'Just') {
-		return A3(_ak1211$tractor$View$viewTable, headlines, viewRow, _p10._0);
+	var _p11 = model.portfolios;
+	if (_p11.ctor === 'Just') {
+		return A3(_ak1211$tractor$View$viewTable, headlines, viewRow, _p11._0);
 	} else {
 		return _ak1211$tractor$View$pinkCard(
 			{
@@ -19872,8 +20203,8 @@ var _ak1211$tractor$View$viewReports = function (model) {
 		});
 };
 var _ak1211$tractor$View$viewApiDocument = function (model) {
-	var _p11 = model.webApiDocument;
-	if (_p11.ctor === 'Just') {
+	var _p12 = model.webApiDocument;
+	if (_p12.ctor === 'Just') {
 		var attributes = {
 			ctor: '::',
 			_0: _elm_lang$html$Html_Attributes$class('content'),
@@ -19888,7 +20219,7 @@ var _ak1211$tractor$View$viewApiDocument = function (model) {
 				_1: {ctor: '[]'}
 			}
 		};
-		return A2(_evancz$elm_markdown$Markdown$toHtml, attributes, _p11._0);
+		return A2(_evancz$elm_markdown$Markdown$toHtml, attributes, _p12._0);
 	} else {
 		return _ak1211$tractor$View$pinkCard(
 			{
@@ -19903,8 +20234,10 @@ var _ak1211$tractor$View$viewBody = function (model) {
 		_elm_lang$core$Maybe$withDefault,
 		_ak1211$tractor$Route$Dashboard,
 		_elm_lang$core$List$head(model.pageHistory));
-	var _p12 = page;
-	switch (_p12.ctor) {
+	var _p13 = page;
+	switch (_p13.ctor) {
+		case 'Home':
+			return _ak1211$tractor$View$viewDashboard(model);
 		case 'Dashboard':
 			return _ak1211$tractor$View$viewDashboard(model);
 		case 'Upload':
@@ -19912,7 +20245,7 @@ var _ak1211$tractor$View$viewBody = function (model) {
 		case 'Portfolio':
 			return _ak1211$tractor$View$viewPortfolio(model);
 		case 'Analytics':
-			return A2(_ak1211$tractor$View$viewAnalytics, model, _p12._0);
+			return A2(_ak1211$tractor$View$viewAnalytics, model, _p13._0);
 		case 'Reports':
 			return _ak1211$tractor$View$viewReports(model);
 		case 'AccBalance':
@@ -19955,7 +20288,18 @@ var _ak1211$tractor$View$dialogAbout = function (model) {
 								_0: _elm_lang$html$Html$text('A front end of TRACTOR application.'),
 								_1: {ctor: '[]'}
 							}),
-						_1: {ctor: '[]'}
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$p,
+								{ctor: '[]'},
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html$text('© 2016 Akihiro Yamamoto.'),
+									_1: {ctor: '[]'}
+								}),
+							_1: {ctor: '[]'}
+						}
 					}),
 				_1: {
 					ctor: '::',
@@ -19993,7 +20337,7 @@ var _ak1211$tractor$View$dialogAbout = function (model) {
 var _ak1211$tractor$View$view = function (model) {
 	return A3(
 		_debois$elm_mdl$Material_Scheme$topWithScheme,
-		_debois$elm_mdl$Material_Color$Lime,
+		_debois$elm_mdl$Material_Color$Grey,
 		_debois$elm_mdl$Material_Color$Indigo,
 		A4(
 			_debois$elm_mdl$Material_Layout$render,
@@ -20090,44 +20434,77 @@ var _elm_lang$dom$Dom_Scroll$toTop = function (id) {
 	return A2(_elm_lang$dom$Dom_Scroll$toY, id, 0);
 };
 
+var _ak1211$tractor$Main$initialModel = {
+	accessToken: _elm_lang$core$Maybe$Nothing,
+	userName: _elm_lang$core$Maybe$Nothing,
+	pageHistory: {ctor: '[]'},
+	inDropZone: false,
+	droppedFiles: {ctor: '[]'},
+	serverVersion: _elm_lang$core$Maybe$Nothing,
+	portfolios: _elm_lang$core$Maybe$Nothing,
+	histories: _elm_lang$core$Maybe$Nothing,
+	webApiDocument: _elm_lang$core$Maybe$Nothing,
+	mdl: _debois$elm_mdl$Material$model
+};
 var _ak1211$tractor$Main$subscriptions = function (model) {
 	return A2(_debois$elm_mdl$Material$subscriptions, _ak1211$tractor$Msg$Mdl, model);
 };
-var _ak1211$tractor$Main$askHistories = function (ts) {
+var _ak1211$tractor$Main$toBearerToken = function (token) {
+	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
+};
+var _ak1211$tractor$Main$askPortfolios = function (token) {
 	return A2(
 		_elm_lang$http$Http$send,
-		_ak1211$tractor$Msg$UpdateAnalytics,
-		_ak1211$tractor$Generated_WebApi$getApiV1QuotesByCode(ts));
+		_ak1211$tractor$Msg$UpdatePortfolios,
+		_ak1211$tractor$Generated_WebApi$getApiV1Portfolios(
+			_ak1211$tractor$Main$toBearerToken(token)));
 };
-var _ak1211$tractor$Main$askPortfolios = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdatePortfolios, _ak1211$tractor$Generated_WebApi$getApiV1Portfolios);
+var _ak1211$tractor$Main$askHistories = F2(
+	function (token, ts) {
+		return A2(
+			_elm_lang$http$Http$send,
+			_ak1211$tractor$Msg$UpdateAnalytics,
+			A2(
+				_ak1211$tractor$Generated_WebApi$getApiV1QuotesByMarketCode,
+				_ak1211$tractor$Main$toBearerToken(token),
+				ts));
+	});
 var _ak1211$tractor$Main$askServerVersion = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdateServerVersion, _ak1211$tractor$Generated_WebApi$getApiV1Version);
+var _ak1211$tractor$Main$exchangeOAuthCodeForToken = function (code) {
+	return A2(
+		_elm_lang$http$Http$send,
+		_ak1211$tractor$Msg$DoneOAuthExchangeCode,
+		_ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode(code));
+};
 var _ak1211$tractor$Main$askWebApiDocument = A2(
 	_elm_lang$http$Http$send,
 	_ak1211$tractor$Msg$UpdateWebApiDocument,
 	_elm_lang$http$Http$getString('public/WebApiDocument.md'));
 var _ak1211$tractor$Main$init = function (location) {
-	var model = {
-		count: 0,
-		pageHistory: function () {
-			var _p0 = _ak1211$tractor$Route$fromLocation(location);
-			if (_p0.ctor === 'Just') {
-				return {
-					ctor: '::',
-					_0: _p0._0,
-					_1: {ctor: '[]'}
-				};
-			} else {
-				return {ctor: '[]'};
-			}
-		}(),
-		inDropZone: false,
-		droppedFiles: {ctor: '[]'},
-		serverVersion: _elm_lang$core$Maybe$Nothing,
-		portfolios: _elm_lang$core$Maybe$Nothing,
-		histories: _elm_lang$core$Maybe$Nothing,
-		webApiDocument: _elm_lang$core$Maybe$Nothing,
-		mdl: _debois$elm_mdl$Material$model
-	};
+	var exchangeCode = function () {
+		var _p0 = _ak1211$tractor$Route$fromLocation(location);
+		if ((((_p0.ctor === 'Just') && (_p0._0.ctor === 'Home')) && (_p0._0._0.ctor === 'Nothing')) && (_p0._0._1.ctor === 'Just')) {
+			return _ak1211$tractor$Main$exchangeOAuthCodeForToken(_p0._0._1._0);
+		} else {
+			return _elm_lang$core$Platform_Cmd$none;
+		}
+	}();
+	var model = function () {
+		var _p1 = _ak1211$tractor$Route$fromLocation(location);
+		if (_p1.ctor === 'Just') {
+			return _elm_lang$core$Native_Utils.update(
+				_ak1211$tractor$Main$initialModel,
+				{
+					pageHistory: {
+						ctor: '::',
+						_0: _p1._0,
+						_1: {ctor: '[]'}
+					}
+				});
+		} else {
+			return _ak1211$tractor$Main$initialModel;
+		}
+	}();
 	return A2(
 		_elm_lang$core$Platform_Cmd_ops['!'],
 		model,
@@ -20139,7 +20516,7 @@ var _ak1211$tractor$Main$init = function (location) {
 				_0: _ak1211$tractor$Main$askWebApiDocument,
 				_1: {
 					ctor: '::',
-					_0: _ak1211$tractor$Main$askPortfolios,
+					_0: exchangeCode,
 					_1: {
 						ctor: '::',
 						_0: _debois$elm_mdl$Material$init(_ak1211$tractor$Msg$Mdl),
@@ -20151,12 +20528,20 @@ var _ak1211$tractor$Main$init = function (location) {
 };
 var _ak1211$tractor$Main$urlUpdate = F2(
 	function (model, location) {
-		var _p1 = _ak1211$tractor$Route$fromLocation(location);
-		if (_p1.ctor === 'Just') {
-			if ((_p1._0.ctor === 'Analytics') && (_p1._0._0.ctor === 'Just')) {
-				var _p2 = _p1._0._0._0;
+		var _p2 = _ak1211$tractor$Route$fromLocation(location);
+		if (_p2.ctor === 'Just') {
+			if ((_p2._0.ctor === 'Analytics') && (_p2._0._0.ctor === 'Just')) {
+				var _p4 = _p2._0._0._0;
+				var history = function () {
+					var _p3 = model.accessToken;
+					if (_p3.ctor === 'Just') {
+						return A2(_ak1211$tractor$Main$askHistories, _p3._0, _p4);
+					} else {
+						return _elm_lang$core$Platform_Cmd$none;
+					}
+				}();
 				var next = _ak1211$tractor$Route$Analytics(
-					_elm_lang$core$Maybe$Just(_p2));
+					_elm_lang$core$Maybe$Just(_p4));
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -20166,7 +20551,7 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 						}),
 					{
 						ctor: '::',
-						_0: _ak1211$tractor$Main$askHistories(_p2),
+						_0: history,
 						_1: {ctor: '[]'}
 					});
 			} else {
@@ -20175,7 +20560,7 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							pageHistory: {ctor: '::', _0: _p1._0, _1: model.pageHistory}
+							pageHistory: {ctor: '::', _0: _p2._0, _1: model.pageHistory}
 						}),
 					{
 						ctor: '::',
@@ -20195,8 +20580,8 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 	});
 var _ak1211$tractor$Main$update = F2(
 	function (msg, model) {
-		var _p3 = msg;
-		switch (_p3.ctor) {
+		var _p5 = msg;
+		switch (_p5.ctor) {
 			case 'DropZoneEntered':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -20216,26 +20601,50 @@ var _ak1211$tractor$Main$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{inDropZone: false, droppedFiles: _p3._0}),
+						{inDropZone: false, droppedFiles: _p5._0}),
 					{ctor: '[]'});
 			case 'UrlChange':
-				return A2(_ak1211$tractor$Main$urlUpdate, model, _p3._0);
+				return A2(_ak1211$tractor$Main$urlUpdate, model, _p5._0);
 			case 'NewUrl':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					model,
 					{
 						ctor: '::',
-						_0: _elm_lang$navigation$Navigation$newUrl(_p3._0),
+						_0: _elm_lang$navigation$Navigation$newUrl(_p5._0),
 						_1: {ctor: '[]'}
 					});
+			case 'DoneOAuthExchangeCode':
+				if (_p5._0.ctor === 'Ok') {
+					var _p6 = _p5._0._0;
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								accessToken: _elm_lang$core$Maybe$Just(_p6.accessToken),
+								userName: _elm_lang$core$Maybe$Just(_p6.userName)
+							}),
+						{
+							ctor: '::',
+							_0: _ak1211$tractor$Main$askPortfolios(_p6.accessToken),
+							_1: {ctor: '[]'}
+						});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{accessToken: _elm_lang$core$Maybe$Nothing, userName: _elm_lang$core$Maybe$Nothing}),
+						{ctor: '[]'});
+				}
 			case 'UpdateServerVersion':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							serverVersion: _elm_lang$core$Result$toMaybe(_p3._0)
+							serverVersion: _elm_lang$core$Result$toMaybe(_p5._0)
 						}),
 					{ctor: '[]'});
 			case 'UpdatePortfolios':
@@ -20244,7 +20653,7 @@ var _ak1211$tractor$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							portfolios: _elm_lang$core$Result$toMaybe(_p3._0)
+							portfolios: _elm_lang$core$Result$toMaybe(_p5._0)
 						}),
 					{ctor: '[]'});
 			case 'UpdateAnalytics':
@@ -20253,7 +20662,7 @@ var _ak1211$tractor$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							histories: _elm_lang$core$Result$toMaybe(_p3._0)
+							histories: _elm_lang$core$Result$toMaybe(_p5._0)
 						}),
 					{ctor: '[]'});
 			case 'UpdateWebApiDocument':
@@ -20262,7 +20671,7 @@ var _ak1211$tractor$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							webApiDocument: _elm_lang$core$Result$toMaybe(_p3._0)
+							webApiDocument: _elm_lang$core$Result$toMaybe(_p5._0)
 						}),
 					{ctor: '[]'});
 			case 'ScrollToTop':
@@ -20280,7 +20689,7 @@ var _ak1211$tractor$Main$update = F2(
 			case 'Nop':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 			default:
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p3._0, model);
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p5._0, model);
 		}
 	});
 var _ak1211$tractor$Main$main = A2(

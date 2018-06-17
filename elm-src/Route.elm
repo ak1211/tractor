@@ -28,10 +28,32 @@
 -}
 
 
-module Route exposing (TickerSymbol, Route(..), showRoute, toUrlPath, fromLocation)
+module Route
+    exposing
+        ( QueryError
+        , QueryCode
+        , QueryState
+        , TickerSymbol
+        , Route(..)
+        , showRoute
+        , toUrlPath
+        , fromLocation
+        )
 
 import Navigation
-import UrlParser exposing (top, s, (<?>), stringParam)
+import UrlParser exposing (top, s, (</>), (<?>), stringParam)
+
+
+type alias QueryError =
+    String
+
+
+type alias QueryCode =
+    String
+
+
+type alias QueryState =
+    String
 
 
 type alias TickerSymbol =
@@ -39,7 +61,8 @@ type alias TickerSymbol =
 
 
 type Route
-    = Dashboard
+    = Home (Maybe QueryError) (Maybe QueryCode) (Maybe QueryState)
+    | Dashboard
     | Upload
     | Portfolio
     | Analytics (Maybe TickerSymbol)
@@ -51,6 +74,9 @@ type Route
 showRoute : Route -> String
 showRoute route =
     case route of
+        Home _ _ _ ->
+            "Home"
+
         Dashboard ->
             "Dashboard"
 
@@ -77,6 +103,9 @@ showRoute route =
 toUrlPath : Route -> String
 toUrlPath route =
     case route of
+        Home _ _ _ ->
+            "/"
+
         Dashboard ->
             "/"
 
@@ -107,7 +136,7 @@ fromLocation path =
     let
         parser =
             UrlParser.oneOf
-                [ UrlParser.map Dashboard top
+                [ UrlParser.map Home (top <?> stringParam "error" <?> stringParam "code" <?> stringParam "state")
                 , UrlParser.map Upload (s "upload")
                 , UrlParser.map Portfolio (s "portfolio")
                 , UrlParser.map Analytics (s "analytics" <?> stringParam "ticker")
@@ -116,6 +145,9 @@ fromLocation path =
                 , UrlParser.map ApiDocument (s "api-document")
                 ]
     in
-        UrlParser.parseHash
-            parser
-            path
+        case UrlParser.parseHash parser path of
+            Just (Home Nothing Nothing Nothing) ->
+                Just Dashboard
+
+            a ->
+                a

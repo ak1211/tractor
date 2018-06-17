@@ -66,6 +66,7 @@ dialogAbout model =
         [ Dialog.title [] [ Html.text "ABOUT" ]
         , Dialog.content []
             [ Html.p [] [ Html.text "A front end of TRACTOR application." ]
+            , Html.p [] [ Html.text "© 2016 Akihiro Yamamoto." ]
             ]
         , Dialog.actions []
             [ Button.render Msg.Mdl
@@ -113,7 +114,7 @@ view model =
         , tabs = ( [], [] )
         , main = [ viewBody model, dialogAbout model ]
         }
-        |> Material.Scheme.topWithScheme Color.Lime Color.Indigo
+        |> Material.Scheme.topWithScheme Color.Grey Color.Indigo
 
 
 viewHeader : Model -> Html Msg
@@ -210,6 +211,8 @@ viewDrawer model =
     <|
         (List.map (viewDrawerMenuItem model) menuItems)
             ++ [ Layout.spacer
+
+               -- ABOUTダイアログ
                , Layout.link
                     [ Dialog.openOn "click"
                     ]
@@ -249,6 +252,9 @@ viewBody model =
                 |> Maybe.withDefault Route.Dashboard
     in
         case page of
+            Route.Home _ _ _ ->
+                viewDashboard model
+
             Route.Dashboard ->
                 viewDashboard model
 
@@ -285,18 +291,18 @@ viewDashboard model =
                 , Options.css "height" "100%"
                 , Options.css "position" "relative"
                 , Options.css "word-wrap" "break-word"
-                , Color.background <| Color.color Color.Amber Color.S50
+                , Color.background <| Color.color Color.Brown Color.S50
                 ]
                 [ Card.text [ Options.css "padding-bottom" "90px" ] contents
                 , Card.title
-                    [ Color.background <| Color.primary
-                    , Color.text Color.black
+                    [ Color.background <| Color.color Color.BlueGrey Color.S900
+                    , Color.text <| Color.color Color.BlueGrey Color.S50
                     , Options.css "width" "100%"
                     , Options.css "position" "absolute"
                     , Options.css "bottom" "0"
                     ]
                     [ Card.head
-                        []
+                        [ Color.text <| Color.color Color.BlueGrey Color.S100 ]
                         [ Options.styled
                             Html.div
                             [ Typo.display1
@@ -306,11 +312,71 @@ viewDashboard model =
                         ]
                     , Card.subhead
                         [ Options.css "margin-top" "-10px"
-                        , Typo.title
+                        , Color.text <| Color.color Color.BlueGrey Color.S100
+                        , Typo.body1
                         ]
                         [ Html.text subhead ]
                     ]
                 ]
+
+        authurl =
+            "https://slack.com/oauth/authorize"
+
+        scope =
+            "identity.basic"
+
+        clientid =
+            "108727386418.336729839344"
+
+        state =
+            "abcdefg"
+
+        oauthAddr =
+            String.concat [ authurl, "?scope=", scope, "&client_id=", clientid, "&state=", state ]
+
+        oauthButton =
+            Options.styled
+                Html.p
+                [ Typo.center ]
+                [ Html.a
+                    [ Attr.href oauthAddr ]
+                    [ Html.img
+                        [ Attr.alt "Sign in with Slack"
+                        , Attr.height 40
+                        , Attr.width 172
+                        , Attr.src "https://platform.slack-edge.com/img/sign_in_with_slack.png"
+                        ]
+                        []
+                    ]
+                ]
+
+        viewSigninUser =
+            [ Options.styled
+                Html.p
+                [ Typo.title ]
+                [ Html.text "Maido " ]
+            , Options.styled
+                Html.p
+                [ Typo.display1
+                , Typo.center
+                ]
+                [ model.userName
+                    |> Maybe.withDefault "Unauthorized user"
+                    |> Html.text
+                ]
+            , Options.styled
+                Html.p
+                [ Typo.title
+                , Typo.right
+                ]
+                [ Html.text "san" ]
+            ]
+                ++ case model.accessToken of
+                    Just _ ->
+                        []
+
+                    Nothing ->
+                        [ oauthButton ]
 
         viewVersion v =
             [ Options.styled
@@ -357,6 +423,10 @@ viewDashboard model =
             []
             [ Grid.cell
                 [ Grid.size Grid.All 4 ]
+                [ card "user" "Authorization information" viewSigninUser
+                ]
+            , Grid.cell
+                [ Grid.size Grid.All 4 ]
                 [ model.serverVersion
                     |> Maybe.map (card "Version" "of server" << viewVersion)
                     |> Maybe.withDefault viewNA
@@ -381,24 +451,6 @@ viewCell =
 
 viewUpload : Model -> Html Msg
 viewUpload model =
-    {-
-       div
-           [ style [ ( "padding", "2rem" ) ] ]
-           [ text ("upload file : " ++ toString model.count)
-           , Button.render Mdl
-               [ 0 ]
-               model.mdl
-               [ Options.onClick Increase
-               , Options.css "margin" "0 24px"
-               ]
-               [ text "Increase" ]
-           , Button.render Mdl
-               [ 1 ]
-               model.mdl
-               [ Options.onClick Reset ]
-               [ text "Reset" ]
-           ]
-    -}
     Grid.grid
         []
         [ Grid.cell

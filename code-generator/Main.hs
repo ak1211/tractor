@@ -53,6 +53,10 @@ spec =
         : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)
         : Elm.toElmEncoderSource (Proxy :: Proxy VerRev)
         --
+        : Elm.toElmTypeSource    (Proxy :: Proxy ApiTypes.OAuthReply)
+        : Elm.toElmDecoderSource (Proxy :: Proxy ApiTypes.OAuthReply)
+        : Elm.toElmEncoderSource (Proxy :: Proxy ApiTypes.OAuthReply)
+        --
         : Elm.toElmTypeSource    (Proxy :: Proxy ApiTypes.Portfolio)
         : Elm.toElmDecoderSource (Proxy :: Proxy ApiTypes.Portfolio)
         : Elm.toElmEncoderSource (Proxy :: Proxy ApiTypes.Portfolio)
@@ -66,7 +70,7 @@ spec =
 
 webApiDocs :: Servant.Docs.API
 webApiDocs =
-    Servant.Docs.docs WebServer.proxyWebApi
+    Servant.Docs.docs WebServer.proxyWebApiServer
 
 webApiDocMarkdown :: String
 webApiDocMarkdown =

@@ -84,15 +84,11 @@ executables:
     - -threaded
     - -Wall
     - -with-rtsopts=-N
-    - -with-rtsopts=-T
     dependencies:
     - async
     - optparse-applicative
     - persistent-mysql
-    - safe
     - tractor
-    - transformers
-    - unix
 
 tests:
   tractor-test:

@@ -52,6 +52,7 @@ import qualified Data.Aeson.TH              as Aeson
 import qualified Data.ByteString.Char8      as B8
 import qualified Data.ByteString.Lazy       as BSL
 import           Data.Monoid                (mempty, (<>))
+import qualified Data.Text                  as T
 import qualified Data.Text.Lazy             as TL
 import qualified Data.Text.Lazy.Builder     as TLB
 import qualified Data.Text.Lazy.Builder.Int as TLB
@@ -76,10 +77,12 @@ data Info = Info
 -- |
 -- 通知するSlackの設定情報
 data InfoSlack = InfoSlack
-    { webHookURL         :: String
-    , oauth_access_token :: String
-    , channel            :: String
-    , userName           :: String
+    { webHookURL       :: String
+    , oauthAccessToken :: T.Text
+    , clientID         :: T.Text
+    , clientSecret     :: T.Text
+    , channel          :: String
+    , userName         :: String
     } deriving Eq
 
 -- |
@@ -158,7 +161,9 @@ instance Show InfoSlack where
     show InfoSlack{..} =
         TL.unpack . TLB.toLazyText $ mempty
         <> "Slack Webhook URL:<" <> TLB.fromString webHookURL <> newline
-        <> "Slack oauth access token:\"" <> TLB.fromString oauth_access_token <> "\"" <> newline
+        <> "Slack oauth access token:\"" <> TLB.fromText oauthAccessToken <> "\"" <> newline
+        <> "Slack client ID:\"" <> TLB.fromText clientID <> "\"" <> newline
+        <> "Slack client secret:\"" <> TLB.fromText clientSecret <> "\"" <> newline
         <> "Slack channel:\"" <> TLB.fromString channel <> "\"" <> newline
         <> "Slack user name:\"" <> TLB.fromString userName <> "\"" <> newline
 

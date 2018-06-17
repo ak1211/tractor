@@ -44,6 +44,7 @@ type Msg
     | FilesDropped (List FileReader.File)
     | UrlChange Navigation.Location
     | NewUrl String
+    | DoneOAuthExchangeCode (Result Http.Error Api.OAuthReply)
     | UpdateServerVersion (Result Http.Error Api.VerRev)
     | UpdatePortfolios (Result Http.Error Model.Portfolios)
     | UpdateAnalytics (Result Http.Error Model.Histories)

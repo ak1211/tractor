@@ -39,6 +39,7 @@ module NetService.ApiTypes
     , toPortfolio
     , Ohlcv
     , toOhlcv
+    , OAuthReply(..)
     )
     where
 import qualified Control.Concurrent.STM as STM
@@ -59,10 +60,28 @@ import qualified Model
 type ServerTChan = STM.TChan [Ohlcv]
 
 -- |
+-- OAuth返答
+data OAuthReply = OAuthReply
+    { accessToken :: T.Text
+    , scope       :: T.Text
+    , userName    :: T.Text
+    } deriving (Eq, Show, Generic)
+
+instance Aeson.FromJSON OAuthReply
+instance Aeson.ToJSON OAuthReply
+instance Servant.Elm.ElmType OAuthReply
+instance Servant.Docs.ToSample OAuthReply where
+    toSamples _ =
+        Servant.Docs.singleSample $ OAuthReply
+            "xoxp-????????????-????????????-????????????-????????????????????????????????"
+            "identify.basic"
+            "John Doe"
+
+-- |
 -- ポートフォリオ
 data Portfolio = Portfolio
     { code     :: String
-    , caption  :: Maybe String
+    , caption  :: Maybe T.Text
     , updateAt :: Maybe String
     } deriving (Eq, Show, Read, Generic)
 instance Aeson.FromJSON Portfolio
@@ -78,7 +97,7 @@ instance Servant.Docs.ToSample Portfolio where
 toPortfolio :: Model.Portfolio -> Portfolio
 toPortfolio o = Portfolio
     { code     = Model.fromTickerSymbol $ Model.portfolioTicker o
-    , caption  = T.unpack <$> Model.portfolioCaption o
+    , caption  = Model.portfolioCaption o
     , updateAt = toISO8601DateTime
                 . Time.utcToZonedTime tzAsiaTokyo
                 <$> Model.portfolioUpdateAt o

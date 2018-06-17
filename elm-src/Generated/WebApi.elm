@@ -37,6 +37,27 @@ encodeVerRev x =
         , ( "gitStatus", Json.Encode.string x.gitStatus )
         ]
 
+type alias OAuthReply =
+    { accessToken : String
+    , scope : String
+    , userName : String
+    }
+
+decodeOAuthReply : Decoder OAuthReply
+decodeOAuthReply =
+    decode OAuthReply
+        |> required "accessToken" string
+        |> required "scope" string
+        |> required "userName" string
+
+encodeOAuthReply : OAuthReply -> Json.Encode.Value
+encodeOAuthReply x =
+    Json.Encode.object
+        [ ( "accessToken", Json.Encode.string x.accessToken )
+        , ( "scope", Json.Encode.string x.scope )
+        , ( "userName", Json.Encode.string x.userName )
+        ]
+
 type alias Portfolio =
     { code : String
     , caption : Maybe (String)
@@ -96,11 +117,11 @@ encodeOhlcv x =
 
 type alias NoContent = {}
 
-putApiV1PublishZmqByCode : String -> Http.Request (NoContent)
-putApiV1PublishZmqByCode capture_code =
+getApiV1ExchangeTemporaryCodeByTempCode : String -> Http.Request (OAuthReply)
+getApiV1ExchangeTemporaryCodeByTempCode capture_tempCode =
     Http.request
         { method =
-            "PUT"
+            "GET"
         , headers =
             []
         , url =
@@ -108,9 +129,37 @@ putApiV1PublishZmqByCode capture_code =
                 [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
+                , "exchange"
+                , "temporary"
+                , "code"
+                , capture_tempCode |> Http.encodeUri
+                ]
+        , body =
+            Http.emptyBody
+        , expect =
+            Http.expectJson decodeOAuthReply
+        , timeout =
+            Nothing
+        , withCredentials =
+            False
+        }
+
+putApiV1PublishZmqByMarketCode : String -> String -> Http.Request (NoContent)
+putApiV1PublishZmqByMarketCode header_Authorization capture_marketCode =
+    Http.request
+        { method =
+            "PUT"
+        , headers =
+            [ Http.header "Authorization" header_Authorization
+            ]
+        , url =
+            String.join "/"
+                [ "https://tractor.ak1211.com"
+                , "api"
+                , "v1"
                 , "publish"
                 , "zmq"
-                , capture_code |> Http.encodeUri
+                , capture_marketCode |> Http.encodeUri
                 ]
         , body =
             Http.emptyBody
@@ -152,13 +201,14 @@ getApiV1Version =
             False
         }
 
-getApiV1Portfolios : Http.Request (List (Portfolio))
-getApiV1Portfolios =
+getApiV1Portfolios : String -> Http.Request (List (Portfolio))
+getApiV1Portfolios header_Authorization =
     Http.request
         { method =
             "GET"
         , headers =
-            []
+            [ Http.header "Authorization" header_Authorization
+            ]
         , url =
             String.join "/"
                 [ "https://tractor.ak1211.com"
@@ -176,13 +226,14 @@ getApiV1Portfolios =
             False
         }
 
-postApiV1QuotesAllUpdate : Http.Request (NoContent)
-postApiV1QuotesAllUpdate =
+postApiV1QuotesAllUpdate : String -> Http.Request (NoContent)
+postApiV1QuotesAllUpdate header_Authorization =
     Http.request
         { method =
             "POST"
         , headers =
-            []
+            [ Http.header "Authorization" header_Authorization
+            ]
         , url =
             String.join "/"
                 [ "https://tractor.ak1211.com"
@@ -208,20 +259,21 @@ postApiV1QuotesAllUpdate =
             False
         }
 
-getApiV1QuotesByCode : String -> Http.Request (List (Ohlcv))
-getApiV1QuotesByCode capture_code =
+getApiV1QuotesByMarketCode : String -> String -> Http.Request (List (Ohlcv))
+getApiV1QuotesByMarketCode header_Authorization capture_marketCode =
     Http.request
         { method =
             "GET"
         , headers =
-            []
+            [ Http.header "Authorization" header_Authorization
+            ]
         , url =
             String.join "/"
                 [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
                 , "quotes"
-                , capture_code |> Http.encodeUri
+                , capture_marketCode |> Http.encodeUri
                 ]
         , body =
             Http.emptyBody

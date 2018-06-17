@@ -49,18 +49,16 @@ type alias DocMarkDown =
 
 
 type alias Model =
-    { count : Int
+    { accessToken : Maybe String
+    , userName : Maybe String
     , pageHistory : List Route
-
-    --    , page : Route
     , inDropZone : Bool
     , droppedFiles : List FileReader.File
     , serverVersion : Maybe WebApi.VerRev
     , portfolios : Maybe Portfolios
     , histories : Maybe Histories
     , webApiDocument : Maybe DocMarkDown
-    , mdl :
-        Material.Model
+    , mdl : Material.Model
 
     -- Boilerplate: model store for any and all Mdl components you use.
     }
