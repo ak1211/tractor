@@ -29,20 +29,23 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData        #-}
 module Main where
-import qualified Control.Concurrent           as CC
+import           Control.Concurrent           (threadDelay)
 import qualified Control.Concurrent.Async     as CCA
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (newTChan)
 import           Control.Exception            (AsyncException (UserInterrupt))
 import           Control.Exception.Safe
 import qualified Control.Monad                as M
-import qualified Control.Monad.Trans.Resource as M
+import           Control.Monad.Logger         (logInfoN)
+import           Control.Monad.Logger.Syslog  (runSyslogLoggingT)
+import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Conduit                 as C
 import           Data.Monoid                  ((<>))
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.IO            as TL
-import qualified Data.Time                    as Tm
-import qualified Data.Time.Calendar.WeekDate  as Tm
+import           Data.Time                    (ZonedTime)
+import qualified Data.Time                    as Time
+import qualified Data.Time.Calendar.WeekDate  as Time
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Options.Applicative          as Opt
 
@@ -116,13 +119,13 @@ announceHolidaySchedule conf day =
     where
     act = C.runConduit $ C.yield (TL.pack msg) C..| slack
     msg = "本日 " ++ today ++ " は市場の休日です。"
-    today = Tm.showGregorian $ Scd.getAsiaTokyoDay day
+    today = Time.showGregorian $ Scd.getAsiaTokyoDay day
     slack = simpleTextMsg conf C..| sinkSlack conf
 
 -- |
 -- 立会時間のスケジュール
 --
-tradingTimeSchedule :: Conf.Info -> Conf.InfoBroker -> [Tm.ZonedTime] -> Scd.ZonedTimeJobs
+tradingTimeSchedule :: Conf.Info -> Conf.InfoBroker -> [ZonedTime] -> Scd.ZonedTimeJobs
 tradingTimeSchedule conf broker times =
     -- 3分前にログインする仕掛け
     map (Scd.addTimeOfSecondsZT (-180)) resumableJob
@@ -136,7 +139,7 @@ tradingTimeSchedule conf broker times =
     -- 実際の作業
     onePass :: IO ()
     onePass =
-        M.runResourceT . GB.siteConn broker (Conf.userAgent conf) $ \sess ->
+        runResourceT . GB.siteConn broker (Conf.userAgent conf) $ \sess ->
             Scd.executeZT (fetchPriceJobs sess updateSeconds ++ reportJobs noticeSeconds)
         `catches`
         --
@@ -172,12 +175,12 @@ tradingTimeSchedule conf broker times =
         Lib.every (Conf.noticeAssetsMinutes conf * 60) times
     -- |
     -- 現在資産取得
-    fetchPriceJobs :: BB.HTTPSession -> [Tm.ZonedTime] -> Scd.ZonedTimeJobs
+    fetchPriceJobs :: BB.HTTPSession -> [ZonedTime] -> Scd.ZonedTimeJobs
     fetchPriceJobs session ts =
         [(t, GB.fetchUpdatedPriceAndStore broker conn session) | t<-ts]
     -- |
     -- 現在資産評価額報告
-    reportJobs :: [Tm.ZonedTime] -> Scd.ZonedTimeJobs
+    reportJobs :: [ZonedTime] -> Scd.ZonedTimeJobs
     reportJobs ts =
         -- 同時間にならないために資産取得の実行より1分遅らせる仕掛け
         map (Scd.addTimeOfSecondsZT 60)
@@ -186,7 +189,8 @@ tradingTimeSchedule conf broker times =
 -- |
 -- アプリケーションの本体
 applicationBody :: CommandLineOption -> Conf.Info -> IO ()
-applicationBody cmdLineOpts conf =
+applicationBody cmdLineOpts conf = do
+    runSyslogLoggingT $ logInfoN "START application Tractor."
     --
     -- コマンドラインオプションの指定で実行を替える
     --
@@ -206,7 +210,7 @@ applicationBody cmdLineOpts conf =
         let msg = "some exception caught (at mainloop), " ++ wq ++ show ex ++ wq
         toSlack (Conf.slack conf) $ TL.pack msg
         -- 一定時間待機後に実行時例外からの再開
-        CC.threadDelay (300 * 1000 * 1000)
+        threadDelay (300 * 1000 * 1000)
         applicationBody cmdLineOpts conf
     ]
     where
@@ -245,16 +249,16 @@ applicationBody cmdLineOpts conf =
     getToday :: IO Scd.AsiaTokyoDay
     getToday =
         Scd.AsiaTokyoDay
-        . Tm.localDay
-        . Tm.zonedTimeToLocalTime
-        . Tm.utcToZonedTime Lib.tzAsiaTokyo
-        <$> Tm.getCurrentTime
+        . Time.localDay
+        . Time.zonedTimeToLocalTime
+        . Time.utcToZonedTime Lib.tzAsiaTokyo
+        <$> Time.getCurrentTime
 
 -- |
 -- 今日の実行スレッドに割り当てるリスト
 toAssignThreads :: Conf.Info -> Scd.AsiaTokyoDay -> [Scd.ZonedTimeJobs]
 toAssignThreads conf day =
-    case Tm.toWeekDate $ Scd.getAsiaTokyoDay day of
+    case Time.toWeekDate $ Scd.getAsiaTokyoDay day of
      (_,_,w)
         | w == 1 -> weekday     -- Monday
         | w == 2 -> weekday     -- Tuesday
@@ -270,8 +274,8 @@ toAssignThreads conf day =
     where
     --
     -- 前場後場の立会時間(東京証券取引所,日本時間)
-    morSessSeconds :: [Tm.ZonedTime]
-    aftSessSeconds :: [Tm.ZonedTime]
+    morSessSeconds :: [Time.ZonedTime]
+    aftSessSeconds :: [Time.ZonedTime]
     (morSessSeconds, aftSessSeconds) = Scd.tradingTimeOfSecondsTSE day
     -- |
     -- 明日になるまでただ待つアクション

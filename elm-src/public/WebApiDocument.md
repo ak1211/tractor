@@ -174,7 +174,7 @@ at,code,open,high,low,close,volume,source
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"gitStatus":"Dirty","gitCommitDate":"Thu Jun 14 22:11:42 2018 +0900","version":"0.4.7","gitCommitCount":"126","gitHash":"be1754f0ba5690ef6fb81fcae86a066ead265860","gitBranch":"master"}
+{"gitStatus":"Dirty","gitCommitDate":"Sun Jun 17 21:44:24 2018 +0900","version":"0.4.8","gitCommitCount":"127","gitHash":"66d39a3282be623724eb6233f738ca6911f7f8bd","gitBranch":"master"}
     ```
 
 ## GET /public

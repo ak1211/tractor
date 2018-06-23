@@ -50,7 +50,7 @@ import           Data.Aeson                 ((.:), (.=))
 import qualified Data.Aeson                 as Aeson
 import qualified Data.Aeson.TH              as Aeson
 import qualified Data.ByteString.Char8      as B8
-import qualified Data.ByteString.Lazy       as BSL
+import qualified Data.ByteString.Lazy       as BL
 import           Data.Monoid                (mempty, (<>))
 import qualified Data.Text                  as T
 import qualified Data.Text.Lazy             as TL
@@ -267,7 +267,7 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)
 -- 設定ファイル(json)を読み込む
 readJSONFile :: String -> IO (Either String Info)
 readJSONFile filePath =
-    Aeson.eitherDecode <$> BSL.readFile filePath
+    Aeson.eitherDecode <$> BL.readFile filePath
 
 -- |
 -- MySQLの接続情報

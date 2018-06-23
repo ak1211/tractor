@@ -56,9 +56,9 @@ import qualified Control.Arrow          as A
 import           Control.Exception.Safe
 import           Control.Monad          ((>=>))
 import qualified Data.ByteString.Char8  as B8
-import qualified Data.Maybe             as Mb
+import qualified Data.Maybe             as Maybe
 import qualified Data.Text              as T
-import qualified Data.Text.Encoding     as TE
+import           Data.Text.Encoding     (encodeUtf8)
 import qualified Data.Text.Read         as Read
 import qualified Data.Typeable
 import           Text.XML.Cursor        (($//), (&|))
@@ -118,12 +118,12 @@ takeInputTags cursor =
         { inputType     = go "type" c
         , inputName     = go "name" c
         , inputValue    = go "value" c
-        , inputChecked  = toCheckMark . Mb.isJust $ go "checked" c
+        , inputChecked  = toCheckMark . Maybe.isJust $ go "checked" c
         }
     --
     --
     go n =
-        Mb.listToMaybe . X.laxAttribute n
+        Maybe.listToMaybe . X.laxAttribute n
 
 -- |
 -- name and value pair
@@ -133,7 +133,7 @@ type PairNV a = (Maybe a, Maybe a)
 --
 toPairNV :: InputTag -> PairNV B8.ByteString
 toPairNV t =
-    (TE.encodeUtf8 <$> inputName t, TE.encodeUtf8 <$> inputValue t)
+    (encodeUtf8 <$> inputName t, encodeUtf8 <$> inputValue t)
 
 --
 --
@@ -144,9 +144,9 @@ isEmptyPair = (==) (Nothing, Nothing)
 -- nameとvalue属性をペアで取り出す
 attrNameAndValue :: X.Cursor -> PairNV T.Text
 attrNameAndValue =
-    Mb.listToMaybe . X.laxAttribute "name"
+    Maybe.listToMaybe . X.laxAttribute "name"
     A.&&&
-    Mb.listToMaybe . X.laxAttribute "value"
+    Maybe.listToMaybe . X.laxAttribute "value"
 
 -- |
 -- name, value属性ペアを取り出す
@@ -180,7 +180,7 @@ takeFormTag c =
     pack :: T.Text -> FormTag
     pack a = FormTag
         { formAction    = a
-        , formMethod    = Mb.listToMaybe $ X.laxAttribute "method" c
+        , formMethod    = Maybe.listToMaybe $ X.laxAttribute "method" c
         , formInputTag  = takeInputTags c
         }
 

@@ -51,7 +51,7 @@ import qualified Data.Text.Lazy             as TL
 import qualified Data.Time                  as Tm
 import qualified Data.Time.Clock.POSIX      as Tm
 import qualified Network.HTTP.Conduit       as N
-import qualified Network.HTTP.Types.Status  as N
+import           Network.HTTP.Types.Status  (Status)
 
 import qualified Conf
 
@@ -105,7 +105,7 @@ data Report = Report
 
 -- |
 -- Slackへ送信する関数
-send :: M.MonadIO m => Conf.InfoSlack -> BS8.ByteString -> m N.Status
+send :: M.MonadIO m => Conf.InfoSlack -> BS8.ByteString -> m Status
 send conf json =
     M.liftIO $ do
         req <- request

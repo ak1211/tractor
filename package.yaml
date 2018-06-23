@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.7
+version:            0.4.8
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -24,10 +24,11 @@ dependencies:
 - bytestring
 - conduit
 - directory
-- gitrev
 - elm-export
+- gitrev
 - http-conduit
 - http-types
+- monad-logger
 - mtl
 - resourcet
 - safe-exceptions
@@ -52,7 +53,6 @@ library:
   - http-media
   - iconv
   - lucid
-  - monad-logger
   - mwc-random
   - network-uri
   - optparse-simple
@@ -86,6 +86,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - async
+    - monad-logger-syslog
     - optparse-applicative
     - persistent-mysql
     - tractor

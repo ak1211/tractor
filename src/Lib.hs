@@ -38,10 +38,11 @@ module Lib
     , every
     ) where
 import qualified Data.ByteString.Lazy.Char8 as BL8
-import qualified Data.Maybe                 as Mb
+import qualified Data.Maybe                 as Maybe
 import qualified Data.Text.Lazy             as TL
 import qualified Data.Time                  as Tm
-import qualified Network.HTTP.Types.Header  as N
+import           Network.HTTP.Types.Header  (Header)
+import qualified Network.HTTP.Types.Header  as Header
 
 import           VerRev                     (versionString)
 
@@ -67,12 +68,12 @@ tzAsiaTokyo =
 
 -- |
 -- HTTPリクエストヘッダ
-httpRequestHeader :: String -> [N.Header]
+httpRequestHeader :: String -> [Header]
 httpRequestHeader ua =
-    [ (N.hAccept, "text/html, text/plain, text/css")
-    , (N.hAcceptCharset, "UTF-8")
-    , (N.hAcceptLanguage, "ja, en;q=0.5")
-    , (N.hUserAgent, BL8.toStrict $ BL8.pack ua)
+    [ (Header.hAccept, "text/html, text/plain, text/css")
+    , (Header.hAcceptCharset, "UTF-8")
+    , (Header.hAcceptLanguage, "ja, en;q=0.5")
+    , (Header.hUserAgent, BL8.toStrict $ BL8.pack ua)
     ]
 
 -- |
@@ -80,7 +81,7 @@ httpRequestHeader ua =
 parseJSTDayTimeToUTCTime :: String -> Maybe String -> Tm.UTCTime
 parseJSTDayTimeToUTCTime date mTime =
     let
-        t = Mb.fromMaybe "00:00" mTime
+        t = Maybe.fromMaybe "00:00" mTime
         dtm = date ++ "T" ++ t ++ ":00+0900"
         format = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
     in

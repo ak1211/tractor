@@ -43,22 +43,24 @@ module SBIsecCoJp.Broker
     ) where
 import           Control.Exception.Safe
 import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Logger         as ML
+import qualified Control.Monad.Logger         as Logger
 import qualified Control.Monad.Reader         as M
 import           Control.Monad.Trans.Maybe    (MaybeT (..))
 import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.Conduit                 as C
 import qualified Data.Conduit.List            as CL
-import qualified Data.Maybe                   as Mb
+import qualified Data.Maybe                   as Maybe
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Time                    as Tm
+import           Data.Time                    (UTCTime, ZonedTime (..))
+import qualified Data.Time                    as Time
 import           Database.Persist             ((<.), (==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Database.Persist.Sql         as DB
 import qualified Network.HTTP.Conduit         as N
-import qualified Network.URI                  as N
+import           Network.URI                  (URI)
+import qualified Network.URI                  as URI
 import qualified Safe
 
 import qualified BrokerBackend                as BB
@@ -111,10 +113,10 @@ noticeOfCurrentAssets   :: M.MonadIO m
                         -> C.ConduitT () Slack.Report m ()
 noticeOfCurrentAssets connInfo = do
     -- 今日の前場開始時間
-    openingTime <- todayOpeningTime <$> M.liftIO Tm.getCurrentTime
+    openingTime <- todayOpeningTime <$> M.liftIO Time.getCurrentTime
     -- データーベースの内容からレポートを作る
     rpt <- M.liftIO
-            . ML.runNoLoggingT . MR.runResourceT
+            . Logger.runNoLoggingT . MR.runResourceT
             . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateSBIsecCoJp
         --
@@ -123,18 +125,18 @@ noticeOfCurrentAssets connInfo = do
         report <- M.mapM
                     (makeReport yesterday)
                     (latest :: Maybe (DB.Entity SbiseccojpAsset))
-        return $ Mb.maybeToList (report :: Maybe Slack.Report)
+        return $ Maybe.maybeToList (report :: Maybe Slack.Report)
     -- Slackへレポートを送る
     CL.sourceList rpt
     where
     -- |
     -- 今日の前場開始時間
-    todayOpeningTime :: Tm.UTCTime -> Tm.UTCTime
+    todayOpeningTime :: UTCTime -> UTCTime
     todayOpeningTime =
-        Tm.zonedTimeToUTC
-        . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
-            (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
-        . Tm.utcToZonedTime Lib.tzAsiaTokyo
+        Time.zonedTimeToUTC
+        . (\(ZonedTime t z) -> ZonedTime
+            (t { Time.localTimeOfDay = Time.TimeOfDay 9 00 00}) z)
+        . Time.utcToZonedTime Lib.tzAsiaTokyo
     -- |
     -- レポートを作る関数
     makeReport yesterday (DB.Entity key asset) = do
@@ -201,19 +203,19 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     -- トップ -> 保有証券一覧 -> 保有証券詳細ページを見に行く
     stocks <- mbfn "保有証券詳細ページの取得に失敗しました" $ goHoldStockDetailPage hslPage
     -- 受信時間
-    tm <- Tm.getCurrentTime
-    let (year,_,_) = Tm.toGregorian (Tm.utctDay tm)
+    tm <- Time.getCurrentTime
+    let (year,_,_) = Time.toGregorian (Time.utctDay tm)
     -- 全てをデーターベースへ
-    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    Logger.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateSBIsecCoJp
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm hslPage pmdPage
         -- 保有株式テーブルへ格納する(寄っている場合のみ)
-        M.mapM_ DB.insert . Mb.mapMaybe (stock year key) $ stocks
+        M.mapM_ DB.insert . Maybe.mapMaybe (stock year key) $ stocks
     where
     -- |
     -- 資産テーブル情報を組み立てる
-    asset :: Tm.UTCTime -> S.HoldStockListPage -> S.PurchaseMarginDetailPage -> SbiseccojpAsset
+    asset :: UTCTime -> S.HoldStockListPage -> S.PurchaseMarginDetailPage -> SbiseccojpAsset
     asset at hslp pmdp = SbiseccojpAsset
         { sbiseccojpAssetAt         = at
         , sbiseccojpAssetEvaluation = S.hslEvaluation hslp
@@ -228,12 +230,12 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     stock :: Integer -> DB.Key SbiseccojpAsset -> S.HoldStockDetailPage -> Maybe SbiseccojpStock
     stock year key S.HoldStockDetailPage{..} = do
         (month, day, hour, minute) <- hsdMDHourMin
-        d <- Tm.fromGregorianValid year month day
-        t <- Tm.makeTimeOfDayValid hour minute 0
-        let lt = Tm.LocalTime {Tm.localDay = d, Tm.localTimeOfDay = t}
+        d <- Time.fromGregorianValid year month day
+        t <- Time.makeTimeOfDayValid hour minute 0
+        let lt = Time.LocalTime {Time.localDay = d, Time.localTimeOfDay = t}
         Just SbiseccojpStock
             { sbiseccojpStockAsset      = key
-            , sbiseccojpStockAt         = Tm.localTimeToUTC tzAsiaTokyo lt
+            , sbiseccojpStockAt         = Time.localTimeToUTC tzAsiaTokyo lt
             , sbiseccojpStockTicker     = hsdTicker
             , sbiseccojpStockCaption    = T.unpack hsdCaption
             , sbiseccojpStockCount      = hsdCount
@@ -273,40 +275,40 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         unpack (S.PurchaseMarginListPage x) = x
     -- |
     -- リンク情報からURIに写す
-    mapAbsUri :: [GS.AnchorTag] -> [N.URI]
+    mapAbsUri :: [GS.AnchorTag] -> [URI]
     mapAbsUri =
-        Mb.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . GS.aHref)
+        Maybe.mapMaybe (BB.toAbsoluteURI sLoginPageURI . T.unpack . GS.aHref)
 
 -- |
 -- リンクのページへアクセスする関数
-fetchLinkPage   :: (BB.HTTPSession -> N.URI -> MaybeT IO TL.Text)
+fetchLinkPage   :: (BB.HTTPSession -> URI -> MaybeT IO TL.Text)
                 -> BB.HTTPSession -> T.Text -> MaybeT IO TL.Text
 fetchLinkPage fetcher sess t =
     fetcher sess =<< MaybeT . return . lookupLinkOnTopPage sess =<< pure t
 
 -- |
 -- トップページ上のリンクテキストに対応したURIを返す
-lookupLinkOnTopPage :: BB.HTTPSession -> T.Text -> Maybe N.URI
+lookupLinkOnTopPage :: BB.HTTPSession -> T.Text -> Maybe URI
 lookupLinkOnTopPage BB.HTTPSession{..} linktext =
     BB.toAbsoluteURI sLoginPageURI . T.unpack
     =<< lookup linktext [(GS.aText a, GS.aHref a) | a<-S.getTopPage $ S.topPage sTopPageHTML]
 
 -- |
 -- 通常のfetch
-noWaitFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
+noWaitFetch :: M.MonadIO m => BB.HTTPSession -> URI -> m TL.Text
 noWaitFetch =
     BB.fetchPageWithSession
 
 -- |
 -- 時間待ち付きfetch
-slowlyFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
+slowlyFetch :: M.MonadIO m => BB.HTTPSession -> URI -> m TL.Text
 slowlyFetch x y = noWaitFetch x y <* M.liftIO (BB.waitMS 300)
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
 login :: Conf.InfoSBIsecCoJp -> Conf.UserAgent -> String -> IO BB.HTTPSession
 login conf userAgent loginPageURL = do
-    loginURI <- maybe errInvalidUrl return (N.parseURI loginPageURL)
+    loginURI <- maybe errInvalidUrl return (URI.parseURI loginPageURL)
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセスする

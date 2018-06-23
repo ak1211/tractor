@@ -60,20 +60,21 @@ import qualified Data.ByteString.Lazy.Char8       as BL8
 import           Data.Char                        (Char)
 import qualified Data.Either                      as Either
 import qualified Data.List                        as List
-import qualified Data.Maybe                       as Mb
+import qualified Data.Maybe                       as Maybe
 import           Data.Monoid                      (mempty, (<>))
 import           Data.Text.Encoding.Error         (UnicodeException)
 import qualified Data.Text.Lazy                   as TL
 import qualified Data.Text.Lazy.Builder           as TLB
 import qualified Data.Text.Lazy.Encoding          as TLE
-import qualified Data.Time                        as Tm
+import qualified Data.Time                        as Time
 import qualified Data.Typeable
 import qualified Database.Persist                 as DB
 import qualified Database.Persist.MySQL           as MySQL
 import qualified Database.Persist.Sql             as DB
 import qualified Network.HTTP.Conduit             as N
-import qualified Network.HTTP.Types.Header        as N
-import qualified Network.URI                      as N
+import qualified Network.HTTP.Types.Header        as Header
+import           Network.URI                      (URI)
+import qualified Network.URI                      as URI
 
 import qualified Conf
 import qualified GenScraper                       as GS
@@ -82,9 +83,9 @@ import           Model
 -- |
 -- HTTP / HTTPSセッション情報
 data HTTPSession = HTTPSession
-    { sLoginPageURI :: N.URI
+    { sLoginPageURI :: URI
     , sManager      :: N.Manager
-    , sReqHeaders   :: N.RequestHeaders
+    , sReqHeaders   :: Header.RequestHeaders
     , sRespCookies  :: N.CookieJar
     , sTopPageHTML  :: TL.Text
     }
@@ -121,10 +122,10 @@ storeAccessLog logMessage = M.liftIO $
 -- アクセスログはDBに記録する
 fetchHTTP   :: M.MonadIO m
             => N.Manager
-            -> N.RequestHeaders
+            -> Header.RequestHeaders
             -> Maybe N.CookieJar
             -> [(B8.ByteString, B8.ByteString)]
-            -> N.URI
+            -> URI
             -> m (N.Response BL8.ByteString)
 fetchHTTP manager header cookieJar postReq url =
     M.liftIO $ do
@@ -134,7 +135,7 @@ fetchHTTP manager header cookieJar postReq url =
         -- 組み立てたHTTPリクエストを発行する
         responce <- N.httpLbs req manager
         -- 受信時間
-        now <- Tm.getCurrentTime
+        now <- Time.getCurrentTime
         -- ログDBへ
         storeAccessLog $ packLoghttp now req responce
         -- HTTPレスポンスを返却
@@ -158,20 +159,20 @@ fetchHTTP manager header cookieJar postReq url =
     customRequest postData = N.urlEncodedBody postData
     --
     --
-    packLoghttp :: Tm.UTCTime
+    packLoghttp :: Time.UTCTime
                 -> N.Request
                 -> N.Response BL8.ByteString
                 -> AccessLog
     packLoghttp receivedAt customReq resp = AccessLog
         { accessLogReceivedAt   = receivedAt
         , accessLogUrl          = show url
-        , accessLogScheme       = N.uriScheme url
-        , accessLogUserInfo     = maybe "" N.uriUserInfo $ N.uriAuthority url
-        , accessLogHost         = maybe "" N.uriRegName $ N.uriAuthority url
-        , accessLogPort         = maybe "" N.uriPort $ N.uriAuthority url
-        , accessLogPath         = N.uriPath url
-        , accessLogQuery        = N.uriQuery url
-        , accessLogFragment     = N.uriFragment url
+        , accessLogScheme       = URI.uriScheme url
+        , accessLogUserInfo     = maybe "" URI.uriUserInfo $ URI.uriAuthority url
+        , accessLogHost         = maybe "" URI.uriRegName $ URI.uriAuthority url
+        , accessLogPort         = maybe "" URI.uriPort $ URI.uriAuthority url
+        , accessLogPath         = URI.uriPath url
+        , accessLogQuery        = URI.uriQuery url
+        , accessLogFragment     = URI.uriFragment url
         , accessLogReqCookie    = show cookieJar
         , accessLogReqHeader    = show $ N.requestHeaders customReq
         , accessLogRespStatus   = show $ N.responseStatus resp
@@ -274,7 +275,7 @@ token1 = Ap.takeWhile1 (Ap.inClass "0-9a-zA-Z_-")
 -- >>> takeCharsetFromHTTPHeader [("Content-Length","5962")]
 -- Left "Content-Type is none"
 --
-takeCharsetFromHTTPHeader :: N.ResponseHeaders -> Either String HtmlCharset
+takeCharsetFromHTTPHeader :: Header.ResponseHeaders -> Either String HtmlCharset
 takeCharsetFromHTTPHeader headers = do
     -- HTTPヘッダから"Content-Type"を得る
     ct <- maybe (Left "Content-Type is none") Right $ lookup "Content-Type" headers
@@ -310,9 +311,9 @@ takeBodyFromResponse resp =
 
 -- |
 -- 絶対リンクへ変換する関数
-toAbsoluteURI :: N.URI -> String -> Maybe N.URI
+toAbsoluteURI :: URI -> String -> Maybe URI
 toAbsoluteURI baseURI href =
-    fmap (`N.relativeTo` baseURI) (N.parseURIReference href)
+    fmap (`URI.relativeTo` baseURI) (URI.parseURIReference href)
 
 -- |
 -- fetchHTTP関数の相対リンク版
@@ -340,7 +341,7 @@ mkCustomPostReq original custom =
     -- originalからNothingが混ざっている物を削除するので
     -- 自ずと"ACT_login"は消える仕組み
     List.unionBy (\(a,_) (b,_) -> a == b) custom
-        $ Mb.mapMaybe (\(a,b) -> (,) <$> a <*> b) original
+        $ Maybe.mapMaybe (\(a,b) -> (,) <$> a <*> b) original
 
 -- |
 -- ミリ秒待ち
@@ -350,7 +351,7 @@ waitMS milliSec =
 
 -- |
 -- 引数のページへアクセス
-fetchPageWithSession :: M.MonadIO m => HTTPSession -> N.URI -> m TL.Text
+fetchPageWithSession :: M.MonadIO m => HTTPSession -> URI -> m TL.Text
 fetchPageWithSession HTTPSession{..} uri =
     takeBodyFromResponse
     <$>

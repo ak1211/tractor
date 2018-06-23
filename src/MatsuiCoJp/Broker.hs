@@ -48,7 +48,7 @@ import qualified Control.Concurrent           as CC
 import           Control.Exception.Safe
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Logger         as ML
+import qualified Control.Monad.Logger         as Logger
 import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.ByteString.Char8        as B8
@@ -58,15 +58,17 @@ import qualified Data.Conduit.List            as CL
 import qualified Data.List                    as List
 import qualified Data.Maybe                   as Maybe
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Time                    as Tm
+import           Data.Time                    (UTCTime, ZonedTime (..))
+import qualified Data.Time                    as Time
 import           Data.Word                    (Word32)
 import           Database.Persist             ((<.), (==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Database.Persist.Sql         as DB
 import qualified Network.HTTP.Conduit         as N
-import qualified Network.HTTP.Types.Header    as N
-import qualified Network.URI                  as N
+import qualified Network.HTTP.Types.Header    as Header
+import           Network.URI                  (URI)
+import qualified Network.URI                  as URI
 import qualified Text.HTML.TagSoup            as TS
 import qualified Text.HTML.TagSoup.Tree       as TS
 
@@ -101,7 +103,7 @@ siteConn conf userAgent f =
     -- |
     -- 証券会社のサイトにログインする関数
     login' =
-        maybe invalidUrl return (N.parseURI url)
+        maybe invalidUrl return (URI.parseURI url)
         >>= login conf userAgent
         >>= maybe loginFail return
 
@@ -137,10 +139,10 @@ noticeOfCurrentAssets   :: M.MonadIO m
                         -> C.ConduitT () Slack.Report m ()
 noticeOfCurrentAssets connInfo = do
     -- 今日の前場開始時間
-    openingTime <- todayOpeningTime <$> M.liftIO Tm.getCurrentTime
+    openingTime <- todayOpeningTime <$> M.liftIO Time.getCurrentTime
     -- データーベースの内容からレポートを作る
     rpt <- M.liftIO
-            . ML.runNoLoggingT . MR.runResourceT
+            . Logger.runNoLoggingT . MR.runResourceT
             . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateMatsuiCoJp
         --
@@ -155,12 +157,12 @@ noticeOfCurrentAssets connInfo = do
     where
     -- |
     -- 今日の前場開始時間
-    todayOpeningTime :: Tm.UTCTime -> Tm.UTCTime
+    todayOpeningTime :: UTCTime -> UTCTime
     todayOpeningTime =
-        Tm.zonedTimeToUTC
-        . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
-            (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
-        . Tm.utcToZonedTime Lib.tzAsiaTokyo
+        Time.zonedTimeToUTC
+        . (\(ZonedTime t z) -> ZonedTime
+            (t { Time.localTimeOfDay = Time.TimeOfDay 9 00 00}) z)
+        . Time.utcToZonedTime Lib.tzAsiaTokyo
     -- |
     -- レポートを作る関数
     makeReport yesterday (DB.Entity key asset) = do
@@ -221,9 +223,9 @@ fetchUpdatedPriceAndStore connInfo session = do
     -- 資産状況 -> 余力情報を見に行く
     assetspare <- MatsuiCoJp.Broker.fetchFraAstSpare session
     -- 受信時間
-    tm <- Tm.getCurrentTime
+    tm <- Time.getCurrentTime
     -- 全てをデーターベースへ
-    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    Logger.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateMatsuiCoJp
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm sell assetspare
@@ -232,7 +234,7 @@ fetchUpdatedPriceAndStore connInfo session = do
     where
     --
     --
-    asset   :: Tm.UTCTime
+    asset   :: UTCTime
             -> MatsuiCoJp.Scraper.FraStkSell
             -> MatsuiCoJp.Scraper.FraAstSpare
             -> MatsuicojpAsset
@@ -266,10 +268,10 @@ fetchUpdatedPriceAndStore connInfo session = do
 -- |
 -- formのactionを実行する関数
 doPostAction    :: N.Manager
-                -> N.RequestHeaders
+                -> Header.RequestHeaders
                 -> Maybe N.CookieJar
                 -> [(B8.ByteString, B8.ByteString)]
-                -> N.URI
+                -> URI
                 -> TL.Text
                 -> IO (Maybe (N.Response BL8.ByteString))
 doPostAction manager reqHeader cookie customPostReq pageURI html = do
@@ -294,18 +296,18 @@ doPostAction manager reqHeader cookie customPostReq pageURI html = do
             -- POSTリクエストを送信するURL
             let postActionURL = BB.toAbsoluteURI pageURI . TL.unpack =<< fmAction
             -- フォームのaction属性ページへアクセス
-            M.mapM (BB.fetchHTTP manager reqHeader cookie postReqBody) (postActionURL :: Maybe N.URI)
+            M.mapM (BB.fetchHTTP manager reqHeader cookie postReqBody) (postActionURL :: Maybe URI)
         _ -> return Nothing
     --
     --
     chooseDefaultOrCustomReq :: B8.ByteString -> B8.ByteString -> Maybe (B8.ByteString, B8.ByteString)
     chooseDefaultOrCustomReq k v =
         case List.lookup k customPostReq of
-            Just cv -> Just (k, cv)
+            Just cv                        -> Just (k, cv)
             -- x yは指定の物以外削除
             Nothing | B8.isSuffixOf ".x" k -> Nothing
             Nothing | B8.isSuffixOf ".y" k -> Nothing
-            _       ->  Just (k, v)
+            _                              ->  Just (k, v)
     --
     --
     takeValue :: [TS.Attribute TL.Text] -> TL.Text -> Maybe B8.ByteString
@@ -365,7 +367,7 @@ doPostActionOnSession s customPostReq =
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
-login :: Conf.InfoMatsuiCoJp -> Conf.UserAgent -> N.URI -> IO (Maybe BB.HTTPSession)
+login :: Conf.InfoMatsuiCoJp -> Conf.UserAgent -> URI -> IO (Maybe BB.HTTPSession)
 login conf userAgent loginUri = do
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings

@@ -53,7 +53,7 @@ import qualified Data.List              as List
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Read    as Read
 import           Data.Word              (Word32)
-import qualified Text.HTML.DOM          as H
+import qualified Text.HTML.DOM          as DOM
 import           Text.XML.Cursor        (($/), ($//), (&/), (&//), (&|))
 import qualified Text.XML.Cursor        as X
 
@@ -148,7 +148,7 @@ scrapingFraHomeAnnounce (html:_) = do
     where
     --
     --
-    root = X.fromDocument $ H.parseLT html
+    root = X.fromDocument $ DOM.parseLT html
     --
     -- <B></B>で囲まれた要素
     bolds :: [TL.Text]
@@ -197,7 +197,7 @@ scrapingFraStkSell (html:_) = do
     where
     --
     --
-    root = X.fromDocument $ H.parseLT html
+    root = X.fromDocument $ DOM.parseLT html
     --
     -- 株式評価損益, 株式時価評価額が書いてあるテーブル
     tblSummary :: [TL.Text]
@@ -318,7 +318,7 @@ scrapingFraAstSpare (html:_) = do
     where
     --
     --
-    root = X.fromDocument $ H.parseLT html
+    root = X.fromDocument $ DOM.parseLT html
     -- |
     -- 現物買付余力を取り出す
     takeMoneySpare :: (MonadThrow m, Integral a) => [TL.Text] -> m a

@@ -39,7 +39,7 @@ import qualified Control.Concurrent           as CC
 import           Control.Exception.Safe
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Logger         as ML
+import qualified Control.Monad.Logger         as Logger
 import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.Conduit                 as C
 import qualified Data.List                    as List
@@ -49,7 +49,8 @@ import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.Builder       as TLB
 import qualified Data.Text.Lazy.Builder.Int   as TLB
-import qualified Data.Time                    as Tm
+import           Data.Time                    (UTCTime)
+import qualified Data.Time                    as Time
 import           Database.Persist             ((<=.), (=.), (==.), (||.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
@@ -84,16 +85,16 @@ fetchStockPrices sess ticker = do
     --
     pack :: String -> S.DailyStockPrice -> Ohlcv
     pack _ pr =
-        let closingTime = Tm.TimeOfDay 15 00 00
-            lt = Tm.LocalTime
-                    { Tm.localDay = getAsiaTokyoDay $ S.dspDay pr
-                    , Tm.localTimeOfDay = closingTime
+        let closingTime = Time.TimeOfDay 15 00 00
+            lt = Time.LocalTime
+                    { Time.localDay = getAsiaTokyoDay $ S.dspDay pr
+                    , Time.localTimeOfDay = closingTime
                     }
         in
         Ohlcv
             { ohlcvTicker = ticker
             , ohlcvTf = TF1d
-            , ohlcvAt = Tm.localTimeToUTC tzAsiaTokyo lt
+            , ohlcvAt = Time.localTimeToUTC tzAsiaTokyo lt
             , ohlcvOpen = S.dspOpen pr
             , ohlcvHigh = S.dspHigh pr
             , ohlcvLow = S.dspLow pr
@@ -184,11 +185,11 @@ updateTimeAndSales  :: M.MonadIO m
                     -> DB.Entity Portfolio
                     -> C.ConduitT () TL.Text m ()
 updateTimeAndSales sess conf (DB.Entity wKey wVal) =
-    M.liftIO . ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    M.liftIO . Logger.runNoLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
         -- インターネットから株価情報を取得する
         (caption, ohlcvs) <- M.liftIO $ fetchStockPrices sess (portfolioTicker wVal)
-        updateAt <- M.liftIO Tm.getCurrentTime
+        updateAt <- M.liftIO Time.getCurrentTime
         -- 6本値をohlcvテーブルに書き込む
         M.forM_ ohlcvs $ \val ->
             -- 同じ時間の物があるか探してみる
@@ -220,16 +221,16 @@ updateTimeAndSales sess conf (DB.Entity wKey wVal) =
 --
 takeUpdateItems :: MySQL.ConnectInfo -> IO [DB.Entity Portfolio]
 takeUpdateItems connInfo = do
-    limitTm <- diffTime <$> Tm.getCurrentTime
+    limitTime <- diffTime <$> Time.getCurrentTime
     -- 前回の更新から一定時間以上経過した更新対象のリストを得る
-    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    Logger.runNoLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateQuotes
-        DB.selectList ([PortfolioUpdateAt ==. Nothing] ||. [PortfolioUpdateAt <=. Just limitTm]) []
+        DB.selectList ([PortfolioUpdateAt ==. Nothing] ||. [PortfolioUpdateAt <=. Just limitTime]) []
     where
     --
     -- (-12)時間の足し算は12時間の引き算になる
-    diffTime :: Tm.UTCTime -> Tm.UTCTime
-    diffTime = Tm.addUTCTime $ fromInteger (-12*60*60)
+    diffTime :: UTCTime -> UTCTime
+    diffTime = Time.addUTCTime $ fromInteger (-12*60*60)
 
 
 -- |

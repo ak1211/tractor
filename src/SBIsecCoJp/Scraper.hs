@@ -69,7 +69,7 @@ import qualified Data.Text.Lazy.Builder           as TLB
 import qualified Data.Text.Lazy.Builder.Int       as TLB
 import qualified Data.Text.Lazy.Builder.RealFloat as TLB
 import           System.IO                        (Newline (..), nativeNewline)
-import qualified Text.HTML.DOM                    as H
+import qualified Text.HTML.DOM                    as DOM
 import           Text.XML.Cursor                  (($/), ($//), (&/), (&//),
                                                    (&|))
 import qualified Text.XML.Cursor                  as X
@@ -199,7 +199,7 @@ data HoldStockListPage = HoldStockListPage
 -- ログインページをスクレイピングする関数
 formLoginPage :: MonadThrow m => TL.Text -> m GS.FormTag
 formLoginPage html =
-    let tag = X.fromDocument (H.parseLT html)
+    let tag = X.fromDocument (DOM.parseLT html)
             $// X.element "form" >=> X.attributeIs "name" "form1"
             &| GS.takeFormTag
     in
@@ -211,13 +211,13 @@ formLoginPage html =
 -- トップページをスクレイピングする関数
 topPage :: TL.Text -> TopPage
 topPage =
-    TopPage . GS.takeAnchorTag . X.fromDocument . H.parseLT
+    TopPage . GS.takeAnchorTag . X.fromDocument . DOM.parseLT
 
 -- |
 -- 口座管理ページをスクレイピングする関数
 accMenuPage :: TL.Text -> AccMenuPage
 accMenuPage =
-    AccMenuPage . GS.takeAnchorTag . X.fromDocument . H.parseLT
+    AccMenuPage . GS.takeAnchorTag . X.fromDocument . DOM.parseLT
 
 -- |
 -- 買付余力ページをスクレイピングする関数
@@ -229,7 +229,7 @@ purchaseMarginListPage html =
     -- <div class="titletext">買付余力</div> 以下のtable
     table :: [X.Cursor]
     table =
-        X.fromDocument (H.parseLT html)
+        X.fromDocument (DOM.parseLT html)
         $// X.attributeIs "class" "titletext"
         >=> X.followingSibling >=> X.laxElement "div"
         &/ X.laxElement "table"
@@ -244,7 +244,7 @@ purchaseMarginDetailPage html =
     -- <div class="titletext">買付余力詳細</div> 以下のtable
     table :: [X.Cursor]
     table =
-        X.fromDocument (H.parseLT html)
+        X.fromDocument (DOM.parseLT html)
         $// X.attributeIs "class" "titletext"
         >=> X.followingSibling >=> X.element "div"
         &/ X.element "table" &/ X.element "tr" &/ X.element "td"
@@ -282,7 +282,7 @@ holdStockListPage html =
     -- <div class="titletext">保有証券一覧</div> 以下のtable
     table :: [X.Cursor]
     table =
-        X.fromDocument (H.parseLT html)
+        X.fromDocument (DOM.parseLT html)
         $// X.attributeIs "class" "titletext"
         >=> X.followingSibling >=> X.element "table" &/ X.element "tr" &/ X.element "td"
     --
@@ -352,7 +352,7 @@ holdStockDetailPage html =
     -- <div class="titletext">保有証券詳細</div> 以下のtable
     table :: [X.Cursor]
     table =
-        X.fromDocument (H.parseLT html)
+        X.fromDocument (DOM.parseLT html)
         $// X.attributeIs "class" "titletext"
         >=> X.followingSibling >=> X.element "div"
         &/ X.element "table"
@@ -474,13 +474,13 @@ marketInfoPage html =
             }
     --
     --
-    root = X.fromDocument (H.parseLT html)
+    root = X.fromDocument (DOM.parseLT html)
     --
     -- <div class="titletext"></div> 以下の
     -- <table><tr><td><form><table>
     tables :: [X.Cursor]
     tables =
-        X.fromDocument (H.parseLT html)
+        X.fromDocument (DOM.parseLT html)
         $// X.attributeIs "class" "titletext"
         >=> X.followingSibling >=> X.element "table" &/ X.element "tr" &/ X.element "td"
         &/ X.element "form" &/ X.element "table"

@@ -44,21 +44,23 @@ module KabuCom.Broker
 import qualified Control.Arrow                as A
 import           Control.Exception.Safe
 import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Logger         as ML
+import qualified Control.Monad.Logger         as Logger
 import qualified Control.Monad.Reader         as M
 import qualified Control.Monad.Trans.Resource as MR
 import qualified Data.Conduit                 as C
 import qualified Data.Conduit.List            as CL
-import qualified Data.Maybe                   as Mb
+import qualified Data.Maybe                   as Maybe
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
-import qualified Data.Time                    as Tm
+import           Data.Time                    (UTCTime)
+import qualified Data.Time                    as Time
 import           Database.Persist             ((<.), (==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Database.Persist.Sql         as DB
 import qualified Network.HTTP.Conduit         as N
-import qualified Network.URI                  as N
+import           Network.URI                  (URI)
+import qualified Network.URI                  as URI
 
 import qualified BrokerBackend                as BB
 import qualified Conf
@@ -100,10 +102,10 @@ noticeOfCurrentAssets   :: M.MonadIO m
                         -> C.ConduitT () Slack.Report m ()
 noticeOfCurrentAssets connInfo = do
     -- 今日の前場開始時間
-    openingTime <- todayOpeningTime <$> M.liftIO Tm.getCurrentTime
+    openingTime <- todayOpeningTime <$> M.liftIO Time.getCurrentTime
     -- データーベースの内容からレポートを作る
     rpt <- M.liftIO
-            . ML.runNoLoggingT . MR.runResourceT
+            . Logger.runNoLoggingT . MR.runResourceT
             . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateKabuCom
         --
@@ -112,18 +114,18 @@ noticeOfCurrentAssets connInfo = do
         report <- M.mapM
                     (makeReport yesterday)
                     (latest :: Maybe (DB.Entity KabucomAsset))
-        return $ Mb.maybeToList (report :: Maybe Slack.Report)
+        return $ Maybe.maybeToList (report :: Maybe Slack.Report)
     -- Slackへレポートを送る
     CL.sourceList rpt
     where
     -- |
     -- 今日の前場開始時間
-    todayOpeningTime :: Tm.UTCTime -> Tm.UTCTime
+    todayOpeningTime :: UTCTime -> UTCTime
     todayOpeningTime =
-        Tm.zonedTimeToUTC
-        . (\(Tm.ZonedTime t z) -> Tm.ZonedTime
-            (t { Tm.localTimeOfDay = Tm.TimeOfDay 9 00 00}) z)
-        . Tm.utcToZonedTime Lib.tzAsiaTokyo
+        Time.zonedTimeToUTC
+        . (\(Time.ZonedTime t z) -> Time.ZonedTime
+            (t { Time.localTimeOfDay = Time.TimeOfDay 9 00 00}) z)
+        . Time.utcToZonedTime Lib.tzAsiaTokyo
     -- |
     -- レポートを作る関数
     makeReport yesterday (DB.Entity key asset) = do
@@ -182,14 +184,14 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
     -- トップ -> 残高照会 -> 個別銘柄詳細ページを見に行く
     stocks <- goStockDetailPage splPage
     -- 受信時間
-    tm <- Tm.getCurrentTime
+    tm <- Time.getCurrentTime
     -- 全てをデーターベースへ
-    ML.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
+    Logger.runStderrLoggingT . MR.runResourceT . MySQL.withMySQLConn connInfo . MySQL.runSqlConn $ do
         DB.runMigration migrateKabuCom
         -- 資産テーブルへ格納する
         key <- DB.insert $ asset tm splPage pmPage
         -- 保有株式テーブルへ格納する(寄っている場合のみ)
-        M.mapM_ DB.insert . Mb.mapMaybe (stock key) $ stocks
+        M.mapM_ DB.insert . Maybe.mapMaybe (stock key) $ stocks
     where
     -- |
     -- トップ -> 買付出金可能額 を見に行く
@@ -222,7 +224,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
                     S.stockDetailPage =<< slowlyFetch sess uri
     -- |
     -- 資産テーブル情報を組み立てる
-    asset :: Tm.UTCTime -> S.StockPositionListPage -> S.PurchaseMarginPage -> KabucomAsset
+    asset :: UTCTime -> S.StockPositionListPage -> S.PurchaseMarginPage -> KabucomAsset
     asset at splp pmp = KabucomAsset
         { kabucomAssetAt         = at
         , kabucomAssetEvaluation = S.splEvaluation splp
@@ -239,12 +241,12 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
             -> Maybe KabucomStock
     stock key (sp, sdp) = do
         (pr, (h,m)) <- A.second S.getHourMinute <$> S.sdpPrice sdp
-        t <- Tm.makeTimeOfDayValid h m 0
-        let lt = Tm.LocalTime   { Tm.localDay = getAsiaTokyoDay (S.sdpDay sdp)
-                                , Tm.localTimeOfDay = t }
+        t <- Time.makeTimeOfDayValid h m 0
+        let lt = Time.LocalTime   { Time.localDay = getAsiaTokyoDay (S.sdpDay sdp)
+                                , Time.localTimeOfDay = t }
         Just KabucomStock
             { kabucomStockAsset      = key
-            , kabucomStockAt         = Tm.localTimeToUTC tzAsiaTokyo lt
+            , kabucomStockAt         = Time.localTimeToUTC tzAsiaTokyo lt
             , kabucomStockTicker     = S.sdpTicker sdp
             , kabucomStockCaption    = T.unpack $ S.sdpCaption sdp
             , kabucomStockCount      = S.spCount sp
@@ -255,7 +257,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
 -- |
 -- リンクのページへアクセスする関数
 fetchLinkPage   :: MonadThrow m
-                => (BB.HTTPSession -> N.URI -> m TL.Text)
+                => (BB.HTTPSession -> URI -> m TL.Text)
                 -> BB.HTTPSession
                 -> T.Text
                 -> m TL.Text
@@ -264,7 +266,7 @@ fetchLinkPage fetcher sess t =
 
 -- |
 -- トップページ上のリンクテキストに対応したURIを返す
-lookupLinkOnTopPage :: MonadThrow m => BB.HTTPSession -> T.Text -> m N.URI
+lookupLinkOnTopPage :: MonadThrow m => BB.HTTPSession -> T.Text -> m URI
 lookupLinkOnTopPage BB.HTTPSession{..} linktext =
     maybe failure pure go
     where
@@ -284,20 +286,20 @@ lookupLinkOnTopPage BB.HTTPSession{..} linktext =
 
 -- |
 -- 通常のfetch
-noWaitFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
+noWaitFetch :: M.MonadIO m => BB.HTTPSession -> URI -> m TL.Text
 noWaitFetch =
     BB.fetchPageWithSession
 
 -- |
 -- 時間待ち付きfetch
-slowlyFetch :: M.MonadIO m => BB.HTTPSession -> N.URI -> m TL.Text
+slowlyFetch :: M.MonadIO m => BB.HTTPSession -> URI -> m TL.Text
 slowlyFetch x y = noWaitFetch x y <* M.liftIO (BB.waitMS 300)
 
 -- |
 -- ログインページからログインしてHTTPセッション情報を返す関数
 login :: Conf.InfoKabuCom -> Conf.UserAgent -> String -> IO BB.HTTPSession
 login conf userAgent loginPageURL = do
-    loginURI <- maybe errInvalidUrl return (N.parseURI loginPageURL)
+    loginURI <- maybe errInvalidUrl return (URI.parseURI loginPageURL)
     -- HTTPS接続ですよ
     manager <- N.newManager N.tlsManagerSettings
     -- ログインページへアクセスする

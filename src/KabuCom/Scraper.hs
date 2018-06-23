@@ -60,8 +60,8 @@ import qualified Control.Monad          as M
 import           Data.Int               (Int32, Int64)
 import qualified Data.Text              as T
 import qualified Data.Text.Lazy         as TL
-import qualified Data.Time              as Tm
-import qualified Text.HTML.DOM          as H
+import qualified Data.Time              as Time
+import qualified Text.HTML.DOM          as DOM
 import           Text.XML.Cursor        (($/), ($//), (&/), (&|))
 import qualified Text.XML.Cursor        as X
 
@@ -81,7 +81,7 @@ topPage :: TL.Text -> TopPage
 topPage html =
     TopPage (GS.takeAnchorTag root)
     where
-    root = X.fromDocument (H.parseLT html)
+    root = X.fromDocument (DOM.parseLT html)
 
 -- |
 -- 日時分
@@ -194,7 +194,7 @@ data PurchaseMarginPage = PurchaseMarginPage
 -- ログインページをスクレイピングする関数
 formLoginPage :: MonadThrow m => TL.Text -> m GS.FormTag
 formLoginPage html =
-    let tags = X.fromDocument (H.parseLT html)
+    let tags = X.fromDocument (DOM.parseLT html)
                 $// X.laxElement "form" >=> X.attributeIs "NAME" "xyz"
                 &| GS.takeFormTag
     in
@@ -212,7 +212,7 @@ purchaseMarginPage html =
     where
     --
     --
-    root = X.fromDocument $ H.parseLT html
+    root = X.fromDocument $ DOM.parseLT html
     --
     --
     tables :: [X.Cursor]
@@ -262,7 +262,7 @@ stockPositionListPage html =
     where
     --
     --
-    root = X.fromDocument $ H.parseLT html
+    root = X.fromDocument $ DOM.parseLT html
     --
     --
     tables :: [X.Cursor]
@@ -365,7 +365,7 @@ stockDetailPage html =
     --
     --
     go html' =
-        let tables = X.fromDocument (H.parseLT html')
+        let tables = X.fromDocument (DOM.parseLT html')
                         $/ X.laxElement "body"
                         &/ X.laxElement "table"
         in
@@ -600,7 +600,7 @@ parseHM =
 parseDay :: MonadThrow m => T.Text -> m AsiaTokyoDay
 parseDay =
     fmap AsiaTokyoDay
-    . Tm.parseTimeM True Tm.defaultTimeLocale "%Y/%m/%d"
+    . Time.parseTimeM True Time.defaultTimeLocale "%Y/%m/%d"
     -- 日付のみ取り出す
     . T.unpack . fst . T.breakOn "("
 

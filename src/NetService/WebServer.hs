@@ -41,8 +41,8 @@ module NetService.WebServer
     ) where
 import qualified Control.Concurrent.STM       as STM
 import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Logger         as ML
-import qualified Control.Monad.Trans.Resource as MR
+import qualified Control.Monad.Logger         as Logger
+import           Control.Monad.Trans.Resource (runResourceT)
 import           Data.Aeson                   ((.:), (.:?))
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
@@ -61,8 +61,8 @@ import           Lucid                        (body_, charset_, content_,
                                                script_, src_, title_, type_)
 import qualified Lucid
 import qualified Network.HTTP.Conduit         as N
-import qualified Network.HTTP.Types.Header    as N
-import qualified Network.URI                  as N
+import qualified Network.HTTP.Types.Header    as Header
+import qualified Network.URI                  as URI
 import qualified Network.Wai.Handler.Warp     as Warp
 import qualified Servant
 import           Servant.API                  ((:<|>) (..), (:>), Capture, Get,
@@ -273,14 +273,14 @@ exchangeTempCodeHandler cnf tempCode =
     err500 = Servant.throwError Servant.err500
     --
     --
-    methodURI   = N.parseURI . TL.unpack . TLB.toLazyText $ "https://"
+    methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"
                 <> "slack.com/api/oauth.access"
                 <> "?" <> "client_id="      <> cID
                 <> "&" <> "client_secret="  <> cSecret
                 <> "&" <> "code="           <> TLB.fromText tempCode
     cID         = TLB.fromText . Conf.clientID . Conf.slack $ cConf cnf
     cSecret     = TLB.fromText . Conf.clientSecret . Conf.slack $ cConf cnf
-    contentType = (N.hContentType, "application/x-www-form-urlencoded")
+    contentType = (Header.hContentType, "application/x-www-form-urlencoded")
 
 -- |
 --
@@ -397,7 +397,7 @@ app c =
 -- Web API サーバーを起動する
 runWebServer :: Conf.Info -> ApiTypes.ServerTChan -> IO ()
 runWebServer conf chan = do
-    pool <- ML.runNoLoggingT . MR.runResourceT $ MySQL.createMySQLPool connInfo poolSize
+    pool <- Logger.runNoLoggingT . runResourceT $ MySQL.createMySQLPool connInfo poolSize
     Warp.runSettings settings . app $ Config conf pool chan
     where
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
