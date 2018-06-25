@@ -48,7 +48,6 @@ import qualified Control.Monad.Logger         as Logger
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
-import qualified Data.Maybe                   as Maybe
 import           Data.Monoid                  ((<>))
 import           Data.Proxy                   (Proxy (..))
 import qualified Data.Text                    as T
@@ -67,9 +66,8 @@ import qualified Servant
 import           Servant.API                  ((:<|>) (..), (:>), Capture,
                                                FormUrlEncoded, Get, Header',
                                                JSON, NoContent, Patch,
-                                               Post, PostAccepted, Put,
-                                               QueryParam', Raw, ReqBody,
-                                               Required, Strict)
+                                               PostAccepted, Put, QueryParam',
+                                               Raw, ReqBody, Required, Strict)
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
@@ -122,7 +120,7 @@ instance Servant.Elm.ElmType TimeFrame
 instance Servant.Docs.ToParam QTimeFrame where
     toParam _ =
         Servant.Docs.DocQueryParam
-            "time frame"
+            "tf"
             Model.validTimeFrames
             "prices of a time frame."
             Servant.Docs.Normal
@@ -158,8 +156,6 @@ type GetOAuthReply      = Get '[JSON] ApiTypes.OAuthReply
 type GetApiPortfolios   = HAuthorization :> Get '[JSON] [ApiPortfolio]
 --
 type GetApiOhlcvs       = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
-type PostApiOhlcvs      = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] [ApiOhlcv] :> Post '[JSON] NoContent
-type PostApiOhlcv       = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] ApiOhlcv :> Post '[JSON] NoContent
 type PatchApiOhlcv      = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] ApiOhlcv :> Patch '[JSON] NoContent
 
 type WebApiServer

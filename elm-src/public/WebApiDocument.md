@@ -131,7 +131,7 @@
 
 ### GET Parameters:
 
-- time frame
+- tf
      - **Values**: *1h, 1d*
      - **Description**: prices of a time frame.
 
@@ -178,7 +178,7 @@ at,open,high,low,close,volume,source
 
 ### PATCH Parameters:
 
-- time frame
+- tf
      - **Values**: *1h, 1d*
      - **Description**: prices of a time frame.
 
