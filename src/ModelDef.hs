@@ -25,14 +25,16 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
 module ModelDef
     where
 import           Control.Exception.Safe
-import           Data.Char              (toUpper)
+import           Data.Char              (toLower, toUpper)
 import           Data.Word              (Word32)
 import           Database.Persist.TH    (derivePersistField)
+import           GHC.Generics           (Generic)
 import           Text.Read              (readMaybe)
 
 --
@@ -97,23 +99,47 @@ toTickerSymbol codeStr =
 -- "TYO8306"
 --
 fromTickerSymbol :: TickerSymbol -> String
-fromTickerSymbol TSNI225    = "NI225"
-fromTickerSymbol TSTOPIX    = "TOPIX"
-fromTickerSymbol (TSTYO c)  = "TYO" ++ show c
+fromTickerSymbol TSNI225   = "NI225"
+fromTickerSymbol TSTOPIX   = "TOPIX"
+fromTickerSymbol (TSTYO c) = "TYO" ++ show c
 
---
+-- |
 --
 data TimeFrame
     = TF1h  -- ^ 1時間足
     | TF1d  -- ^ 日足
-    deriving (Show, Read, Eq)
+    deriving (Show, Read, Eq, Generic)
 derivePersistField "TimeFrame"
 
---
+-- |
 --
 showTimeFrame :: TimeFrame -> String
 showTimeFrame TF1h = "１時間足"
 showTimeFrame TF1d = "日足"
+
+-- |
+--
+validTimeFrames :: [String]
+validTimeFrames =
+    map fromTimeFrame [TF1h, TF1d]
+
+-- |
+--
+toTimeFrame:: MonadThrow m => String -> m TimeFrame
+toTimeFrame str =
+    case go $ map toLower str of
+        Just a  -> pure a
+        Nothing-> throwString $ "toTimeFrame: no parse of \"" ++ str ++ "\""
+    where
+    go "1h" = Just TF1h
+    go "1d" = Just TF1d
+    go _    = Nothing
+
+-- |
+--
+fromTimeFrame :: TimeFrame -> String
+fromTimeFrame TF1h = "1h"
+fromTimeFrame TF1d = "1d"
 
 --
 --

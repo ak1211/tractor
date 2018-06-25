@@ -154,9 +154,13 @@ askPortfolios token =
 
 
 askHistories : String -> TickerSymbol -> Cmd Msg
-askHistories token ts =
-    Http.send Msg.UpdateAnalytics <|
-        Api.getApiV1QuotesByMarketCode (toBearerToken token) ts
+askHistories token ticker =
+    let
+        authzHeader =
+            toBearerToken token
+    in
+        Http.send Msg.UpdateAnalytics <|
+            Api.getApiV1StocksHistoryByMarketCode authzHeader ticker (Just "1d")
 
 
 subscriptions : Model -> Sub Msg

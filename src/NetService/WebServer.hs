@@ -27,7 +27,9 @@ Portability :  POSIX
 Web API サーバーモジュールです
 -}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -40,34 +42,34 @@ module NetService.WebServer
     , proxyWebApiServer
     ) where
 import qualified Control.Concurrent.STM       as STM
+import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as Logger
 import           Control.Monad.Trans.Resource (runResourceT)
-import           Data.Aeson                   ((.:), (.:?))
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
+import qualified Data.Maybe                   as Maybe
 import           Data.Monoid                  ((<>))
 import           Data.Proxy                   (Proxy (..))
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.Builder       as TLB
-import           Database.Persist             ((==.))
+import           Database.Persist             ((=.), (==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
 import qualified Database.Persist.Sql         as DB
-import           Lucid                        (body_, charset_, content_,
-                                               doctype_, head_, href_, html_,
-                                               lang_, link_, meta_, name_, rel_,
-                                               script_, src_, title_, type_)
-import qualified Lucid
 import qualified Network.HTTP.Conduit         as N
 import qualified Network.HTTP.Types.Header    as Header
 import qualified Network.URI                  as URI
+import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
 import qualified Servant
-import           Servant.API                  ((:<|>) (..), (:>), Capture, Get,
-                                               Header', JSON, NoContent, Post,
-                                               Put, Raw, Required, Strict)
+import           Servant.API                  ((:<|>) (..), (:>), Capture,
+                                               FormUrlEncoded, Get, Header',
+                                               JSON, NoContent, Patch,
+                                               Post, PostAccepted, Put,
+                                               QueryParam', Raw, ReqBody,
+                                               Required, Strict)
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
@@ -76,17 +78,15 @@ import           Servant.HTML.Lucid           (HTML)
 import qualified BackOffice.Agency            as Agency
 import qualified BrokerBackend                as BB
 import qualified Conf
+import           Model                        (TimeFrame (..))
 import qualified Model
+import           NetService.ApiTypes          (ApiOhlcv, ApiPortfolio,
+                                               OAuthAccessResponse (..))
 import qualified NetService.ApiTypes          as ApiTypes
-import           VerRev                       (VerRev)
-import qualified VerRev
+import           NetService.HomePage          (HomePage (..))
 
-
-instance Servant.Elm.ElmType VerRev
-instance Servant.Docs.ToSample VerRev where
-    toSamples _ =
-        Servant.Docs.singleSample VerRev.versionRevision
-
+-- |
+-- このサーバーで使う設定情報
 data Config = Config
     { cConf :: Conf.Info
     , cPool :: MySQL.ConnectionPool
@@ -94,78 +94,73 @@ data Config = Config
     }
 
 -- |
--- slack api oauth.accessからのJSON返答
-data OAuthAccessResponse = OAuthAccessResponse
-    { respOk          :: Bool
-    , respError       :: Maybe T.Text
-    , respAccessToken :: Maybe T.Text
-    , respScope       :: Maybe T.Text
-    , respUserId      :: Maybe T.Text
-    , respUserName    :: Maybe T.Text
-    , respTeamId      :: Maybe T.Text
-    } deriving Show
-
-instance Aeson.FromJSON OAuthAccessResponse where
-    parseJSON = Aeson.withObject "oauth.access response" $ \o -> do
-        respOk          <- o .: "ok"
-        respError       <- o .:? "error"
-        respAccessToken <- o .:? "access_token"
-        respScope       <- o .:? "scope"
-        --
-        -- userの中のid,nameを取り出す
-        oUser           <- o .:? "user"
-        respUserId      <- maybe (pure Nothing) (.:? "id") oUser
-        respUserName    <- maybe (pure Nothing) (.:? "name") oUser
-        --
-        -- teamの中のidを取り出す
-        oTeam           <- o .:? "team"
-        respTeamId      <- maybe (pure Nothing) (.:? "id") oTeam
-        return OAuthAccessResponse{..}
+--
+type TempCode   = String
+type CTempCode  = Capture "tempCode" TempCode
+instance Servant.Docs.ToCapture CTempCode where
+    toCapture _ =
+        Servant.Docs.DocCapture
+        "OAuth temporary code"
+        "Exchanging a temporary code for an access token"
 
 -- |
--- アプリケーションのホームページ
-data HomePage = HomePage
-instance Lucid.ToHtml HomePage where
-    --
-    --
-    toHtml _ = do
-        doctype_
-        html_ [lang_ "ja"] $ do
-            head_ $ do
-                meta_ [charset_ "utf-8"]
-                meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
-                title_ $ Lucid.toHtmlRaw ("Dashboard &#8212; TRACTOR" :: T.Text)
-                link_ [rel_ "stylesheet", type_ "text/css", href_ "https://fonts.googleapis.com/css?family=Roboto:400,300,500|Roboto+Mono|Roboto+Condensed:400,700&subset=latin,latin-ext"]
-                link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/icon?family=Material+Icons"]
-                link_ [rel_ "stylesheet", href_ "https://code.getmdl.io/1.3.0/material.blue_grey-lime.min.css"]
-                link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/css?family=Gugi"]
-                --
-                script_ [src_ "https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.js"] T.empty
-                link_ [rel_ "stylesheet", type_ "text/css", href_ "https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.css"]
-                --
-                script_ [src_ "https://cdn.polyfill.io/v2/polyfill.js?features=Event.focusin"] T.empty
-                --
-            body_ $ do
-                script_ [src_ "public/main.js"] T.empty
-                script_ [] ("app = Elm.Main.fullscreen();" :: T.Text)
-    --
-    --
-    toHtmlRaw = Lucid.toHtml
-
-instance Servant.Docs.ToSample HomePage where
-    toSamples _ = Servant.Docs.singleSample HomePage
-
 --
--- for servant doc
-instance Servant.Docs.ToCapture (Capture "marketCode" T.Text) where
+type MarketCode = String
+type CMarketCode= Capture "marketCode" MarketCode
+instance Servant.Docs.ToCapture CMarketCode where
     toCapture _ =
         Servant.Docs.DocCapture
         "market code"
         "NI225, TOPIX, TYO8306 etc..."
 
-instance Servant.Docs.ToCapture (Capture "tempCode" T.Text) where
-    toCapture _ =
-        Servant.Docs.DocCapture "tempCode" "Exchanging a temporary code for an access token"
+-- |
+--
+type QTimeFrame = QueryParam' '[Required, Strict] "tf" TimeFrame
+
+instance Servant.Elm.ElmType TimeFrame
+
+instance Servant.Docs.ToParam QTimeFrame where
+    toParam _ =
+        Servant.Docs.DocQueryParam
+            "time frame"
+            Model.validTimeFrames
+            "prices of a time frame."
+            Servant.Docs.Normal
+
+instance Servant.FromHttpApiData TimeFrame where
+    parseQueryParam x =
+        let y = T.filter ((/=) '"') $ URI.decodeText x
+        in
+        case Model.toTimeFrame =<< parse y of
+            Nothing ->
+                Left "TimeFrame"
+            Just a ->
+                Right a
+        where
+        --
+        --
+        parse :: T.Text -> Maybe String
+        parse =
+            either (const Nothing) Just . Servant.parseQueryParam
+
+instance Servant.ToHttpApiData TimeFrame where
+    toQueryParam =
+        T.pack . Model.fromTimeFrame
+
+-- |
+--
+type AuthzValue         = T.Text
+type HAuthorization     = Header' '[Required, Strict] "Authorization" AuthzValue
+
+-- |
+--
+type GetOAuthReply      = Get '[JSON] ApiTypes.OAuthReply
+type GetApiPortfolios   = HAuthorization :> Get '[JSON] [ApiPortfolio]
+--
+type GetApiOhlcvs       = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
+type PostApiOhlcvs      = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] [ApiOhlcv] :> Post '[JSON] NoContent
+type PostApiOhlcv       = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] ApiOhlcv :> Post '[JSON] NoContent
+type PatchApiOhlcv      = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] ApiOhlcv :> Patch '[JSON] NoContent
 
 type WebApiServer
     = Get '[HTML] HomePage
@@ -173,20 +168,16 @@ type WebApiServer
  :<|> WebApi
 
 -- |
---
-type AuthHeaderValue = T.Text
-type AuthHeader = Header' '[Required, Strict] "Authorization" AuthHeaderValue
-
--- |
 -- web front 接続用 JSON API
---
 type WebApi
-    = "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> Capture "tempCode" T.Text :> Get '[JSON] ApiTypes.OAuthReply
- :<|> "api" :> "v1" :> "publish" :> "zmq" :> Capture "marketCode" T.Text :> AuthHeader :> Put '[JSON] NoContent
- :<|> "api" :> "v1" :> "version" :> Get '[JSON] VerRev
- :<|> "api" :> "v1" :> "portfolios" :> AuthHeader :> Get '[JSON] [ApiTypes.Portfolio]
- :<|> "api" :> "v1" :> "quotes" :> "all" :> "update" :> AuthHeader :> Post '[JSON] NoContent
- :<|> "api" :> "v1" :> "quotes" :> Capture "marketCode" T.Text :> AuthHeader :> Get '[JSON, CSV] [ApiTypes.Ohlcv]
+    = "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> CTempCode :> GetOAuthReply
+ :<|> "api" :> "v1" :> "publish" :> "zmq" :> CMarketCode :> HAuthorization :> Put '[JSON] NoContent
+ :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
+ :<|> "api" :> "v1" :> "portfolios" :> GetApiPortfolios
+ --
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> HAuthorization :> PostAccepted '[JSON] NoContent
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> GetApiOhlcvs
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PatchApiOhlcv
 
 --
 --
@@ -195,41 +186,55 @@ webApiServer cnf =
     return HomePage
     :<|> Servant.serveDirectoryFileServer "elm-src/public"
     --
-    :<|> exchangeTempCode
-    :<|> publishZmq
-    :<|> version
-    :<|> portfolios
-    :<|> updateAll
-    :<|> histories
-    where
-    exchangeTempCode = exchangeTempCodeHandler cnf
-    publishZmq = publishZmqHandler cnf
-    version = versionHandler
-    portfolios = portfolioHandler cnf
-    updateAll = updateAllHandler cnf
-    histories = historiesHandler cnf
+    :<|> exchangeTempCodeHandler cnf
+    :<|> publishZmqHandler cnf
+    :<|> versionHandler
+    :<|> portfolioHandler cnf
+    --
+    :<|> updateHistoriesHandler cnf
+    :<|> getHistoriesHandler cnf
+    :<|> patchHistoriesHandler cnf
 
 -- |
 --
-versionHandler :: Servant.Handler VerRev
-versionHandler =
-    return VerRev.versionRevision
-
--- |
---
-isMatchBearerToken :: AuthHeaderValue -> Config -> Bool
-isMatchBearerToken value cnf =
-    value == T.concat ["Bearer ", token]
+allowed :: Config -> AuthzValue -> Bool
+allowed cnf value =
+    value == T.unwords ["Bearer", token]
     where
     token = Conf.oauthAccessToken . Conf.slack $ cConf cnf
+
+authzFailed :: Config -> AuthzValue -> Bool
+authzFailed a b =
+    not (allowed a b)
+
+--
+--
+err400BadRequest :: Servant.Handler a
+err400BadRequest = Servant.throwError Servant.err400
+
+--
+--
+err401Unauthorized :: Servant.Handler a
+err401Unauthorized = Servant.throwError Servant.err401
+
+--
+--
+err500InternalServerError :: Servant.Handler a
+err500InternalServerError = Servant.throwError Servant.err500
+
+-- |
+--
+versionHandler :: Servant.Handler ApiTypes.VerRev
+versionHandler =
+    return ApiTypes.versionRevision
 
 -- |
 -- 仮コードをアクセストークンに交換する
 exchangeTempCodeHandler :: Config
-                        -> T.Text
+                        -> TempCode
                         -> Servant.Handler ApiTypes.OAuthReply
 exchangeTempCodeHandler cnf tempCode =
-    maybe err500 go methodURI
+    maybe err500InternalServerError go methodURI
     where
     --
     --
@@ -252,7 +257,7 @@ exchangeTempCodeHandler cnf tempCode =
         --
         --
         --
-        maybe err401 return $ pack response
+        maybe err401Unauthorized return $ pack response
     --
     --
     pack    :: Either String OAuthAccessResponse
@@ -269,118 +274,117 @@ exchangeTempCodeHandler cnf tempCode =
         Nothing
     --
     --
-    err401 = Servant.throwError Servant.err401
-    err500 = Servant.throwError Servant.err500
-    --
-    --
     methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"
                 <> "slack.com/api/oauth.access"
                 <> "?" <> "client_id="      <> cID
                 <> "&" <> "client_secret="  <> cSecret
-                <> "&" <> "code="           <> TLB.fromText tempCode
+                <> "&" <> "code="           <> TLB.fromString tempCode
     cID         = TLB.fromText . Conf.clientID . Conf.slack $ cConf cnf
     cSecret     = TLB.fromText . Conf.clientSecret . Conf.slack $ cConf cnf
     contentType = (Header.hContentType, "application/x-www-form-urlencoded")
 
 -- |
 --
-updateAllHandler    :: Config
-                    -> AuthHeaderValue
-                    -> Servant.Handler Servant.NoContent
-updateAllHandler cnf auth
-    | isMatchBearerToken auth cnf = go
-    | otherwise = err401
-    where
-    go = do
+updateHistoriesHandler :: Config -> AuthzValue -> Servant.Handler Servant.NoContent
+updateHistoriesHandler cnf auth
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise = do
         M.liftIO . Agency.updateSomeRates $ cConf cnf
         return Servant.NoContent
-    err401 = do
-        M.liftIO $ print auth
-        Servant.throwError Servant.err401
 
 -- |
 --
-toTickerSymbol :: T.Text -> Maybe Model.TickerSymbol
-toTickerSymbol = Model.toTickerSymbol . T.unpack
-
--- |
---
-publishZmqHandler   :: Config
-                    -> T.Text
-                    -> AuthHeaderValue
-                    -> Servant.Handler Servant.NoContent
+publishZmqHandler :: Config -> MarketCode -> AuthzValue -> Servant.Handler Servant.NoContent
 publishZmqHandler cnf code auth
-    | isMatchBearerToken auth cnf = maybe err400 go (toTickerSymbol code)
-    | otherwise = err401
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise =
+        case Model.toTickerSymbol code of
+            Nothing ->
+                err400BadRequest
+            Just ts -> do
+                M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
+                return Servant.NoContent
     where
-    go ts = do
-        M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
-        return Servant.NoContent
-    err400 = Servant.throwError Servant.err400
-    err401 = do
-        M.liftIO $ print auth
-        Servant.throwError Servant.err401
     --
     --
-    prices :: Model.TickerSymbol -> IO [ApiTypes.Ohlcv]
+    prices :: Model.TickerSymbol -> IO [ApiOhlcv]
     prices ts =
-        flip DB.runSqlPersistMPool (cPool cnf) $
-            fromInternal<$> DB.selectList [Model.OhlcvTicker ==. ts] [DB.Asc Model.OhlcvAt]
-    --
-    --
-    fromInternal:: [DB.Entity Model.Ohlcv] -> [ApiTypes.Ohlcv]
-    fromInternal= map (ApiTypes.toOhlcv. DB.entityVal)
+        flip DB.runSqlPersistMPool (cPool cnf) $ do
+            xs <- DB.selectList
+                    [Model.OhlcvTicker ==. ts]
+                    [DB.Asc Model.OhlcvAt]
+            return $ map (ApiTypes.toApiOhlcv. DB.entityVal) xs
 
 -- |
 --
-portfolioHandler    :: Config
-                    -> AuthHeaderValue
-                    -> Servant.Handler [ApiTypes.Portfolio]
+portfolioHandler :: Config -> AuthzValue -> Servant.Handler [ApiPortfolio]
 portfolioHandler cnf auth
-    | isMatchBearerToken auth cnf = M.liftIO getPortfolio
-    | otherwise = err401
-    where
-    err401 = do
-        M.liftIO $ print auth
-        Servant.throwError Servant.err401
-    --
-    --
-    getPortfolio :: IO [ApiTypes.Portfolio]
-    getPortfolio =
-        flip DB.runSqlPersistMPool (cPool cnf) $
-            fromInternal <$> DB.selectList [] [DB.Asc Model.PortfolioTicker]
-    --
-    --
-    fromInternal :: [DB.Entity Model.Portfolio] -> [ApiTypes.Portfolio]
-    fromInternal = map (ApiTypes.toPortfolio . DB.entityVal)
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise =
+        M.liftIO . flip DB.runSqlPersistMPool (cPool cnf) $ do
+            xs <- DB.selectList [] [DB.Asc Model.PortfolioTicker]
+            return $ map (ApiTypes.toApiPortfolio . DB.entityVal) xs
 
 -- |
 --
-historiesHandler    :: Config
-                    -> T.Text
-                    -> AuthHeaderValue
-                    -> Servant.Handler [ApiTypes.Ohlcv]
-historiesHandler cnf code auth
-    | isMatchBearerToken auth cnf = maybe err400 go (toTickerSymbol code)
-    | otherwise = err401
-    where
-    go = M.liftIO . takePrices (cPool cnf)
-    err400 = Servant.throwError Servant.err400
-    err401 = do
-        M.liftIO $ print auth
-        Servant.throwError Servant.err401
+getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> Servant.Handler [ApiOhlcv]
+getHistoriesHandler cnf code timeFrame auth
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise = do
+        M.liftIO $ print timeFrame
+        case Model.toTickerSymbol code of
+            Nothing ->
+                err400BadRequest
+            Just ticker ->
+                M.liftIO . flip DB.runSqlPersistMPool (cPool cnf) $ do
+                    xs <- DB.selectList
+                            [ Model.OhlcvTf     ==. timeFrame
+                            , Model.OhlcvTicker ==. ticker
+                            ]
+                            [DB.Asc Model.OhlcvAt]
+                    return $ map (ApiTypes.toApiOhlcv . DB.entityVal) xs
 
---
---
-takePrices :: MySQL.ConnectionPool -> Model.TickerSymbol -> IO [ApiTypes.Ohlcv]
-takePrices pool ticker =
-    flip DB.runSqlPersistMPool pool $
-       fromInternal <$> DB.selectList [Model.OhlcvTicker ==. ticker] [DB.Asc Model.OhlcvAt]
+-- |
+-- 既存のデータを入れ替える(UPDATE)
+patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> ApiOhlcv -> Servant.Handler Servant.NoContent
+patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcv
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise =
+        let ts = Model.toTickerSymbol codeStr
+            a = do
+                x <- ts
+                ApiTypes.fromApiOhlcv x timeFrame apiOhlcv
+        in
+        case (,) <$> ts <*> a of
+            Nothing ->
+                err400BadRequest
+            Just (ticker, ohlcv) -> do
+                go ticker ohlcv
+                return Servant.NoContent
     where
     --
     --
-    fromInternal:: [DB.Entity Model.Ohlcv] -> [ApiTypes.Ohlcv]
-    fromInternal= map (ApiTypes.toOhlcv . DB.entityVal)
+    go ticker ohlcv =
+        M.liftIO . flip DB.runSqlPersistMPool (cPool cnf) $
+            -- 同じ時間の物があるか探してみる
+            DB.selectFirst
+                    [ Model.OhlcvTicker ==. ticker
+                    , Model.OhlcvTf ==. timeFrame
+                    , Model.OhlcvAt ==. Model.ohlcvAt ohlcv]
+                    []
+            >>= \case
+                -- レコードが無かった場合は新規挿入する
+                Nothing -> M.void $ DB.insert ohlcv
+                -- レコードが有った場合は更新する
+                Just (DB.Entity updKey _) ->
+                    DB.update updKey
+                        [ Model.OhlcvOpen     =. Model.ohlcvOpen ohlcv
+                        , Model.OhlcvHigh     =. Model.ohlcvHigh ohlcv
+                        , Model.OhlcvLow      =. Model.ohlcvLow ohlcv
+                        , Model.OhlcvClose    =. Model.ohlcvClose ohlcv
+                        , Model.OhlcvVolume   =. Model.ohlcvVolume ohlcv
+                        , Model.OhlcvSource   =. Model.ohlcvSource ohlcv
+                        ]
 
 --
 --
@@ -397,7 +401,7 @@ app c =
 -- Web API サーバーを起動する
 runWebServer :: Conf.Info -> ApiTypes.ServerTChan -> IO ()
 runWebServer conf chan = do
-    pool <- Logger.runNoLoggingT . runResourceT $ MySQL.createMySQLPool connInfo poolSize
+    pool <- Logger.runStdoutLoggingT . runResourceT $ MySQL.createMySQLPool connInfo poolSize
     Warp.runSettings settings . app $ Config conf pool chan
     where
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf

@@ -33,31 +33,73 @@ Portability :  POSIX
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE StrictData            #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module NetService.ApiTypes
     ( ServerTChan
-    , Portfolio
-    , toPortfolio
-    , Ohlcv
-    , toOhlcv
+    , ApiPortfolio
+    , toApiPortfolio
+    , ApiOhlcv
+    , toApiOhlcv
+    , fromApiOhlcv
+    , OAuthAccessResponse(..)
     , OAuthReply(..)
+    , module VerRev
     )
     where
-import qualified Control.Concurrent.STM as STM
-import qualified Data.Aeson             as Aeson
-import qualified Data.Csv               as Csv
-import           Data.Int               (Int64)
-import qualified Data.Text              as T
-import qualified Data.Time              as Time
-import           GHC.Generics           (Generic)
+import qualified Control.Concurrent.STM      as STM
+import           Data.Aeson                  ((.:), (.:?))
+import qualified Data.Aeson                  as Aeson
+import           Data.Csv                    ((.=))
+import qualified Data.Csv                    as Csv
+import           Data.Int                    (Int64)
+import qualified Data.Text                   as T
+import qualified Data.Time                   as Time
+import           GHC.Generics                (Generic)
 import qualified Servant.Docs
 import qualified Servant.Elm
+import           Web.Internal.FormUrlEncoded (FromForm, ToForm)
 
-import           Lib                    (toISO8601DateTime, tzAsiaTokyo)
+import           Lib                         (toISO8601DateTime, tzAsiaTokyo)
 import qualified Model
+import           VerRev
+
+instance Servant.Elm.ElmType VerRev
+instance Servant.Docs.ToSample VerRev where
+    toSamples _ =
+        Servant.Docs.singleSample VerRev.versionRevision
 
 --
 --
-type ServerTChan = STM.TChan [Ohlcv]
+type ServerTChan = STM.TChan [ApiOhlcv]
+
+-- |
+-- slack api oauth.accessからのJSON返答
+data OAuthAccessResponse = OAuthAccessResponse
+    { respOk          :: Bool
+    , respError       :: Maybe T.Text
+    , respAccessToken :: Maybe T.Text
+    , respScope       :: Maybe T.Text
+    , respUserId      :: Maybe T.Text
+    , respUserName    :: Maybe T.Text
+    , respTeamId      :: Maybe T.Text
+    } deriving Show
+
+instance Aeson.FromJSON OAuthAccessResponse where
+    parseJSON = Aeson.withObject "oauth.access response" $ \o -> do
+        respOk          <- o .: "ok"
+        respError       <- o .:? "error"
+        respAccessToken <- o .:? "access_token"
+        respScope       <- o .:? "scope"
+        --
+        -- userの中のid,nameを取り出す
+        oUser           <- o .:? "user"
+        respUserId      <- maybe (pure Nothing) (.:? "id") oUser
+        respUserName    <- maybe (pure Nothing) (.:? "name") oUser
+        --
+        -- teamの中のidを取り出す
+        oTeam           <- o .:? "team"
+        respTeamId      <- maybe (pure Nothing) (.:? "id") oTeam
+        return OAuthAccessResponse{..}
 
 -- |
 -- OAuth返答
@@ -79,23 +121,23 @@ instance Servant.Docs.ToSample OAuthReply where
 
 -- |
 -- ポートフォリオ
-data Portfolio = Portfolio
+data ApiPortfolio = ApiPortfolio
     { code     :: String
     , caption  :: Maybe T.Text
     , updateAt :: Maybe String
     } deriving (Eq, Show, Read, Generic)
-instance Aeson.FromJSON Portfolio
-instance Aeson.ToJSON Portfolio
-instance Servant.Elm.ElmType Portfolio
-instance Servant.Docs.ToSample Portfolio where
+instance Aeson.FromJSON ApiPortfolio
+instance Aeson.ToJSON ApiPortfolio
+instance Servant.Elm.ElmType ApiPortfolio
+instance Servant.Docs.ToSample ApiPortfolio where
     toSamples _ =
         Servant.Docs.singleSample $
-        Portfolio "TYO8306" (Just "三菱ＵＦＪフィナンシャル・グループ") Nothing
+        ApiPortfolio "TYO8306" (Just "三菱ＵＦＪフィナンシャル・グループ") Nothing
 
 --
 --
-toPortfolio :: Model.Portfolio -> Portfolio
-toPortfolio o = Portfolio
+toApiPortfolio :: Model.Portfolio -> ApiPortfolio
+toApiPortfolio o = ApiPortfolio
     { code     = Model.fromTickerSymbol $ Model.portfolioTicker o
     , caption  = Model.portfolioCaption o
     , updateAt = toISO8601DateTime
@@ -105,29 +147,29 @@ toPortfolio o = Portfolio
 
 -- |
 -- 4本値 + 出来高
-data Ohlcv = Ohlcv
+data ApiOhlcv = ApiOhlcv
     { at     :: String
-    , code   :: String
     , open   :: Maybe Double
     , high   :: Maybe Double
     , low    :: Maybe Double
     , close  :: Maybe Double
     , volume :: Int64
     , source :: Maybe String
-    } deriving (Eq, Show, Generic)
+    } deriving (Show,Generic)
 
 -- |
 -- 4本値 + 出来高
-instance Aeson.FromJSON Ohlcv
-instance Aeson.ToJSON Ohlcv
-instance Servant.Elm.ElmType Ohlcv
-instance Servant.Docs.ToSample Ohlcv where
+instance Aeson.FromJSON ApiOhlcv
+instance Aeson.ToJSON ApiOhlcv
+instance FromForm ApiOhlcv
+instance ToForm ApiOhlcv
+instance Servant.Elm.ElmType ApiOhlcv
+instance Servant.Docs.ToSample ApiOhlcv where
     toSamples _ =
         Servant.Docs.singleSample v
         where
-        v = Ohlcv
+        v = ApiOhlcv
             { at     = "2018-03-07T15:00:00+0900"
-            , code   = "TYO8306"
             , open   = Just 723
             , high   = Just 726
             , low    = Just 715
@@ -138,24 +180,22 @@ instance Servant.Docs.ToSample Ohlcv where
 
 -- |
 -- 4本値 + 出来高
-instance Csv.FromRecord Ohlcv
-instance Csv.ToNamedRecord Ohlcv where
-    toNamedRecord Ohlcv{..} =
+instance Csv.FromRecord ApiOhlcv
+instance Csv.ToNamedRecord ApiOhlcv where
+    toNamedRecord ApiOhlcv{..} =
         Csv.namedRecord
-        [ "at"     Csv..= at
-        , "code"   Csv..= code
-        , "open"   Csv..= open
-        , "high"   Csv..= high
-        , "low"    Csv..= low
-        , "close"  Csv..= close
-        , "volume" Csv..= volume
-        , "source" Csv..= source
+        [ "at"     .= at
+        , "open"   .= open
+        , "high"   .= high
+        , "low"    .= low
+        , "close"  .= close
+        , "volume" .= volume
+        , "source" .= source
         ]
-instance Csv.DefaultOrdered Ohlcv where
+instance Csv.DefaultOrdered ApiOhlcv where
     headerOrder _ =
         Csv.header
         [ "at"
-        , "code"
         , "open"
         , "high"
         , "low"
@@ -166,12 +206,11 @@ instance Csv.DefaultOrdered Ohlcv where
 
 --
 --
-toOhlcv :: Model.Ohlcv -> Ohlcv
-toOhlcv o = Ohlcv
+toApiOhlcv :: Model.Ohlcv -> ApiOhlcv
+toApiOhlcv o = ApiOhlcv
     { at     = toISO8601DateTime
                 . Time.utcToZonedTime tzAsiaTokyo
                 $ Model.ohlcvAt o
-    , code   = Model.fromTickerSymbol $ Model.ohlcvTicker o
     , open   = Model.ohlcvOpen o
     , high   = Model.ohlcvHigh o
     , low    = Model.ohlcvLow o
@@ -179,4 +218,32 @@ toOhlcv o = Ohlcv
     , volume = Model.ohlcvVolume o
     , source = T.unpack <$> Model.ohlcvSource o
     }
+
+--
+--
+fromApiOhlcv    :: Model.TickerSymbol
+                -> Model.TimeFrame
+                -> ApiOhlcv
+                -> Maybe Model.Ohlcv
+fromApiOhlcv ticker tf o = do
+    at'<- toUTCTime (at o)
+    Just $ Model.Ohlcv
+        { Model.ohlcvTicker = ticker
+        , Model.ohlcvTf     = tf
+        , Model.ohlcvAt     = at'
+        , Model.ohlcvOpen   = open o
+        , Model.ohlcvHigh   = high o
+        , Model.ohlcvLow    = low o
+        , Model.ohlcvClose  = close o
+        , Model.ohlcvVolume = volume o
+        , Model.ohlcvSource = T.pack <$> source o
+        }
+    where
+    toUTCTime :: String -> Maybe Time.UTCTime
+    toUTCTime str =
+        let format = Time.iso8601DateFormat (Just "%H:%M:%S%z")
+        in
+        Time.parseTimeM
+            True Time.defaultTimeLocale format str
+
 

@@ -513,7 +513,7 @@ viewFile file =
             in
                 ( name, List.map toDict recs )
 
-        toOhlcvt : String -> Dict String String -> WebApi.Ohlcv
+        toOhlcvt : String -> Dict String String -> WebApi.ApiOhlcv
         toOhlcvt marketCode_ recs =
             let
                 toNumber : (String -> Result a b) -> String -> Maybe b
@@ -543,7 +543,6 @@ viewFile file =
                         |> Maybe.withDefault "Date and Time parse error"
             in
                 { at = datetime
-                , code = marketCode_
                 , open = toFloat "Open"
                 , high = toFloat "High"
                 , low = toFloat "Low"
@@ -608,7 +607,7 @@ viewTable headlines viewRow data =
 viewPortfolio : Model -> Html Msg
 viewPortfolio model =
     let
-        viewRow : WebApi.Portfolio -> Html Msg
+        viewRow : WebApi.ApiPortfolio -> Html Msg
         viewRow item =
             --Table.tr [ Options.onClick <| Msg.GetHistories item.code ]
             Table.tr
@@ -636,14 +635,13 @@ viewPortfolio model =
                 pinkCard [ Html.text "No datasets available" ]
 
 
-tableOhlcv : List WebApi.Ohlcv -> Html Msg
+tableOhlcv : List WebApi.ApiOhlcv -> Html Msg
 tableOhlcv data =
     let
-        viewRow : WebApi.Ohlcv -> Html Msg
+        viewRow : WebApi.ApiOhlcv -> Html Msg
         viewRow item =
             Table.tr []
-                [ Table.td [] [ Html.text item.code ]
-                , Table.td [ Table.numeric ] [ Html.text item.at ]
+                [ Table.td [ Table.numeric ] [ Html.text item.at ]
                 , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.open ]
                 , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.high ]
                 , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.low ]
@@ -653,8 +651,7 @@ tableOhlcv data =
                 ]
 
         headlines =
-            [ Html.text "証券コード"
-            , Html.text "時間"
+            [ Html.text "時間"
             , Html.text "始値"
             , Html.text "高値"
             , Html.text "安値"

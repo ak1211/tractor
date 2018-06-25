@@ -43,10 +43,11 @@ import           System.ZMQ4.Monadic        (ZMQ)
 import qualified System.ZMQ4.Monadic        as ZMQ4
 
 import qualified Conf
+import           NetService.ApiTypes        (ApiOhlcv)
 import qualified NetService.ApiTypes        as ApiTypes
 
 --
-publishOverZmq :: ZMQ4.Sender t => ZMQ4.Socket z t -> [ApiTypes.Ohlcv] -> ZMQ z ()
+publishOverZmq :: ZMQ4.Sender t => ZMQ4.Socket z t -> [ApiOhlcv] -> ZMQ z ()
 publishOverZmq sock prices =
     M.mapM_ (go "" . jsonPrices) ([ [x] | x<-prices ] ++ [ [] ])
     where
@@ -54,7 +55,7 @@ publishOverZmq sock prices =
     go topic contents =
         ZMQ4.sendMulti sock $ NonEmpty.fromList [topic, contents]
     --
-    jsonPrices :: [ApiTypes.Ohlcv] -> B8.ByteString
+    jsonPrices :: [ApiOhlcv] -> B8.ByteString
     jsonPrices =
         BL8.toStrict . Aeson.encode . Seq.fromList
 

@@ -6610,7 +6610,7 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
-var _ak1211$tractor$Generated_WebApi$encodeOhlcv = function (x) {
+var _ak1211$tractor$Generated_WebApi$encodeApiOhlcv = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
 			ctor: '::',
@@ -6623,78 +6623,70 @@ var _ak1211$tractor$Generated_WebApi$encodeOhlcv = function (x) {
 				ctor: '::',
 				_0: {
 					ctor: '_Tuple2',
-					_0: 'code',
-					_1: _elm_lang$core$Json_Encode$string(x.code)
+					_0: 'open',
+					_1: function (_p0) {
+						return A2(
+							_elm_lang$core$Maybe$withDefault,
+							_elm_lang$core$Json_Encode$null,
+							A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p0));
+					}(x.open)
 				},
 				_1: {
 					ctor: '::',
 					_0: {
 						ctor: '_Tuple2',
-						_0: 'open',
-						_1: function (_p0) {
+						_0: 'high',
+						_1: function (_p1) {
 							return A2(
 								_elm_lang$core$Maybe$withDefault,
 								_elm_lang$core$Json_Encode$null,
-								A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p0));
-						}(x.open)
+								A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p1));
+						}(x.high)
 					},
 					_1: {
 						ctor: '::',
 						_0: {
 							ctor: '_Tuple2',
-							_0: 'high',
-							_1: function (_p1) {
+							_0: 'low',
+							_1: function (_p2) {
 								return A2(
 									_elm_lang$core$Maybe$withDefault,
 									_elm_lang$core$Json_Encode$null,
-									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p1));
-							}(x.high)
+									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p2));
+							}(x.low)
 						},
 						_1: {
 							ctor: '::',
 							_0: {
 								ctor: '_Tuple2',
-								_0: 'low',
-								_1: function (_p2) {
+								_0: 'close',
+								_1: function (_p3) {
 									return A2(
 										_elm_lang$core$Maybe$withDefault,
 										_elm_lang$core$Json_Encode$null,
-										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p2));
-								}(x.low)
+										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p3));
+								}(x.close)
 							},
 							_1: {
 								ctor: '::',
 								_0: {
 									ctor: '_Tuple2',
-									_0: 'close',
-									_1: function (_p3) {
-										return A2(
-											_elm_lang$core$Maybe$withDefault,
-											_elm_lang$core$Json_Encode$null,
-											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$float, _p3));
-									}(x.close)
+									_0: 'volume',
+									_1: _elm_lang$core$Json_Encode$int(x.volume)
 								},
 								_1: {
 									ctor: '::',
 									_0: {
 										ctor: '_Tuple2',
-										_0: 'volume',
-										_1: _elm_lang$core$Json_Encode$int(x.volume)
+										_0: 'source',
+										_1: function (_p4) {
+											return A2(
+												_elm_lang$core$Maybe$withDefault,
+												_elm_lang$core$Json_Encode$null,
+												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$string, _p4));
+										}(x.source)
 									},
-									_1: {
-										ctor: '::',
-										_0: {
-											ctor: '_Tuple2',
-											_0: 'source',
-											_1: function (_p4) {
-												return A2(
-													_elm_lang$core$Maybe$withDefault,
-													_elm_lang$core$Json_Encode$null,
-													A2(_elm_lang$core$Maybe$map, _elm_lang$core$Json_Encode$string, _p4));
-											}(x.source)
-										},
-										_1: {ctor: '[]'}
-									}
+									_1: {ctor: '[]'}
 								}
 							}
 						}
@@ -6703,7 +6695,7 @@ var _ak1211$tractor$Generated_WebApi$encodeOhlcv = function (x) {
 			}
 		});
 };
-var _ak1211$tractor$Generated_WebApi$encodePortfolio = function (x) {
+var _ak1211$tractor$Generated_WebApi$encodeApiPortfolio = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
 			ctor: '::',
@@ -6939,11 +6931,11 @@ var _ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode = f
 			withCredentials: false
 		});
 };
-var _ak1211$tractor$Generated_WebApi$Portfolio = F3(
+var _ak1211$tractor$Generated_WebApi$ApiPortfolio = F3(
 	function (a, b, c) {
 		return {code: a, caption: b, updateAt: c};
 	});
-var _ak1211$tractor$Generated_WebApi$decodePortfolio = A3(
+var _ak1211$tractor$Generated_WebApi$decodeApiPortfolio = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 	'updateAt',
 	_elm_lang$core$Json_Decode$maybe(_elm_lang$core$Json_Decode$string),
@@ -6955,7 +6947,7 @@ var _ak1211$tractor$Generated_WebApi$decodePortfolio = A3(
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 			'code',
 			_elm_lang$core$Json_Decode$string,
-			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$Portfolio))));
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$ApiPortfolio))));
 var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = function (header_Authorization) {
 	return _elm_lang$http$Http$request(
 		{
@@ -6987,16 +6979,16 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = function (header_Autho
 				}),
 			body: _elm_lang$http$Http$emptyBody,
 			expect: _elm_lang$http$Http$expectJson(
-				_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodePortfolio)),
+				_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiPortfolio)),
 			timeout: _elm_lang$core$Maybe$Nothing,
 			withCredentials: false
 		});
 };
-var _ak1211$tractor$Generated_WebApi$Ohlcv = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {at: a, code: b, open: c, high: d, low: e, close: f, volume: g, source: h};
+var _ak1211$tractor$Generated_WebApi$ApiOhlcv = F7(
+	function (a, b, c, d, e, f, g) {
+		return {at: a, open: b, high: c, low: d, close: e, volume: f, source: g};
 	});
-var _ak1211$tractor$Generated_WebApi$decodeOhlcv = A3(
+var _ak1211$tractor$Generated_WebApi$decodeApiOhlcv = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 	'source',
 	_elm_lang$core$Json_Decode$maybe(_elm_lang$core$Json_Decode$string),
@@ -7022,15 +7014,36 @@ var _ak1211$tractor$Generated_WebApi$decodeOhlcv = A3(
 						_elm_lang$core$Json_Decode$maybe(_elm_lang$core$Json_Decode$float),
 						A3(
 							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-							'code',
+							'at',
 							_elm_lang$core$Json_Decode$string,
-							A3(
-								_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-								'at',
-								_elm_lang$core$Json_Decode$string,
-								_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$Ohlcv)))))))));
-var _ak1211$tractor$Generated_WebApi$getApiV1QuotesByMarketCode = F2(
-	function (header_Authorization, capture_marketCode) {
+							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$ApiOhlcv))))))));
+var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
+	function (header_Authorization, capture_marketCode, query_tf) {
+		var params = A2(
+			_elm_lang$core$List$filter,
+			function (_p7) {
+				return !_elm_lang$core$String$isEmpty(_p7);
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$core$Maybe$withDefault,
+					'',
+					A2(
+						_elm_lang$core$Maybe$map,
+						function (_p8) {
+							return A2(
+								F2(
+									function (x, y) {
+										return A2(_elm_lang$core$Basics_ops['++'], x, y);
+									}),
+								'tf=',
+								_elm_lang$http$Http$encodeUri(
+									_elm_lang$core$Basics$toString(_p8)));
+						},
+						query_tf)),
+				_1: {ctor: '[]'}
+			});
 		return _elm_lang$http$Http$request(
 			{
 				method: 'GET',
@@ -7040,32 +7053,42 @@ var _ak1211$tractor$Generated_WebApi$getApiV1QuotesByMarketCode = F2(
 					_1: {ctor: '[]'}
 				},
 				url: A2(
-					_elm_lang$core$String$join,
-					'/',
-					{
-						ctor: '::',
-						_0: 'https://tractor.ak1211.com',
-						_1: {
+					_elm_lang$core$Basics_ops['++'],
+					A2(
+						_elm_lang$core$String$join,
+						'/',
+						{
 							ctor: '::',
-							_0: 'api',
+							_0: 'https://tractor.ak1211.com',
 							_1: {
 								ctor: '::',
-								_0: 'v1',
+								_0: 'api',
 								_1: {
 									ctor: '::',
-									_0: 'quotes',
+									_0: 'v1',
 									_1: {
 										ctor: '::',
-										_0: _elm_lang$http$Http$encodeUri(capture_marketCode),
-										_1: {ctor: '[]'}
+										_0: 'stocks',
+										_1: {
+											ctor: '::',
+											_0: 'history',
+											_1: {
+												ctor: '::',
+												_0: _elm_lang$http$Http$encodeUri(capture_marketCode),
+												_1: {ctor: '[]'}
+											}
+										}
 									}
 								}
 							}
-						}
-					}),
+						}),
+					_elm_lang$core$List$isEmpty(params) ? '' : A2(
+						_elm_lang$core$Basics_ops['++'],
+						'?',
+						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$emptyBody,
 				expect: _elm_lang$http$Http$expectJson(
-					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeOhlcv)),
+					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
 				timeout: _elm_lang$core$Maybe$Nothing,
 				withCredentials: false
 			});
@@ -7111,15 +7134,15 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByMarketCode = F2(
 					}),
 				body: _elm_lang$http$Http$emptyBody,
 				expect: _elm_lang$http$Http$expectStringResponse(
-					function (_p7) {
-						var _p8 = _p7;
-						return _elm_lang$core$String$isEmpty(_p8.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+					function (_p9) {
+						var _p10 = _p9;
+						return _elm_lang$core$String$isEmpty(_p10.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 					}),
 				timeout: _elm_lang$core$Maybe$Nothing,
 				withCredentials: false
 			});
 	});
-var _ak1211$tractor$Generated_WebApi$postApiV1QuotesAllUpdate = function (header_Authorization) {
+var _ak1211$tractor$Generated_WebApi$postApiV1StocksHistory = function (header_Authorization) {
 	return _elm_lang$http$Http$request(
 		{
 			method: 'POST',
@@ -7142,15 +7165,11 @@ var _ak1211$tractor$Generated_WebApi$postApiV1QuotesAllUpdate = function (header
 							_0: 'v1',
 							_1: {
 								ctor: '::',
-								_0: 'quotes',
+								_0: 'stocks',
 								_1: {
 									ctor: '::',
-									_0: 'all',
-									_1: {
-										ctor: '::',
-										_0: 'update',
-										_1: {ctor: '[]'}
-									}
+									_0: 'history',
+									_1: {ctor: '[]'}
 								}
 							}
 						}
@@ -7158,14 +7177,94 @@ var _ak1211$tractor$Generated_WebApi$postApiV1QuotesAllUpdate = function (header
 				}),
 			body: _elm_lang$http$Http$emptyBody,
 			expect: _elm_lang$http$Http$expectStringResponse(
-				function (_p9) {
-					var _p10 = _p9;
-					return _elm_lang$core$String$isEmpty(_p10.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+				function (_p11) {
+					var _p12 = _p11;
+					return _elm_lang$core$String$isEmpty(_p12.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 				}),
 			timeout: _elm_lang$core$Maybe$Nothing,
 			withCredentials: false
 		});
 };
+var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
+	function (header_Authorization, capture_marketCode, query_tf, body) {
+		var params = A2(
+			_elm_lang$core$List$filter,
+			function (_p13) {
+				return !_elm_lang$core$String$isEmpty(_p13);
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$core$Maybe$withDefault,
+					'',
+					A2(
+						_elm_lang$core$Maybe$map,
+						function (_p14) {
+							return A2(
+								F2(
+									function (x, y) {
+										return A2(_elm_lang$core$Basics_ops['++'], x, y);
+									}),
+								'tf=',
+								_elm_lang$http$Http$encodeUri(
+									_elm_lang$core$Basics$toString(_p14)));
+						},
+						query_tf)),
+				_1: {ctor: '[]'}
+			});
+		return _elm_lang$http$Http$request(
+			{
+				method: 'PATCH',
+				headers: {
+					ctor: '::',
+					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
+					_1: {ctor: '[]'}
+				},
+				url: A2(
+					_elm_lang$core$Basics_ops['++'],
+					A2(
+						_elm_lang$core$String$join,
+						'/',
+						{
+							ctor: '::',
+							_0: 'https://tractor.ak1211.com',
+							_1: {
+								ctor: '::',
+								_0: 'api',
+								_1: {
+									ctor: '::',
+									_0: 'v1',
+									_1: {
+										ctor: '::',
+										_0: 'stocks',
+										_1: {
+											ctor: '::',
+											_0: 'history',
+											_1: {
+												ctor: '::',
+												_0: _elm_lang$http$Http$encodeUri(capture_marketCode),
+												_1: {ctor: '[]'}
+											}
+										}
+									}
+								}
+							}
+						}),
+					_elm_lang$core$List$isEmpty(params) ? '' : A2(
+						_elm_lang$core$Basics_ops['++'],
+						'?',
+						A2(_elm_lang$core$String$join, '&', params))),
+				body: _elm_lang$http$Http$jsonBody(
+					_ak1211$tractor$Generated_WebApi$encodeApiOhlcv(body)),
+				expect: _elm_lang$http$Http$expectStringResponse(
+					function (_p15) {
+						var _p16 = _p15;
+						return _elm_lang$core$String$isEmpty(_p16.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+					}),
+				timeout: _elm_lang$core$Maybe$Nothing,
+				withCredentials: false
+			});
+	});
 
 var _elm_lang$dom$Native_Dom = function() {
 
@@ -18726,30 +18825,26 @@ var _ak1211$tractor$View$viewCell = _elm_lang$core$Maybe$withDefault('Not Availa
 var _ak1211$tractor$View$tableOhlcv = function (data) {
 	var headlines = {
 		ctor: '::',
-		_0: _elm_lang$html$Html$text('証券コード'),
+		_0: _elm_lang$html$Html$text('時間'),
 		_1: {
 			ctor: '::',
-			_0: _elm_lang$html$Html$text('時間'),
+			_0: _elm_lang$html$Html$text('始値'),
 			_1: {
 				ctor: '::',
-				_0: _elm_lang$html$Html$text('始値'),
+				_0: _elm_lang$html$Html$text('高値'),
 				_1: {
 					ctor: '::',
-					_0: _elm_lang$html$Html$text('高値'),
+					_0: _elm_lang$html$Html$text('安値'),
 					_1: {
 						ctor: '::',
-						_0: _elm_lang$html$Html$text('安値'),
+						_0: _elm_lang$html$Html$text('終値'),
 						_1: {
 							ctor: '::',
-							_0: _elm_lang$html$Html$text('終値'),
+							_0: _elm_lang$html$Html$text('出来高'),
 							_1: {
 								ctor: '::',
-								_0: _elm_lang$html$Html$text('出来高'),
-								_1: {
-									ctor: '::',
-									_0: _elm_lang$html$Html$text('入手元'),
-									_1: {ctor: '[]'}
-								}
+								_0: _elm_lang$html$Html$text('入手元'),
+								_1: {ctor: '[]'}
 							}
 						}
 					}
@@ -18765,10 +18860,14 @@ var _ak1211$tractor$View$tableOhlcv = function (data) {
 				ctor: '::',
 				_0: A2(
 					_debois$elm_mdl$Material_Table$td,
-					{ctor: '[]'},
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html$text(item.code),
+						_0: _debois$elm_mdl$Material_Table$numeric,
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(item.at),
 						_1: {ctor: '[]'}
 					}),
 				_1: {
@@ -18782,7 +18881,9 @@ var _ak1211$tractor$View$tableOhlcv = function (data) {
 						},
 						{
 							ctor: '::',
-							_0: _elm_lang$html$Html$text(item.at),
+							_0: _elm_lang$html$Html$text(
+								_ak1211$tractor$View$viewCell(
+									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.open))),
 							_1: {ctor: '[]'}
 						}),
 					_1: {
@@ -18798,7 +18899,7 @@ var _ak1211$tractor$View$tableOhlcv = function (data) {
 								ctor: '::',
 								_0: _elm_lang$html$Html$text(
 									_ak1211$tractor$View$viewCell(
-										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.open))),
+										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.high))),
 								_1: {ctor: '[]'}
 							}),
 						_1: {
@@ -18814,7 +18915,7 @@ var _ak1211$tractor$View$tableOhlcv = function (data) {
 									ctor: '::',
 									_0: _elm_lang$html$Html$text(
 										_ak1211$tractor$View$viewCell(
-											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.high))),
+											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.low))),
 									_1: {ctor: '[]'}
 								}),
 							_1: {
@@ -18830,7 +18931,7 @@ var _ak1211$tractor$View$tableOhlcv = function (data) {
 										ctor: '::',
 										_0: _elm_lang$html$Html$text(
 											_ak1211$tractor$View$viewCell(
-												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.low))),
+												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.close))),
 										_1: {ctor: '[]'}
 									}),
 								_1: {
@@ -18845,38 +18946,21 @@ var _ak1211$tractor$View$tableOhlcv = function (data) {
 										{
 											ctor: '::',
 											_0: _elm_lang$html$Html$text(
-												_ak1211$tractor$View$viewCell(
-													A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.close))),
+												_elm_lang$core$Basics$toString(item.volume)),
 											_1: {ctor: '[]'}
 										}),
 									_1: {
 										ctor: '::',
 										_0: A2(
 											_debois$elm_mdl$Material_Table$td,
-											{
-												ctor: '::',
-												_0: _debois$elm_mdl$Material_Table$numeric,
-												_1: {ctor: '[]'}
-											},
+											{ctor: '[]'},
 											{
 												ctor: '::',
 												_0: _elm_lang$html$Html$text(
-													_elm_lang$core$Basics$toString(item.volume)),
+													_ak1211$tractor$View$viewCell(item.source)),
 												_1: {ctor: '[]'}
 											}),
-										_1: {
-											ctor: '::',
-											_0: A2(
-												_debois$elm_mdl$Material_Table$td,
-												{ctor: '[]'},
-												{
-													ctor: '::',
-													_0: _elm_lang$html$Html$text(
-														_ak1211$tractor$View$viewCell(item.source)),
-													_1: {ctor: '[]'}
-												}),
-											_1: {ctor: '[]'}
-										}
+										_1: {ctor: '[]'}
 									}
 								}
 							}
@@ -18932,7 +19016,6 @@ var _ak1211$tractor$View$viewFile = function (file) {
 			var toInt = toNumber(_elm_lang$core$String$toInt);
 			return {
 				at: datetime,
-				code: marketCode_,
 				open: toFloat('Open'),
 				high: toFloat('High'),
 				low: toFloat('Low'),
@@ -20460,14 +20543,16 @@ var _ak1211$tractor$Main$askPortfolios = function (token) {
 			_ak1211$tractor$Main$toBearerToken(token)));
 };
 var _ak1211$tractor$Main$askHistories = F2(
-	function (token, ts) {
+	function (token, ticker) {
+		var authzHeader = _ak1211$tractor$Main$toBearerToken(token);
 		return A2(
 			_elm_lang$http$Http$send,
 			_ak1211$tractor$Msg$UpdateAnalytics,
-			A2(
-				_ak1211$tractor$Generated_WebApi$getApiV1QuotesByMarketCode,
-				_ak1211$tractor$Main$toBearerToken(token),
-				ts));
+			A3(
+				_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode,
+				authzHeader,
+				ticker,
+				_elm_lang$core$Maybe$Just('1d')));
 	});
 var _ak1211$tractor$Main$askServerVersion = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdateServerVersion, _ak1211$tractor$Generated_WebApi$getApiV1Version);
 var _ak1211$tractor$Main$exchangeOAuthCodeForToken = function (code) {

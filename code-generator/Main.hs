@@ -34,7 +34,7 @@ import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Shelly
 
-import qualified NetService.ApiTypes  as ApiTypes
+import           NetService.ApiTypes  (ApiOhlcv, ApiPortfolio, OAuthReply)
 import qualified NetService.WebServer as WebServer
 import           VerRev               (VerRev)
 
@@ -48,22 +48,23 @@ spec :: Servant.Elm.Spec
 spec =
     Servant.Elm.Spec ["Generated", "WebApi"]
         ( Servant.Elm.defElmImports
+        : "type alias TimeFrame = String"
         --
         : Elm.toElmTypeSource    (Proxy :: Proxy VerRev)
         : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)
         : Elm.toElmEncoderSource (Proxy :: Proxy VerRev)
         --
-        : Elm.toElmTypeSource    (Proxy :: Proxy ApiTypes.OAuthReply)
-        : Elm.toElmDecoderSource (Proxy :: Proxy ApiTypes.OAuthReply)
-        : Elm.toElmEncoderSource (Proxy :: Proxy ApiTypes.OAuthReply)
+        : Elm.toElmTypeSource    (Proxy :: Proxy OAuthReply)
+        : Elm.toElmDecoderSource (Proxy :: Proxy OAuthReply)
+        : Elm.toElmEncoderSource (Proxy :: Proxy OAuthReply)
         --
-        : Elm.toElmTypeSource    (Proxy :: Proxy ApiTypes.Portfolio)
-        : Elm.toElmDecoderSource (Proxy :: Proxy ApiTypes.Portfolio)
-        : Elm.toElmEncoderSource (Proxy :: Proxy ApiTypes.Portfolio)
+        : Elm.toElmTypeSource    (Proxy :: Proxy ApiPortfolio)
+        : Elm.toElmDecoderSource (Proxy :: Proxy ApiPortfolio)
+        : Elm.toElmEncoderSource (Proxy :: Proxy ApiPortfolio)
         --
-        : Elm.toElmTypeSource    (Proxy :: Proxy ApiTypes.Ohlcv)
-        : Elm.toElmDecoderSource (Proxy :: Proxy ApiTypes.Ohlcv)
-        : Elm.toElmEncoderSource (Proxy :: Proxy ApiTypes.Ohlcv)
+        : Elm.toElmTypeSource    (Proxy :: Proxy ApiOhlcv)
+        : Elm.toElmDecoderSource (Proxy :: Proxy ApiOhlcv)
+        : Elm.toElmEncoderSource (Proxy :: Proxy ApiOhlcv)
         --
         : "type alias NoContent = {}"
         : Servant.Elm.generateElmForAPIWith elmOpts  (Proxy :: Proxy WebServer.WebApi))

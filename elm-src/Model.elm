@@ -37,11 +37,11 @@ import FileReader
 
 
 type alias Portfolios =
-    List WebApi.Portfolio
+    List WebApi.ApiPortfolio
 
 
 type alias Histories =
-    List WebApi.Ohlcv
+    List WebApi.ApiOhlcv
 
 
 type alias DocMarkDown =

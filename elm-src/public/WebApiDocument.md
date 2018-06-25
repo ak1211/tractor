@@ -19,7 +19,7 @@
 
 ### Captures:
 
-- *tempCode*: Exchanging a temporary code for an access token
+- *OAuth temporary code*: Exchanging a temporary code for an access token
 
 ### Response:
 
@@ -97,7 +97,29 @@
 
     ```
 
-## GET /api/v1/quotes/:marketCode
+## POST /api/v1/stocks/history
+
+### Headers:
+
+- This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### Response:
+
+- Status code 202
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+
+    ```
+
+## GET /api/v1/stocks/history/:marketCode
 
 ### Captures:
 
@@ -106,6 +128,13 @@
 ### Headers:
 
 - This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### GET Parameters:
+
+- time frame
+     - **Values**: *1h, 1d*
+     - **Description**: prices of a time frame.
+
 
 ### Response:
 
@@ -127,21 +156,52 @@
 - Example (`text/csv;charset=utf-8`):
 
     ```
-at,code,open,high,low,close,volume,source
+at,open,high,low,close,volume,source
 
     ```
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"code":"TYO8306","source":"This is example.","high":726}]
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
     ```
 
-## POST /api/v1/quotes/all/update
+## PATCH /api/v1/stocks/history/:marketCode
+
+### Captures:
+
+- *market code*: NI225, TOPIX, TYO8306 etc...
 
 ### Headers:
 
 - This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### PATCH Parameters:
+
+- time frame
+     - **Values**: *1h, 1d*
+     - **Description**: prices of a time frame.
+
+
+### Request:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+    - `application/x-www-form-urlencoded`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}
+    ```
+
+- Example (`application/x-www-form-urlencoded`):
+
+    ```
+low=715.0&at=2018-03-07T15%3A00%3A00%2B0900&volume=78487400&close=715.0&open=723.0&source=This%20is%20example.&high=726.0
+    ```
 
 ### Response:
 
@@ -174,7 +234,7 @@ at,code,open,high,low,close,volume,source
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"gitStatus":"Dirty","gitCommitDate":"Sun Jun 17 21:44:24 2018 +0900","version":"0.4.8","gitCommitCount":"127","gitHash":"66d39a3282be623724eb6233f738ca6911f7f8bd","gitBranch":"master"}
+{"gitStatus":"Dirty","gitCommitDate":"Sat Jun 23 22:05:26 2018 +0900","version":"0.4.8","gitCommitCount":"128","gitHash":"b638e8a48def56dc7bfb6f729536c547f1d5884b","gitBranch":"master"}
     ```
 
 ## GET /public
