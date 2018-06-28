@@ -97,6 +97,79 @@
 
     ```
 
+## DELETE /api/v1/stocks/history/:marketCode
+
+### Delete prices
+
+
+### Captures:
+
+- *market code*: NI225, TOPIX, TYO8306 etc...
+
+### Headers:
+
+- This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### DELETE Parameters:
+
+- tf
+     - **Values**: *1h, 1d*
+     - **Description**: prices of a time frame.
+
+
+### Request:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[]
+    ```
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+- Example (`application/json;charset=utf-8`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[]
+    ```
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+- Example (`application/json;charset=utf-8`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
 ## GET /api/v1/stocks/history/:marketCode
 
 ### Select prices
@@ -149,7 +222,7 @@ at,open,high,low,close,volume,source
 
 ## PATCH /api/v1/stocks/history/:marketCode
 
-### Update / Insert price
+### Update / Insert prices
 
 
 ### Captures:
@@ -177,7 +250,19 @@ at,open,high,low,close,volume,source
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}
+[]
+    ```
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+- Example (`application/json;charset=utf-8`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
     ```
 
 ### Response:
@@ -193,7 +278,19 @@ at,open,high,low,close,volume,source
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
+[]
+    ```
 
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+- Example (`application/json;charset=utf-8`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
     ```
 
 ## PUT /api/v1/stocks/history/:marketCode
@@ -254,7 +351,19 @@ at,open,high,low,close,volume,source
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
+[]
+    ```
 
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+- Example (`application/json;charset=utf-8`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
     ```
 
 ## POST /api/v1/stocks/history/all

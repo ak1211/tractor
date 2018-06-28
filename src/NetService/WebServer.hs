@@ -44,6 +44,8 @@ import qualified Control.Concurrent.STM       as STM
 import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as Logger
+import qualified Control.Monad.Trans          as MonadTrans
+import           Control.Monad.Trans.Maybe    (MaybeT (..))
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
@@ -63,11 +65,11 @@ import qualified Network.URI                  as URI
 import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
 import qualified Servant
-import           Servant.API                  ((:<|>) (..), (:>), Capture, Get,
-                                               Header', JSON, NoContent, Patch,
-                                               PostAccepted, Put, QueryParam',
-                                               Raw, ReqBody, Required, Strict,
-                                               Summary)
+import           Servant.API                  ((:<|>) (..), (:>), Capture,
+                                               Delete, Get, Header', JSON,
+                                               NoContent, Patch, PostAccepted,
+                                               Put, QueryParam', Raw, ReqBody,
+                                               Required, Strict, Summary)
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
@@ -159,6 +161,7 @@ type GetApiPortfolios = HAuthorization :> Get '[JSON] [ApiPortfolio]
 type GetApiOhlcvs   = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
 type PutApiOhlcvs   = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
 type PatchApiOhlcv  = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
+type DeleteApiOhlcv = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
 
 type WebApiServer
     = Get '[HTML] HomePage
@@ -180,8 +183,10 @@ type WebApi
    :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> GetApiOhlcvs
  :<|> Summary "Insert prices"
    :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PutApiOhlcvs
- :<|> Summary "Update / Insert price"
+ :<|> Summary "Update / Insert prices"
    :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PatchApiOhlcv
+ :<|> Summary "Delete prices"
+   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> DeleteApiOhlcv
 
 --
 --
@@ -199,6 +204,7 @@ webApiServer cnf =
     :<|> getHistoriesHandler cnf
     :<|> putHistoriesHandler cnf
     :<|> patchHistoriesHandler cnf
+    :<|> deleteHistoriesHandler cnf
 
 -- |
 --
@@ -370,17 +376,46 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     where
     --
     --
+    go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
     go Nothing =
         err400BadRequest
-    --
-    --
     go (Just ticker) =
-        let xs = Maybe.mapMaybe (ApiTypes.fromApiOhlcv ticker timeFrame) apiOhlcvs
-        in do
-            M.liftIO $ M.mapM_ print xs
-            return $ map ApiTypes.toApiOhlcv xs
+        Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . insert ticker) apiOhlcvs
+    --
+    --
+    insert :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
+    insert ticker apiOhlcv =
+        case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
+            Nothing ->
+                MaybeT (return Nothing)
+            Just ohlcv -> do
+                MonadTrans.lift $ insertApiOhlcv (cPool cnf) ohlcv
+                >>= \case
+                    Left () ->
+                        MaybeT (return Nothing)
+                    Right () ->
+                        MaybeT (return $ Just apiOhlcv)
 
 -- |
+-- データを入れる(INSERT)
+insertApiOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
+insertApiOhlcv pool ohlcv@Model.Ohlcv{..} =
+    flip DB.runSqlPersistMPool pool $ do
+        -- 同じ時間の物があるか探してみる
+        c <- DB.count
+                [ Model.OhlcvTicker ==. ohlcvTicker
+                , Model.OhlcvTf ==. ohlcvTf
+                , Model.OhlcvAt ==. ohlcvAt
+                ]
+        -- 無かった場合は新規挿入, 有った場合は何もしない
+        if c == 0
+        then do
+            M.void $ DB.insert ohlcv
+            return $ Right ()
+        else
+            return $ Left ()
+
+--- |
 -- 既存のデータを入れ替える(UPDATE / INSERT)
 patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
 patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
@@ -389,40 +424,106 @@ patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     where
     --
     --
+    go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
     go Nothing =
         err400BadRequest
-    --
-    --
     go (Just ticker) =
-        let xs = Maybe.mapMaybe (ApiTypes.fromApiOhlcv ticker timeFrame) apiOhlcvs
-        in
-        M.liftIO $ M.mapM store xs
+        Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . store ticker) apiOhlcvs
     --
     --
-    store ohlcv@Model.Ohlcv{..} =
-        flip DB.runSqlPersistMPool (cPool cnf) $ do
-            -- 同じ時間の物があるか探してみる
-            entity <-DB.selectFirst
-                        [ Model.OhlcvTicker ==. ohlcvTicker
-                        , Model.OhlcvTf ==. ohlcvTf
-                        , Model.OhlcvAt ==. ohlcvAt
-                        ]
-                        []
-            case DB.entityKey <$> entity of
-                -- レコードが無かった場合は新規挿入する
-                Nothing ->
-                    M.void $ DB.insert ohlcv
-                -- レコードが有った場合は更新する
-                Just key ->
-                    DB.update key
-                        [ Model.OhlcvOpen     =. ohlcvOpen
-                        , Model.OhlcvHigh     =. ohlcvHigh
-                        , Model.OhlcvLow      =. ohlcvLow
-                        , Model.OhlcvClose    =. ohlcvClose
-                        , Model.OhlcvVolume   =. ohlcvVolume
-                        , Model.OhlcvSource   =. ohlcvSource
-                        ]
-        >> return (ApiTypes.toApiOhlcv ohlcv)
+    store :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
+    store ticker apiOhlcv =
+        case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
+            Nothing ->
+                MaybeT (return Nothing)
+            Just val -> do
+                MonadTrans.lift (insertOrUpdateApiOhlcv (cPool cnf) val)
+                MaybeT (return $ Just apiOhlcv)
+
+-- |
+-- データを入れる
+-- もしくは
+-- 既存のデータを入れ替える(UPDATE / INSERT)
+insertOrUpdateApiOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO ()
+insertOrUpdateApiOhlcv pool ohlcv@Model.Ohlcv{..} =
+    flip DB.runSqlPersistMPool pool $ do
+        -- 同じ時間の物があるか探してみる
+        entity <-DB.selectFirst
+                    [ Model.OhlcvTicker ==. ohlcvTicker
+                    , Model.OhlcvTf ==. ohlcvTf
+                    , Model.OhlcvAt ==. ohlcvAt
+                    ]
+                    []
+        case DB.entityKey <$> entity of
+            -- レコードが無かった場合は新規挿入する
+            Nothing ->
+                M.void $ DB.insert ohlcv
+            -- レコードが有った場合は更新する
+            Just key ->
+                DB.update key
+                    [ Model.OhlcvOpen     =. ohlcvOpen
+                    , Model.OhlcvHigh     =. ohlcvHigh
+                    , Model.OhlcvLow      =. ohlcvLow
+                    , Model.OhlcvClose    =. ohlcvClose
+                    , Model.OhlcvVolume   =. ohlcvVolume
+                    , Model.OhlcvSource   =. ohlcvSource
+                    ]
+
+--- |
+-- 既存のデータを削除する(DELETE)
+deleteHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+deleteHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise = go $ Model.toTickerSymbol codeStr
+    where
+    --
+    --
+    go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
+    go Nothing =
+        err400BadRequest
+    go (Just ticker) =
+        Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . delete ticker) apiOhlcvs
+    --
+    --
+    delete :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
+    delete ticker apiOhlcv =
+        case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
+            Nothing ->
+                MaybeT (return Nothing)
+            Just ohlcv -> do
+                MonadTrans.lift $ deleteApiOhlcv (cPool cnf) ohlcv
+                >>= \case
+                    Left () ->
+                        MaybeT (return Nothing)
+                    Right () ->
+                        MaybeT (return $ Just apiOhlcv)
+
+-- |
+-- データを削除する(DELETE)
+deleteApiOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
+deleteApiOhlcv pool Model.Ohlcv{..} =
+    flip DB.runSqlPersistMPool pool $ do
+        -- 同じ物があるか探してみる
+        entity <-DB.selectFirst
+                    [ Model.OhlcvTicker ==. ohlcvTicker
+                    , Model.OhlcvTf     ==. ohlcvTf
+                    , Model.OhlcvAt     ==. ohlcvAt
+                    , Model.OhlcvOpen   ==. ohlcvOpen
+                    , Model.OhlcvHigh   ==. ohlcvHigh
+                    , Model.OhlcvLow    ==. ohlcvLow
+                    , Model.OhlcvClose  ==. ohlcvClose
+                    , Model.OhlcvVolume ==. ohlcvVolume
+                    , Model.OhlcvSource ==. ohlcvSource
+                    ]
+                    []
+        case DB.entityKey <$> entity of
+            -- 無かった場合は何もしない
+            Nothing ->
+                return $ Left ()
+            -- 有った場合は削除
+            Just key -> do
+                DB.deleteWhere [ Model.OhlcvId ==. key ]
+                return $ Right ()
 
 --
 --
