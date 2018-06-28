@@ -97,29 +97,10 @@
 
     ```
 
-## POST /api/v1/stocks/history
-
-### Headers:
-
-- This endpoint is sensitive to the value of the **Authorization** HTTP header.
-
-### Response:
-
-- Status code 202
-- Headers: []
-
-- Supported content types are:
-
-    - `application/json;charset=utf-8`
-    - `application/json`
-
-- Example (`application/json;charset=utf-8`, `application/json`):
-
-    ```javascript
-
-    ```
-
 ## GET /api/v1/stocks/history/:marketCode
+
+### Select prices
+
 
 ### Captures:
 
@@ -168,6 +149,9 @@ at,open,high,low,close,volume,source
 
 ## PATCH /api/v1/stocks/history/:marketCode
 
+### Update / Insert price
+
+
 ### Captures:
 
 - *market code*: NI225, TOPIX, TYO8306 etc...
@@ -189,7 +173,6 @@ at,open,high,low,close,volume,source
 
     - `application/json;charset=utf-8`
     - `application/json`
-    - `application/x-www-form-urlencoded`
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
@@ -197,15 +180,95 @@ at,open,high,low,close,volume,source
 {"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}
     ```
 
-- Example (`application/x-www-form-urlencoded`):
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
 
     ```
-low=715.0&at=2018-03-07T15%3A00%3A00%2B0900&volume=78487400&close=715.0&open=723.0&source=This%20is%20example.&high=726.0
+
+## PUT /api/v1/stocks/history/:marketCode
+
+### Insert prices
+
+
+### Captures:
+
+- *market code*: NI225, TOPIX, TYO8306 etc...
+
+### Headers:
+
+- This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### PUT Parameters:
+
+- tf
+     - **Values**: *1h, 1d*
+     - **Description**: prices of a time frame.
+
+
+### Request:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[]
+    ```
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
+    ```
+
+- Example (`application/json;charset=utf-8`):
+
+    ```javascript
+[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
     ```
 
 ### Response:
 
 - Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+
+    ```
+
+## POST /api/v1/stocks/history/all
+
+### This endpoint runs the crawler.
+
+
+### Headers:
+
+- This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### Response:
+
+- Status code 202
 - Headers: []
 
 - Supported content types are:
@@ -234,7 +297,7 @@ low=715.0&at=2018-03-07T15%3A00%3A00%2B0900&volume=78487400&close=715.0&open=723
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"gitStatus":"Dirty","gitCommitDate":"Sat Jun 23 22:05:26 2018 +0900","version":"0.4.8","gitCommitCount":"128","gitHash":"b638e8a48def56dc7bfb6f729536c547f1d5884b","gitBranch":"master"}
+{"gitStatus":"Clean","gitCommitDate":"Tue Jun 26 01:42:12 2018 +0900","version":"0.4.8","gitCommitCount":"130","gitHash":"57cc74b178e3bde8e0ccbd0b4130fc0e6265ce44","gitBranch":"master"}
     ```
 
 ## GET /public

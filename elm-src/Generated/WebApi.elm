@@ -225,8 +225,8 @@ getApiV1Portfolios header_Authorization =
             False
         }
 
-postApiV1StocksHistory : String -> Http.Request (NoContent)
-postApiV1StocksHistory header_Authorization =
+postApiV1StocksHistoryAll : String -> Http.Request (NoContent)
+postApiV1StocksHistoryAll header_Authorization =
     Http.request
         { method =
             "POST"
@@ -240,6 +240,7 @@ postApiV1StocksHistory header_Authorization =
                 , "v1"
                 , "stocks"
                 , "history"
+                , "all"
                 ]
         , body =
             Http.emptyBody
@@ -290,6 +291,51 @@ getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_
                 Http.emptyBody
             , expect =
                 Http.expectJson (list decodeApiOhlcv)
+            , timeout =
+                Nothing
+            , withCredentials =
+                False
+            }
+
+putApiV1StocksHistoryByMarketCode : String -> String -> Maybe (TimeFrame) -> List (ApiOhlcv) -> Http.Request (NoContent)
+putApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
+    let
+        params =
+            List.filter (not << String.isEmpty)
+                [ query_tf
+                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
+                    |> Maybe.withDefault ""
+                ]
+    in
+        Http.request
+            { method =
+                "PUT"
+            , headers =
+                [ Http.header "Authorization" header_Authorization
+                ]
+            , url =
+                String.join "/"
+                    [ "https://tractor.ak1211.com"
+                    , "api"
+                    , "v1"
+                    , "stocks"
+                    , "history"
+                    , capture_marketCode |> Http.encodeUri
+                    ]
+                ++ if List.isEmpty params then
+                       ""
+                   else
+                       "?" ++ String.join "&" params
+            , body =
+                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
+            , expect =
+                Http.expectStringResponse
+                    (\{ body } ->
+                        if String.isEmpty body then
+                            Ok NoContent
+                        else
+                            Err "Expected the response body to be empty"
+                    )
             , timeout =
                 Nothing
             , withCredentials =

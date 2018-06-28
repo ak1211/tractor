@@ -46,20 +46,21 @@ module NetService.ApiTypes
     , module VerRev
     )
     where
-import qualified Control.Concurrent.STM      as STM
-import           Data.Aeson                  ((.:), (.:?))
-import qualified Data.Aeson                  as Aeson
-import           Data.Csv                    ((.=))
-import qualified Data.Csv                    as Csv
-import           Data.Int                    (Int64)
-import qualified Data.Text                   as T
-import qualified Data.Time                   as Time
-import           GHC.Generics                (Generic)
+import qualified Control.Concurrent.STM as STM
+import           Control.Monad          (guard)
+import           Data.Aeson             ((.:), (.:?))
+import qualified Data.Aeson             as Aeson
+import           Data.Csv               ((.=))
+import qualified Data.Csv               as Csv
+import           Data.Int               (Int64)
+import qualified Data.Text              as T
+import qualified Data.Time              as Time
+import           GHC.Generics           (Generic)
 import qualified Servant.Docs
 import qualified Servant.Elm
-import           Web.Internal.FormUrlEncoded (FromForm, ToForm)
+import qualified Web.FormUrlEncoded
 
-import           Lib                         (toISO8601DateTime, tzAsiaTokyo)
+import           Lib                    (toISO8601DateTime, tzAsiaTokyo)
 import qualified Model
 import           VerRev
 
@@ -155,14 +156,14 @@ data ApiOhlcv = ApiOhlcv
     , close  :: Maybe Double
     , volume :: Int64
     , source :: Maybe String
-    } deriving (Show,Generic)
+    } deriving (Show, Generic)
 
 -- |
 -- 4本値 + 出来高
 instance Aeson.FromJSON ApiOhlcv
 instance Aeson.ToJSON ApiOhlcv
-instance FromForm ApiOhlcv
-instance ToForm ApiOhlcv
+instance Web.FormUrlEncoded.FromForm ApiOhlcv
+instance Web.FormUrlEncoded.ToForm ApiOhlcv
 instance Servant.Elm.ElmType ApiOhlcv
 instance Servant.Docs.ToSample ApiOhlcv where
     toSamples _ =
@@ -225,11 +226,12 @@ fromApiOhlcv    :: Model.TickerSymbol
                 -> Model.TimeFrame
                 -> ApiOhlcv
                 -> Maybe Model.Ohlcv
-fromApiOhlcv ticker tf o = do
+fromApiOhlcv ticker timeFrame o = do
     at'<- toUTCTime (at o)
-    Just $ Model.Ohlcv
+    guard (isValid at')
+    Just Model.Ohlcv
         { Model.ohlcvTicker = ticker
-        , Model.ohlcvTf     = tf
+        , Model.ohlcvTf     = timeFrame
         , Model.ohlcvAt     = at'
         , Model.ohlcvOpen   = open o
         , Model.ohlcvHigh   = high o
@@ -239,11 +241,27 @@ fromApiOhlcv ticker tf o = do
         , Model.ohlcvSource = T.pack <$> source o
         }
     where
-    toUTCTime :: String -> Maybe Time.UTCTime
-    toUTCTime str =
-        let format = Time.iso8601DateFormat (Just "%H:%M:%S%z")
+    --
+    --
+    isValid :: Time.UTCTime -> Bool
+    isValid utc =
+        let
+            t@(Time.TimeOfDay h m s) = Time.localTimeOfDay
+                                        $ Time.utcToLocalTime tzAsiaTokyo utc
+            open = Time.TimeOfDay 9 0 0
+            close = Time.TimeOfDay 15 0 0
         in
-        Time.parseTimeM
-            True Time.defaultTimeLocale format str
+        case timeFrame of
+            Model.TF1h -> (m == 0) && (s== 0)
+            Model.TF1d -> (m == 0) && (s== 0) && (h == 15)
+        && (open <= t) && (t <= close)
+    --
+    --
+    toUTCTime :: String -> Maybe Time.UTCTime
+    toUTCTime timeStr =
+        let parser = Time.parseTimeM True Time.defaultTimeLocale
+            format = Time.iso8601DateFormat (Just "%H:%M:%S%z")
+        in
+        parser format timeStr
 
 

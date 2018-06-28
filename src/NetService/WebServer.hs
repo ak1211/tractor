@@ -27,7 +27,6 @@ Portability :  POSIX
 Web API サーバーモジュールです
 -}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -48,6 +47,7 @@ import qualified Control.Monad.Logger         as Logger
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
+import qualified Data.Maybe                   as Maybe
 import           Data.Monoid                  ((<>))
 import           Data.Proxy                   (Proxy (..))
 import qualified Data.Text                    as T
@@ -63,11 +63,11 @@ import qualified Network.URI                  as URI
 import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
 import qualified Servant
-import           Servant.API                  ((:<|>) (..), (:>), Capture,
-                                               FormUrlEncoded, Get, Header',
-                                               JSON, NoContent, Patch,
+import           Servant.API                  ((:<|>) (..), (:>), Capture, Get,
+                                               Header', JSON, NoContent, Patch,
                                                PostAccepted, Put, QueryParam',
-                                               Raw, ReqBody, Required, Strict)
+                                               Raw, ReqBody, Required, Strict,
+                                               Summary)
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
@@ -127,7 +127,7 @@ instance Servant.Docs.ToParam QTimeFrame where
 
 instance Servant.FromHttpApiData TimeFrame where
     parseQueryParam x =
-        let y = T.filter ((/=) '"') $ URI.decodeText x
+        let y = T.filter ('"' /=)$ URI.decodeText x
         in
         case Model.toTimeFrame =<< parse y of
             Nothing ->
@@ -147,16 +147,18 @@ instance Servant.ToHttpApiData TimeFrame where
 
 -- |
 --
-type AuthzValue         = T.Text
-type HAuthorization     = Header' '[Required, Strict] "Authorization" AuthzValue
+type AuthzValue     = T.Text
+type HAuthorization = Header' '[Required, Strict] "Authorization" AuthzValue
 
 -- |
 --
-type GetOAuthReply      = Get '[JSON] ApiTypes.OAuthReply
-type GetApiPortfolios   = HAuthorization :> Get '[JSON] [ApiPortfolio]
+type GetOAuthReply  = Get '[JSON] ApiTypes.OAuthReply
 --
-type GetApiOhlcvs       = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
-type PatchApiOhlcv      = QTimeFrame :> HAuthorization :> ReqBody '[JSON, FormUrlEncoded] ApiOhlcv :> Patch '[JSON] NoContent
+type GetApiPortfolios = HAuthorization :> Get '[JSON] [ApiPortfolio]
+--
+type GetApiOhlcvs   = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
+type PutApiOhlcvs   = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
+type PatchApiOhlcv  = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
 
 type WebApiServer
     = Get '[HTML] HomePage
@@ -171,9 +173,15 @@ type WebApi
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "portfolios" :> GetApiPortfolios
  --
- :<|> "api" :> "v1" :> "stocks" :> "history" :> HAuthorization :> PostAccepted '[JSON] NoContent
- :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> GetApiOhlcvs
- :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PatchApiOhlcv
+ :<|> Summary "This endpoint runs the crawler."
+   :> "api" :> "v1" :> "stocks" :> "history" :> "all" :> HAuthorization :> PostAccepted '[JSON] NoContent
+ --
+ :<|> Summary "Select prices"
+   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> GetApiOhlcvs
+ :<|> Summary "Insert prices"
+   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PutApiOhlcvs
+ :<|> Summary "Update / Insert price"
+   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PatchApiOhlcv
 
 --
 --
@@ -189,6 +197,7 @@ webApiServer cnf =
     --
     :<|> updateHistoriesHandler cnf
     :<|> getHistoriesHandler cnf
+    :<|> putHistoriesHandler cnf
     :<|> patchHistoriesHandler cnf
 
 -- |
@@ -305,11 +314,13 @@ publishZmqHandler cnf code auth
     --
     prices :: Model.TickerSymbol -> IO [ApiOhlcv]
     prices ts =
-        flip DB.runSqlPersistMPool (cPool cnf) $ do
-            xs <- DB.selectList
-                    [Model.OhlcvTicker ==. ts]
-                    [DB.Asc Model.OhlcvAt]
-            return $ map (ApiTypes.toApiOhlcv. DB.entityVal) xs
+        map (ApiTypes.toApiOhlcv . DB.entityVal) <$> selectList ts
+    --
+    --
+    selectList ticker =
+        flip DB.runSqlPersistMPool (cPool cnf) $
+            DB.selectList   [Model.OhlcvTicker ==. ticker]
+                            [DB.Asc Model.OhlcvAt]
 
 -- |
 --
@@ -317,69 +328,102 @@ portfolioHandler :: Config -> AuthzValue -> Servant.Handler [ApiPortfolio]
 portfolioHandler cnf auth
     | authzFailed cnf auth = err401Unauthorized
     | otherwise =
-        M.liftIO . flip DB.runSqlPersistMPool (cPool cnf) $ do
-            xs <- DB.selectList [] [DB.Asc Model.PortfolioTicker]
-            return $ map (ApiTypes.toApiPortfolio . DB.entityVal) xs
+        map (ApiTypes.toApiPortfolio . DB.entityVal) <$> M.liftIO selectList
+    where
+    --
+    --
+    selectList =
+        flip DB.runSqlPersistMPool (cPool cnf) $
+            DB.selectList [] [DB.Asc Model.PortfolioTicker]
 
 -- |
 --
 getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> Servant.Handler [ApiOhlcv]
-getHistoriesHandler cnf code timeFrame auth
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise = do
-        M.liftIO $ print timeFrame
-        case Model.toTickerSymbol code of
-            Nothing ->
-                err400BadRequest
-            Just ticker ->
-                M.liftIO . flip DB.runSqlPersistMPool (cPool cnf) $ do
-                    xs <- DB.selectList
-                            [ Model.OhlcvTf     ==. timeFrame
-                            , Model.OhlcvTicker ==. ticker
-                            ]
-                            [DB.Asc Model.OhlcvAt]
-                    return $ map (ApiTypes.toApiOhlcv . DB.entityVal) xs
-
--- |
--- 既存のデータを入れ替える(UPDATE)
-patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> ApiOhlcv -> Servant.Handler Servant.NoContent
-patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcv
+getHistoriesHandler cnf codeStr timeFrame auth
     | authzFailed cnf auth = err401Unauthorized
     | otherwise =
-        let ts = Model.toTickerSymbol codeStr
-            a = do
-                x <- ts
-                ApiTypes.fromApiOhlcv x timeFrame apiOhlcv
-        in
-        case (,) <$> ts <*> a of
-            Nothing ->
-                err400BadRequest
-            Just (ticker, ohlcv) -> do
-                go ticker ohlcv
-                return Servant.NoContent
+        go $ Model.toTickerSymbol codeStr
     where
     --
     --
-    go ticker ohlcv =
-        M.liftIO . flip DB.runSqlPersistMPool (cPool cnf) $
+    go Nothing =
+        err400BadRequest
+    --
+    --
+    go (Just ticker) =
+        map (ApiTypes.toApiOhlcv . DB.entityVal) <$> M.liftIO (selectList ticker)
+    --
+    --
+    selectList ticker =
+        flip DB.runSqlPersistMPool (cPool cnf) $
+            DB.selectList   [ Model.OhlcvTf     ==. timeFrame
+                            , Model.OhlcvTicker ==. ticker
+                            ]
+                            [DB.Asc Model.OhlcvAt]
+
+-- |
+-- 新規挿入(INSERT)
+putHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise =
+        go $ do
+            ts <- Model.toTickerSymbol codeStr
+            Just $ Maybe.mapMaybe (ApiTypes.fromApiOhlcv ts timeFrame) apiOhlcvs
+    where
+    --
+    --
+    go Nothing =
+        err400BadRequest
+    --
+    --
+    go (Just ohlcvs) = do
+        M.liftIO $ M.mapM_ print ohlcvs
+        return $ map ApiTypes.toApiOhlcv ohlcvs
+
+-- |
+-- 既存のデータを入れ替える(UPDATE / INSERT)
+patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
+    | authzFailed cnf auth = err401Unauthorized
+    | otherwise =
+        go $ do
+            ts <- Model.toTickerSymbol codeStr
+            Just $ Maybe.mapMaybe (ApiTypes.fromApiOhlcv ts timeFrame) apiOhlcvs
+    where
+    --
+    --
+    go Nothing =
+        err400BadRequest
+    --
+    --
+    go (Just xs) = do
+        M.liftIO $ M.mapM_ update xs
+        return $ map ApiTypes.toApiOhlcv xs
+    --
+    --
+    update ohlcv@Model.Ohlcv{..} =
+        flip DB.runSqlPersistMPool (cPool cnf) $
             -- 同じ時間の物があるか探してみる
             DB.selectFirst
-                    [ Model.OhlcvTicker ==. ticker
-                    , Model.OhlcvTf ==. timeFrame
-                    , Model.OhlcvAt ==. Model.ohlcvAt ohlcv]
+                    [ Model.OhlcvTicker ==. ohlcvTicker
+                    , Model.OhlcvTf ==. ohlcvTf
+                    , Model.OhlcvAt ==. ohlcvAt
+                    ]
                     []
             >>= \case
                 -- レコードが無かった場合は新規挿入する
-                Nothing -> M.void $ DB.insert ohlcv
+                Nothing ->
+                    M.void $ DB.insert ohlcv
                 -- レコードが有った場合は更新する
                 Just (DB.Entity updKey _) ->
                     DB.update updKey
-                        [ Model.OhlcvOpen     =. Model.ohlcvOpen ohlcv
-                        , Model.OhlcvHigh     =. Model.ohlcvHigh ohlcv
-                        , Model.OhlcvLow      =. Model.ohlcvLow ohlcv
-                        , Model.OhlcvClose    =. Model.ohlcvClose ohlcv
-                        , Model.OhlcvVolume   =. Model.ohlcvVolume ohlcv
-                        , Model.OhlcvSource   =. Model.ohlcvSource ohlcv
+                        [ Model.OhlcvOpen     =. ohlcvOpen
+                        , Model.OhlcvHigh     =. ohlcvHigh
+                        , Model.OhlcvLow      =. ohlcvLow
+                        , Model.OhlcvClose    =. ohlcvClose
+                        , Model.OhlcvVolume   =. ohlcvVolume
+                        , Model.OhlcvSource   =. ohlcvSource
                         ]
 
 --
