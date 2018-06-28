@@ -366,10 +366,7 @@ getHistoriesHandler cnf codeStr timeFrame auth
 putHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
 putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     | authzFailed cnf auth = err401Unauthorized
-    | otherwise =
-        go $ do
-            ts <- Model.toTickerSymbol codeStr
-            Just $ Maybe.mapMaybe (ApiTypes.fromApiOhlcv ts timeFrame) apiOhlcvs
+    | otherwise = go $ Model.toTickerSymbol codeStr
     where
     --
     --
@@ -377,19 +374,18 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
         err400BadRequest
     --
     --
-    go (Just ohlcvs) = do
-        M.liftIO $ M.mapM_ print ohlcvs
-        return $ map ApiTypes.toApiOhlcv ohlcvs
+    go (Just ticker) =
+        let xs = Maybe.mapMaybe (ApiTypes.fromApiOhlcv ticker timeFrame) apiOhlcvs
+        in do
+            M.liftIO $ M.mapM_ print xs
+            return $ map ApiTypes.toApiOhlcv xs
 
 -- |
 -- 既存のデータを入れ替える(UPDATE / INSERT)
 patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
 patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     | authzFailed cnf auth = err401Unauthorized
-    | otherwise =
-        go $ do
-            ts <- Model.toTickerSymbol codeStr
-            Just $ Maybe.mapMaybe (ApiTypes.fromApiOhlcv ts timeFrame) apiOhlcvs
+    | otherwise = go $ Model.toTickerSymbol codeStr
     where
     --
     --
@@ -397,27 +393,28 @@ patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
         err400BadRequest
     --
     --
-    go (Just xs) = do
-        M.liftIO $ M.mapM_ update xs
-        return $ map ApiTypes.toApiOhlcv xs
+    go (Just ticker) =
+        let xs = Maybe.mapMaybe (ApiTypes.fromApiOhlcv ticker timeFrame) apiOhlcvs
+        in
+        M.liftIO $ M.mapM store xs
     --
     --
-    update ohlcv@Model.Ohlcv{..} =
-        flip DB.runSqlPersistMPool (cPool cnf) $
+    store ohlcv@Model.Ohlcv{..} =
+        flip DB.runSqlPersistMPool (cPool cnf) $ do
             -- 同じ時間の物があるか探してみる
-            DB.selectFirst
-                    [ Model.OhlcvTicker ==. ohlcvTicker
-                    , Model.OhlcvTf ==. ohlcvTf
-                    , Model.OhlcvAt ==. ohlcvAt
-                    ]
-                    []
-            >>= \case
+            entity <-DB.selectFirst
+                        [ Model.OhlcvTicker ==. ohlcvTicker
+                        , Model.OhlcvTf ==. ohlcvTf
+                        , Model.OhlcvAt ==. ohlcvAt
+                        ]
+                        []
+            case DB.entityKey <$> entity of
                 -- レコードが無かった場合は新規挿入する
                 Nothing ->
                     M.void $ DB.insert ohlcv
                 -- レコードが有った場合は更新する
-                Just (DB.Entity updKey _) ->
-                    DB.update updKey
+                Just key ->
+                    DB.update key
                         [ Model.OhlcvOpen     =. ohlcvOpen
                         , Model.OhlcvHigh     =. ohlcvHigh
                         , Model.OhlcvLow      =. ohlcvLow
@@ -425,6 +422,7 @@ patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
                         , Model.OhlcvVolume   =. ohlcvVolume
                         , Model.OhlcvSource   =. ohlcvSource
                         ]
+        >> return (ApiTypes.toApiOhlcv ohlcv)
 
 --
 --
@@ -441,9 +439,10 @@ app c =
 -- Web API サーバーを起動する
 runWebServer :: Conf.Info -> ApiTypes.ServerTChan -> IO ()
 runWebServer conf chan = do
-    pool <- Logger.runStdoutLoggingT . runResourceT $ MySQL.createMySQLPool connInfo poolSize
+    pool <- Logger.runStdoutLoggingT . runResourceT $ createPool
     Warp.runSettings settings . app $ Config conf pool chan
     where
+    createPool = MySQL.createMySQLPool connInfo poolSize
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
     poolSize = 8
     settings = Warp.setPort 8739 Warp.defaultSettings
