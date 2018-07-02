@@ -9,8 +9,14 @@ import String
 
 type alias TimeFrame = String
 
+type alias MarketCode = String
+
+type alias AuthzValue = String
+
 type alias VerRev =
     { version : String
+    , buildArch : String
+    , buildOS : String
     , gitBranch : String
     , gitHash : String
     , gitCommitDate : String
@@ -22,6 +28,8 @@ decodeVerRev : Decoder VerRev
 decodeVerRev =
     decode VerRev
         |> required "version" string
+        |> required "buildArch" string
+        |> required "buildOS" string
         |> required "gitBranch" string
         |> required "gitHash" string
         |> required "gitCommitDate" string
@@ -32,6 +40,8 @@ encodeVerRev : VerRev -> Json.Encode.Value
 encodeVerRev x =
     Json.Encode.object
         [ ( "version", Json.Encode.string x.version )
+        , ( "buildArch", Json.Encode.string x.buildArch )
+        , ( "buildOS", Json.Encode.string x.buildOS )
         , ( "gitBranch", Json.Encode.string x.gitBranch )
         , ( "gitHash", Json.Encode.string x.gitHash )
         , ( "gitCommitDate", Json.Encode.string x.gitCommitDate )

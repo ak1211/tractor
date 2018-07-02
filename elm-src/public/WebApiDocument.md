@@ -12,7 +12,7 @@
 - Response body as below.
 
     ```html
-<!DOCTYPE HTML><html lang="ja"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1" name="viewport"><title>Dashboard &#8212; TRACTOR</title><link href="https://fonts.googleapis.com/css?family=Roboto:400,300,500|Roboto+Mono|Roboto+Condensed:400,700&amp;subset=latin,latin-ext" type="text/css" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link href="https://code.getmdl.io/1.3.0/material.blue_grey-lime.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css?family=Gugi" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.css" type="text/css" rel="stylesheet"><script src="https://cdn.polyfill.io/v2/polyfill.js?features=Event.focusin"></script></head><body><script src="public/main.js"></script><script>app = Elm.Main.fullscreen();</script></body></html>
+<!DOCTYPE HTML><html lang="ja"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1" name="viewport"><title>Dashboard &#8212; TRACTOR</title><link href="https://fonts.googleapis.com/css?family=Roboto:400,300,500|Roboto+Mono|Roboto+Condensed:400,700&amp;subset=latin,latin-ext" type="text/css" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link href="https://code.getmdl.io/1.3.0/material.blue_grey-lime.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css?family=Gugi" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.css" type="text/css" rel="stylesheet"><script src="https://cdn.polyfill.io/v2/polyfill.js?features=Event.focusin"></script></head><body><script src="public/main.js"></script><script>var flags = {client_id: 'example'};var app = Elm.Main.fullscreen(flags);</script></body></html>
     ```
 
 ## GET /api/v1/exchange/temporary/code/:tempCode
@@ -319,6 +319,7 @@ at,open,high,low,close,volume,source
 
     - `application/json;charset=utf-8`
     - `application/json`
+    - `text/csv;charset=utf-8`
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
@@ -326,16 +327,17 @@ at,open,high,low,close,volume,source
 []
     ```
 
+- Example (`text/csv;charset=utf-8`):
+
+    ```
+at,open,high,low,close,volume,source
+
+    ```
+
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
 [{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
-    ```
-
-- Example (`application/json;charset=utf-8`):
-
-    ```javascript
-[{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726},{"low":715,"at":"2018-03-07T15:00:00+0900","volume":78487400,"close":715,"open":723,"source":"This is example.","high":726}]
     ```
 
 ### Response:
@@ -406,7 +408,7 @@ at,open,high,low,close,volume,source
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"gitStatus":"Clean","gitCommitDate":"Tue Jun 26 01:42:12 2018 +0900","version":"0.4.8","gitCommitCount":"130","gitHash":"57cc74b178e3bde8e0ccbd0b4130fc0e6265ce44","gitBranch":"master"}
+{"buildOS":"linux","gitStatus":"Dirty","gitCommitDate":"Thu Jun 28 19:12:47 2018 +0900","version":"0.4.9","gitCommitCount":"133","gitHash":"9c411f808b67e0bf71219aa771e66178699727ed","gitBranch":"master","buildArch":"x86-64"}
     ```
 
 ## GET /public

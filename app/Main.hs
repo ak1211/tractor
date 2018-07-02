@@ -28,12 +28,15 @@ Portability :  POSIX
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Main where
 import           Control.Concurrent           (threadDelay)
 import qualified Control.Concurrent.Async     as CCA
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (newTChan)
 import           Control.Exception            (AsyncException (UserInterrupt))
+import qualified Distribution.System
+import qualified Distribution.Text
 import           Control.Exception.Safe
 import qualified Control.Monad                as M
 import           Control.Monad.Logger         (logInfoN)
@@ -41,13 +44,18 @@ import           Control.Monad.Logger.Syslog  (runSyslogLoggingT)
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Conduit                 as C
 import           Data.Monoid                  ((<>))
+import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.IO            as TL
 import           Data.Time                    (ZonedTime)
 import qualified Data.Time                    as Time
 import qualified Data.Time.Calendar.WeekDate  as Time
+import qualified Data.Version                 as Version
 import qualified Database.Persist.MySQL       as MySQL
+import qualified Development.GitRev           as GitRev
 import qualified Options.Applicative          as Opt
+import qualified Options.Applicative.Simple
+import qualified Paths_tractor                as Meta
 
 import           BackOffice.Agency            (updateSomeRates)
 import qualified BrokerBackend                as BB
@@ -55,10 +63,37 @@ import qualified Conf
 import qualified GenBroker                    as GB
 import qualified GenScraper                   as GS
 import qualified Lib
+import qualified NetService.ApiTypes          as ApiTypes
 import qualified NetService.PubServer
 import qualified NetService.WebServer
 import qualified Scheduling                   as Scd
 import qualified SinkSlack                    as Slack
+
+-- |
+--
+versionRevision :: ApiTypes.VerRev
+versionRevision = ApiTypes.VerRev
+    { ApiTypes.version          = versionString
+    , ApiTypes.buildArch        = Distribution.Text.display Distribution.System.buildArch
+    , ApiTypes.buildOS          = Distribution.Text.display Distribution.System.buildOS
+    , ApiTypes.gitBranch        = $(GitRev.gitBranch)
+    , ApiTypes.gitHash          = $(GitRev.gitHash)
+    , ApiTypes.gitCommitDate    = $(GitRev.gitCommitDate)
+    , ApiTypes.gitCommitCount   = $(GitRev.gitCommitCount)
+    , ApiTypes.gitStatus        = if $(GitRev.gitDirty) then "Dirty" else "Clean"
+    }
+
+-- |
+--
+versionString :: String
+versionString =
+    Version.showVersion Meta.version
+
+-- |
+--
+simpleVersion :: String
+simpleVersion =
+    $(Options.Applicative.Simple.simpleVersion Meta.version)
 
 -- |
 -- レポートをsinkSlackで送信する形式に変換する関数
@@ -190,7 +225,7 @@ tradingTimeSchedule conf broker times =
 -- アプリケーションの本体
 applicationBody :: CommandLineOption -> Conf.Info -> IO ()
 applicationBody cmdLineOpts conf = do
-    runSyslogLoggingT $ logInfoN "START application Tractor."
+    runSyslogLoggingT . logInfoN . T.pack $ "START application Tractor " ++ simpleVersion
     --
     -- コマンドラインオプションの指定で実行を替える
     --
@@ -220,13 +255,13 @@ applicationBody cmdLineOpts conf = do
     runNetServices conf' = do
         chan <- atomically $ newTChan
         M.void . CCA.async $ NetService.PubServer.runPubOverZmqServer conf' chan
-        NetService.WebServer.runWebServer conf' chan
+        NetService.WebServer.runWebServer versionRevision conf' chan
     --
     -- メインループ
     mainLoop :: Conf.Info -> IO ()
     mainLoop conf' = do
        -- 起動時の挨拶文をSlackへ送る
-        toSlack (Conf.slack conf) Lib.greetingsMessage
+        toSlack (Conf.slack conf) $ Lib.greetingsMessage versionString
         M.forever $ do
             assign <- toAssignThreads conf' <$> getToday
             -- 今日の作業スレッドを実行する

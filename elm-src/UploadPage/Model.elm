@@ -15,7 +15,7 @@
    along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-   Module      :  Model
+   Module      :  UploadPage.Model
    Description :  This file is web front main module of Application "Tractor"
    Copyright   :  (c) 2016 Akihiro Yamamoto
    License     :  AGPLv3
@@ -24,59 +24,62 @@
    Stability   :  unstable
    Portability :  POSIX
 
-   アプリケーション「Tractor」のフロント側モデル定義です。
+   Uploadページのモデル定義です。
 -}
 
 
-module Model exposing (..)
+module UploadPage.Model exposing (..)
 
 import Material
-import Route exposing (Route)
 import Generated.WebApi as WebApi
-import UploadPage.Model as UploadPage
+import UploadPage.Msg as UploadPage
 
 
-type alias Portfolios =
-    List WebApi.ApiPortfolio
-
-
-type alias UploadFileContent =
-    { marketCode : WebApi.MarketCode
+type alias FileContent =
+    { name : String
+    , marketCode : WebApi.MarketCode
     , timeFrame : WebApi.TimeFrame
     , ohlcvs : List WebApi.ApiOhlcv
     }
 
 
-type alias DocMarkDown =
-    String
+type alias UploadThunk =
+    { function : WebApi.ApiOhlcv -> Cmd UploadPage.Msg
+    , ohlcv : WebApi.ApiOhlcv
+    }
+
+
+type alias UploadProgress =
+    { counter : Int
+    , total : Int
+    , todo : List UploadThunk
+    , done : List UploadThunk
+    }
 
 
 type alias Model =
-    { clientID : String
-    , accessToken : Maybe String
-    , userName : Maybe String
-    , pageHistory : List Route
-    , uploadFilesContent : List UploadFileContent
-    , serverVersion : Maybe WebApi.VerRev
-    , portfolios : Maybe Portfolios
-    , histories : Maybe (List WebApi.ApiOhlcv)
-    , webApiDocument : Maybe DocMarkDown
-    , uploadPageModel : UploadPage.Model
+    { accessToken : Maybe String
+    , inDropZone : Bool
+    , fileContents : List (Result String FileContent)
+    , progress : UploadProgress
     , mdl : Material.Model
     }
 
 
-initialModel : String -> Model
-initialModel initClientID =
-    { clientID = initClientID
-    , accessToken = Nothing
-    , userName = Nothing
-    , pageHistory = []
-    , uploadFilesContent = []
-    , serverVersion = Nothing
-    , portfolios = Nothing
-    , histories = Nothing
-    , webApiDocument = Nothing
-    , uploadPageModel = UploadPage.initialModel
+initialUploadProgress : UploadProgress
+initialUploadProgress =
+    { counter = 0
+    , total = 1
+    , todo = []
+    , done = []
+    }
+
+
+initialModel : Model
+initialModel =
+    { accessToken = Nothing
+    , inDropZone = False
+    , fileContents = []
+    , progress = initialUploadProgress
     , mdl = Material.model
     }

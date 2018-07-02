@@ -34,9 +34,9 @@ import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Shelly
 
-import           NetService.ApiTypes  (ApiOhlcv, ApiPortfolio, OAuthReply)
+import           NetService.ApiTypes  (ApiOhlcv, ApiPortfolio, OAuthReply,
+                                       VerRev)
 import qualified NetService.WebServer as WebServer
-import           VerRev               (VerRev)
 
 elmOpts :: Servant.Elm.ElmOptions
 elmOpts =
@@ -49,6 +49,8 @@ spec =
     Servant.Elm.Spec ["Generated", "WebApi"]
         ( Servant.Elm.defElmImports
         : "type alias TimeFrame = String"
+        : "type alias MarketCode = String"
+        : "type alias AuthzValue = String"
         --
         : Elm.toElmTypeSource    (Proxy :: Proxy VerRev)
         : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)

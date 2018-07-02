@@ -30,74 +30,89 @@
 
 module Main exposing (..)
 
+import Dom.Scroll
+import Generated.WebApi as WebApi
+import Generated.WebApi exposing (ApiOhlcv)
 import Http
-import Maybe
-import Navigation
 import Material
+import Material.Layout as Layout
+import Maybe
 import Model exposing (Model)
 import Msg exposing (Msg)
-import Route exposing (QueryCode, Route, TickerSymbol)
-import View
-import Task
 import Navigation
-import Dom.Scroll
-import Material.Layout as Layout
-import Generated.WebApi as Api
+import Json.Decode as Decode
+import Json.Decode.Pipeline as Decode
+import UploadPage.Update as UploadPage
+import UploadPage.Msg as UploadPage
+import Route exposing (QueryCode, Route)
+import Task
+import View
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg.DropZoneEntered ->
-            { model | inDropZone = True } ! []
+        Msg.DoneOAuthExchangeCode res ->
+            let
+                ( newModel, newCmd ) =
+                    UploadPage.update
+                        (UploadPage.DoneOAuthExchangeCode res)
+                        model.uploadPageModel
+            in
+                case res of
+                    Ok ok ->
+                        { model
+                            | accessToken = Just ok.accessToken
+                            , userName = Just ok.userName
+                            , uploadPageModel = newModel
+                        }
+                            ! [ getPortfolios ok.accessToken
+                              , Cmd.map Msg.UploadPageMsg newCmd
+                              ]
 
-        Msg.DropZoneLeaved ->
-            { model | inDropZone = False } ! []
+                    Err _ ->
+                        { model
+                            | accessToken = Nothing
+                            , userName = Nothing
+                            , uploadPageModel = newModel
+                        }
+                            ! [ Cmd.map Msg.UploadPageMsg newCmd ]
 
-        Msg.FilesDropped files ->
-            { model | inDropZone = False, droppedFiles = files } ! []
+        Msg.UploadPageMsg subMsg ->
+            let
+                ( newModel, newCmd ) =
+                    UploadPage.update subMsg model.uploadPageModel
+            in
+                ( { model | uploadPageModel = newModel }
+                , Cmd.map Msg.UploadPageMsg newCmd
+                )
 
-        Msg.UrlChange location ->
-            urlUpdate model location
+        Msg.Mdl subMsg ->
+            Material.update Msg.Mdl subMsg model
 
         Msg.NewUrl url ->
             model ! [ Navigation.newUrl url ]
 
-        Msg.DoneOAuthExchangeCode (Ok rep) ->
-            { model
-                | accessToken = Just rep.accessToken
-                , userName = Just rep.userName
-            }
-                ! [ askPortfolios rep.accessToken ]
-
-        Msg.DoneOAuthExchangeCode (Err _) ->
-            { model
-                | accessToken = Nothing
-                , userName = Nothing
-            }
-                ! []
-
-        Msg.UpdateServerVersion res ->
-            { model | serverVersion = Result.toMaybe res } ! []
-
-        Msg.UpdatePortfolios res ->
-            { model | portfolios = Result.toMaybe res } ! []
-
-        Msg.UpdateAnalytics res ->
-            { model | histories = Result.toMaybe res } ! []
-
-        Msg.UpdateWebApiDocument res ->
-            { model | webApiDocument = Result.toMaybe res } ! []
+        Msg.Nop ->
+            ( model, Cmd.none )
 
         Msg.ScrollToTop ->
             model ! [ Task.attempt (always Msg.Nop) <| Dom.Scroll.toTop Layout.mainId ]
 
-        Msg.Nop ->
-            ( model, Cmd.none )
+        Msg.UpdateAnalytics res ->
+            { model | histories = Result.toMaybe res } ! []
 
-        -- Boilerplate: Mdl action handler.
-        Msg.Mdl msg_ ->
-            Material.update Msg.Mdl msg_ model
+        Msg.UpdatePortfolios res ->
+            { model | portfolios = Result.toMaybe res } ! []
+
+        Msg.UpdateServerVersion res ->
+            { model | serverVersion = Result.toMaybe res } ! []
+
+        Msg.UpdateWebApiDocument res ->
+            { model | webApiDocument = Result.toMaybe res } ! []
+
+        Msg.UrlChange location ->
+            urlUpdate model location
 
 
 urlUpdate : Model -> Navigation.Location -> ( Model, Cmd Msg )
@@ -111,7 +126,7 @@ urlUpdate model location =
                 history =
                     case model.accessToken of
                         Just token ->
-                            askHistories token ts
+                            getHistories token ts
 
                         Nothing ->
                             Cmd.none
@@ -127,40 +142,44 @@ urlUpdate model location =
             model ! []
 
 
-askWebApiDocument : Cmd Msg
-askWebApiDocument =
+getWebApiDocument : Cmd Msg
+getWebApiDocument =
     Http.send Msg.UpdateWebApiDocument (Http.getString "public/WebApiDocument.md")
 
 
 exchangeOAuthCodeForToken : String -> Cmd Msg
 exchangeOAuthCodeForToken code =
-    Http.send Msg.DoneOAuthExchangeCode (Api.getApiV1ExchangeTemporaryCodeByTempCode code)
+    Http.send Msg.DoneOAuthExchangeCode (WebApi.getApiV1ExchangeTemporaryCodeByTempCode code)
 
 
-askServerVersion : Cmd Msg
-askServerVersion =
-    Http.send Msg.UpdateServerVersion Api.getApiV1Version
+getServerVersion : Cmd Msg
+getServerVersion =
+    Http.send Msg.UpdateServerVersion WebApi.getApiV1Version
 
 
-toBearerToken : String -> String
-toBearerToken token =
+makeAuthorizationHeader : String -> WebApi.AuthzValue
+makeAuthorizationHeader token =
     "Bearer " ++ token
 
 
-askPortfolios : String -> Cmd Msg
-askPortfolios token =
-    Http.send Msg.UpdatePortfolios <|
-        Api.getApiV1Portfolios (toBearerToken token)
-
-
-askHistories : String -> TickerSymbol -> Cmd Msg
-askHistories token ticker =
+getPortfolios : String -> Cmd Msg
+getPortfolios token =
     let
         authzHeader =
-            toBearerToken token
+            makeAuthorizationHeader token
+    in
+        Http.send Msg.UpdatePortfolios <|
+            WebApi.getApiV1Portfolios authzHeader
+
+
+getHistories : String -> WebApi.MarketCode -> Cmd Msg
+getHistories token marketCode =
+    let
+        authzHeader =
+            makeAuthorizationHeader token
     in
         Http.send Msg.UpdateAnalytics <|
-            Api.getApiV1StocksHistoryByMarketCode authzHeader ticker (Just "1d")
+            WebApi.getApiV1StocksHistoryByMarketCode authzHeader marketCode (Just "1d")
 
 
 subscriptions : Model -> Sub Msg
@@ -168,26 +187,23 @@ subscriptions model =
     Material.subscriptions Msg.Mdl model
 
 
-initialModel : Model
-initialModel =
-    { accessToken = Nothing
-    , userName = Nothing
-    , pageHistory = []
-    , inDropZone = False
-    , droppedFiles = []
-    , serverVersion = Nothing
-    , portfolios = Nothing
-    , histories = Nothing
-    , webApiDocument = Nothing
-    , mdl = Material.model
-
-    -- Boilerplate: Always use this initial Mdl model store.
+type alias Flags =
+    { client_id : String
     }
 
 
-init : Navigation.Location -> ( Model, Cmd Msg )
-init location =
+decodeFlags : Decode.Decoder Flags
+decodeFlags =
+    Decode.decode Flags
+        |> Decode.required "client_id" Decode.string
+
+
+init : Flags -> Navigation.Location -> ( Model, Cmd Msg )
+init flags location =
     let
+        initialModel =
+            Model.initialModel flags.client_id
+
         model =
             case Route.fromLocation location of
                 Just a ->
@@ -205,16 +221,16 @@ init location =
                     Cmd.none
     in
         model
-            ! [ askServerVersion
-              , askWebApiDocument
+            ! [ getServerVersion
+              , getWebApiDocument
               , exchangeCode
               , Material.init Msg.Mdl
               ]
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Navigation.program Msg.UrlChange
+    Navigation.programWithFlags Msg.UrlChange
         { init = init
         , view = View.view
         , subscriptions = subscriptions

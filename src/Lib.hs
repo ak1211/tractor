@@ -44,12 +44,10 @@ import qualified Data.Time                  as Tm
 import           Network.HTTP.Types.Header  (Header)
 import qualified Network.HTTP.Types.Header  as Header
 
-import           VerRev                     (versionString)
-
 -- |
 -- 起動時の挨拶文
-greetingsMessage :: TL.Text
-greetingsMessage = TL.unlines
+greetingsMessage :: String -> TL.Text
+greetingsMessage versionString = TL.unlines
     [ TL.pack $ "tractor " ++ versionString ++ " が起動しました。"
     , "以降一定時間で通知します。"
     , "tractor is an Assets observation application."

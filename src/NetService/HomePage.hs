@@ -30,18 +30,21 @@ Portability :  POSIX
 module NetService.HomePage
     ( HomePage(..)
     ) where
-import qualified Data.Text    as T
+import           Data.Monoid            ((<>),mempty)
+import qualified Data.Text              as T
+import qualified Data.Text.Lazy.Builder as TLB
 import           Lucid
 import qualified Servant.Docs
 
 -- |
 -- アプリケーションのホームページ
 data HomePage = HomePage
+    { clientId :: T.Text }
 
 instance Lucid.ToHtml HomePage where
     --
     --
-    toHtml _ = do
+    toHtml a = do
         doctype_
         html_ [lang_ "ja"] $ do
             head_ $ do
@@ -60,11 +63,17 @@ instance Lucid.ToHtml HomePage where
                 --
             body_ $ do
                 script_ [src_ "public/main.js"] T.empty
-                script_ [] ("app = Elm.Main.fullscreen();" :: T.Text)
+                script_ [] (launchElm)
+        where
+        launchElm = TLB.toLazyText $ mempty
+            <> "var flags = {client_id: '"
+            <> TLB.fromText (clientId a)
+            <> "'};"
+            <> "var app = Elm.Main.fullscreen(flags);"
     --
     --
     toHtmlRaw = Lucid.toHtml
 
 instance Servant.Docs.ToSample HomePage where
-    toSamples _ = Servant.Docs.singleSample HomePage
+    toSamples _ = Servant.Docs.singleSample $ HomePage "example"
 

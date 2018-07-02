@@ -43,7 +43,7 @@ module NetService.ApiTypes
     , fromApiOhlcv
     , OAuthAccessResponse(..)
     , OAuthReply(..)
-    , module VerRev
+    , VerRev(..)
     )
     where
 import qualified Control.Concurrent.STM as STM
@@ -62,12 +62,37 @@ import qualified Web.FormUrlEncoded
 
 import           Lib                    (toISO8601DateTime, tzAsiaTokyo)
 import qualified Model
-import           VerRev
+
+--
+--
+data VerRev = VerRev
+    { version        :: String
+    , buildArch      :: String
+    , buildOS        :: String
+    , gitBranch      :: String
+    , gitHash        :: String
+    , gitCommitDate  :: String
+    , gitCommitCount :: String
+    , gitStatus      :: String
+    } deriving (Generic, Show)
+instance Aeson.FromJSON VerRev
+instance Aeson.ToJSON VerRev
 
 instance Servant.Elm.ElmType VerRev
 instance Servant.Docs.ToSample VerRev where
     toSamples _ =
-        Servant.Docs.singleSample VerRev.versionRevision
+        let v = VerRev
+                    { version       = "0.4.9"
+                    , buildArch     = "x86-64"
+                    , buildOS       = "linux"
+                    , gitBranch     = "master"
+                    , gitHash       = "9c411f808b67e0bf71219aa771e66178699727ed"
+                    , gitCommitDate = "Thu Jun 28 19:12:47 2018 +0900"
+                    , gitCommitCount= "133"
+                    , gitStatus     = "Dirty"
+                    }
+        in
+        Servant.Docs.singleSample v
 
 --
 --
@@ -132,8 +157,13 @@ instance Aeson.ToJSON ApiPortfolio
 instance Servant.Elm.ElmType ApiPortfolio
 instance Servant.Docs.ToSample ApiPortfolio where
     toSamples _ =
-        Servant.Docs.singleSample $
-        ApiPortfolio "TYO8306" (Just "三菱ＵＦＪフィナンシャル・グループ") Nothing
+        Servant.Docs.singleSample v
+        where
+        v = ApiPortfolio
+            { code = "TYO8306"
+            , caption = Just "三菱ＵＦＪフィナンシャル・グループ"
+            , updateAt =  Nothing
+            }
 
 --
 --
@@ -208,16 +238,14 @@ instance Csv.DefaultOrdered ApiOhlcv where
 --
 --
 toApiOhlcv :: Model.Ohlcv -> ApiOhlcv
-toApiOhlcv o = ApiOhlcv
-    { at     = toISO8601DateTime
-                . Time.utcToZonedTime tzAsiaTokyo
-                $ Model.ohlcvAt o
-    , open   = Model.ohlcvOpen o
-    , high   = Model.ohlcvHigh o
-    , low    = Model.ohlcvLow o
-    , close  = Model.ohlcvClose o
-    , volume = Model.ohlcvVolume o
-    , source = T.unpack <$> Model.ohlcvSource o
+toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
+    { at     = toISO8601DateTime . Time.utcToZonedTime tzAsiaTokyo $ ohlcvAt
+    , open   = ohlcvOpen
+    , high   = ohlcvHigh
+    , low    = ohlcvLow
+    , close  = ohlcvClose
+    , volume = ohlcvVolume
+    , source = T.unpack <$> ohlcvSource
     }
 
 --
@@ -230,15 +258,15 @@ fromApiOhlcv ticker timeFrame o = do
     at'<- toUTCTime (at o)
     guard (isValid at')
     Just Model.Ohlcv
-        { Model.ohlcvTicker = ticker
-        , Model.ohlcvTf     = timeFrame
-        , Model.ohlcvAt     = at'
-        , Model.ohlcvOpen   = open o
-        , Model.ohlcvHigh   = high o
-        , Model.ohlcvLow    = low o
-        , Model.ohlcvClose  = close o
-        , Model.ohlcvVolume = volume o
-        , Model.ohlcvSource = T.pack <$> source o
+        { ohlcvTicker = ticker
+        , ohlcvTf     = timeFrame
+        , ohlcvAt     = at'
+        , ohlcvOpen   = open o
+        , ohlcvHigh   = high o
+        , ohlcvLow    = low o
+        , ohlcvClose  = close o
+        , ohlcvVolume = volume o
+        , ohlcvSource = T.pack <$> source o
         }
     where
     --

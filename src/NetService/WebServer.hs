@@ -88,7 +88,8 @@ import           NetService.HomePage          (HomePage (..))
 -- |
 -- このサーバーで使う設定情報
 data Config = Config
-    { cConf :: Conf.Info
+    { cVerRev :: ApiTypes.VerRev
+    , cConf :: Conf.Info
     , cPool :: MySQL.ConnectionPool
     , cChan :: ApiTypes.ServerTChan
     }
@@ -159,7 +160,7 @@ type GetOAuthReply  = Get '[JSON] ApiTypes.OAuthReply
 type GetApiPortfolios = HAuthorization :> Get '[JSON] [ApiPortfolio]
 --
 type GetApiOhlcvs   = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
-type PutApiOhlcvs   = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
+type PutApiOhlcvs   = QTimeFrame :> HAuthorization :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
 type PatchApiOhlcv  = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
 type DeleteApiOhlcv = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
 
@@ -192,12 +193,14 @@ type WebApi
 --
 webApiServer :: Config -> Servant.Server WebApiServer
 webApiServer cnf =
-    return HomePage
+    let clientID = Conf.clientID . Conf.slack . cConf $ cnf
+    in
+    return (HomePage clientID)
     :<|> Servant.serveDirectoryFileServer "elm-src/public"
     --
     :<|> exchangeTempCodeHandler cnf
     :<|> publishZmqHandler cnf
-    :<|> versionHandler
+    :<|> return (cVerRev cnf)
     :<|> portfolioHandler cnf
     --
     :<|> updateHistoriesHandler cnf
@@ -232,12 +235,6 @@ err401Unauthorized = Servant.throwError Servant.err401
 --
 err500InternalServerError :: Servant.Handler a
 err500InternalServerError = Servant.throwError Servant.err500
-
--- |
---
-versionHandler :: Servant.Handler ApiTypes.VerRev
-versionHandler =
-    return ApiTypes.versionRevision
 
 -- |
 -- 仮コードをアクセストークンに交換する
@@ -389,7 +386,7 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
             Nothing ->
                 MaybeT (return Nothing)
             Just ohlcv -> do
-                MonadTrans.lift $ insertApiOhlcv (cPool cnf) ohlcv
+                MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
                 >>= \case
                     Left () ->
                         MaybeT (return Nothing)
@@ -398,8 +395,8 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
 
 -- |
 -- データを入れる(INSERT)
-insertApiOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
-insertApiOhlcv pool ohlcv@Model.Ohlcv{..} =
+insertOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
+insertOhlcv pool ohlcv@Model.Ohlcv{..} =
     flip DB.runSqlPersistMPool pool $ do
         -- 同じ時間の物があるか探してみる
         c <- DB.count
@@ -437,15 +434,15 @@ patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
             Nothing ->
                 MaybeT (return Nothing)
             Just val -> do
-                MonadTrans.lift (insertOrUpdateApiOhlcv (cPool cnf) val)
+                MonadTrans.lift (insertOrUpdateOhlcv (cPool cnf) val)
                 MaybeT (return $ Just apiOhlcv)
 
 -- |
 -- データを入れる
 -- もしくは
 -- 既存のデータを入れ替える(UPDATE / INSERT)
-insertOrUpdateApiOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO ()
-insertOrUpdateApiOhlcv pool ohlcv@Model.Ohlcv{..} =
+insertOrUpdateOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO ()
+insertOrUpdateOhlcv pool ohlcv@Model.Ohlcv{..} =
     flip DB.runSqlPersistMPool pool $ do
         -- 同じ時間の物があるか探してみる
         entity <-DB.selectFirst
@@ -469,7 +466,7 @@ insertOrUpdateApiOhlcv pool ohlcv@Model.Ohlcv{..} =
                     , Model.OhlcvSource   =. ohlcvSource
                     ]
 
---- |
+-- |
 -- 既存のデータを削除する(DELETE)
 deleteHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
 deleteHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
@@ -491,20 +488,18 @@ deleteHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
             Nothing ->
                 MaybeT (return Nothing)
             Just ohlcv -> do
-                MonadTrans.lift $ deleteApiOhlcv (cPool cnf) ohlcv
-                >>= \case
-                    Left () ->
-                        MaybeT (return Nothing)
-                    Right () ->
-                        MaybeT (return $ Just apiOhlcv)
+                let err _ = MaybeT $ return Nothing
+                let ok _  = MaybeT $ return (Just apiOhlcv)
+                result <- MonadTrans.lift $ deleteOhlcv (cPool cnf) ohlcv
+                either err ok result
 
 -- |
 -- データを削除する(DELETE)
-deleteApiOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
-deleteApiOhlcv pool Model.Ohlcv{..} =
+deleteOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
+deleteOhlcv pool Model.Ohlcv{..} =
     flip DB.runSqlPersistMPool pool $ do
         -- 同じ物があるか探してみる
-        entity <-DB.selectFirst
+        entity <- DB.selectFirst
                     [ Model.OhlcvTicker ==. ohlcvTicker
                     , Model.OhlcvTf     ==. ohlcvTf
                     , Model.OhlcvAt     ==. ohlcvAt
@@ -538,10 +533,10 @@ app c =
 
 -- |
 -- Web API サーバーを起動する
-runWebServer :: Conf.Info -> ApiTypes.ServerTChan -> IO ()
-runWebServer conf chan = do
+runWebServer :: ApiTypes.VerRev -> Conf.Info -> ApiTypes.ServerTChan -> IO ()
+runWebServer versionRevision conf chan = do
     pool <- Logger.runStdoutLoggingT . runResourceT $ createPool
-    Warp.runSettings settings . app $ Config conf pool chan
+    Warp.runSettings settings . app $ Config versionRevision conf pool chan
     where
     createPool = MySQL.createMySQLPool connInfo poolSize
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf

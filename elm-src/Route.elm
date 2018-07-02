@@ -33,7 +33,6 @@ module Route
         ( QueryError
         , QueryCode
         , QueryState
-        , TickerSymbol
         , Route(..)
         , showRoute
         , toUrlPath
@@ -42,6 +41,7 @@ module Route
 
 import Navigation
 import UrlParser exposing (top, s, (</>), (<?>), stringParam)
+import Generated.WebApi as WebApi
 
 
 type alias QueryError =
@@ -56,16 +56,12 @@ type alias QueryState =
     String
 
 
-type alias TickerSymbol =
-    String
-
-
 type Route
     = Home (Maybe QueryError) (Maybe QueryCode) (Maybe QueryState)
     | Dashboard
     | Upload
     | Portfolio
-    | Analytics (Maybe TickerSymbol)
+    | Analytics (Maybe WebApi.MarketCode)
     | Reports
     | AccBalance
     | ApiDocument

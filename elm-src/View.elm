@@ -30,30 +30,27 @@
 
 module View exposing (..)
 
-import Html.Attributes as Attr
+import Generated.WebApi as WebApi
 import Html exposing (Html)
-import Csv exposing (Csv)
-import Dict exposing (Dict)
+import Html.Attributes as Attr
 import Markdown
 import Material
-import MimeType
 import Material.Button as Button
 import Material.Card as Card
-import Material.Typography as Typo
 import Material.Color as Color
 import Material.Dialog as Dialog
 import Material.Elevation as Elevation
-import Material.Table as Table
 import Material.Grid as Grid
 import Material.Icon as Icon
 import Material.Layout as Layout
 import Material.Options as Options
 import Material.Scheme
-import FileReader
+import Material.Table as Table
+import Material.Typography as Typo
 import Model exposing (Model)
 import Msg exposing (Msg)
-import Route exposing (Route, TickerSymbol)
-import Generated.WebApi as WebApi
+import UploadPage.View as UploadPage
+import Route exposing (Route)
 
 
 -- Define the dialog
@@ -114,7 +111,7 @@ view model =
         , tabs = ( [], [] )
         , main = [ viewBody model, dialogAbout model ]
         }
-        |> Material.Scheme.topWithScheme Color.Grey Color.Indigo
+        |> Material.Scheme.topWithScheme Color.LightGreen Color.Indigo
 
 
 viewHeader : Model -> Html Msg
@@ -259,7 +256,8 @@ viewBody model =
                 viewDashboard model
 
             Route.Upload ->
-                viewUpload model
+                UploadPage.view model.uploadPageModel
+                    |> Html.map Msg.UploadPageMsg
 
             Route.Portfolio ->
                 viewPortfolio model
@@ -325,14 +323,11 @@ viewDashboard model =
         scope =
             "identity.basic"
 
-        clientid =
-            "108727386418.336729839344"
-
         state =
             "abcdefg"
 
         oauthAddr =
-            String.concat [ authurl, "?scope=", scope, "&client_id=", clientid, "&state=", state ]
+            String.concat [ authurl, "?scope=", scope, "&client_id=", model.clientID, "&state=", state ]
 
         oauthButton =
             Options.styled
@@ -394,7 +389,12 @@ viewDashboard model =
                 [ Typo.title
                 , Typo.right
                 ]
-                [ Html.text <| "(" ++ v.gitStatus ++ ")" ]
+                [ Html.text "("
+                , Html.text <| v.buildArch
+                , Html.text " - "
+                , Html.text <| v.buildOS
+                , Html.text ")"
+                ]
             ]
 
         viewRevision v =
@@ -406,6 +406,13 @@ viewDashboard model =
                 Html.p
                 [ Typo.body1, Typo.center ]
                 [ Html.text v.gitHash ]
+            , Options.styled
+                Html.p
+                [ Typo.title, Typo.right ]
+                [ Html.text "("
+                , Html.text <| v.gitStatus
+                , Html.text ")"
+                ]
             , Options.styled
                 Html.p
                 [ Typo.title ]
@@ -443,151 +450,6 @@ viewDashboard model =
 viewCell : Maybe String -> String
 viewCell =
     Maybe.withDefault "Not Available"
-
-
-
--- Uploadページ
-
-
-viewUpload : Model -> Html Msg
-viewUpload model =
-    Grid.grid
-        []
-        [ Grid.cell
-            [ Grid.size Grid.All 12 ]
-            [ Html.div
-                ([ Attr.style
-                    ([ ( "width", "300px" )
-                     , ( "height", "300px" )
-                     , ( "margin", "auto" )
-                     , ( "padding", "16px" )
-                     , ( "border", "solid medium slategrey" )
-                     ]
-                        ++ (if model.inDropZone then
-                                [ ( "background", "lightblue" ) ]
-                            else
-                                []
-                           )
-                    )
-                 ]
-                    ++ FileReader.dropZone
-                        { dataFormat = FileReader.Text "ms932"
-                        , enterMsg = Msg.DropZoneEntered
-                        , leaveMsg = Msg.DropZoneLeaved
-                        , filesMsg = Msg.FilesDropped
-                        }
-                )
-                [ Html.text "The CSV file to upload."
-                , Html.p [] [ Html.text "Drop files here." ]
-                ]
-            , if List.length model.droppedFiles > 0 then
-                Html.div [] (List.map viewFile model.droppedFiles)
-              else
-                Html.text ""
-            ]
-        ]
-
-
-viewFile : FileReader.File -> Html Msg
-viewFile file =
-    let
-        parseFromNetstockCsv : String -> ( Maybe String, List (Dict String String) )
-        parseFromNetstockCsv data =
-            let
-                lines =
-                    Csv.split data
-
-                name =
-                    List.take 1 lines |> List.take 1 |> List.concat |> List.head
-
-                hds =
-                    List.drop 1 lines |> List.take 1 |> List.concat
-
-                recs =
-                    List.drop 2 lines
-
-                toDict : List String -> Dict String String
-                toDict r =
-                    List.map2 (\k v -> ( k, v )) hds r
-                        |> Dict.fromList
-            in
-                ( name, List.map toDict recs )
-
-        toOhlcvt : String -> Dict String String -> WebApi.ApiOhlcv
-        toOhlcvt marketCode_ recs =
-            let
-                toNumber : (String -> Result a b) -> String -> Maybe b
-                toNumber fn name =
-                    Dict.get name recs
-                        |> Maybe.andThen (Result.toMaybe << fn << String.trim)
-
-                toFloat : String -> Maybe Float
-                toFloat =
-                    toNumber String.toFloat
-
-                toInt : String -> Maybe Int
-                toInt =
-                    toNumber String.toInt
-
-                date : Maybe String
-                date =
-                    Dict.get "Date" recs
-
-                time : Maybe String
-                time =
-                    Dict.get "Time" recs
-
-                datetime : String
-                datetime =
-                    Maybe.map2 (\a b -> a ++ "T" ++ b ++ "+0900") date time
-                        |> Maybe.withDefault "Date and Time parse error"
-            in
-                { at = datetime
-                , open = toFloat "Open"
-                , high = toFloat "High"
-                , low = toFloat "Low"
-                , close = toFloat "Close"
-                , volume = toInt "Volume" |> Maybe.withDefault 0
-                , source = Just "matsui.co.jp"
-                }
-
-        marketCode =
-            -- 今はファイル名を使う事にする
-            String.split "." file.name |> List.head |> Maybe.map String.trim |> Maybe.withDefault ""
-
-        viewFileData =
-            case file.data of
-                Ok data ->
-                    case ( file.dataFormat, MimeType.parseMimeType file.mimeType ) of
-                        ( FileReader.DataURL, Just (MimeType.Image _) ) ->
-                            [ Html.img [ Attr.src data ] [] ]
-
-                        _ ->
-                            let
-                                ( name, recs ) =
-                                    parseFromNetstockCsv data
-                            in
-                                [ List.map (toOhlcvt marketCode) recs |> tableOhlcv ]
-
-                Err error ->
-                    [ Html.text ("Error: " ++ toString error.code ++ " " ++ error.name ++ " " ++ error.message) ]
-    in
-        Html.div [] <|
-            [ Html.dl []
-                [ Html.dt [] [ Html.text "File name" ]
-                , Html.dd [] [ Html.text file.name ]
-                , Html.dt [] [ Html.text "File size" ]
-                , Html.dd [] [ Html.text (toString file.size) ]
-                , Html.dt [] [ Html.text "Last modified" ]
-                , Html.dd [] [ Html.text (toString file.lastModified) ]
-                , Html.dt [] [ Html.text "Mime type" ]
-                , Html.dd [] [ Html.text file.mimeType ]
-                , Html.dt [] [ Html.text "Data format" ]
-                , Html.dd [] [ Html.text (toString file.dataFormat) ]
-                , Html.dt [] [ Html.text "Data" ]
-                ]
-            ]
-                ++ viewFileData
 
 
 viewTable : List (Html m) -> (a -> Html m) -> List a -> Html m
@@ -667,7 +529,7 @@ tableOhlcv data =
 -- Analyticsページ
 
 
-viewAnalytics : Model -> Maybe TickerSymbol -> Html Msg
+viewAnalytics : Model -> Maybe WebApi.MarketCode -> Html Msg
 viewAnalytics model ticker =
     let
         def =
