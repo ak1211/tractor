@@ -48,6 +48,7 @@ spec :: Servant.Elm.Spec
 spec =
     Servant.Elm.Spec ["Generated", "WebApi"]
         ( Servant.Elm.defElmImports
+        : "type alias AccessToken = String"
         : "type alias TimeFrame = String"
         : "type alias MarketCode = String"
         : "type alias AuthzValue = String"

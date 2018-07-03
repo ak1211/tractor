@@ -7454,215 +7454,6 @@ var _ak1211$tractor$Generated_WebApi$postApiV1StocksHistoryAll = function (heade
 		});
 };
 
-var _elm_lang$dom$Native_Dom = function() {
-
-var fakeNode = {
-	addEventListener: function() {},
-	removeEventListener: function() {}
-};
-
-var onDocument = on(typeof document !== 'undefined' ? document : fakeNode);
-var onWindow = on(typeof window !== 'undefined' ? window : fakeNode);
-
-function on(node)
-{
-	return function(eventName, decoder, toTask)
-	{
-		return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-
-			function performTask(event)
-			{
-				var result = A2(_elm_lang$core$Json_Decode$decodeValue, decoder, event);
-				if (result.ctor === 'Ok')
-				{
-					_elm_lang$core$Native_Scheduler.rawSpawn(toTask(result._0));
-				}
-			}
-
-			node.addEventListener(eventName, performTask);
-
-			return function()
-			{
-				node.removeEventListener(eventName, performTask);
-			};
-		});
-	};
-}
-
-var rAF = typeof requestAnimationFrame !== 'undefined'
-	? requestAnimationFrame
-	: function(callback) { callback(); };
-
-function withNode(id, doStuff)
-{
-	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback)
-	{
-		rAF(function()
-		{
-			var node = document.getElementById(id);
-			if (node === null)
-			{
-				callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'NotFound', _0: id }));
-				return;
-			}
-			callback(_elm_lang$core$Native_Scheduler.succeed(doStuff(node)));
-		});
-	});
-}
-
-
-// FOCUS
-
-function focus(id)
-{
-	return withNode(id, function(node) {
-		node.focus();
-		return _elm_lang$core$Native_Utils.Tuple0;
-	});
-}
-
-function blur(id)
-{
-	return withNode(id, function(node) {
-		node.blur();
-		return _elm_lang$core$Native_Utils.Tuple0;
-	});
-}
-
-
-// SCROLLING
-
-function getScrollTop(id)
-{
-	return withNode(id, function(node) {
-		return node.scrollTop;
-	});
-}
-
-function setScrollTop(id, desiredScrollTop)
-{
-	return withNode(id, function(node) {
-		node.scrollTop = desiredScrollTop;
-		return _elm_lang$core$Native_Utils.Tuple0;
-	});
-}
-
-function toBottom(id)
-{
-	return withNode(id, function(node) {
-		node.scrollTop = node.scrollHeight;
-		return _elm_lang$core$Native_Utils.Tuple0;
-	});
-}
-
-function getScrollLeft(id)
-{
-	return withNode(id, function(node) {
-		return node.scrollLeft;
-	});
-}
-
-function setScrollLeft(id, desiredScrollLeft)
-{
-	return withNode(id, function(node) {
-		node.scrollLeft = desiredScrollLeft;
-		return _elm_lang$core$Native_Utils.Tuple0;
-	});
-}
-
-function toRight(id)
-{
-	return withNode(id, function(node) {
-		node.scrollLeft = node.scrollWidth;
-		return _elm_lang$core$Native_Utils.Tuple0;
-	});
-}
-
-
-// SIZE
-
-function width(options, id)
-{
-	return withNode(id, function(node) {
-		switch (options.ctor)
-		{
-			case 'Content':
-				return node.scrollWidth;
-			case 'VisibleContent':
-				return node.clientWidth;
-			case 'VisibleContentWithBorders':
-				return node.offsetWidth;
-			case 'VisibleContentWithBordersAndMargins':
-				var rect = node.getBoundingClientRect();
-				return rect.right - rect.left;
-		}
-	});
-}
-
-function height(options, id)
-{
-	return withNode(id, function(node) {
-		switch (options.ctor)
-		{
-			case 'Content':
-				return node.scrollHeight;
-			case 'VisibleContent':
-				return node.clientHeight;
-			case 'VisibleContentWithBorders':
-				return node.offsetHeight;
-			case 'VisibleContentWithBordersAndMargins':
-				var rect = node.getBoundingClientRect();
-				return rect.bottom - rect.top;
-		}
-	});
-}
-
-return {
-	onDocument: F3(onDocument),
-	onWindow: F3(onWindow),
-
-	focus: focus,
-	blur: blur,
-
-	getScrollTop: getScrollTop,
-	setScrollTop: F2(setScrollTop),
-	getScrollLeft: getScrollLeft,
-	setScrollLeft: F2(setScrollLeft),
-	toBottom: toBottom,
-	toRight: toRight,
-
-	height: F2(height),
-	width: F2(width)
-};
-
-}();
-
-var _elm_lang$dom$Dom$blur = _elm_lang$dom$Native_Dom.blur;
-var _elm_lang$dom$Dom$focus = _elm_lang$dom$Native_Dom.focus;
-var _elm_lang$dom$Dom$NotFound = function (a) {
-	return {ctor: 'NotFound', _0: a};
-};
-
-var _elm_lang$dom$Dom_Size$width = _elm_lang$dom$Native_Dom.width;
-var _elm_lang$dom$Dom_Size$height = _elm_lang$dom$Native_Dom.height;
-var _elm_lang$dom$Dom_Size$VisibleContentWithBordersAndMargins = {ctor: 'VisibleContentWithBordersAndMargins'};
-var _elm_lang$dom$Dom_Size$VisibleContentWithBorders = {ctor: 'VisibleContentWithBorders'};
-var _elm_lang$dom$Dom_Size$VisibleContent = {ctor: 'VisibleContent'};
-var _elm_lang$dom$Dom_Size$Content = {ctor: 'Content'};
-
-var _elm_lang$dom$Dom_Scroll$toX = _elm_lang$dom$Native_Dom.setScrollLeft;
-var _elm_lang$dom$Dom_Scroll$x = _elm_lang$dom$Native_Dom.getScrollLeft;
-var _elm_lang$dom$Dom_Scroll$toRight = _elm_lang$dom$Native_Dom.toRight;
-var _elm_lang$dom$Dom_Scroll$toLeft = function (id) {
-	return A2(_elm_lang$dom$Dom_Scroll$toX, id, 0);
-};
-var _elm_lang$dom$Dom_Scroll$toY = _elm_lang$dom$Native_Dom.setScrollTop;
-var _elm_lang$dom$Dom_Scroll$y = _elm_lang$dom$Native_Dom.getScrollTop;
-var _elm_lang$dom$Dom_Scroll$toBottom = _elm_lang$dom$Native_Dom.toBottom;
-var _elm_lang$dom$Dom_Scroll$toTop = function (id) {
-	return A2(_elm_lang$dom$Dom_Scroll$toY, id, 0);
-};
-
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrap;
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrapWithFlags;
 
@@ -12346,6 +12137,189 @@ var _debois$elm_mdl$Material_Textfield$view = F4(
 	});
 var _debois$elm_mdl$Material_Textfield$render = A3(_debois$elm_mdl$Material_Component$render, _debois$elm_mdl$Material_Textfield$get, _debois$elm_mdl$Material_Textfield$view, _debois$elm_mdl$Material_Component$TextfieldMsg);
 
+var _elm_lang$dom$Native_Dom = function() {
+
+var fakeNode = {
+	addEventListener: function() {},
+	removeEventListener: function() {}
+};
+
+var onDocument = on(typeof document !== 'undefined' ? document : fakeNode);
+var onWindow = on(typeof window !== 'undefined' ? window : fakeNode);
+
+function on(node)
+{
+	return function(eventName, decoder, toTask)
+	{
+		return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+
+			function performTask(event)
+			{
+				var result = A2(_elm_lang$core$Json_Decode$decodeValue, decoder, event);
+				if (result.ctor === 'Ok')
+				{
+					_elm_lang$core$Native_Scheduler.rawSpawn(toTask(result._0));
+				}
+			}
+
+			node.addEventListener(eventName, performTask);
+
+			return function()
+			{
+				node.removeEventListener(eventName, performTask);
+			};
+		});
+	};
+}
+
+var rAF = typeof requestAnimationFrame !== 'undefined'
+	? requestAnimationFrame
+	: function(callback) { callback(); };
+
+function withNode(id, doStuff)
+{
+	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback)
+	{
+		rAF(function()
+		{
+			var node = document.getElementById(id);
+			if (node === null)
+			{
+				callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'NotFound', _0: id }));
+				return;
+			}
+			callback(_elm_lang$core$Native_Scheduler.succeed(doStuff(node)));
+		});
+	});
+}
+
+
+// FOCUS
+
+function focus(id)
+{
+	return withNode(id, function(node) {
+		node.focus();
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function blur(id)
+{
+	return withNode(id, function(node) {
+		node.blur();
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+
+// SCROLLING
+
+function getScrollTop(id)
+{
+	return withNode(id, function(node) {
+		return node.scrollTop;
+	});
+}
+
+function setScrollTop(id, desiredScrollTop)
+{
+	return withNode(id, function(node) {
+		node.scrollTop = desiredScrollTop;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function toBottom(id)
+{
+	return withNode(id, function(node) {
+		node.scrollTop = node.scrollHeight;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function getScrollLeft(id)
+{
+	return withNode(id, function(node) {
+		return node.scrollLeft;
+	});
+}
+
+function setScrollLeft(id, desiredScrollLeft)
+{
+	return withNode(id, function(node) {
+		node.scrollLeft = desiredScrollLeft;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function toRight(id)
+{
+	return withNode(id, function(node) {
+		node.scrollLeft = node.scrollWidth;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+
+// SIZE
+
+function width(options, id)
+{
+	return withNode(id, function(node) {
+		switch (options.ctor)
+		{
+			case 'Content':
+				return node.scrollWidth;
+			case 'VisibleContent':
+				return node.clientWidth;
+			case 'VisibleContentWithBorders':
+				return node.offsetWidth;
+			case 'VisibleContentWithBordersAndMargins':
+				var rect = node.getBoundingClientRect();
+				return rect.right - rect.left;
+		}
+	});
+}
+
+function height(options, id)
+{
+	return withNode(id, function(node) {
+		switch (options.ctor)
+		{
+			case 'Content':
+				return node.scrollHeight;
+			case 'VisibleContent':
+				return node.clientHeight;
+			case 'VisibleContentWithBorders':
+				return node.offsetHeight;
+			case 'VisibleContentWithBordersAndMargins':
+				var rect = node.getBoundingClientRect();
+				return rect.bottom - rect.top;
+		}
+	});
+}
+
+return {
+	onDocument: F3(onDocument),
+	onWindow: F3(onWindow),
+
+	focus: focus,
+	blur: blur,
+
+	getScrollTop: getScrollTop,
+	setScrollTop: F2(setScrollTop),
+	getScrollLeft: getScrollLeft,
+	setScrollLeft: F2(setScrollLeft),
+	toBottom: toBottom,
+	toRight: toRight,
+
+	height: F2(height),
+	width: F2(width)
+};
+
+}();
+
 var _elm_lang$dom$Dom_LowLevel$onWindow = _elm_lang$dom$Native_Dom.onWindow;
 var _elm_lang$dom$Dom_LowLevel$onDocument = _elm_lang$dom$Native_Dom.onDocument;
 
@@ -16194,6 +16168,886 @@ var _debois$elm_mdl$Material$Model = F8(
 		return {button: a, textfield: b, menu: c, snackbar: d, layout: e, toggles: f, tooltip: g, tabs: h};
 	});
 
+var _ak1211$tractor$AnalyticsPage_Model$initialModel = {accessToken: _elm_lang$core$Maybe$Nothing, quotes: _elm_lang$core$Maybe$Nothing, tab: 0, mdl: _debois$elm_mdl$Material$model};
+var _ak1211$tractor$AnalyticsPage_Model$Quotes = F2(
+	function (a, b) {
+		return {marketCode: a, histories: b};
+	});
+var _ak1211$tractor$AnalyticsPage_Model$Model = F4(
+	function (a, b, c, d) {
+		return {accessToken: a, quotes: b, tab: c, mdl: d};
+	});
+
+var _ak1211$tractor$AnalyticsPage_Msg$Mdl = function (a) {
+	return {ctor: 'Mdl', _0: a};
+};
+var _ak1211$tractor$AnalyticsPage_Msg$SelectTab = function (a) {
+	return {ctor: 'SelectTab', _0: a};
+};
+var _ak1211$tractor$AnalyticsPage_Msg$UpdateHistories = F2(
+	function (a, b) {
+		return {ctor: 'UpdateHistories', _0: a, _1: b};
+	});
+var _ak1211$tractor$AnalyticsPage_Msg$ChangeMarketCode = function (a) {
+	return {ctor: 'ChangeMarketCode', _0: a};
+};
+var _ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken = function (a) {
+	return {ctor: 'ChangeAccessToken', _0: a};
+};
+
+var _ak1211$tractor$AnalyticsPage_Update$makeAuthorizationHeader = function (token) {
+	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
+};
+var _ak1211$tractor$AnalyticsPage_Update$getHistories = F2(
+	function (token, marketCode) {
+		var authzHeader = _ak1211$tractor$AnalyticsPage_Update$makeAuthorizationHeader(token);
+		return A2(
+			_elm_lang$http$Http$send,
+			_ak1211$tractor$AnalyticsPage_Msg$UpdateHistories(marketCode),
+			A3(
+				_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode,
+				authzHeader,
+				marketCode,
+				_elm_lang$core$Maybe$Just('1d')));
+	});
+var _ak1211$tractor$AnalyticsPage_Update$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'ChangeAccessToken':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{accessToken: _p0._0}),
+					{ctor: '[]'});
+			case 'ChangeMarketCode':
+				if (_p0._0.ctor === 'Just') {
+					var _p1 = model.accessToken;
+					if (_p1.ctor === 'Just') {
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							model,
+							{
+								ctor: '::',
+								_0: A2(_ak1211$tractor$AnalyticsPage_Update$getHistories, _p1._0, _p0._0._0),
+								_1: {ctor: '[]'}
+							});
+					} else {
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{quotes: _elm_lang$core$Maybe$Nothing}),
+							{ctor: '[]'});
+					}
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{quotes: _elm_lang$core$Maybe$Nothing}),
+						{ctor: '[]'});
+				}
+			case 'UpdateHistories':
+				if (_p0._1.ctor === 'Ok') {
+					var newQuotes = {marketCode: _p0._0, histories: _p0._1._0};
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								quotes: _elm_lang$core$Maybe$Just(newQuotes)
+							}),
+						{ctor: '[]'});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{quotes: _elm_lang$core$Maybe$Nothing}),
+						{ctor: '[]'});
+				}
+			case 'SelectTab':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{tab: _p0._0}),
+					{ctor: '[]'});
+			default:
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$AnalyticsPage_Msg$Mdl, _p0._0, model);
+		}
+	});
+
+var _debois$elm_mdl$Material_Grid$clip = F3(
+	function (lower, upper, k) {
+		return A2(
+			_elm_lang$core$Basics$max,
+			lower,
+			A2(_elm_lang$core$Basics$min, k, upper));
+	});
+var _debois$elm_mdl$Material_Grid$stretch = _debois$elm_mdl$Material_Options$cs('mdl-cell--stretch');
+var _debois$elm_mdl$Material_Grid$align = function (a) {
+	var _p0 = a;
+	switch (_p0.ctor) {
+		case 'Top':
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--top');
+		case 'Middle':
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--middle');
+		default:
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--bottom');
+	}
+};
+var _debois$elm_mdl$Material_Grid$suffix = function (device) {
+	var _p1 = device;
+	switch (_p1.ctor) {
+		case 'All':
+			return '';
+		case 'Desktop':
+			return '-desktop';
+		case 'Tablet':
+			return '-tablet';
+		default:
+			return '-phone';
+	}
+};
+var _debois$elm_mdl$Material_Grid$size = F2(
+	function (device, k) {
+		var c = function () {
+			var _p2 = device;
+			switch (_p2.ctor) {
+				case 'All':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
+				case 'Desktop':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
+				case 'Tablet':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 8, k);
+				default:
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 4, k);
+			}
+		}();
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(c),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'-col',
+						_debois$elm_mdl$Material_Grid$suffix(device)))));
+	});
+var _debois$elm_mdl$Material_Grid$offset = F2(
+	function (device, k) {
+		var c = function () {
+			var _p3 = device;
+			switch (_p3.ctor) {
+				case 'All':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
+				case 'Desktop':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
+				case 'Tablet':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 7, k);
+				default:
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 3, k);
+			}
+		}();
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(c),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'-offset',
+						_debois$elm_mdl$Material_Grid$suffix(device)))));
+	});
+var _debois$elm_mdl$Material_Grid$hide = function (device) {
+	return _debois$elm_mdl$Material_Options$cs(
+		function () {
+			var _p4 = device;
+			if (_p4.ctor === 'All') {
+				return '';
+			} else {
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'mdl-cell--hide-',
+					_debois$elm_mdl$Material_Grid$suffix(device));
+			}
+		}());
+};
+var _debois$elm_mdl$Material_Grid$order = F2(
+	function (device, n) {
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--order-',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(
+						A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, n)),
+					_debois$elm_mdl$Material_Grid$suffix(device))));
+	});
+var _debois$elm_mdl$Material_Grid$grid = F2(
+	function (styling, cells) {
+		return A2(
+			_debois$elm_mdl$Material_Options$div,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-grid'),
+				_1: styling
+			},
+			A2(
+				_elm_lang$core$List$map,
+				function (_p5) {
+					var _p6 = _p5;
+					return _p6._0;
+				},
+				cells));
+	});
+var _debois$elm_mdl$Material_Grid$maxWidth = function (w) {
+	return A2(_debois$elm_mdl$Material_Options$css, 'max-width', w);
+};
+var _debois$elm_mdl$Material_Grid$noSpacing = _debois$elm_mdl$Material_Options$cs('mdl-grid--no-spacing');
+var _debois$elm_mdl$Material_Grid$Phone = {ctor: 'Phone'};
+var _debois$elm_mdl$Material_Grid$Tablet = {ctor: 'Tablet'};
+var _debois$elm_mdl$Material_Grid$Desktop = {ctor: 'Desktop'};
+var _debois$elm_mdl$Material_Grid$All = {ctor: 'All'};
+var _debois$elm_mdl$Material_Grid$Cell = function (a) {
+	return {ctor: 'Cell', _0: a};
+};
+var _debois$elm_mdl$Material_Grid$cell = F2(
+	function (styling, elms) {
+		return _debois$elm_mdl$Material_Grid$Cell(
+			A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-cell'),
+					_1: styling
+				},
+				elms));
+	});
+var _debois$elm_mdl$Material_Grid$Bottom = {ctor: 'Bottom'};
+var _debois$elm_mdl$Material_Grid$Middle = {ctor: 'Middle'};
+var _debois$elm_mdl$Material_Grid$Top = {ctor: 'Top'};
+
+var _debois$elm_mdl$Material_Table$defaultCell = {numeric: false};
+var _debois$elm_mdl$Material_Table$td = F2(
+	function (options, html) {
+		var _p0 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultCell, options);
+		var summary = _p0;
+		var config = _p0.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$td,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.numeric,
+					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$sorted = function (order) {
+	return _debois$elm_mdl$Material_Options_Internal$option(
+		function (self) {
+			return _elm_lang$core$Native_Utils.update(
+				self,
+				{
+					sorted: _elm_lang$core$Maybe$Just(order)
+				});
+		});
+};
+var _debois$elm_mdl$Material_Table$numeric = _debois$elm_mdl$Material_Options_Internal$option(
+	function (self) {
+		return _elm_lang$core$Native_Utils.update(
+			self,
+			{numeric: true});
+	});
+var _debois$elm_mdl$Material_Table$defaultHeader = {numeric: false, sorted: _elm_lang$core$Maybe$Nothing};
+var _debois$elm_mdl$Material_Table$th = F2(
+	function (options, html) {
+		var _p1 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultHeader, options);
+		var summary = _p1;
+		var config = _p1.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$th,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.numeric,
+					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
+				_1: {
+					ctor: '::',
+					_0: function () {
+						var _p2 = config.sorted;
+						if (_p2.ctor === 'Just') {
+							if (_p2._0.ctor === 'Ascending') {
+								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-ascending');
+							} else {
+								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-descending');
+							}
+						} else {
+							return _debois$elm_mdl$Material_Options$nop;
+						}
+					}(),
+					_1: {ctor: '[]'}
+				}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$selected = _debois$elm_mdl$Material_Options_Internal$option(
+	function (self) {
+		return _elm_lang$core$Native_Utils.update(
+			self,
+			{selected: true});
+	});
+var _debois$elm_mdl$Material_Table$defaultRow = {selected: false};
+var _debois$elm_mdl$Material_Table$tr = F2(
+	function (options, html) {
+		var _p3 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultRow, options);
+		var summary = _p3;
+		var config = _p3.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tr,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.selected,
+					_debois$elm_mdl$Material_Options$cs('is-selected')),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$tfoot = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tfoot,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$tbody = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tbody,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$thead = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$thead,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$table = F2(
+	function (options, nodes) {
+		return A3(
+			_debois$elm_mdl$Material_Options$styled,
+			_elm_lang$html$Html$table,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-data-table'),
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-js-data-table'),
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Options$cs('is-upgraded'),
+						_1: options
+					}
+				}
+			},
+			nodes);
+	});
+var _debois$elm_mdl$Material_Table$Row = function (a) {
+	return {selected: a};
+};
+var _debois$elm_mdl$Material_Table$Header = F2(
+	function (a, b) {
+		return {numeric: a, sorted: b};
+	});
+var _debois$elm_mdl$Material_Table$Cell = function (a) {
+	return {numeric: a};
+};
+var _debois$elm_mdl$Material_Table$Descending = {ctor: 'Descending'};
+var _debois$elm_mdl$Material_Table$descending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Descending);
+var _debois$elm_mdl$Material_Table$Ascending = {ctor: 'Ascending'};
+var _debois$elm_mdl$Material_Table$ascending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Ascending);
+
+var _ak1211$tractor$AnalyticsPage_View$viewTable = F2(
+	function (headlines, rows) {
+		return A2(
+			_debois$elm_mdl$Material_Table$table,
+			{
+				ctor: '::',
+				_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '0 auto'),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Table$thead,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Table$tr,
+							{ctor: '[]'},
+							A2(
+								_elm_lang$core$List$map,
+								function (a) {
+									return A2(
+										_debois$elm_mdl$Material_Table$th,
+										{ctor: '[]'},
+										{
+											ctor: '::',
+											_0: a,
+											_1: {ctor: '[]'}
+										});
+								},
+								headlines)),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Table$tbody,
+						{ctor: '[]'},
+						rows),
+					_1: {ctor: '[]'}
+				}
+			});
+	});
+var _ak1211$tractor$AnalyticsPage_View$viewCell = _elm_lang$core$Maybe$withDefault('Not Available');
+var _ak1211$tractor$AnalyticsPage_View$tableOhlcv = function (data) {
+	var row = function (item) {
+		return A2(
+			_debois$elm_mdl$Material_Table$tr,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Table$td,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Table$numeric,
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(item.at),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Table$td,
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Table$numeric,
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(
+								_ak1211$tractor$AnalyticsPage_View$viewCell(
+									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.open))),
+							_1: {ctor: '[]'}
+						}),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Table$td,
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Table$numeric,
+								_1: {ctor: '[]'}
+							},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text(
+									_ak1211$tractor$AnalyticsPage_View$viewCell(
+										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.high))),
+								_1: {ctor: '[]'}
+							}),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_debois$elm_mdl$Material_Table$td,
+								{
+									ctor: '::',
+									_0: _debois$elm_mdl$Material_Table$numeric,
+									_1: {ctor: '[]'}
+								},
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html$text(
+										_ak1211$tractor$AnalyticsPage_View$viewCell(
+											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.low))),
+									_1: {ctor: '[]'}
+								}),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_debois$elm_mdl$Material_Table$td,
+									{
+										ctor: '::',
+										_0: _debois$elm_mdl$Material_Table$numeric,
+										_1: {ctor: '[]'}
+									},
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html$text(
+											_ak1211$tractor$AnalyticsPage_View$viewCell(
+												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.close))),
+										_1: {ctor: '[]'}
+									}),
+								_1: {
+									ctor: '::',
+									_0: A2(
+										_debois$elm_mdl$Material_Table$td,
+										{
+											ctor: '::',
+											_0: _debois$elm_mdl$Material_Table$numeric,
+											_1: {ctor: '[]'}
+										},
+										{
+											ctor: '::',
+											_0: _elm_lang$html$Html$text(
+												_elm_lang$core$Basics$toString(item.volume)),
+											_1: {ctor: '[]'}
+										}),
+									_1: {
+										ctor: '::',
+										_0: A2(
+											_debois$elm_mdl$Material_Table$td,
+											{ctor: '[]'},
+											{
+												ctor: '::',
+												_0: _elm_lang$html$Html$text(
+													_ak1211$tractor$AnalyticsPage_View$viewCell(item.source)),
+												_1: {ctor: '[]'}
+											}),
+										_1: {ctor: '[]'}
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+	};
+	var headlines = {
+		ctor: '::',
+		_0: _elm_lang$html$Html$text('時間'),
+		_1: {
+			ctor: '::',
+			_0: _elm_lang$html$Html$text('始値'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('高値'),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('安値'),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('終値'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('出来高'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('入手元'),
+								_1: {ctor: '[]'}
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+	return A2(
+		_ak1211$tractor$AnalyticsPage_View$viewTable,
+		headlines,
+		A2(_elm_lang$core$List$map, row, data));
+};
+var _ak1211$tractor$AnalyticsPage_View$listView = function (model) {
+	var hs = A2(
+		_elm_lang$core$Maybe$withDefault,
+		{ctor: '[]'},
+		A2(
+			_elm_lang$core$Maybe$map,
+			function (q) {
+				return q.histories;
+			},
+			model.quotes));
+	return A2(
+		_debois$elm_mdl$Material_Grid$grid,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_debois$elm_mdl$Material_Grid$cell,
+				{
+					ctor: '::',
+					_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _ak1211$tractor$AnalyticsPage_View$tableOhlcv(hs),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		});
+};
+var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
+	var width = '500px';
+	var marketCode = A2(
+		_elm_lang$core$Maybe$withDefault,
+		'Not Available',
+		A2(
+			_elm_lang$core$Maybe$map,
+			function (q) {
+				return q.marketCode;
+			},
+			model.quotes));
+	var contents = A2(
+		_elm_lang$html$Html$dl,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$dt,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('コード'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$dd,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(marketCode),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			}
+		});
+	return A2(
+		_debois$elm_mdl$Material_Grid$grid,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_debois$elm_mdl$Material_Grid$cell,
+				{
+					ctor: '::',
+					_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$p,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$style(
+								{
+									ctor: '::',
+									_0: {ctor: '_Tuple2', _0: 'width', _1: width},
+									_1: {
+										ctor: '::',
+										_0: {ctor: '_Tuple2', _0: 'margin', _1: '0 auto'},
+										_1: {ctor: '[]'}
+									}
+								}),
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: contents,
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		});
+};
+var _ak1211$tractor$AnalyticsPage_View$view = F2(
+	function (model, marketCode) {
+		return A6(
+			_debois$elm_mdl$Material_Tabs$render,
+			_ak1211$tractor$AnalyticsPage_Msg$Mdl,
+			{
+				ctor: '::',
+				_0: 0,
+				_1: {ctor: '[]'}
+			},
+			model.mdl,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Tabs$ripple,
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Tabs$onSelectTab(_ak1211$tractor$AnalyticsPage_Msg$SelectTab),
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Tabs$activeTab(model.tab),
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Tabs$label,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Options$center,
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Icon$i('insert_chart_outlined'),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_debois$elm_mdl$Material_Options$span,
+								{
+									ctor: '::',
+									_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
+									_1: {ctor: '[]'}
+								},
+								{ctor: '[]'}),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('summary'),
+								_1: {ctor: '[]'}
+							}
+						}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Tabs$label,
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Options$center,
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Icon$i('notes'),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_debois$elm_mdl$Material_Options$span,
+									{
+										ctor: '::',
+										_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
+										_1: {ctor: '[]'}
+									},
+									{ctor: '[]'}),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html$text('histories'),
+									_1: {ctor: '[]'}
+								}
+							}
+						}),
+					_1: {ctor: '[]'}
+				}
+			},
+			{
+				ctor: '::',
+				_0: function () {
+					var _p0 = model.tab;
+					if (_p0 === 1) {
+						return _ak1211$tractor$AnalyticsPage_View$listView(model);
+					} else {
+						return _ak1211$tractor$AnalyticsPage_View$summaryView(model);
+					}
+				}(),
+				_1: {ctor: '[]'}
+			});
+	});
+
+var _elm_lang$dom$Dom$blur = _elm_lang$dom$Native_Dom.blur;
+var _elm_lang$dom$Dom$focus = _elm_lang$dom$Native_Dom.focus;
+var _elm_lang$dom$Dom$NotFound = function (a) {
+	return {ctor: 'NotFound', _0: a};
+};
+
+var _elm_lang$dom$Dom_Size$width = _elm_lang$dom$Native_Dom.width;
+var _elm_lang$dom$Dom_Size$height = _elm_lang$dom$Native_Dom.height;
+var _elm_lang$dom$Dom_Size$VisibleContentWithBordersAndMargins = {ctor: 'VisibleContentWithBordersAndMargins'};
+var _elm_lang$dom$Dom_Size$VisibleContentWithBorders = {ctor: 'VisibleContentWithBorders'};
+var _elm_lang$dom$Dom_Size$VisibleContent = {ctor: 'VisibleContent'};
+var _elm_lang$dom$Dom_Size$Content = {ctor: 'Content'};
+
+var _elm_lang$dom$Dom_Scroll$toX = _elm_lang$dom$Native_Dom.setScrollLeft;
+var _elm_lang$dom$Dom_Scroll$x = _elm_lang$dom$Native_Dom.getScrollLeft;
+var _elm_lang$dom$Dom_Scroll$toRight = _elm_lang$dom$Native_Dom.toRight;
+var _elm_lang$dom$Dom_Scroll$toLeft = function (id) {
+	return A2(_elm_lang$dom$Dom_Scroll$toX, id, 0);
+};
+var _elm_lang$dom$Dom_Scroll$toY = _elm_lang$dom$Native_Dom.setScrollTop;
+var _elm_lang$dom$Dom_Scroll$y = _elm_lang$dom$Native_Dom.getScrollTop;
+var _elm_lang$dom$Dom_Scroll$toBottom = _elm_lang$dom$Native_Dom.toBottom;
+var _elm_lang$dom$Dom_Scroll$toTop = function (id) {
+	return A2(_elm_lang$dom$Dom_Scroll$toY, id, 0);
+};
+
+var _ak1211$tractor$PortfolioPage_Model$initialModel = {accessToken: _elm_lang$core$Maybe$Nothing, portfolios: _elm_lang$core$Maybe$Nothing, mdl: _debois$elm_mdl$Material$model};
+var _ak1211$tractor$PortfolioPage_Model$Model = F3(
+	function (a, b, c) {
+		return {accessToken: a, portfolios: b, mdl: c};
+	});
+
 var _elm_lang$navigation$Native_Navigation = function() {
 
 
@@ -16862,7 +17716,7 @@ var _ak1211$tractor$Route$toUrlPath = function (route) {
 			if (_p0._0.ctor === 'Just') {
 				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					'/?ticker=',
+					'/?marketCode=',
 					A2(_elm_lang$core$Basics_ops['++'], _p0._0._0, '#analytics'));
 			} else {
 				return '/#analytics';
@@ -16952,7 +17806,7 @@ var _ak1211$tractor$Route$fromLocation = function (path) {
 							A2(
 								_evancz$url_parser$UrlParser_ops['<?>'],
 								_evancz$url_parser$UrlParser$s('analytics'),
-								_evancz$url_parser$UrlParser$stringParam('ticker'))),
+								_evancz$url_parser$UrlParser$stringParam('marketCode'))),
 						_1: {
 							ctor: '::',
 							_0: A2(
@@ -17217,8 +18071,8 @@ var _ak1211$tractor$UploadPage_Msg$FilesDropped = function (a) {
 };
 var _ak1211$tractor$UploadPage_Msg$DropZoneLeaved = {ctor: 'DropZoneLeaved'};
 var _ak1211$tractor$UploadPage_Msg$DropZoneEntered = {ctor: 'DropZoneEntered'};
-var _ak1211$tractor$UploadPage_Msg$DoneOAuthExchangeCode = function (a) {
-	return {ctor: 'DoneOAuthExchangeCode', _0: a};
+var _ak1211$tractor$UploadPage_Msg$ChangeAccessToken = function (a) {
+	return {ctor: 'ChangeAccessToken', _0: a};
 };
 
 var _ak1211$tractor$UploadPage_Model$initialUploadProgress = {
@@ -17257,19 +18111,14 @@ var _ak1211$tractor$Model$initialModel = function (initClientID) {
 		accessToken: _elm_lang$core$Maybe$Nothing,
 		userName: _elm_lang$core$Maybe$Nothing,
 		pageHistory: {ctor: '[]'},
-		uploadFilesContent: {ctor: '[]'},
 		serverVersion: _elm_lang$core$Maybe$Nothing,
-		portfolios: _elm_lang$core$Maybe$Nothing,
-		histories: _elm_lang$core$Maybe$Nothing,
 		webApiDocument: _elm_lang$core$Maybe$Nothing,
 		uploadPageModel: _ak1211$tractor$UploadPage_Model$initialModel,
+		portfolioPageModel: _ak1211$tractor$PortfolioPage_Model$initialModel,
+		analyticsPageModel: _ak1211$tractor$AnalyticsPage_Model$initialModel,
 		mdl: _debois$elm_mdl$Material$model
 	};
 };
-var _ak1211$tractor$Model$UploadFileContent = F3(
-	function (a, b, c) {
-		return {marketCode: a, timeFrame: b, ohlcvs: c};
-	});
 var _ak1211$tractor$Model$Model = function (a) {
 	return function (b) {
 		return function (c) {
@@ -17280,9 +18129,7 @@ var _ak1211$tractor$Model$Model = function (a) {
 							return function (h) {
 								return function (i) {
 									return function (j) {
-										return function (k) {
-											return {clientID: a, accessToken: b, userName: c, pageHistory: d, uploadFilesContent: e, serverVersion: f, portfolios: g, histories: h, webApiDocument: i, uploadPageModel: j, mdl: k};
-										};
+										return {clientID: a, accessToken: b, userName: c, pageHistory: d, serverVersion: e, webApiDocument: f, uploadPageModel: g, portfolioPageModel: h, analyticsPageModel: i, mdl: j};
 									};
 								};
 							};
@@ -17294,8 +18141,27 @@ var _ak1211$tractor$Model$Model = function (a) {
 	};
 };
 
+var _ak1211$tractor$PortfolioPage_Msg$Mdl = function (a) {
+	return {ctor: 'Mdl', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$NewUrl = function (a) {
+	return {ctor: 'NewUrl', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$UpdatePortfolios = function (a) {
+	return {ctor: 'UpdatePortfolios', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken = function (a) {
+	return {ctor: 'ChangeAccessToken', _0: a};
+};
+
 var _ak1211$tractor$Msg$Mdl = function (a) {
 	return {ctor: 'Mdl', _0: a};
+};
+var _ak1211$tractor$Msg$AnalyticsPageMsg = function (a) {
+	return {ctor: 'AnalyticsPageMsg', _0: a};
+};
+var _ak1211$tractor$Msg$PortfolioPageMsg = function (a) {
+	return {ctor: 'PortfolioPageMsg', _0: a};
 };
 var _ak1211$tractor$Msg$UploadPageMsg = function (a) {
 	return {ctor: 'UploadPageMsg', _0: a};
@@ -17309,12 +18175,6 @@ var _ak1211$tractor$Msg$UpdateWebApiDocument = function (a) {
 var _ak1211$tractor$Msg$UpdateServerVersion = function (a) {
 	return {ctor: 'UpdateServerVersion', _0: a};
 };
-var _ak1211$tractor$Msg$UpdatePortfolios = function (a) {
-	return {ctor: 'UpdatePortfolios', _0: a};
-};
-var _ak1211$tractor$Msg$UpdateAnalytics = function (a) {
-	return {ctor: 'UpdateAnalytics', _0: a};
-};
 var _ak1211$tractor$Msg$ScrollToTop = {ctor: 'ScrollToTop'};
 var _ak1211$tractor$Msg$Nop = {ctor: 'Nop'};
 var _ak1211$tractor$Msg$NewUrl = function (a) {
@@ -17323,6 +18183,66 @@ var _ak1211$tractor$Msg$NewUrl = function (a) {
 var _ak1211$tractor$Msg$DoneOAuthExchangeCode = function (a) {
 	return {ctor: 'DoneOAuthExchangeCode', _0: a};
 };
+
+var _ak1211$tractor$PortfolioPage_Update$makeAuthorizationHeader = function (token) {
+	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
+};
+var _ak1211$tractor$PortfolioPage_Update$getPortfolios = function (token) {
+	var authzHeader = _ak1211$tractor$PortfolioPage_Update$makeAuthorizationHeader(token);
+	return A2(
+		_elm_lang$http$Http$send,
+		_ak1211$tractor$PortfolioPage_Msg$UpdatePortfolios,
+		_ak1211$tractor$Generated_WebApi$getApiV1Portfolios(authzHeader));
+};
+var _ak1211$tractor$PortfolioPage_Update$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'ChangeAccessToken':
+				if (_p0._0.ctor === 'Just') {
+					var _p1 = _p0._0._0;
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								accessToken: _elm_lang$core$Maybe$Just(_p1)
+							}),
+						{
+							ctor: '::',
+							_0: _ak1211$tractor$PortfolioPage_Update$getPortfolios(_p1),
+							_1: {ctor: '[]'}
+						});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{accessToken: _elm_lang$core$Maybe$Nothing}),
+						{ctor: '[]'});
+				}
+			case 'UpdatePortfolios':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							portfolios: _elm_lang$core$Result$toMaybe(_p0._0)
+						}),
+					{ctor: '[]'});
+			case 'NewUrl':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: _elm_lang$navigation$Navigation$newUrl(_p0._0),
+						_1: {ctor: '[]'}
+					});
+			default:
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$PortfolioPage_Msg$Mdl, _p0._0, model);
+		}
+	});
 
 //import Maybe, Native.List //
 
@@ -17721,24 +18641,13 @@ var _ak1211$tractor$UploadPage_Update$update = F2(
 	function (msg, model) {
 		var _p4 = msg;
 		switch (_p4.ctor) {
-			case 'DoneOAuthExchangeCode':
-				if (_p4._0.ctor === 'Ok') {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{
-								accessToken: _elm_lang$core$Maybe$Just(_p4._0._0.accessToken)
-							}),
-						{ctor: '[]'});
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{accessToken: _elm_lang$core$Maybe$Nothing}),
-						{ctor: '[]'});
-				}
+			case 'ChangeAccessToken':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{accessToken: _p4._0}),
+					{ctor: '[]'});
 			case 'DropZoneEntered':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -18684,162 +19593,6 @@ var _debois$elm_mdl$Material_Elevation$elevations = _elm_lang$core$Array$fromLis
 		}
 	});
 
-var _debois$elm_mdl$Material_Grid$clip = F3(
-	function (lower, upper, k) {
-		return A2(
-			_elm_lang$core$Basics$max,
-			lower,
-			A2(_elm_lang$core$Basics$min, k, upper));
-	});
-var _debois$elm_mdl$Material_Grid$stretch = _debois$elm_mdl$Material_Options$cs('mdl-cell--stretch');
-var _debois$elm_mdl$Material_Grid$align = function (a) {
-	var _p0 = a;
-	switch (_p0.ctor) {
-		case 'Top':
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--top');
-		case 'Middle':
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--middle');
-		default:
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--bottom');
-	}
-};
-var _debois$elm_mdl$Material_Grid$suffix = function (device) {
-	var _p1 = device;
-	switch (_p1.ctor) {
-		case 'All':
-			return '';
-		case 'Desktop':
-			return '-desktop';
-		case 'Tablet':
-			return '-tablet';
-		default:
-			return '-phone';
-	}
-};
-var _debois$elm_mdl$Material_Grid$size = F2(
-	function (device, k) {
-		var c = function () {
-			var _p2 = device;
-			switch (_p2.ctor) {
-				case 'All':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
-				case 'Desktop':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
-				case 'Tablet':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 8, k);
-				default:
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 4, k);
-			}
-		}();
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(c),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'-col',
-						_debois$elm_mdl$Material_Grid$suffix(device)))));
-	});
-var _debois$elm_mdl$Material_Grid$offset = F2(
-	function (device, k) {
-		var c = function () {
-			var _p3 = device;
-			switch (_p3.ctor) {
-				case 'All':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
-				case 'Desktop':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
-				case 'Tablet':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 7, k);
-				default:
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 3, k);
-			}
-		}();
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(c),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'-offset',
-						_debois$elm_mdl$Material_Grid$suffix(device)))));
-	});
-var _debois$elm_mdl$Material_Grid$hide = function (device) {
-	return _debois$elm_mdl$Material_Options$cs(
-		function () {
-			var _p4 = device;
-			if (_p4.ctor === 'All') {
-				return '';
-			} else {
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					'mdl-cell--hide-',
-					_debois$elm_mdl$Material_Grid$suffix(device));
-			}
-		}());
-};
-var _debois$elm_mdl$Material_Grid$order = F2(
-	function (device, n) {
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--order-',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(
-						A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, n)),
-					_debois$elm_mdl$Material_Grid$suffix(device))));
-	});
-var _debois$elm_mdl$Material_Grid$grid = F2(
-	function (styling, cells) {
-		return A2(
-			_debois$elm_mdl$Material_Options$div,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$cs('mdl-grid'),
-				_1: styling
-			},
-			A2(
-				_elm_lang$core$List$map,
-				function (_p5) {
-					var _p6 = _p5;
-					return _p6._0;
-				},
-				cells));
-	});
-var _debois$elm_mdl$Material_Grid$maxWidth = function (w) {
-	return A2(_debois$elm_mdl$Material_Options$css, 'max-width', w);
-};
-var _debois$elm_mdl$Material_Grid$noSpacing = _debois$elm_mdl$Material_Options$cs('mdl-grid--no-spacing');
-var _debois$elm_mdl$Material_Grid$Phone = {ctor: 'Phone'};
-var _debois$elm_mdl$Material_Grid$Tablet = {ctor: 'Tablet'};
-var _debois$elm_mdl$Material_Grid$Desktop = {ctor: 'Desktop'};
-var _debois$elm_mdl$Material_Grid$All = {ctor: 'All'};
-var _debois$elm_mdl$Material_Grid$Cell = function (a) {
-	return {ctor: 'Cell', _0: a};
-};
-var _debois$elm_mdl$Material_Grid$cell = F2(
-	function (styling, elms) {
-		return _debois$elm_mdl$Material_Grid$Cell(
-			A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-cell'),
-					_1: styling
-				},
-				elms));
-	});
-var _debois$elm_mdl$Material_Grid$Bottom = {ctor: 'Bottom'};
-var _debois$elm_mdl$Material_Grid$Middle = {ctor: 'Middle'};
-var _debois$elm_mdl$Material_Grid$Top = {ctor: 'Top'};
-
 var _debois$elm_mdl$Material_Scheme$scheme = F2(
 	function (primary, accent) {
 		return A2(
@@ -18902,183 +19655,6 @@ var _debois$elm_mdl$Material_Scheme$top = function (content) {
 	return A3(_debois$elm_mdl$Material_Scheme$topWithScheme, _debois$elm_mdl$Material_Color$Grey, _debois$elm_mdl$Material_Color$Grey, content);
 };
 
-var _debois$elm_mdl$Material_Table$defaultCell = {numeric: false};
-var _debois$elm_mdl$Material_Table$td = F2(
-	function (options, html) {
-		var _p0 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultCell, options);
-		var summary = _p0;
-		var config = _p0.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$td,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.numeric,
-					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
-				_1: {ctor: '[]'}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$sorted = function (order) {
-	return _debois$elm_mdl$Material_Options_Internal$option(
-		function (self) {
-			return _elm_lang$core$Native_Utils.update(
-				self,
-				{
-					sorted: _elm_lang$core$Maybe$Just(order)
-				});
-		});
-};
-var _debois$elm_mdl$Material_Table$numeric = _debois$elm_mdl$Material_Options_Internal$option(
-	function (self) {
-		return _elm_lang$core$Native_Utils.update(
-			self,
-			{numeric: true});
-	});
-var _debois$elm_mdl$Material_Table$defaultHeader = {numeric: false, sorted: _elm_lang$core$Maybe$Nothing};
-var _debois$elm_mdl$Material_Table$th = F2(
-	function (options, html) {
-		var _p1 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultHeader, options);
-		var summary = _p1;
-		var config = _p1.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$th,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.numeric,
-					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
-				_1: {
-					ctor: '::',
-					_0: function () {
-						var _p2 = config.sorted;
-						if (_p2.ctor === 'Just') {
-							if (_p2._0.ctor === 'Ascending') {
-								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-ascending');
-							} else {
-								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-descending');
-							}
-						} else {
-							return _debois$elm_mdl$Material_Options$nop;
-						}
-					}(),
-					_1: {ctor: '[]'}
-				}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$selected = _debois$elm_mdl$Material_Options_Internal$option(
-	function (self) {
-		return _elm_lang$core$Native_Utils.update(
-			self,
-			{selected: true});
-	});
-var _debois$elm_mdl$Material_Table$defaultRow = {selected: false};
-var _debois$elm_mdl$Material_Table$tr = F2(
-	function (options, html) {
-		var _p3 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultRow, options);
-		var summary = _p3;
-		var config = _p3.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tr,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.selected,
-					_debois$elm_mdl$Material_Options$cs('is-selected')),
-				_1: {ctor: '[]'}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$tfoot = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tfoot,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$tbody = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tbody,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$thead = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$thead,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$table = F2(
-	function (options, nodes) {
-		return A3(
-			_debois$elm_mdl$Material_Options$styled,
-			_elm_lang$html$Html$table,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$cs('mdl-data-table'),
-				_1: {
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-js-data-table'),
-					_1: {
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Options$cs('is-upgraded'),
-						_1: options
-					}
-				}
-			},
-			nodes);
-	});
-var _debois$elm_mdl$Material_Table$Row = function (a) {
-	return {selected: a};
-};
-var _debois$elm_mdl$Material_Table$Header = F2(
-	function (a, b) {
-		return {numeric: a, sorted: b};
-	});
-var _debois$elm_mdl$Material_Table$Cell = function (a) {
-	return {numeric: a};
-};
-var _debois$elm_mdl$Material_Table$Descending = {ctor: 'Descending'};
-var _debois$elm_mdl$Material_Table$descending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Descending);
-var _debois$elm_mdl$Material_Table$Ascending = {ctor: 'Ascending'};
-var _debois$elm_mdl$Material_Table$ascending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Ascending);
-
 var _debois$elm_mdl$Material_Typography$uppercase = _debois$elm_mdl$Material_Options$cs('mdl-typography--text-uppercase');
 var _debois$elm_mdl$Material_Typography$lowercase = _debois$elm_mdl$Material_Options$cs('mdl-typography--text-lowercase');
 var _debois$elm_mdl$Material_Typography$capitalize = _debois$elm_mdl$Material_Options$cs('mdl-typography--text-capitalize');
@@ -19106,6 +19682,161 @@ var _debois$elm_mdl$Material_Typography$display4 = _debois$elm_mdl$Material_Opti
 var _debois$elm_mdl$Material_Typography$display3 = _debois$elm_mdl$Material_Options$cs('mdl-typography--display-3-color-contrast');
 var _debois$elm_mdl$Material_Typography$display2 = _debois$elm_mdl$Material_Options$cs('mdl-typography--display-2-color-contrast');
 var _debois$elm_mdl$Material_Typography$display1 = _debois$elm_mdl$Material_Options$cs('mdl-typography--display-1-color-contrast');
+
+var _ak1211$tractor$PortfolioPage_View$viewTable = F3(
+	function (headlines, viewRow, data) {
+		return A2(
+			_debois$elm_mdl$Material_Table$table,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Table$thead,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Table$tr,
+							{ctor: '[]'},
+							A2(
+								_elm_lang$core$List$map,
+								function (a) {
+									return A2(
+										_debois$elm_mdl$Material_Table$th,
+										{ctor: '[]'},
+										{
+											ctor: '::',
+											_0: a,
+											_1: {ctor: '[]'}
+										});
+								},
+								headlines)),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Table$tbody,
+						{ctor: '[]'},
+						A2(_elm_lang$core$List$map, viewRow, data)),
+					_1: {ctor: '[]'}
+				}
+			});
+	});
+var _ak1211$tractor$PortfolioPage_View$viewCell = _elm_lang$core$Maybe$withDefault('Not Available');
+var _ak1211$tractor$PortfolioPage_View$pinkCard = function (contents) {
+	return A2(
+		_debois$elm_mdl$Material_Card$view,
+		{
+			ctor: '::',
+			_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '200px'),
+			_1: {
+				ctor: '::',
+				_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '10px'),
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Color$background(
+						A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Pink, _debois$elm_mdl$Material_Color$S500)),
+					_1: {ctor: '[]'}
+				}
+			}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_debois$elm_mdl$Material_Card$text,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Color$text(_debois$elm_mdl$Material_Color$white),
+					_1: {ctor: '[]'}
+				},
+				contents),
+			_1: {ctor: '[]'}
+		});
+};
+var _ak1211$tractor$PortfolioPage_View$view = function (model) {
+	var headlines = {
+		ctor: '::',
+		_0: _elm_lang$html$Html$text('証券コード'),
+		_1: {
+			ctor: '::',
+			_0: _elm_lang$html$Html$text('銘柄名'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('更新時間'),
+				_1: {ctor: '[]'}
+			}
+		}
+	};
+	var viewRow = function (item) {
+		return A2(
+			_debois$elm_mdl$Material_Table$tr,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$onClick(
+					_ak1211$tractor$PortfolioPage_Msg$NewUrl(
+						_ak1211$tractor$Route$toUrlPath(
+							_ak1211$tractor$Route$Analytics(
+								_elm_lang$core$Maybe$Just(item.code))))),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Table$td,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Table$numeric,
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(item.code),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Table$td,
+						{ctor: '[]'},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(
+								_ak1211$tractor$PortfolioPage_View$viewCell(item.caption)),
+							_1: {ctor: '[]'}
+						}),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Table$td,
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Table$numeric,
+								_1: {ctor: '[]'}
+							},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text(
+									_ak1211$tractor$PortfolioPage_View$viewCell(item.updateAt)),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}
+				}
+			});
+	};
+	var _p0 = model.portfolios;
+	if (_p0.ctor === 'Just') {
+		return A3(_ak1211$tractor$PortfolioPage_View$viewTable, headlines, viewRow, _p0._0);
+	} else {
+		return _ak1211$tractor$PortfolioPage_View$pinkCard(
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('No datasets available'),
+				_1: {ctor: '[]'}
+			});
+	}
+};
 
 var _debois$elm_mdl$Material_Progress$percentage = function (p) {
 	return A2(
@@ -19769,196 +20500,6 @@ var _ak1211$tractor$UploadPage_View$view = function (model) {
 		});
 };
 
-var _ak1211$tractor$View$viewTable = F3(
-	function (headlines, viewRow, data) {
-		return A2(
-			_debois$elm_mdl$Material_Table$table,
-			{ctor: '[]'},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Table$thead,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: A2(
-							_debois$elm_mdl$Material_Table$tr,
-							{ctor: '[]'},
-							A2(
-								_elm_lang$core$List$map,
-								function (a) {
-									return A2(
-										_debois$elm_mdl$Material_Table$th,
-										{ctor: '[]'},
-										{
-											ctor: '::',
-											_0: a,
-											_1: {ctor: '[]'}
-										});
-								},
-								headlines)),
-						_1: {ctor: '[]'}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_debois$elm_mdl$Material_Table$tbody,
-						{ctor: '[]'},
-						A2(_elm_lang$core$List$map, viewRow, data)),
-					_1: {ctor: '[]'}
-				}
-			});
-	});
-var _ak1211$tractor$View$viewCell = _elm_lang$core$Maybe$withDefault('Not Available');
-var _ak1211$tractor$View$tableOhlcv = function (data) {
-	var headlines = {
-		ctor: '::',
-		_0: _elm_lang$html$Html$text('時間'),
-		_1: {
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('始値'),
-			_1: {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text('高値'),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$html$Html$text('安値'),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html$text('終値'),
-						_1: {
-							ctor: '::',
-							_0: _elm_lang$html$Html$text('出来高'),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$html$Html$text('入手元'),
-								_1: {ctor: '[]'}
-							}
-						}
-					}
-				}
-			}
-		}
-	};
-	var viewRow = function (item) {
-		return A2(
-			_debois$elm_mdl$Material_Table$tr,
-			{ctor: '[]'},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Table$td,
-					{
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Table$numeric,
-						_1: {ctor: '[]'}
-					},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(item.at),
-						_1: {ctor: '[]'}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_debois$elm_mdl$Material_Table$td,
-						{
-							ctor: '::',
-							_0: _debois$elm_mdl$Material_Table$numeric,
-							_1: {ctor: '[]'}
-						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(
-								_ak1211$tractor$View$viewCell(
-									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.open))),
-							_1: {ctor: '[]'}
-						}),
-					_1: {
-						ctor: '::',
-						_0: A2(
-							_debois$elm_mdl$Material_Table$td,
-							{
-								ctor: '::',
-								_0: _debois$elm_mdl$Material_Table$numeric,
-								_1: {ctor: '[]'}
-							},
-							{
-								ctor: '::',
-								_0: _elm_lang$html$Html$text(
-									_ak1211$tractor$View$viewCell(
-										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.high))),
-								_1: {ctor: '[]'}
-							}),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_debois$elm_mdl$Material_Table$td,
-								{
-									ctor: '::',
-									_0: _debois$elm_mdl$Material_Table$numeric,
-									_1: {ctor: '[]'}
-								},
-								{
-									ctor: '::',
-									_0: _elm_lang$html$Html$text(
-										_ak1211$tractor$View$viewCell(
-											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.low))),
-									_1: {ctor: '[]'}
-								}),
-							_1: {
-								ctor: '::',
-								_0: A2(
-									_debois$elm_mdl$Material_Table$td,
-									{
-										ctor: '::',
-										_0: _debois$elm_mdl$Material_Table$numeric,
-										_1: {ctor: '[]'}
-									},
-									{
-										ctor: '::',
-										_0: _elm_lang$html$Html$text(
-											_ak1211$tractor$View$viewCell(
-												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.close))),
-										_1: {ctor: '[]'}
-									}),
-								_1: {
-									ctor: '::',
-									_0: A2(
-										_debois$elm_mdl$Material_Table$td,
-										{
-											ctor: '::',
-											_0: _debois$elm_mdl$Material_Table$numeric,
-											_1: {ctor: '[]'}
-										},
-										{
-											ctor: '::',
-											_0: _elm_lang$html$Html$text(
-												_elm_lang$core$Basics$toString(item.volume)),
-											_1: {ctor: '[]'}
-										}),
-									_1: {
-										ctor: '::',
-										_0: A2(
-											_debois$elm_mdl$Material_Table$td,
-											{ctor: '[]'},
-											{
-												ctor: '::',
-												_0: _elm_lang$html$Html$text(
-													_ak1211$tractor$View$viewCell(item.source)),
-												_1: {ctor: '[]'}
-											}),
-										_1: {ctor: '[]'}
-									}
-								}
-							}
-						}
-					}
-				}
-			});
-	};
-	return A3(_ak1211$tractor$View$viewTable, headlines, viewRow, data);
-};
 var _ak1211$tractor$View$viewDashboard = function (model) {
 	var viewNA = _elm_lang$html$Html$text('No datasets available');
 	var viewRevision = function (v) {
@@ -20229,7 +20770,7 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 				},
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html$text('Maido '),
+					_0: _elm_lang$html$Html$text('Maido'),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -20835,102 +21376,6 @@ var _ak1211$tractor$View$pinkCard = function (contents) {
 			_1: {ctor: '[]'}
 		});
 };
-var _ak1211$tractor$View$viewPortfolio = function (model) {
-	var headlines = {
-		ctor: '::',
-		_0: _elm_lang$html$Html$text('証券コード'),
-		_1: {
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('銘柄名'),
-			_1: {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text('更新時間'),
-				_1: {ctor: '[]'}
-			}
-		}
-	};
-	var viewRow = function (item) {
-		return A2(
-			_debois$elm_mdl$Material_Table$tr,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$onClick(
-					_ak1211$tractor$Msg$NewUrl(
-						_ak1211$tractor$Route$toUrlPath(
-							_ak1211$tractor$Route$Analytics(
-								_elm_lang$core$Maybe$Just(item.code))))),
-				_1: {ctor: '[]'}
-			},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Table$td,
-					{
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Table$numeric,
-						_1: {ctor: '[]'}
-					},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(item.code),
-						_1: {ctor: '[]'}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_debois$elm_mdl$Material_Table$td,
-						{ctor: '[]'},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(
-								_ak1211$tractor$View$viewCell(item.caption)),
-							_1: {ctor: '[]'}
-						}),
-					_1: {
-						ctor: '::',
-						_0: A2(
-							_debois$elm_mdl$Material_Table$td,
-							{
-								ctor: '::',
-								_0: _debois$elm_mdl$Material_Table$numeric,
-								_1: {ctor: '[]'}
-							},
-							{
-								ctor: '::',
-								_0: _elm_lang$html$Html$text(
-									_ak1211$tractor$View$viewCell(item.updateAt)),
-								_1: {ctor: '[]'}
-							}),
-						_1: {ctor: '[]'}
-					}
-				}
-			});
-	};
-	var _p5 = model.portfolios;
-	if (_p5.ctor === 'Just') {
-		return A3(_ak1211$tractor$View$viewTable, headlines, viewRow, _p5._0);
-	} else {
-		return _ak1211$tractor$View$pinkCard(
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html$text('No datasets available'),
-				_1: {ctor: '[]'}
-			});
-	}
-};
-var _ak1211$tractor$View$viewAnalytics = F2(
-	function (model, ticker) {
-		var def = _ak1211$tractor$View$pinkCard(
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html$text('No datasets available'),
-				_1: {ctor: '[]'}
-			});
-		return A2(
-			_elm_lang$core$Maybe$withDefault,
-			def,
-			A2(_elm_lang$core$Maybe$map, _ak1211$tractor$View$tableOhlcv, model.histories));
-	});
 var _ak1211$tractor$View$viewReports = function (model) {
 	return _ak1211$tractor$View$pinkCard(
 		{
@@ -20940,8 +21385,8 @@ var _ak1211$tractor$View$viewReports = function (model) {
 		});
 };
 var _ak1211$tractor$View$viewApiDocument = function (model) {
-	var _p6 = model.webApiDocument;
-	if (_p6.ctor === 'Just') {
+	var _p5 = model.webApiDocument;
+	if (_p5.ctor === 'Just') {
 		var attributes = {
 			ctor: '::',
 			_0: _elm_lang$html$Html_Attributes$class('content'),
@@ -20956,7 +21401,7 @@ var _ak1211$tractor$View$viewApiDocument = function (model) {
 				_1: {ctor: '[]'}
 			}
 		};
-		return A2(_evancz$elm_markdown$Markdown$toHtml, attributes, _p6._0);
+		return A2(_evancz$elm_markdown$Markdown$toHtml, attributes, _p5._0);
 	} else {
 		return _ak1211$tractor$View$pinkCard(
 			{
@@ -20971,8 +21416,8 @@ var _ak1211$tractor$View$viewBody = function (model) {
 		_elm_lang$core$Maybe$withDefault,
 		_ak1211$tractor$Route$Dashboard,
 		_elm_lang$core$List$head(model.pageHistory));
-	var _p7 = page;
-	switch (_p7.ctor) {
+	var _p6 = page;
+	switch (_p6.ctor) {
 		case 'Home':
 			return _ak1211$tractor$View$viewDashboard(model);
 		case 'Dashboard':
@@ -20983,9 +21428,15 @@ var _ak1211$tractor$View$viewBody = function (model) {
 				_ak1211$tractor$Msg$UploadPageMsg,
 				_ak1211$tractor$UploadPage_View$view(model.uploadPageModel));
 		case 'Portfolio':
-			return _ak1211$tractor$View$viewPortfolio(model);
+			return A2(
+				_elm_lang$html$Html$map,
+				_ak1211$tractor$Msg$PortfolioPageMsg,
+				_ak1211$tractor$PortfolioPage_View$view(model.portfolioPageModel));
 		case 'Analytics':
-			return A2(_ak1211$tractor$View$viewAnalytics, model, _p7._0);
+			return A2(
+				_elm_lang$html$Html$map,
+				_ak1211$tractor$Msg$AnalyticsPageMsg,
+				A2(_ak1211$tractor$AnalyticsPage_View$view, model.analyticsPageModel, _p6._0));
 		case 'Reports':
 			return _ak1211$tractor$View$viewReports(model);
 		case 'AccBalance':
@@ -21154,25 +21605,6 @@ var _ak1211$tractor$Main$subscriptions = function (model) {
 var _ak1211$tractor$Main$makeAuthorizationHeader = function (token) {
 	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
 };
-var _ak1211$tractor$Main$getPortfolios = function (token) {
-	var authzHeader = _ak1211$tractor$Main$makeAuthorizationHeader(token);
-	return A2(
-		_elm_lang$http$Http$send,
-		_ak1211$tractor$Msg$UpdatePortfolios,
-		_ak1211$tractor$Generated_WebApi$getApiV1Portfolios(authzHeader));
-};
-var _ak1211$tractor$Main$getHistories = F2(
-	function (token, marketCode) {
-		var authzHeader = _ak1211$tractor$Main$makeAuthorizationHeader(token);
-		return A2(
-			_elm_lang$http$Http$send,
-			_ak1211$tractor$Msg$UpdateAnalytics,
-			A3(
-				_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode,
-				authzHeader,
-				marketCode,
-				_elm_lang$core$Maybe$Just('1d')));
-	});
 var _ak1211$tractor$Main$getServerVersion = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdateServerVersion, _ak1211$tractor$Generated_WebApi$getApiV1Version);
 var _ak1211$tractor$Main$exchangeOAuthCodeForToken = function (code) {
 	return A2(
@@ -21236,18 +21668,15 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 	function (model, location) {
 		var _p2 = _ak1211$tractor$Route$fromLocation(location);
 		if (_p2.ctor === 'Just') {
-			if ((_p2._0.ctor === 'Analytics') && (_p2._0._0.ctor === 'Just')) {
-				var _p4 = _p2._0._0._0;
-				var history = function () {
-					var _p3 = model.accessToken;
-					if (_p3.ctor === 'Just') {
-						return A2(_ak1211$tractor$Main$getHistories, _p3._0, _p4);
-					} else {
-						return _elm_lang$core$Platform_Cmd$none;
-					}
-				}();
-				var next = _ak1211$tractor$Route$Analytics(
-					_elm_lang$core$Maybe$Just(_p4));
+			if (_p2._0.ctor === 'Analytics') {
+				var _p3 = _p2._0._0;
+				var msg = _ak1211$tractor$Msg$AnalyticsPageMsg(
+					_ak1211$tractor$AnalyticsPage_Msg$ChangeMarketCode(_p3));
+				var cmd = A2(
+					_elm_lang$core$Task$perform,
+					_elm_lang$core$Basics$identity,
+					_elm_lang$core$Task$succeed(msg));
+				var next = _ak1211$tractor$Route$Analytics(_p3);
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -21257,7 +21686,7 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 						}),
 					{
 						ctor: '::',
-						_0: history,
+						_0: cmd,
 						_1: {ctor: '[]'}
 					});
 			} else {
@@ -21286,69 +21715,112 @@ var _ak1211$tractor$Main$urlUpdate = F2(
 	});
 var _ak1211$tractor$Main$update = F2(
 	function (msg, model) {
-		var _p5 = msg;
-		switch (_p5.ctor) {
+		var _p4 = msg;
+		switch (_p4.ctor) {
 			case 'DoneOAuthExchangeCode':
-				var _p9 = _p5._0;
-				var _p6 = A2(
-					_ak1211$tractor$UploadPage_Update$update,
-					_ak1211$tractor$UploadPage_Msg$DoneOAuthExchangeCode(_p9),
-					model.uploadPageModel);
-				var newModel = _p6._0;
-				var newCmd = _p6._1;
-				var _p7 = _p9;
-				if (_p7.ctor === 'Ok') {
-					var _p8 = _p7._0;
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
+				var _p5 = function () {
+					var _p6 = _p4._0;
+					if (_p6.ctor === 'Ok') {
+						var _p7 = _p6._0;
+						var m = _elm_lang$core$Native_Utils.update(
 							model,
 							{
-								accessToken: _elm_lang$core$Maybe$Just(_p8.accessToken),
-								userName: _elm_lang$core$Maybe$Just(_p8.userName),
-								uploadPageModel: newModel
-							}),
-						{
-							ctor: '::',
-							_0: _ak1211$tractor$Main$getPortfolios(_p8.accessToken),
-							_1: {
-								ctor: '::',
-								_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, newCmd),
-								_1: {ctor: '[]'}
-							}
-						});
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
+								accessToken: _elm_lang$core$Maybe$Just(_p7.accessToken),
+								userName: _elm_lang$core$Maybe$Just(_p7.userName)
+							});
+						return {
+							ctor: '_Tuple2',
+							_0: m,
+							_1: _elm_lang$core$Maybe$Just(_p7.accessToken)
+						};
+					} else {
+						var m = _elm_lang$core$Native_Utils.update(
 							model,
-							{accessToken: _elm_lang$core$Maybe$Nothing, userName: _elm_lang$core$Maybe$Nothing, uploadPageModel: newModel}),
-						{
+							{accessToken: _elm_lang$core$Maybe$Nothing, userName: _elm_lang$core$Maybe$Nothing});
+						return {ctor: '_Tuple2', _0: m, _1: _elm_lang$core$Maybe$Nothing};
+					}
+				}();
+				var newModel = _p5._0;
+				var token = _p5._1;
+				var msgs = {
+					ctor: '::',
+					_0: _ak1211$tractor$Msg$UploadPageMsg(
+						_ak1211$tractor$UploadPage_Msg$ChangeAccessToken(token)),
+					_1: {
+						ctor: '::',
+						_0: _ak1211$tractor$Msg$PortfolioPageMsg(
+							_ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken(token)),
+						_1: {
 							ctor: '::',
-							_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, newCmd),
+							_0: _ak1211$tractor$Msg$AnalyticsPageMsg(
+								_ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken(token)),
 							_1: {ctor: '[]'}
-						});
-				}
+						}
+					}
+				};
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					newModel,
+					A2(
+						_elm_lang$core$List$map,
+						function (_p8) {
+							return A2(
+								_elm_lang$core$Task$perform,
+								_elm_lang$core$Basics$identity,
+								_elm_lang$core$Task$succeed(_p8));
+						},
+						msgs));
 			case 'UploadPageMsg':
-				var _p10 = A2(_ak1211$tractor$UploadPage_Update$update, _p5._0, model.uploadPageModel);
-				var newModel = _p10._0;
-				var newCmd = _p10._1;
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
+				var _p9 = A2(_ak1211$tractor$UploadPage_Update$update, _p4._0, model.uploadPageModel);
+				var newModel = _p9._0;
+				var newCmd = _p9._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
 						model,
 						{uploadPageModel: newModel}),
-					_1: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, newCmd)
-				};
+					{
+						ctor: '::',
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, newCmd),
+						_1: {ctor: '[]'}
+					});
+			case 'PortfolioPageMsg':
+				var _p10 = A2(_ak1211$tractor$PortfolioPage_Update$update, _p4._0, model.portfolioPageModel);
+				var newModel = _p10._0;
+				var newCmd = _p10._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{portfolioPageModel: newModel}),
+					{
+						ctor: '::',
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$PortfolioPageMsg, newCmd),
+						_1: {ctor: '[]'}
+					});
+			case 'AnalyticsPageMsg':
+				var _p11 = A2(_ak1211$tractor$AnalyticsPage_Update$update, _p4._0, model.analyticsPageModel);
+				var newModel = _p11._0;
+				var newCmd = _p11._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{analyticsPageModel: newModel}),
+					{
+						ctor: '::',
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$AnalyticsPageMsg, newCmd),
+						_1: {ctor: '[]'}
+					});
 			case 'Mdl':
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p5._0, model);
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p4._0, model);
 			case 'NewUrl':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					model,
 					{
 						ctor: '::',
-						_0: _elm_lang$navigation$Navigation$newUrl(_p5._0),
+						_0: _elm_lang$navigation$Navigation$newUrl(_p4._0),
 						_1: {ctor: '[]'}
 					});
 			case 'Nop':
@@ -21365,31 +21837,13 @@ var _ak1211$tractor$Main$update = F2(
 							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
 						_1: {ctor: '[]'}
 					});
-			case 'UpdateAnalytics':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							histories: _elm_lang$core$Result$toMaybe(_p5._0)
-						}),
-					{ctor: '[]'});
-			case 'UpdatePortfolios':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							portfolios: _elm_lang$core$Result$toMaybe(_p5._0)
-						}),
-					{ctor: '[]'});
 			case 'UpdateServerVersion':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							serverVersion: _elm_lang$core$Result$toMaybe(_p5._0)
+							serverVersion: _elm_lang$core$Result$toMaybe(_p4._0)
 						}),
 					{ctor: '[]'});
 			case 'UpdateWebApiDocument':
@@ -21398,11 +21852,11 @@ var _ak1211$tractor$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							webApiDocument: _elm_lang$core$Result$toMaybe(_p5._0)
+							webApiDocument: _elm_lang$core$Result$toMaybe(_p4._0)
 						}),
 					{ctor: '[]'});
 			default:
-				return A2(_ak1211$tractor$Main$urlUpdate, model, _p5._0);
+				return A2(_ak1211$tractor$Main$urlUpdate, model, _p4._0);
 		}
 	});
 var _ak1211$tractor$Main$main = A2(

@@ -28,9 +28,9 @@
 -}
 
 
-module View exposing (..)
+module View exposing (view)
 
-import Generated.WebApi as WebApi
+import AnalyticsPage.View as AnalyticsPage
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Markdown
@@ -45,12 +45,12 @@ import Material.Icon as Icon
 import Material.Layout as Layout
 import Material.Options as Options
 import Material.Scheme
-import Material.Table as Table
 import Material.Typography as Typo
 import Model exposing (Model)
 import Msg exposing (Msg)
-import UploadPage.View as UploadPage
+import PortfolioPage.View as PortfolioPage
 import Route exposing (Route)
+import UploadPage.View as UploadPage
 
 
 -- Define the dialog
@@ -256,14 +256,13 @@ viewBody model =
                 viewDashboard model
 
             Route.Upload ->
-                UploadPage.view model.uploadPageModel
-                    |> Html.map Msg.UploadPageMsg
+                UploadPage.view model.uploadPageModel |> Html.map Msg.UploadPageMsg
 
             Route.Portfolio ->
-                viewPortfolio model
+                PortfolioPage.view model.portfolioPageModel |> Html.map Msg.PortfolioPageMsg
 
-            Route.Analytics ts ->
-                viewAnalytics model ts
+            Route.Analytics marketCode ->
+                AnalyticsPage.view model.analyticsPageModel marketCode |> Html.map Msg.AnalyticsPageMsg
 
             Route.Reports ->
                 viewReports model
@@ -349,7 +348,7 @@ viewDashboard model =
             [ Options.styled
                 Html.p
                 [ Typo.title ]
-                [ Html.text "Maido " ]
+                [ Html.text "Maido" ]
             , Options.styled
                 Html.p
                 [ Typo.display1
@@ -445,97 +444,6 @@ viewDashboard model =
                     |> Maybe.withDefault viewNA
                 ]
             ]
-
-
-viewCell : Maybe String -> String
-viewCell =
-    Maybe.withDefault "Not Available"
-
-
-viewTable : List (Html m) -> (a -> Html m) -> List a -> Html m
-viewTable headlines viewRow data =
-    Table.table []
-        [ Table.thead []
-            [ Table.tr [] (List.map (\a -> Table.th [] [ a ]) headlines)
-            ]
-        , Table.tbody [] <| List.map viewRow data
-        ]
-
-
-
--- Portfolioページ
-
-
-viewPortfolio : Model -> Html Msg
-viewPortfolio model =
-    let
-        viewRow : WebApi.ApiPortfolio -> Html Msg
-        viewRow item =
-            --Table.tr [ Options.onClick <| Msg.GetHistories item.code ]
-            Table.tr
-                [ Route.Analytics (Just item.code)
-                    |> Route.toUrlPath
-                    |> Msg.NewUrl
-                    |> Options.onClick
-                ]
-                [ Table.td [ Table.numeric ] [ Html.text item.code ]
-                , Table.td [] [ Html.text <| viewCell item.caption ]
-                , Table.td [ Table.numeric ] [ Html.text <| viewCell item.updateAt ]
-                ]
-
-        headlines =
-            [ Html.text "証券コード"
-            , Html.text "銘柄名"
-            , Html.text "更新時間"
-            ]
-    in
-        case model.portfolios of
-            Just a ->
-                viewTable headlines viewRow a
-
-            Nothing ->
-                pinkCard [ Html.text "No datasets available" ]
-
-
-tableOhlcv : List WebApi.ApiOhlcv -> Html Msg
-tableOhlcv data =
-    let
-        viewRow : WebApi.ApiOhlcv -> Html Msg
-        viewRow item =
-            Table.tr []
-                [ Table.td [ Table.numeric ] [ Html.text item.at ]
-                , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.open ]
-                , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.high ]
-                , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.low ]
-                , Table.td [ Table.numeric ] [ Html.text <| viewCell <| Maybe.map toString item.close ]
-                , Table.td [ Table.numeric ] [ Html.text <| toString item.volume ]
-                , Table.td [] [ Html.text <| viewCell item.source ]
-                ]
-
-        headlines =
-            [ Html.text "時間"
-            , Html.text "始値"
-            , Html.text "高値"
-            , Html.text "安値"
-            , Html.text "終値"
-            , Html.text "出来高"
-            , Html.text "入手元"
-            ]
-    in
-        viewTable headlines viewRow data
-
-
-
--- Analyticsページ
-
-
-viewAnalytics : Model -> Maybe WebApi.MarketCode -> Html Msg
-viewAnalytics model ticker =
-    let
-        def =
-            pinkCard [ Html.text "No datasets available" ]
-    in
-        model.histories |> Maybe.map tableOhlcv |> Maybe.withDefault def
 
 
 

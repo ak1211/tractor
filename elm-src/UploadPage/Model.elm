@@ -30,8 +30,8 @@
 
 module UploadPage.Model exposing (..)
 
-import Material
 import Generated.WebApi as WebApi
+import Material
 import UploadPage.Msg as UploadPage
 
 

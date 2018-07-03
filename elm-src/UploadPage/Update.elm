@@ -44,11 +44,8 @@ import UploadPage.Msg as UploadPage
 update : UploadPage.Msg -> UploadPage.Model -> ( UploadPage.Model, Cmd UploadPage.Msg )
 update msg model =
     case msg of
-        UploadPage.DoneOAuthExchangeCode (Ok res) ->
-            { model | accessToken = Just res.accessToken } ! []
-
-        UploadPage.DoneOAuthExchangeCode (Err _) ->
-            { model | accessToken = Nothing } ! []
+        UploadPage.ChangeAccessToken newToken ->
+            { model | accessToken = newToken } ! []
 
         UploadPage.DropZoneEntered ->
             { model | inDropZone = True } ! []
@@ -240,12 +237,12 @@ toOhlcvt tf records =
         }
 
 
-makeAuthorizationHeader : String -> WebApi.AuthzValue
+makeAuthorizationHeader : WebApi.AccessToken -> WebApi.AuthzValue
 makeAuthorizationHeader token =
     "Bearer " ++ token
 
 
-putOhlcv : String -> WebApi.MarketCode -> WebApi.TimeFrame -> WebApi.ApiOhlcv -> Cmd UploadPage.Msg
+putOhlcv : WebApi.AccessToken -> WebApi.MarketCode -> WebApi.TimeFrame -> WebApi.ApiOhlcv -> Cmd UploadPage.Msg
 putOhlcv token marketCode timeFrame ohlcv =
     let
         authzHeader =

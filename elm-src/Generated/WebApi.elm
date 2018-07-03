@@ -7,6 +7,8 @@ import Http
 import String
 
 
+type alias AccessToken = String
+
 type alias TimeFrame = String
 
 type alias MarketCode = String

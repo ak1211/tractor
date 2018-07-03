@@ -28,64 +28,86 @@
 -}
 
 
-module Main exposing (..)
+module Main exposing (main)
 
+import AnalyticsPage.Msg as AnalyticsPage
+import AnalyticsPage.Update as AnalyticsPage
 import Dom.Scroll
 import Generated.WebApi as WebApi
 import Generated.WebApi exposing (ApiOhlcv)
 import Http
+import Json.Decode as Decode
+import Json.Decode.Pipeline as Decode
 import Material
 import Material.Layout as Layout
 import Maybe
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Navigation
-import Json.Decode as Decode
-import Json.Decode.Pipeline as Decode
-import UploadPage.Update as UploadPage
-import UploadPage.Msg as UploadPage
+import PortfolioPage.Msg as PortfolioPage
+import PortfolioPage.Update as PortfolioPage
 import Route exposing (QueryCode, Route)
 import Task
+import UploadPage.Msg as UploadPage
+import UploadPage.Update as UploadPage
 import View
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg.DoneOAuthExchangeCode res ->
+        Msg.DoneOAuthExchangeCode result ->
             let
-                ( newModel, newCmd ) =
-                    UploadPage.update
-                        (UploadPage.DoneOAuthExchangeCode res)
-                        model.uploadPageModel
-            in
-                case res of
-                    Ok ok ->
-                        { model
-                            | accessToken = Just ok.accessToken
-                            , userName = Just ok.userName
-                            , uploadPageModel = newModel
-                        }
-                            ! [ getPortfolios ok.accessToken
-                              , Cmd.map Msg.UploadPageMsg newCmd
-                              ]
+                ( newModel, token ) =
+                    case result of
+                        Ok ok ->
+                            let
+                                m =
+                                    { model
+                                        | accessToken = Just ok.accessToken
+                                        , userName = Just ok.userName
+                                    }
+                            in
+                                ( m, Just ok.accessToken )
 
-                    Err _ ->
-                        { model
-                            | accessToken = Nothing
-                            , userName = Nothing
-                            , uploadPageModel = newModel
-                        }
-                            ! [ Cmd.map Msg.UploadPageMsg newCmd ]
+                        Err _ ->
+                            let
+                                m =
+                                    { model
+                                        | accessToken = Nothing
+                                        , userName = Nothing
+                                    }
+                            in
+                                ( m, Nothing )
+
+                msgs =
+                    [ Msg.UploadPageMsg (UploadPage.ChangeAccessToken token)
+                    , Msg.PortfolioPageMsg (PortfolioPage.ChangeAccessToken token)
+                    , Msg.AnalyticsPageMsg (AnalyticsPage.ChangeAccessToken token)
+                    ]
+            in
+                newModel ! List.map (Task.perform identity << Task.succeed) msgs
 
         Msg.UploadPageMsg subMsg ->
             let
                 ( newModel, newCmd ) =
                     UploadPage.update subMsg model.uploadPageModel
             in
-                ( { model | uploadPageModel = newModel }
-                , Cmd.map Msg.UploadPageMsg newCmd
-                )
+                { model | uploadPageModel = newModel } ! [ Cmd.map Msg.UploadPageMsg newCmd ]
+
+        Msg.PortfolioPageMsg subMsg ->
+            let
+                ( newModel, newCmd ) =
+                    PortfolioPage.update subMsg model.portfolioPageModel
+            in
+                { model | portfolioPageModel = newModel } ! [ Cmd.map Msg.PortfolioPageMsg newCmd ]
+
+        Msg.AnalyticsPageMsg subMsg ->
+            let
+                ( newModel, newCmd ) =
+                    AnalyticsPage.update subMsg model.analyticsPageModel
+            in
+                { model | analyticsPageModel = newModel } ! [ Cmd.map Msg.AnalyticsPageMsg newCmd ]
 
         Msg.Mdl subMsg ->
             Material.update Msg.Mdl subMsg model
@@ -98,12 +120,6 @@ update msg model =
 
         Msg.ScrollToTop ->
             model ! [ Task.attempt (always Msg.Nop) <| Dom.Scroll.toTop Layout.mainId ]
-
-        Msg.UpdateAnalytics res ->
-            { model | histories = Result.toMaybe res } ! []
-
-        Msg.UpdatePortfolios res ->
-            { model | portfolios = Result.toMaybe res } ! []
 
         Msg.UpdateServerVersion res ->
             { model | serverVersion = Result.toMaybe res } ! []
@@ -118,21 +134,18 @@ update msg model =
 urlUpdate : Model -> Navigation.Location -> ( Model, Cmd Msg )
 urlUpdate model location =
     case Route.fromLocation location of
-        Just (Route.Analytics (Just ts)) ->
+        Just (Route.Analytics marketCode) ->
             let
                 next =
-                    Route.Analytics (Just ts)
+                    Route.Analytics marketCode
 
-                history =
-                    case model.accessToken of
-                        Just token ->
-                            getHistories token ts
+                msg =
+                    Msg.AnalyticsPageMsg <| AnalyticsPage.ChangeMarketCode marketCode
 
-                        Nothing ->
-                            Cmd.none
+                cmd =
+                    Task.perform identity <| Task.succeed msg
             in
-                { model | pageHistory = next :: model.pageHistory }
-                    ! [ history ]
+                { model | pageHistory = next :: model.pageHistory } ! [ cmd ]
 
         Just next ->
             { model | pageHistory = next :: model.pageHistory }
@@ -157,29 +170,9 @@ getServerVersion =
     Http.send Msg.UpdateServerVersion WebApi.getApiV1Version
 
 
-makeAuthorizationHeader : String -> WebApi.AuthzValue
+makeAuthorizationHeader : WebApi.AccessToken -> WebApi.AuthzValue
 makeAuthorizationHeader token =
     "Bearer " ++ token
-
-
-getPortfolios : String -> Cmd Msg
-getPortfolios token =
-    let
-        authzHeader =
-            makeAuthorizationHeader token
-    in
-        Http.send Msg.UpdatePortfolios <|
-            WebApi.getApiV1Portfolios authzHeader
-
-
-getHistories : String -> WebApi.MarketCode -> Cmd Msg
-getHistories token marketCode =
-    let
-        authzHeader =
-            makeAuthorizationHeader token
-    in
-        Http.send Msg.UpdateAnalytics <|
-            WebApi.getApiV1StocksHistoryByMarketCode authzHeader marketCode (Just "1d")
 
 
 subscriptions : Model -> Sub Msg

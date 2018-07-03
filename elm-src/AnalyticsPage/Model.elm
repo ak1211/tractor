@@ -15,7 +15,7 @@
    along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-   Module      :  Model
+   Module      :  AnalyticsPage.Model
    Description :  This file is web front main module of Application "Tractor"
    Copyright   :  (c) 2016 Akihiro Yamamoto
    License     :  AGPLv3
@@ -24,48 +24,34 @@
    Stability   :  unstable
    Portability :  POSIX
 
-   アプリケーション「Tractor」のフロント側モデル定義です。
+   Analyticsページのモデル定義です。
 -}
 
 
-module Model exposing (..)
+module AnalyticsPage.Model exposing (..)
 
-import AnalyticsPage.Model as AnalyticsPage
 import Generated.WebApi as WebApi
 import Material
-import PortfolioPage.Model as PortfolioPage
-import Route exposing (Route)
-import UploadPage.Model as UploadPage
 
 
-type alias DocMarkDown =
-    String
+type alias Quotes =
+    { marketCode : WebApi.MarketCode
+    , histories : List WebApi.ApiOhlcv
+    }
 
 
 type alias Model =
-    { clientID : String
-    , accessToken : Maybe WebApi.AccessToken
-    , userName : Maybe String
-    , pageHistory : List Route
-    , serverVersion : Maybe WebApi.VerRev
-    , webApiDocument : Maybe DocMarkDown
-    , uploadPageModel : UploadPage.Model
-    , portfolioPageModel : PortfolioPage.Model
-    , analyticsPageModel : AnalyticsPage.Model
+    { accessToken : Maybe WebApi.AccessToken
+    , quotes : Maybe Quotes
+    , tab : Int
     , mdl : Material.Model
     }
 
 
-initialModel : String -> Model
-initialModel initClientID =
-    { clientID = initClientID
-    , accessToken = Nothing
-    , userName = Nothing
-    , pageHistory = []
-    , serverVersion = Nothing
-    , webApiDocument = Nothing
-    , uploadPageModel = UploadPage.initialModel
-    , portfolioPageModel = PortfolioPage.initialModel
-    , analyticsPageModel = AnalyticsPage.initialModel
+initialModel : Model
+initialModel =
+    { accessToken = Nothing
+    , quotes = Nothing
+    , tab = 0
     , mdl = Material.model
     }

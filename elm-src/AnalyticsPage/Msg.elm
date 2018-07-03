@@ -15,7 +15,7 @@
    along with Tractor.  If not, see <http://www.gnu.org/licenses/>.
 -}
 {- |
-   Module      :  UploadPage.Msg
+   Module      :  AnalyticsPage.Msg
    Description :  This file is web front main module of Application "Tractor"
    Copyright   :  (c) 2016 Akihiro Yamamoto
    License     :  AGPLv3
@@ -24,13 +24,12 @@
    Stability   :  unstable
    Portability :  POSIX
 
-   Uploadページのメッセージ定義です。
+   Analyticsページのメッセージ定義です。
 -}
 
 
-module UploadPage.Msg exposing (..)
+module AnalyticsPage.Msg exposing (..)
 
-import FileReader
 import Generated.WebApi as WebApi
 import Http
 import Material
@@ -38,10 +37,7 @@ import Material
 
 type Msg
     = ChangeAccessToken (Maybe WebApi.AccessToken)
-    | DropZoneEntered
-    | DropZoneLeaved
-    | FilesDropped (List FileReader.File)
-    | UploadAllFilesContent
-    | UploadContent
-    | DoneUploadContent (Result Http.Error (List WebApi.ApiOhlcv))
+    | ChangeMarketCode (Maybe WebApi.MarketCode)
+    | UpdateHistories WebApi.MarketCode (Result Http.Error (List WebApi.ApiOhlcv))
+    | SelectTab Int
     | Mdl (Material.Msg Msg)

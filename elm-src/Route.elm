@@ -39,9 +39,9 @@ module Route
         , fromLocation
         )
 
+import Generated.WebApi as WebApi
 import Navigation
 import UrlParser exposing (top, s, (</>), (<?>), stringParam)
-import Generated.WebApi as WebApi
 
 
 type alias QueryError =
@@ -111,8 +111,8 @@ toUrlPath route =
         Portfolio ->
             "/#portfolio"
 
-        Analytics (Just ts) ->
-            "/?ticker=" ++ ts ++ "#analytics"
+        Analytics (Just code) ->
+            "/?marketCode=" ++ code ++ "#analytics"
 
         Analytics Nothing ->
             "/#analytics"
@@ -135,7 +135,7 @@ fromLocation path =
                 [ UrlParser.map Home (top <?> stringParam "error" <?> stringParam "code" <?> stringParam "state")
                 , UrlParser.map Upload (s "upload")
                 , UrlParser.map Portfolio (s "portfolio")
-                , UrlParser.map Analytics (s "analytics" <?> stringParam "ticker")
+                , UrlParser.map Analytics (s "analytics" <?> stringParam "marketCode")
                 , UrlParser.map Reports (s "reports")
                 , UrlParser.map AccBalance (s "acc-balance")
                 , UrlParser.map ApiDocument (s "api-document")

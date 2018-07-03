@@ -30,12 +30,13 @@
 
 module Msg exposing (..)
 
+import Generated.WebApi as WebApi
 import Http
 import Material
 import Navigation
-import Model
-import Generated.WebApi as WebApi
+import PortfolioPage.Msg as PortfolioPage
 import UploadPage.Msg as UploadPage
+import AnalyticsPage.Msg as AnalyticsPage
 
 
 type Msg
@@ -43,10 +44,10 @@ type Msg
     | NewUrl String
     | Nop
     | ScrollToTop
-    | UpdateAnalytics (Result Http.Error (List WebApi.ApiOhlcv))
-    | UpdatePortfolios (Result Http.Error Model.Portfolios)
     | UpdateServerVersion (Result Http.Error WebApi.VerRev)
     | UpdateWebApiDocument (Result Http.Error String)
     | UrlChange Navigation.Location
     | UploadPageMsg UploadPage.Msg
+    | PortfolioPageMsg PortfolioPage.Msg
+    | AnalyticsPageMsg AnalyticsPage.Msg
     | Mdl (Material.Msg Msg)
