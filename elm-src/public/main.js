@@ -20116,7 +20116,7 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 					model.mdl,
 					{
 						ctor: '::',
-						_0: _debois$elm_mdl$Material_Button$raised,
+						_0: _debois$elm_mdl$Material_Button$fab,
 						_1: {
 							ctor: '::',
 							_0: _debois$elm_mdl$Material_Button$colored,
@@ -20133,7 +20133,7 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 					},
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html$text('Upload'),
+						_0: _debois$elm_mdl$Material_Icon$i('cloud_upload'),
 						_1: {ctor: '[]'}
 					}),
 				_1: {ctor: '[]'}
@@ -20185,7 +20185,7 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 		},
 		isEmpty ? {
 			ctor: '::',
-			_0: _elm_lang$html$Html$text('No uploading'),
+			_0: _elm_lang$html$Html$text(' Let\'s upload.'),
 			_1: {ctor: '[]'}
 		} : {
 			ctor: '::',
@@ -20471,7 +20471,7 @@ var _ak1211$tractor$UploadPage_View$viewFileContent = F2(
 							_0: {ctor: '_Tuple2', _0: 'margin', _1: 'auto'},
 							_1: {
 								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: 'max-width', _1: '500px'},
+								_0: {ctor: '_Tuple2', _0: 'max-width', _1: '700px'},
 								_1: {ctor: '[]'}
 							}
 						}),
@@ -20607,12 +20607,25 @@ var _ak1211$tractor$UploadPage_View$viewFileContent = F2(
 						ctor: '::',
 						_0: A2(
 							_elm_lang$html$Html$div,
-							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$style(
+									{
+										ctor: '::',
+										_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
+										_1: {ctor: '[]'}
+									}),
+								_1: {ctor: '[]'}
+							},
 							{
 								ctor: '::',
 								_0: _ak1211$tractor$UploadPage_View$tableOhlcv(
-									A2(_elm_lang$core$List$take, 5, data.ohlcvs)),
-								_1: {ctor: '[]'}
+									A2(_elm_lang$core$List$take, 4, data.ohlcvs)),
+								_1: {
+									ctor: '::',
+									_0: _debois$elm_mdl$Material_Icon$i('more_vert'),
+									_1: {ctor: '[]'}
+								}
 							}),
 						_1: {ctor: '[]'}
 					}

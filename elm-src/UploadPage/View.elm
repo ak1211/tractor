@@ -36,6 +36,7 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Material.Button as Button
 import Material.Grid as Grid
+import Material.Icon as Icon
 import Material.List as Lists
 import Material.Options as Options
 import Material.Progress as Loading
@@ -117,7 +118,8 @@ controlPanel model =
                 [ Typo.display1 ]
             <|
                 if isEmpty then
-                    [ Html.text "No uploading" ]
+                    [ Html.text " Let's upload."
+                    ]
                 else
                     [ Html.text (toString model.progress.counter)
                     , Html.text " / "
@@ -156,7 +158,7 @@ controlPanel model =
                 [ Button.render UploadPage.Mdl
                     [ 0 ]
                     model.mdl
-                    [ Button.raised
+                    [ Button.fab
                     , Button.colored
                     , if enabled then
                         Button.ripple
@@ -164,7 +166,7 @@ controlPanel model =
                         Button.disabled
                     , Options.onClick UploadPage.UploadAllFilesContent
                     ]
-                    [ Html.text "Upload" ]
+                    [ Icon.i "cloud_upload" ]
                 ]
 
         style =
@@ -200,7 +202,7 @@ viewFileContent model content =
             Options.css "margin" "0 auto"
 
         dijestContent data =
-            Html.div [ Attr.style [ ( "margin", "auto" ), ( "max-width", "500px" ) ] ]
+            Html.div [ Attr.style [ ( "margin", "auto" ), ( "max-width", "700px" ) ] ]
                 [ Lists.ul []
                     [ Lists.li [ Lists.withSubtitle ]
                         [ Lists.content []
@@ -224,7 +226,10 @@ viewFileContent model content =
                             ]
                         ]
                     ]
-                , Html.div [] [ tableOhlcv <| List.take 5 data.ohlcvs ]
+                , Html.div [ Attr.style [ ( "text-align", "center" ) ] ]
+                    [ tableOhlcv <| List.take 4 data.ohlcvs
+                    , Icon.i "more_vert"
+                    ]
                 ]
 
         errorContent error =
