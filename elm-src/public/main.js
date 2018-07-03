@@ -16810,7 +16810,7 @@ var _ak1211$tractor$AnalyticsPage_View$tableOhlcv = function (data) {
 		headlines,
 		A2(_elm_lang$core$List$map, row, data));
 };
-var _ak1211$tractor$AnalyticsPage_View$listView = function (model) {
+var _ak1211$tractor$AnalyticsPage_View$historiesView = function (model) {
 	var hs = A2(
 		_elm_lang$core$Maybe$withDefault,
 		{ctor: '[]'},
@@ -17007,7 +17007,7 @@ var _ak1211$tractor$AnalyticsPage_View$view = F2(
 				_0: function () {
 					var _p0 = model.tab;
 					if (_p0 === 1) {
-						return _ak1211$tractor$AnalyticsPage_View$listView(model);
+						return _ak1211$tractor$AnalyticsPage_View$historiesView(model);
 					} else {
 						return _ak1211$tractor$AnalyticsPage_View$summaryView(model);
 					}
@@ -19838,6 +19838,118 @@ var _ak1211$tractor$PortfolioPage_View$view = function (model) {
 	}
 };
 
+var _debois$elm_mdl$Material_List$action2 = _debois$elm_mdl$Material_Options$cs('mdl-list__item-secondary-action');
+var _debois$elm_mdl$Material_List$info2 = function (options) {
+	return _debois$elm_mdl$Material_Options$span(
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item-secondary-info'),
+			_1: options
+		});
+};
+var _debois$elm_mdl$Material_List$content2 = function (options) {
+	return _debois$elm_mdl$Material_Options$span(
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item-secondary-content'),
+			_1: options
+		});
+};
+var _debois$elm_mdl$Material_List$subtitle = function (options) {
+	return _debois$elm_mdl$Material_Options$span(
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item-sub-title'),
+			_1: options
+		});
+};
+var _debois$elm_mdl$Material_List$body = function (options) {
+	return _debois$elm_mdl$Material_Options$span(
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item-text-body'),
+			_1: options
+		});
+};
+var _debois$elm_mdl$Material_List$icon = F2(
+	function (i, options) {
+		return A2(
+			_debois$elm_mdl$Material_Icon$view,
+			i,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item-icon'),
+				_1: options
+			});
+	});
+var _debois$elm_mdl$Material_List$avatar = _debois$elm_mdl$Material_Options$cs('mdl-list__item-avatar');
+var _debois$elm_mdl$Material_List$avatarImage = F2(
+	function (src, options) {
+		return A4(
+			_debois$elm_mdl$Material_Options$styled_,
+			_elm_lang$html$Html$img,
+			{ctor: '::', _0: _debois$elm_mdl$Material_List$avatar, _1: options},
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$src(src),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'});
+	});
+var _debois$elm_mdl$Material_List$avatarIcon = F2(
+	function (i, options) {
+		return A2(
+			_debois$elm_mdl$Material_Options$div,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$center,
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$many(options),
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_List$avatar,
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Icon$i(i),
+				_1: {ctor: '[]'}
+			});
+	});
+var _debois$elm_mdl$Material_List$content = function (options) {
+	return _debois$elm_mdl$Material_Options$span(
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item-primary-content'),
+			_1: options
+		});
+};
+var _debois$elm_mdl$Material_List$withSubtitle = _debois$elm_mdl$Material_Options$cs('mdl-list__item--two-line');
+var _debois$elm_mdl$Material_List$withBody = _debois$elm_mdl$Material_Options$cs('mdl-list__item--three-line');
+var _debois$elm_mdl$Material_List$li = function (options) {
+	return A2(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$li,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list__item'),
+			_1: options
+		});
+};
+var _debois$elm_mdl$Material_List$ul = function (options) {
+	return A2(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$ul,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-list'),
+			_1: options
+		});
+};
+
 var _debois$elm_mdl$Material_Progress$percentage = function (p) {
 	return A2(
 		_elm_lang$core$Basics_ops['++'],
@@ -19963,6 +20075,226 @@ var _ak1211$tractor$UploadPage_View$viewTable = F2(
 				}
 			});
 	});
+var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
+	var style = _elm_lang$html$Html_Attributes$style(
+		{
+			ctor: '::',
+			_0: {ctor: '_Tuple2', _0: 'margin', _1: 'auto'},
+			_1: {
+				ctor: '::',
+				_0: {ctor: '_Tuple2', _0: 'max-width', _1: '500px'},
+				_1: {
+					ctor: '::',
+					_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
+					_1: {ctor: '[]'}
+				}
+			}
+		});
+	var uploadButton = function (enabled) {
+		return A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$style(
+					{
+						ctor: '::',
+						_0: {ctor: '_Tuple2', _0: 'margin-top', _1: '16px'},
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: A5(
+					_debois$elm_mdl$Material_Button$render,
+					_ak1211$tractor$UploadPage_Msg$Mdl,
+					{
+						ctor: '::',
+						_0: 0,
+						_1: {ctor: '[]'}
+					},
+					model.mdl,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Button$raised,
+						_1: {
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Button$colored,
+							_1: {
+								ctor: '::',
+								_0: enabled ? _debois$elm_mdl$Material_Button$ripple : _debois$elm_mdl$Material_Button$disabled,
+								_1: {
+									ctor: '::',
+									_0: _debois$elm_mdl$Material_Options$onClick(_ak1211$tractor$UploadPage_Msg$UploadAllFilesContent),
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('Upload'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			});
+	};
+	var isEmpty = _elm_lang$core$List$isEmpty(model.progress.todo) && _elm_lang$core$List$isEmpty(model.progress.done);
+	var isUploadable = function () {
+		var hasOk = function (x) {
+			var _p0 = x;
+			if (_p0.ctor === 'Ok') {
+				return true;
+			} else {
+				return false;
+			}
+		};
+		return A2(_elm_lang$core$List$any, hasOk, model.fileContents);
+	}();
+	var show = A3(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$p,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Typography$body1,
+			_1: {ctor: '[]'}
+		},
+		function () {
+			var _p1 = model.progress.done;
+			if (_p1.ctor === '::') {
+				return {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(_p1._0.ohlcv.at),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(' is now uploading.'),
+						_1: {ctor: '[]'}
+					}
+				};
+			} else {
+				return {ctor: '[]'};
+			}
+		}());
+	var numOfTotal = A3(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$p,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Typography$display1,
+			_1: {ctor: '[]'}
+		},
+		isEmpty ? {
+			ctor: '::',
+			_0: _elm_lang$html$Html$text('No uploading'),
+			_1: {ctor: '[]'}
+		} : {
+			ctor: '::',
+			_0: _elm_lang$html$Html$text(
+				_elm_lang$core$Basics$toString(model.progress.counter)),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html$text(' / '),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(model.progress.total)),
+					_1: {ctor: '[]'}
+				}
+			}
+		});
+	var percent = (_elm_lang$core$Basics$toFloat(model.progress.counter) / _elm_lang$core$Basics$toFloat(model.progress.total)) * 100.0;
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: style,
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: show,
+			_1: {
+				ctor: '::',
+				_0: numOfTotal,
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Progress$progress(percent),
+					_1: {
+						ctor: '::',
+						_0: uploadButton(
+							_elm_lang$core$Native_Utils.eq(model.progress.counter, 0) ? isUploadable : false),
+						_1: {ctor: '[]'}
+					}
+				}
+			}
+		});
+};
+var _ak1211$tractor$UploadPage_View$dropZonePanel = function (model) {
+	var contents = {
+		ctor: '::',
+		_0: _elm_lang$html$Html$text('The CSV file to upload.'),
+		_1: {
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$br,
+				{ctor: '[]'},
+				{ctor: '[]'}),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('Drop files here.'),
+				_1: {ctor: '[]'}
+			}
+		}
+	};
+	var dropZone = _norpan$elm_file_reader$FileReader$dropZone(
+		{
+			dataFormat: _norpan$elm_file_reader$FileReader$Text('ms932'),
+			enterMsg: _ak1211$tractor$UploadPage_Msg$DropZoneEntered,
+			leaveMsg: _ak1211$tractor$UploadPage_Msg$DropZoneLeaved,
+			filesMsg: _ak1211$tractor$UploadPage_Msg$FilesDropped
+		});
+	var bgColor = model.inDropZone ? 'lightblue' : 'gainsboro';
+	var opts = A2(
+		_elm_lang$core$List$map,
+		_debois$elm_mdl$Material_Options$attribute,
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$style(
+					{
+						ctor: '::',
+						_0: {ctor: '_Tuple2', _0: 'padding', _1: '16px'},
+						_1: {
+							ctor: '::',
+							_0: {ctor: '_Tuple2', _0: 'line-height', _1: '50px'},
+							_1: {
+								ctor: '::',
+								_0: {ctor: '_Tuple2', _0: 'background', _1: bgColor},
+								_1: {ctor: '[]'}
+							}
+						}
+					}),
+				_1: {ctor: '[]'}
+			},
+			dropZone));
+	return A3(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$p,
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			opts,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Typography$title,
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Typography$center,
+					_1: {ctor: '[]'}
+				}
+			}),
+		contents);
+};
 var _ak1211$tractor$UploadPage_View$viewCell = _elm_lang$core$Maybe$withDefault('Not Available');
 var _ak1211$tractor$UploadPage_View$tableOhlcv = function (data) {
 	var row = function (item) {
@@ -20131,83 +20463,150 @@ var _ak1211$tractor$UploadPage_View$viewFileContent = F2(
 		var dijestContent = function (data) {
 			return A2(
 				_elm_lang$html$Html$div,
-				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$style(
+						{
+							ctor: '::',
+							_0: {ctor: '_Tuple2', _0: 'margin', _1: 'auto'},
+							_1: {
+								ctor: '::',
+								_0: {ctor: '_Tuple2', _0: 'max-width', _1: '500px'},
+								_1: {ctor: '[]'}
+							}
+						}),
+					_1: {ctor: '[]'}
+				},
 				{
 					ctor: '::',
 					_0: A2(
-						_elm_lang$html$Html$dl,
+						_debois$elm_mdl$Material_List$ul,
 						{ctor: '[]'},
 						{
 							ctor: '::',
 							_0: A2(
-								_elm_lang$html$Html$dt,
-								{ctor: '[]'},
+								_debois$elm_mdl$Material_List$li,
 								{
 									ctor: '::',
-									_0: _elm_lang$html$Html$text('コード(ファイル名より取得)'),
+									_0: _debois$elm_mdl$Material_List$withSubtitle,
+									_1: {ctor: '[]'}
+								},
+								{
+									ctor: '::',
+									_0: A2(
+										_debois$elm_mdl$Material_List$content,
+										{ctor: '[]'},
+										{
+											ctor: '::',
+											_0: A2(
+												_debois$elm_mdl$Material_List$icon,
+												'label',
+												{ctor: '[]'}),
+											_1: {
+												ctor: '::',
+												_0: _elm_lang$html$Html$text(data.marketCode),
+												_1: {
+													ctor: '::',
+													_0: A2(
+														_debois$elm_mdl$Material_List$subtitle,
+														{ctor: '[]'},
+														{
+															ctor: '::',
+															_0: _elm_lang$html$Html$text('コード(ファイル名より取得)'),
+															_1: {ctor: '[]'}
+														}),
+													_1: {ctor: '[]'}
+												}
+											}
+										}),
 									_1: {ctor: '[]'}
 								}),
 							_1: {
 								ctor: '::',
 								_0: A2(
-									_elm_lang$html$Html$dd,
-									{ctor: '[]'},
+									_debois$elm_mdl$Material_List$li,
 									{
 										ctor: '::',
-										_0: _elm_lang$html$Html$text(data.marketCode),
+										_0: _debois$elm_mdl$Material_List$withSubtitle,
+										_1: {ctor: '[]'}
+									},
+									{
+										ctor: '::',
+										_0: A2(
+											_debois$elm_mdl$Material_List$content,
+											{ctor: '[]'},
+											{
+												ctor: '::',
+												_0: A2(
+													_debois$elm_mdl$Material_List$icon,
+													'label',
+													{ctor: '[]'}),
+												_1: {
+													ctor: '::',
+													_0: _elm_lang$html$Html$text(data.name),
+													_1: {
+														ctor: '::',
+														_0: A2(
+															_debois$elm_mdl$Material_List$subtitle,
+															{ctor: '[]'},
+															{
+																ctor: '::',
+																_0: _elm_lang$html$Html$text('銘柄名(ファイル内より取得)'),
+																_1: {ctor: '[]'}
+															}),
+														_1: {ctor: '[]'}
+													}
+												}
+											}),
 										_1: {ctor: '[]'}
 									}),
 								_1: {
 									ctor: '::',
 									_0: A2(
-										_elm_lang$html$Html$dt,
-										{ctor: '[]'},
+										_debois$elm_mdl$Material_List$li,
 										{
 											ctor: '::',
-											_0: _elm_lang$html$Html$text('銘柄名(ファイル内より取得)'),
+											_0: _debois$elm_mdl$Material_List$withSubtitle,
 											_1: {ctor: '[]'}
-										}),
-									_1: {
-										ctor: '::',
-										_0: A2(
-											_elm_lang$html$Html$dd,
-											{ctor: '[]'},
-											{
-												ctor: '::',
-												_0: _elm_lang$html$Html$text(data.name),
-												_1: {ctor: '[]'}
-											}),
-										_1: {
+										},
+										{
 											ctor: '::',
 											_0: A2(
-												_elm_lang$html$Html$dt,
+												_debois$elm_mdl$Material_List$content,
 												{ctor: '[]'},
 												{
 													ctor: '::',
-													_0: _elm_lang$html$Html$text('時間枠'),
-													_1: {ctor: '[]'}
-												}),
-											_1: {
-												ctor: '::',
-												_0: A2(
-													_elm_lang$html$Html$dd,
-													{ctor: '[]'},
-													{
+													_0: A2(
+														_debois$elm_mdl$Material_List$icon,
+														'label',
+														{ctor: '[]'}),
+													_1: {
 														ctor: '::',
 														_0: _elm_lang$html$Html$text(data.timeFrame),
-														_1: {ctor: '[]'}
-													}),
-												_1: {ctor: '[]'}
-											}
-										}
-									}
+														_1: {
+															ctor: '::',
+															_0: A2(
+																_debois$elm_mdl$Material_List$subtitle,
+																{ctor: '[]'},
+																{
+																	ctor: '::',
+																	_0: _elm_lang$html$Html$text('時間枠'),
+																	_1: {ctor: '[]'}
+																}),
+															_1: {ctor: '[]'}
+														}
+													}
+												}),
+											_1: {ctor: '[]'}
+										}),
+									_1: {ctor: '[]'}
 								}
 							}
 						}),
 					_1: {
 						ctor: '::',
 						_0: A2(
-							_elm_lang$html$Html$p,
+							_elm_lang$html$Html$div,
 							{ctor: '[]'},
 							{
 								ctor: '::',
@@ -20219,236 +20618,24 @@ var _ak1211$tractor$UploadPage_View$viewFileContent = F2(
 					}
 				});
 		};
-		var _p0 = content;
-		if (_p0.ctor === 'Ok') {
-			return dijestContent(_p0._0);
+		var margin = A2(_debois$elm_mdl$Material_Options$css, 'margin', '0 auto');
+		var _p2 = content;
+		if (_p2.ctor === 'Ok') {
+			return dijestContent(_p2._0);
 		} else {
-			return errorContent(_p0._0);
+			return errorContent(_p2._0);
 		}
 	});
-var _ak1211$tractor$UploadPage_View$view = function (model) {
-	var controlPanel = function () {
-		var style = _elm_lang$html$Html_Attributes$style(
-			{
-				ctor: '::',
-				_0: {ctor: '_Tuple2', _0: 'margin', _1: 'auto'},
-				_1: {
-					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: 'max-width', _1: '500px'},
-					_1: {
-						ctor: '::',
-						_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
-						_1: {ctor: '[]'}
-					}
-				}
-			});
-		var uploadButton = function (enabled) {
-			return A2(
-				_elm_lang$html$Html$div,
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$style(
-						{
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'margin-top', _1: '16px'},
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				},
-				{
-					ctor: '::',
-					_0: A5(
-						_debois$elm_mdl$Material_Button$render,
-						_ak1211$tractor$UploadPage_Msg$Mdl,
-						{
-							ctor: '::',
-							_0: 0,
-							_1: {ctor: '[]'}
-						},
-						model.mdl,
-						{
-							ctor: '::',
-							_0: _debois$elm_mdl$Material_Button$raised,
-							_1: {
-								ctor: '::',
-								_0: _debois$elm_mdl$Material_Button$colored,
-								_1: {
-									ctor: '::',
-									_0: enabled ? _debois$elm_mdl$Material_Button$ripple : _debois$elm_mdl$Material_Button$disabled,
-									_1: {
-										ctor: '::',
-										_0: _debois$elm_mdl$Material_Options$onClick(_ak1211$tractor$UploadPage_Msg$UploadAllFilesContent),
-										_1: {ctor: '[]'}
-									}
-								}
-							}
-						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text('Upload'),
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				});
-		};
-		var isEmpty = _elm_lang$core$List$isEmpty(model.progress.todo) && _elm_lang$core$List$isEmpty(model.progress.done);
-		var isUploadable = function () {
-			var hasOk = function (x) {
-				var _p1 = x;
-				if (_p1.ctor === 'Ok') {
-					return true;
-				} else {
-					return false;
-				}
-			};
-			return A2(_elm_lang$core$List$any, hasOk, model.fileContents);
-		}();
-		var show = A3(
-			_debois$elm_mdl$Material_Options$styled,
-			_elm_lang$html$Html$p,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Typography$body1,
-				_1: {ctor: '[]'}
-			},
-			function () {
-				var _p2 = model.progress.done;
-				if (_p2.ctor === '::') {
-					return {
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(_p2._0.ohlcv.at),
-						_1: {
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(' is now uploading.'),
-							_1: {ctor: '[]'}
-						}
-					};
-				} else {
-					return {ctor: '[]'};
-				}
-			}());
-		var numOfTotal = A3(
-			_debois$elm_mdl$Material_Options$styled,
-			_elm_lang$html$Html$p,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Typography$display1,
-				_1: {ctor: '[]'}
-			},
-			isEmpty ? {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text('No Contents'),
-				_1: {ctor: '[]'}
-			} : {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(model.progress.counter)),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$html$Html$text(' / '),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(
-							_elm_lang$core$Basics$toString(model.progress.total)),
-						_1: {ctor: '[]'}
-					}
-				}
-			});
-		var percent = (_elm_lang$core$Basics$toFloat(model.progress.counter) / _elm_lang$core$Basics$toFloat(model.progress.total)) * 100.0;
-		return A2(
-			_elm_lang$html$Html$div,
-			{
-				ctor: '::',
-				_0: style,
-				_1: {ctor: '[]'}
-			},
-			{
-				ctor: '::',
-				_0: show,
-				_1: {
-					ctor: '::',
-					_0: numOfTotal,
-					_1: {
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Progress$progress(percent),
-						_1: {
-							ctor: '::',
-							_0: uploadButton(
-								_elm_lang$core$Native_Utils.eq(model.progress.counter, 0) ? isUploadable : false),
-							_1: {ctor: '[]'}
-						}
-					}
-				}
-			});
-	}();
-	var fileContents = A2(
-		_elm_lang$html$Html$p,
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$style(
-				{
-					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: 'margin', _1: '16px'},
-					_1: {ctor: '[]'}
-				}),
-			_1: {ctor: '[]'}
-		},
+var _ak1211$tractor$UploadPage_View$fileContents = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{ctor: '[]'},
 		A2(
 			_elm_lang$core$List$map,
 			_ak1211$tractor$UploadPage_View$viewFileContent(model),
 			model.fileContents));
-	var dropZone = A2(
-		_elm_lang$html$Html$div,
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html_Attributes$style(
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						{
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'height', _1: '8em'},
-							_1: {
-								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: 'padding', _1: '16px'},
-								_1: {ctor: '[]'}
-							}
-						},
-						model.inDropZone ? {
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'background', _1: 'lightblue'},
-							_1: {ctor: '[]'}
-						} : {
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'background', _1: 'gainsboro'},
-							_1: {ctor: '[]'}
-						})),
-				_1: {ctor: '[]'}
-			},
-			_norpan$elm_file_reader$FileReader$dropZone(
-				{
-					dataFormat: _norpan$elm_file_reader$FileReader$Text('ms932'),
-					enterMsg: _ak1211$tractor$UploadPage_Msg$DropZoneEntered,
-					leaveMsg: _ak1211$tractor$UploadPage_Msg$DropZoneLeaved,
-					filesMsg: _ak1211$tractor$UploadPage_Msg$FilesDropped
-				})),
-		{
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('The CSV file to upload.'),
-			_1: {
-				ctor: '::',
-				_0: A2(
-					_elm_lang$html$Html$p,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text('Drop files here.'),
-						_1: {ctor: '[]'}
-					}),
-				_1: {ctor: '[]'}
-			}
-		});
+};
+var _ak1211$tractor$UploadPage_View$view = function (model) {
 	return A2(
 		_debois$elm_mdl$Material_Grid$grid,
 		{ctor: '[]'},
@@ -20463,7 +20650,7 @@ var _ak1211$tractor$UploadPage_View$view = function (model) {
 				},
 				{
 					ctor: '::',
-					_0: dropZone,
+					_0: _ak1211$tractor$UploadPage_View$dropZonePanel(model),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -20477,7 +20664,7 @@ var _ak1211$tractor$UploadPage_View$view = function (model) {
 					},
 					{
 						ctor: '::',
-						_0: controlPanel,
+						_0: _ak1211$tractor$UploadPage_View$controlPanel(model),
 						_1: {ctor: '[]'}
 					}),
 				_1: {
@@ -20491,7 +20678,7 @@ var _ak1211$tractor$UploadPage_View$view = function (model) {
 						},
 						{
 							ctor: '::',
-							_0: fileContents,
+							_0: _ak1211$tractor$UploadPage_View$fileContents(model),
 							_1: {ctor: '[]'}
 						}),
 					_1: {ctor: '[]'}

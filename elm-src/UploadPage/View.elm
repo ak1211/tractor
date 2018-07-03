@@ -36,6 +36,7 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Material.Button as Button
 import Material.Grid as Grid
+import Material.List as Lists
 import Material.Options as Options
 import Material.Progress as Loading
 import Material.Table as Table
@@ -51,139 +52,179 @@ viewCell =
 
 view : UploadPage.Model -> Html UploadPage.Msg
 view model =
+    Grid.grid
+        []
+        [ Grid.cell [ Grid.size Grid.All 12 ] [ dropZonePanel model ]
+        , Grid.cell [ Grid.size Grid.All 12 ] [ controlPanel model ]
+        , Grid.cell [ Grid.size Grid.All 12 ] [ fileContents model ]
+        ]
+
+
+dropZonePanel : UploadPage.Model -> Html UploadPage.Msg
+dropZonePanel model =
     let
+        bgColor =
+            if model.inDropZone then
+                "lightblue"
+            else
+                "gainsboro"
+
+        opts =
+            List.map Options.attribute <|
+                [ Attr.style
+                    [ ( "padding", "16px" )
+                    , ( "line-height", "50px" )
+                    , ( "background", bgColor )
+                    ]
+                ]
+                    ++ dropZone
+
         dropZone =
+            FileReader.dropZone
+                { dataFormat = FileReader.Text "ms932"
+                , enterMsg = UploadPage.DropZoneEntered
+                , leaveMsg = UploadPage.DropZoneLeaved
+                , filesMsg = UploadPage.FilesDropped
+                }
+
+        contents =
+            [ Html.text "The CSV file to upload."
+            , Html.br [] []
+            , Html.text "Drop files here."
+            ]
+    in
+        Options.styled
+            Html.p
+            (opts
+                ++ [ Typo.title
+                   , Typo.center
+                   ]
+            )
+            contents
+
+
+controlPanel : UploadPage.Model -> Html UploadPage.Msg
+controlPanel model =
+    let
+        percent =
+            toFloat model.progress.counter
+                / toFloat model.progress.total
+                * 100.0
+
+        numOfTotal =
+            Options.styled
+                Html.p
+                [ Typo.display1 ]
+            <|
+                if isEmpty then
+                    [ Html.text "No uploading" ]
+                else
+                    [ Html.text (toString model.progress.counter)
+                    , Html.text " / "
+                    , Html.text (toString model.progress.total)
+                    ]
+
+        show =
+            Options.styled Html.p [ Typo.body1 ] <|
+                case model.progress.done of
+                    x :: _ ->
+                        [ Html.text x.ohlcv.at
+                        , Html.text " is now uploading."
+                        ]
+
+                    [] ->
+                        []
+
+        isUploadable =
+            let
+                hasOk x =
+                    case x of
+                        Ok _ ->
+                            True
+
+                        Err _ ->
+                            False
+            in
+                List.any hasOk model.fileContents
+
+        isEmpty =
+            List.isEmpty model.progress.todo && List.isEmpty model.progress.done
+
+        uploadButton enabled =
             Html.div
-                ([ Attr.style
-                    ([ ( "height", "8em" )
-                     , ( "padding", "16px" )
-                     ]
-                        ++ (if model.inDropZone then
-                                [ ( "background", "lightblue" ) ]
-                            else
-                                [ ( "background", "gainsboro" ) ]
-                           )
-                    )
-                 ]
-                    ++ FileReader.dropZone
-                        { dataFormat = FileReader.Text "ms932"
-                        , enterMsg = UploadPage.DropZoneEntered
-                        , leaveMsg = UploadPage.DropZoneLeaved
-                        , filesMsg = UploadPage.FilesDropped
-                        }
-                )
-                [ Html.text "The CSV file to upload."
-                , Html.p [] [ Html.text "Drop files here." ]
+                [ Attr.style [ ( "margin-top", "16px" ) ] ]
+                [ Button.render UploadPage.Mdl
+                    [ 0 ]
+                    model.mdl
+                    [ Button.raised
+                    , Button.colored
+                    , if enabled then
+                        Button.ripple
+                      else
+                        Button.disabled
+                    , Options.onClick UploadPage.UploadAllFilesContent
+                    ]
+                    [ Html.text "Upload" ]
                 ]
 
-        fileContents =
-            Html.p [ Attr.style [ ( "margin", "16px" ) ] ] <|
-                List.map (viewFileContent model) model.fileContents
-
-        controlPanel =
-            let
-                percent =
-                    toFloat model.progress.counter
-                        / toFloat model.progress.total
-                        * 100.0
-
-                numOfTotal =
-                    Options.styled
-                        Html.p
-                        [ Typo.display1 ]
-                    <|
-                        if isEmpty then
-                            [ Html.text "No Contents" ]
-                        else
-                            [ Html.text (toString model.progress.counter)
-                            , Html.text " / "
-                            , Html.text (toString model.progress.total)
-                            ]
-
-                show =
-                    Options.styled Html.p [ Typo.body1 ] <|
-                        case model.progress.done of
-                            x :: _ ->
-                                [ Html.text x.ohlcv.at
-                                , Html.text " is now uploading."
-                                ]
-
-                            [] ->
-                                []
-
-                isUploadable =
-                    let
-                        hasOk x =
-                            case x of
-                                Ok _ ->
-                                    True
-
-                                Err _ ->
-                                    False
-                    in
-                        List.any hasOk model.fileContents
-
-                isEmpty =
-                    List.isEmpty model.progress.todo && List.isEmpty model.progress.done
-
-                uploadButton enabled =
-                    Html.div
-                        [ Attr.style [ ( "margin-top", "16px" ) ] ]
-                        [ Button.render UploadPage.Mdl
-                            [ 0 ]
-                            model.mdl
-                            [ Button.raised
-                            , Button.colored
-                            , if enabled then
-                                Button.ripple
-                              else
-                                Button.disabled
-                            , Options.onClick UploadPage.UploadAllFilesContent
-                            ]
-                            [ Html.text "Upload" ]
-                        ]
-
-                style =
-                    Attr.style
-                        [ ( "margin", "auto" )
-                        , ( "max-width", "500px" )
-                        , ( "text-align", "center" )
-                        ]
-            in
-                Html.div [ style ]
-                    [ show
-                    , numOfTotal
-                    , Loading.progress percent
-                    , uploadButton
-                        (if model.progress.counter == 0 then
-                            isUploadable
-                         else
-                            False
-                        )
-                    ]
+        style =
+            Attr.style
+                [ ( "margin", "auto" )
+                , ( "max-width", "500px" )
+                , ( "text-align", "center" )
+                ]
     in
-        Grid.grid
-            []
-            [ Grid.cell [ Grid.size Grid.All 12 ] [ dropZone ]
-            , Grid.cell [ Grid.size Grid.All 12 ] [ controlPanel ]
-            , Grid.cell [ Grid.size Grid.All 12 ] [ fileContents ]
+        Html.div [ style ]
+            [ show
+            , numOfTotal
+            , Loading.progress percent
+            , uploadButton
+                (if model.progress.counter == 0 then
+                    isUploadable
+                 else
+                    False
+                )
             ]
+
+
+fileContents : UploadPage.Model -> Html UploadPage.Msg
+fileContents model =
+    Html.div [] <|
+        List.map (viewFileContent model) model.fileContents
 
 
 viewFileContent : UploadPage.Model -> Result String UploadPage.FileContent -> Html msg
 viewFileContent model content =
     let
+        margin =
+            Options.css "margin" "0 auto"
+
         dijestContent data =
-            Html.div []
-                [ Html.dl []
-                    [ Html.dt [] [ Html.text "コード(ファイル名より取得)" ]
-                    , Html.dd [] [ Html.text data.marketCode ]
-                    , Html.dt [] [ Html.text "銘柄名(ファイル内より取得)" ]
-                    , Html.dd [] [ Html.text data.name ]
-                    , Html.dt [] [ Html.text "時間枠" ]
-                    , Html.dd [] [ Html.text data.timeFrame ]
+            Html.div [ Attr.style [ ( "margin", "auto" ), ( "max-width", "500px" ) ] ]
+                [ Lists.ul []
+                    [ Lists.li [ Lists.withSubtitle ]
+                        [ Lists.content []
+                            [ Lists.icon "label" []
+                            , Html.text data.marketCode
+                            , Lists.subtitle [] [ Html.text "コード(ファイル名より取得)" ]
+                            ]
+                        ]
+                    , Lists.li [ Lists.withSubtitle ]
+                        [ Lists.content []
+                            [ Lists.icon "label" []
+                            , Html.text data.name
+                            , Lists.subtitle [] [ Html.text "銘柄名(ファイル内より取得)" ]
+                            ]
+                        ]
+                    , Lists.li [ Lists.withSubtitle ]
+                        [ Lists.content []
+                            [ Lists.icon "label" []
+                            , Html.text data.timeFrame
+                            , Lists.subtitle [] [ Html.text "時間枠" ]
+                            ]
+                        ]
                     ]
-                , Html.p [] [ tableOhlcv <| List.take 5 data.ohlcvs ]
+                , Html.div [] [ tableOhlcv <| List.take 5 data.ohlcvs ]
                 ]
 
         errorContent error =

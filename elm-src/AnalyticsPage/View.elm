@@ -66,7 +66,7 @@ view model marketCode =
         ]
         [ case model.tab of
             1 ->
-                listView model
+                historiesView model
 
             _ ->
                 summaryView model
@@ -102,8 +102,8 @@ summaryView model =
             ]
 
 
-listView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
-listView model =
+historiesView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
+historiesView model =
     let
         hs =
             Maybe.map (\q -> q.histories) model.quotes
