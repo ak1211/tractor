@@ -39,10 +39,6 @@
 
 ## GET /api/v1/portfolios
 
-### Headers:
-
-- This endpoint is sensitive to the value of the **Authorization** HTTP header.
-
 ### Response:
 
 - Status code 200
@@ -96,6 +92,33 @@
     ```javascript
 
     ```
+
+## GET /api/v1/stocks/chart/:marketCode
+
+### Get Chart
+
+
+### Captures:
+
+- *market code*: NI225, TOPIX, TYO8306 etc...
+
+### GET Parameters:
+
+- tf
+     - **Values**: *1h, 1d*
+     - **Description**: prices of a time frame.
+
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `image/svg+xml`
+
+- No response body
 
 ## DELETE /api/v1/stocks/history/:marketCode
 

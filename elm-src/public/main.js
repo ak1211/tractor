@@ -6829,6 +6829,9 @@ var _ak1211$tractor$Generated_WebApi$encodeVerRev = function (x) {
 			}
 		});
 };
+var _ak1211$tractor$Generated_WebApi$makeAuthorizationHeader = function (token) {
+	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
+};
 var _ak1211$tractor$Generated_WebApi$VerRev = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {version: a, buildArch: b, buildOS: c, gitBranch: d, gitHash: e, gitCommitDate: f, gitCommitCount: g, gitStatus: h};
@@ -6972,42 +6975,36 @@ var _ak1211$tractor$Generated_WebApi$decodeApiPortfolio = A3(
 			'code',
 			_elm_lang$core$Json_Decode$string,
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$ApiPortfolio))));
-var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = function (header_Authorization) {
-	return _elm_lang$http$Http$request(
-		{
-			method: 'GET',
-			headers: {
+var _ak1211$tractor$Generated_WebApi$getApiV1Portfolios = _elm_lang$http$Http$request(
+	{
+		method: 'GET',
+		headers: {ctor: '[]'},
+		url: A2(
+			_elm_lang$core$String$join,
+			'/',
+			{
 				ctor: '::',
-				_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-				_1: {ctor: '[]'}
-			},
-			url: A2(
-				_elm_lang$core$String$join,
-				'/',
-				{
+				_0: 'https://tractor.ak1211.com',
+				_1: {
 					ctor: '::',
-					_0: 'https://tractor.ak1211.com',
+					_0: 'api',
 					_1: {
 						ctor: '::',
-						_0: 'api',
+						_0: 'v1',
 						_1: {
 							ctor: '::',
-							_0: 'v1',
-							_1: {
-								ctor: '::',
-								_0: 'portfolios',
-								_1: {ctor: '[]'}
-							}
+							_0: 'portfolios',
+							_1: {ctor: '[]'}
 						}
 					}
-				}),
-			body: _elm_lang$http$Http$emptyBody,
-			expect: _elm_lang$http$Http$expectJson(
-				_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiPortfolio)),
-			timeout: _elm_lang$core$Maybe$Nothing,
-			withCredentials: false
-		});
-};
+				}
+			}),
+		body: _elm_lang$http$Http$emptyBody,
+		expect: _elm_lang$http$Http$expectJson(
+			_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiPortfolio)),
+		timeout: _elm_lang$core$Maybe$Nothing,
+		withCredentials: false
+	});
 var _ak1211$tractor$Generated_WebApi$ApiOhlcv = F7(
 	function (a, b, c, d, e, f, g) {
 		return {at: a, open: b, high: c, low: d, close: e, volume: f, source: g};
@@ -16168,886 +16165,6 @@ var _debois$elm_mdl$Material$Model = F8(
 		return {button: a, textfield: b, menu: c, snackbar: d, layout: e, toggles: f, tooltip: g, tabs: h};
 	});
 
-var _ak1211$tractor$AnalyticsPage_Model$initialModel = {accessToken: _elm_lang$core$Maybe$Nothing, quotes: _elm_lang$core$Maybe$Nothing, tab: 0, mdl: _debois$elm_mdl$Material$model};
-var _ak1211$tractor$AnalyticsPage_Model$Quotes = F2(
-	function (a, b) {
-		return {marketCode: a, histories: b};
-	});
-var _ak1211$tractor$AnalyticsPage_Model$Model = F4(
-	function (a, b, c, d) {
-		return {accessToken: a, quotes: b, tab: c, mdl: d};
-	});
-
-var _ak1211$tractor$AnalyticsPage_Msg$Mdl = function (a) {
-	return {ctor: 'Mdl', _0: a};
-};
-var _ak1211$tractor$AnalyticsPage_Msg$SelectTab = function (a) {
-	return {ctor: 'SelectTab', _0: a};
-};
-var _ak1211$tractor$AnalyticsPage_Msg$UpdateHistories = F2(
-	function (a, b) {
-		return {ctor: 'UpdateHistories', _0: a, _1: b};
-	});
-var _ak1211$tractor$AnalyticsPage_Msg$ChangeMarketCode = function (a) {
-	return {ctor: 'ChangeMarketCode', _0: a};
-};
-var _ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken = function (a) {
-	return {ctor: 'ChangeAccessToken', _0: a};
-};
-
-var _ak1211$tractor$AnalyticsPage_Update$makeAuthorizationHeader = function (token) {
-	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
-};
-var _ak1211$tractor$AnalyticsPage_Update$getHistories = F2(
-	function (token, marketCode) {
-		var authzHeader = _ak1211$tractor$AnalyticsPage_Update$makeAuthorizationHeader(token);
-		return A2(
-			_elm_lang$http$Http$send,
-			_ak1211$tractor$AnalyticsPage_Msg$UpdateHistories(marketCode),
-			A3(
-				_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode,
-				authzHeader,
-				marketCode,
-				_elm_lang$core$Maybe$Just('1d')));
-	});
-var _ak1211$tractor$AnalyticsPage_Update$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'ChangeAccessToken':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{accessToken: _p0._0}),
-					{ctor: '[]'});
-			case 'ChangeMarketCode':
-				if (_p0._0.ctor === 'Just') {
-					var _p1 = model.accessToken;
-					if (_p1.ctor === 'Just') {
-						return A2(
-							_elm_lang$core$Platform_Cmd_ops['!'],
-							model,
-							{
-								ctor: '::',
-								_0: A2(_ak1211$tractor$AnalyticsPage_Update$getHistories, _p1._0, _p0._0._0),
-								_1: {ctor: '[]'}
-							});
-					} else {
-						return A2(
-							_elm_lang$core$Platform_Cmd_ops['!'],
-							_elm_lang$core$Native_Utils.update(
-								model,
-								{quotes: _elm_lang$core$Maybe$Nothing}),
-							{ctor: '[]'});
-					}
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{quotes: _elm_lang$core$Maybe$Nothing}),
-						{ctor: '[]'});
-				}
-			case 'UpdateHistories':
-				if (_p0._1.ctor === 'Ok') {
-					var newQuotes = {marketCode: _p0._0, histories: _p0._1._0};
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{
-								quotes: _elm_lang$core$Maybe$Just(newQuotes)
-							}),
-						{ctor: '[]'});
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{quotes: _elm_lang$core$Maybe$Nothing}),
-						{ctor: '[]'});
-				}
-			case 'SelectTab':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{tab: _p0._0}),
-					{ctor: '[]'});
-			default:
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$AnalyticsPage_Msg$Mdl, _p0._0, model);
-		}
-	});
-
-var _debois$elm_mdl$Material_Grid$clip = F3(
-	function (lower, upper, k) {
-		return A2(
-			_elm_lang$core$Basics$max,
-			lower,
-			A2(_elm_lang$core$Basics$min, k, upper));
-	});
-var _debois$elm_mdl$Material_Grid$stretch = _debois$elm_mdl$Material_Options$cs('mdl-cell--stretch');
-var _debois$elm_mdl$Material_Grid$align = function (a) {
-	var _p0 = a;
-	switch (_p0.ctor) {
-		case 'Top':
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--top');
-		case 'Middle':
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--middle');
-		default:
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--bottom');
-	}
-};
-var _debois$elm_mdl$Material_Grid$suffix = function (device) {
-	var _p1 = device;
-	switch (_p1.ctor) {
-		case 'All':
-			return '';
-		case 'Desktop':
-			return '-desktop';
-		case 'Tablet':
-			return '-tablet';
-		default:
-			return '-phone';
-	}
-};
-var _debois$elm_mdl$Material_Grid$size = F2(
-	function (device, k) {
-		var c = function () {
-			var _p2 = device;
-			switch (_p2.ctor) {
-				case 'All':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
-				case 'Desktop':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
-				case 'Tablet':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 8, k);
-				default:
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 4, k);
-			}
-		}();
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(c),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'-col',
-						_debois$elm_mdl$Material_Grid$suffix(device)))));
-	});
-var _debois$elm_mdl$Material_Grid$offset = F2(
-	function (device, k) {
-		var c = function () {
-			var _p3 = device;
-			switch (_p3.ctor) {
-				case 'All':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
-				case 'Desktop':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
-				case 'Tablet':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 7, k);
-				default:
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 3, k);
-			}
-		}();
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(c),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'-offset',
-						_debois$elm_mdl$Material_Grid$suffix(device)))));
-	});
-var _debois$elm_mdl$Material_Grid$hide = function (device) {
-	return _debois$elm_mdl$Material_Options$cs(
-		function () {
-			var _p4 = device;
-			if (_p4.ctor === 'All') {
-				return '';
-			} else {
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					'mdl-cell--hide-',
-					_debois$elm_mdl$Material_Grid$suffix(device));
-			}
-		}());
-};
-var _debois$elm_mdl$Material_Grid$order = F2(
-	function (device, n) {
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--order-',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(
-						A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, n)),
-					_debois$elm_mdl$Material_Grid$suffix(device))));
-	});
-var _debois$elm_mdl$Material_Grid$grid = F2(
-	function (styling, cells) {
-		return A2(
-			_debois$elm_mdl$Material_Options$div,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$cs('mdl-grid'),
-				_1: styling
-			},
-			A2(
-				_elm_lang$core$List$map,
-				function (_p5) {
-					var _p6 = _p5;
-					return _p6._0;
-				},
-				cells));
-	});
-var _debois$elm_mdl$Material_Grid$maxWidth = function (w) {
-	return A2(_debois$elm_mdl$Material_Options$css, 'max-width', w);
-};
-var _debois$elm_mdl$Material_Grid$noSpacing = _debois$elm_mdl$Material_Options$cs('mdl-grid--no-spacing');
-var _debois$elm_mdl$Material_Grid$Phone = {ctor: 'Phone'};
-var _debois$elm_mdl$Material_Grid$Tablet = {ctor: 'Tablet'};
-var _debois$elm_mdl$Material_Grid$Desktop = {ctor: 'Desktop'};
-var _debois$elm_mdl$Material_Grid$All = {ctor: 'All'};
-var _debois$elm_mdl$Material_Grid$Cell = function (a) {
-	return {ctor: 'Cell', _0: a};
-};
-var _debois$elm_mdl$Material_Grid$cell = F2(
-	function (styling, elms) {
-		return _debois$elm_mdl$Material_Grid$Cell(
-			A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-cell'),
-					_1: styling
-				},
-				elms));
-	});
-var _debois$elm_mdl$Material_Grid$Bottom = {ctor: 'Bottom'};
-var _debois$elm_mdl$Material_Grid$Middle = {ctor: 'Middle'};
-var _debois$elm_mdl$Material_Grid$Top = {ctor: 'Top'};
-
-var _debois$elm_mdl$Material_Table$defaultCell = {numeric: false};
-var _debois$elm_mdl$Material_Table$td = F2(
-	function (options, html) {
-		var _p0 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultCell, options);
-		var summary = _p0;
-		var config = _p0.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$td,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.numeric,
-					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
-				_1: {ctor: '[]'}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$sorted = function (order) {
-	return _debois$elm_mdl$Material_Options_Internal$option(
-		function (self) {
-			return _elm_lang$core$Native_Utils.update(
-				self,
-				{
-					sorted: _elm_lang$core$Maybe$Just(order)
-				});
-		});
-};
-var _debois$elm_mdl$Material_Table$numeric = _debois$elm_mdl$Material_Options_Internal$option(
-	function (self) {
-		return _elm_lang$core$Native_Utils.update(
-			self,
-			{numeric: true});
-	});
-var _debois$elm_mdl$Material_Table$defaultHeader = {numeric: false, sorted: _elm_lang$core$Maybe$Nothing};
-var _debois$elm_mdl$Material_Table$th = F2(
-	function (options, html) {
-		var _p1 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultHeader, options);
-		var summary = _p1;
-		var config = _p1.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$th,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.numeric,
-					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
-				_1: {
-					ctor: '::',
-					_0: function () {
-						var _p2 = config.sorted;
-						if (_p2.ctor === 'Just') {
-							if (_p2._0.ctor === 'Ascending') {
-								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-ascending');
-							} else {
-								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-descending');
-							}
-						} else {
-							return _debois$elm_mdl$Material_Options$nop;
-						}
-					}(),
-					_1: {ctor: '[]'}
-				}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$selected = _debois$elm_mdl$Material_Options_Internal$option(
-	function (self) {
-		return _elm_lang$core$Native_Utils.update(
-			self,
-			{selected: true});
-	});
-var _debois$elm_mdl$Material_Table$defaultRow = {selected: false};
-var _debois$elm_mdl$Material_Table$tr = F2(
-	function (options, html) {
-		var _p3 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultRow, options);
-		var summary = _p3;
-		var config = _p3.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tr,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.selected,
-					_debois$elm_mdl$Material_Options$cs('is-selected')),
-				_1: {ctor: '[]'}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$tfoot = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tfoot,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$tbody = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tbody,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$thead = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$thead,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$table = F2(
-	function (options, nodes) {
-		return A3(
-			_debois$elm_mdl$Material_Options$styled,
-			_elm_lang$html$Html$table,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$cs('mdl-data-table'),
-				_1: {
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-js-data-table'),
-					_1: {
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Options$cs('is-upgraded'),
-						_1: options
-					}
-				}
-			},
-			nodes);
-	});
-var _debois$elm_mdl$Material_Table$Row = function (a) {
-	return {selected: a};
-};
-var _debois$elm_mdl$Material_Table$Header = F2(
-	function (a, b) {
-		return {numeric: a, sorted: b};
-	});
-var _debois$elm_mdl$Material_Table$Cell = function (a) {
-	return {numeric: a};
-};
-var _debois$elm_mdl$Material_Table$Descending = {ctor: 'Descending'};
-var _debois$elm_mdl$Material_Table$descending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Descending);
-var _debois$elm_mdl$Material_Table$Ascending = {ctor: 'Ascending'};
-var _debois$elm_mdl$Material_Table$ascending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Ascending);
-
-var _ak1211$tractor$AnalyticsPage_View$viewTable = F2(
-	function (headlines, rows) {
-		return A2(
-			_debois$elm_mdl$Material_Table$table,
-			{
-				ctor: '::',
-				_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '0 auto'),
-				_1: {ctor: '[]'}
-			},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Table$thead,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: A2(
-							_debois$elm_mdl$Material_Table$tr,
-							{ctor: '[]'},
-							A2(
-								_elm_lang$core$List$map,
-								function (a) {
-									return A2(
-										_debois$elm_mdl$Material_Table$th,
-										{ctor: '[]'},
-										{
-											ctor: '::',
-											_0: a,
-											_1: {ctor: '[]'}
-										});
-								},
-								headlines)),
-						_1: {ctor: '[]'}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_debois$elm_mdl$Material_Table$tbody,
-						{ctor: '[]'},
-						rows),
-					_1: {ctor: '[]'}
-				}
-			});
-	});
-var _ak1211$tractor$AnalyticsPage_View$viewCell = _elm_lang$core$Maybe$withDefault('Not Available');
-var _ak1211$tractor$AnalyticsPage_View$tableOhlcv = function (data) {
-	var row = function (item) {
-		return A2(
-			_debois$elm_mdl$Material_Table$tr,
-			{ctor: '[]'},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Table$td,
-					{
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Table$numeric,
-						_1: {ctor: '[]'}
-					},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(item.at),
-						_1: {ctor: '[]'}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_debois$elm_mdl$Material_Table$td,
-						{
-							ctor: '::',
-							_0: _debois$elm_mdl$Material_Table$numeric,
-							_1: {ctor: '[]'}
-						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(
-								_ak1211$tractor$AnalyticsPage_View$viewCell(
-									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.open))),
-							_1: {ctor: '[]'}
-						}),
-					_1: {
-						ctor: '::',
-						_0: A2(
-							_debois$elm_mdl$Material_Table$td,
-							{
-								ctor: '::',
-								_0: _debois$elm_mdl$Material_Table$numeric,
-								_1: {ctor: '[]'}
-							},
-							{
-								ctor: '::',
-								_0: _elm_lang$html$Html$text(
-									_ak1211$tractor$AnalyticsPage_View$viewCell(
-										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.high))),
-								_1: {ctor: '[]'}
-							}),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_debois$elm_mdl$Material_Table$td,
-								{
-									ctor: '::',
-									_0: _debois$elm_mdl$Material_Table$numeric,
-									_1: {ctor: '[]'}
-								},
-								{
-									ctor: '::',
-									_0: _elm_lang$html$Html$text(
-										_ak1211$tractor$AnalyticsPage_View$viewCell(
-											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.low))),
-									_1: {ctor: '[]'}
-								}),
-							_1: {
-								ctor: '::',
-								_0: A2(
-									_debois$elm_mdl$Material_Table$td,
-									{
-										ctor: '::',
-										_0: _debois$elm_mdl$Material_Table$numeric,
-										_1: {ctor: '[]'}
-									},
-									{
-										ctor: '::',
-										_0: _elm_lang$html$Html$text(
-											_ak1211$tractor$AnalyticsPage_View$viewCell(
-												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.close))),
-										_1: {ctor: '[]'}
-									}),
-								_1: {
-									ctor: '::',
-									_0: A2(
-										_debois$elm_mdl$Material_Table$td,
-										{
-											ctor: '::',
-											_0: _debois$elm_mdl$Material_Table$numeric,
-											_1: {ctor: '[]'}
-										},
-										{
-											ctor: '::',
-											_0: _elm_lang$html$Html$text(
-												_elm_lang$core$Basics$toString(item.volume)),
-											_1: {ctor: '[]'}
-										}),
-									_1: {
-										ctor: '::',
-										_0: A2(
-											_debois$elm_mdl$Material_Table$td,
-											{ctor: '[]'},
-											{
-												ctor: '::',
-												_0: _elm_lang$html$Html$text(
-													_ak1211$tractor$AnalyticsPage_View$viewCell(item.source)),
-												_1: {ctor: '[]'}
-											}),
-										_1: {ctor: '[]'}
-									}
-								}
-							}
-						}
-					}
-				}
-			});
-	};
-	var headlines = {
-		ctor: '::',
-		_0: _elm_lang$html$Html$text('時間'),
-		_1: {
-			ctor: '::',
-			_0: _elm_lang$html$Html$text('始値'),
-			_1: {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text('高値'),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$html$Html$text('安値'),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html$text('終値'),
-						_1: {
-							ctor: '::',
-							_0: _elm_lang$html$Html$text('出来高'),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$html$Html$text('入手元'),
-								_1: {ctor: '[]'}
-							}
-						}
-					}
-				}
-			}
-		}
-	};
-	return A2(
-		_ak1211$tractor$AnalyticsPage_View$viewTable,
-		headlines,
-		A2(_elm_lang$core$List$map, row, data));
-};
-var _ak1211$tractor$AnalyticsPage_View$historiesView = function (model) {
-	var hs = A2(
-		_elm_lang$core$Maybe$withDefault,
-		{ctor: '[]'},
-		A2(
-			_elm_lang$core$Maybe$map,
-			function (q) {
-				return q.histories;
-			},
-			model.quotes));
-	return A2(
-		_debois$elm_mdl$Material_Grid$grid,
-		{ctor: '[]'},
-		{
-			ctor: '::',
-			_0: A2(
-				_debois$elm_mdl$Material_Grid$cell,
-				{
-					ctor: '::',
-					_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
-					_1: {ctor: '[]'}
-				},
-				{
-					ctor: '::',
-					_0: _ak1211$tractor$AnalyticsPage_View$tableOhlcv(hs),
-					_1: {ctor: '[]'}
-				}),
-			_1: {ctor: '[]'}
-		});
-};
-var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
-	var width = '500px';
-	var marketCode = A2(
-		_elm_lang$core$Maybe$withDefault,
-		'Not Available',
-		A2(
-			_elm_lang$core$Maybe$map,
-			function (q) {
-				return q.marketCode;
-			},
-			model.quotes));
-	var contents = A2(
-		_elm_lang$html$Html$dl,
-		{ctor: '[]'},
-		{
-			ctor: '::',
-			_0: A2(
-				_elm_lang$html$Html$dt,
-				{ctor: '[]'},
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html$text('コード'),
-					_1: {ctor: '[]'}
-				}),
-			_1: {
-				ctor: '::',
-				_0: A2(
-					_elm_lang$html$Html$dd,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(marketCode),
-						_1: {ctor: '[]'}
-					}),
-				_1: {ctor: '[]'}
-			}
-		});
-	return A2(
-		_debois$elm_mdl$Material_Grid$grid,
-		{ctor: '[]'},
-		{
-			ctor: '::',
-			_0: A2(
-				_debois$elm_mdl$Material_Grid$cell,
-				{
-					ctor: '::',
-					_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
-					_1: {ctor: '[]'}
-				},
-				{
-					ctor: '::',
-					_0: A2(
-						_elm_lang$html$Html$p,
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html_Attributes$style(
-								{
-									ctor: '::',
-									_0: {ctor: '_Tuple2', _0: 'width', _1: width},
-									_1: {
-										ctor: '::',
-										_0: {ctor: '_Tuple2', _0: 'margin', _1: '0 auto'},
-										_1: {ctor: '[]'}
-									}
-								}),
-							_1: {ctor: '[]'}
-						},
-						{
-							ctor: '::',
-							_0: contents,
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				}),
-			_1: {ctor: '[]'}
-		});
-};
-var _ak1211$tractor$AnalyticsPage_View$view = F2(
-	function (model, marketCode) {
-		return A6(
-			_debois$elm_mdl$Material_Tabs$render,
-			_ak1211$tractor$AnalyticsPage_Msg$Mdl,
-			{
-				ctor: '::',
-				_0: 0,
-				_1: {ctor: '[]'}
-			},
-			model.mdl,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Tabs$ripple,
-				_1: {
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Tabs$onSelectTab(_ak1211$tractor$AnalyticsPage_Msg$SelectTab),
-					_1: {
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Tabs$activeTab(model.tab),
-						_1: {ctor: '[]'}
-					}
-				}
-			},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Tabs$label,
-					{
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Options$center,
-						_1: {ctor: '[]'}
-					},
-					{
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Icon$i('insert_chart_outlined'),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_debois$elm_mdl$Material_Options$span,
-								{
-									ctor: '::',
-									_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
-									_1: {ctor: '[]'}
-								},
-								{ctor: '[]'}),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$html$Html$text('summary'),
-								_1: {ctor: '[]'}
-							}
-						}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_debois$elm_mdl$Material_Tabs$label,
-						{
-							ctor: '::',
-							_0: _debois$elm_mdl$Material_Options$center,
-							_1: {ctor: '[]'}
-						},
-						{
-							ctor: '::',
-							_0: _debois$elm_mdl$Material_Icon$i('notes'),
-							_1: {
-								ctor: '::',
-								_0: A2(
-									_debois$elm_mdl$Material_Options$span,
-									{
-										ctor: '::',
-										_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
-										_1: {ctor: '[]'}
-									},
-									{ctor: '[]'}),
-								_1: {
-									ctor: '::',
-									_0: _elm_lang$html$Html$text('histories'),
-									_1: {ctor: '[]'}
-								}
-							}
-						}),
-					_1: {ctor: '[]'}
-				}
-			},
-			{
-				ctor: '::',
-				_0: function () {
-					var _p0 = model.tab;
-					if (_p0 === 1) {
-						return _ak1211$tractor$AnalyticsPage_View$historiesView(model);
-					} else {
-						return _ak1211$tractor$AnalyticsPage_View$summaryView(model);
-					}
-				}(),
-				_1: {ctor: '[]'}
-			});
-	});
-
-var _elm_lang$dom$Dom$blur = _elm_lang$dom$Native_Dom.blur;
-var _elm_lang$dom$Dom$focus = _elm_lang$dom$Native_Dom.focus;
-var _elm_lang$dom$Dom$NotFound = function (a) {
-	return {ctor: 'NotFound', _0: a};
-};
-
-var _elm_lang$dom$Dom_Size$width = _elm_lang$dom$Native_Dom.width;
-var _elm_lang$dom$Dom_Size$height = _elm_lang$dom$Native_Dom.height;
-var _elm_lang$dom$Dom_Size$VisibleContentWithBordersAndMargins = {ctor: 'VisibleContentWithBordersAndMargins'};
-var _elm_lang$dom$Dom_Size$VisibleContentWithBorders = {ctor: 'VisibleContentWithBorders'};
-var _elm_lang$dom$Dom_Size$VisibleContent = {ctor: 'VisibleContent'};
-var _elm_lang$dom$Dom_Size$Content = {ctor: 'Content'};
-
-var _elm_lang$dom$Dom_Scroll$toX = _elm_lang$dom$Native_Dom.setScrollLeft;
-var _elm_lang$dom$Dom_Scroll$x = _elm_lang$dom$Native_Dom.getScrollLeft;
-var _elm_lang$dom$Dom_Scroll$toRight = _elm_lang$dom$Native_Dom.toRight;
-var _elm_lang$dom$Dom_Scroll$toLeft = function (id) {
-	return A2(_elm_lang$dom$Dom_Scroll$toX, id, 0);
-};
-var _elm_lang$dom$Dom_Scroll$toY = _elm_lang$dom$Native_Dom.setScrollTop;
-var _elm_lang$dom$Dom_Scroll$y = _elm_lang$dom$Native_Dom.getScrollTop;
-var _elm_lang$dom$Dom_Scroll$toBottom = _elm_lang$dom$Native_Dom.toBottom;
-var _elm_lang$dom$Dom_Scroll$toTop = function (id) {
-	return A2(_elm_lang$dom$Dom_Scroll$toY, id, 0);
-};
-
-var _ak1211$tractor$PortfolioPage_Model$initialModel = {accessToken: _elm_lang$core$Maybe$Nothing, portfolios: _elm_lang$core$Maybe$Nothing, mdl: _debois$elm_mdl$Material$model};
-var _ak1211$tractor$PortfolioPage_Model$Model = F3(
-	function (a, b, c) {
-		return {accessToken: a, portfolios: b, mdl: c};
-	});
-
 var _elm_lang$navigation$Native_Navigation = function() {
 
 
@@ -17841,1219 +16958,499 @@ var _ak1211$tractor$Route$fromLocation = function (path) {
 	}
 };
 
-var _norpan$elm_file_reader$FileReader$handleFiles = '\n    var fileObjects = [];\n    var index = 0;\n    var reader = new FileReader();\n    var dataFormat = event.target.dataset.format;\n    var encoding = event.target.dataset.encoding;\n    reader.onload = function() {\n        var data;\n        switch(dataFormat) {\n            case \'DataURL\':\n            case \'Text\':\n                data = reader.result;\n                break;\n            case \'Base64\':\n                data = reader.result.split(\',\')[1];\n                break;\n        }\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , data: data\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    reader.onerror = function () {\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , errorCode: reader.error.code\n            , errorName: reader.error.name\n            , errorMessage: reader.error.message\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    function readOne() {\n        var file = files[index];\n        if (file) {\n            switch(dataFormat) {\n                case \'DataURL\':\n                case \'Base64\':\n                    reader.readAsDataURL(file);\n                    break;\n                case \'Text\':\n                    reader.readAsText(file, encoding);\n                    break;\n            }\n        } else {\n            if (fileObjects.length > 0) {\n                var filesEvent;\n                try {\n                  filesEvent = new CustomEvent(\"files\", { detail: fileObjects });\n                } catch(e) {\n                  filesEvent = document.createEvent(\"CustomEvent\");\n                  filesEvent.initCustomEvent(\"files\", false, false, fileObjects);\n                }\n                event.target.dispatchEvent(filesEvent);\n            }\n        }\n      }\n    readOne();\n';
-var _norpan$elm_file_reader$FileReader$onChangeHandler = A2(_elm_lang$core$Basics_ops['++'], '\n    event.preventDefault();\n    event.stopPropagation();\n    var files = event.target.files;\n    ', _norpan$elm_file_reader$FileReader$handleFiles);
-var _norpan$elm_file_reader$FileReader$onDropHandler = A2(_elm_lang$core$Basics_ops['++'], '\n    event.preventDefault();\n    event.stopPropagation();\n    var files = event.dataTransfer.files;\n    ', _norpan$elm_file_reader$FileReader$handleFiles);
-var _norpan$elm_file_reader$FileReader$dataFormatAttributes = function (dataFormat) {
-	var _p0 = dataFormat;
-	switch (_p0.ctor) {
-		case 'DataURL':
-			return {
-				ctor: '::',
-				_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-format', 'DataURL'),
-				_1: {ctor: '[]'}
-			};
-		case 'Base64':
-			return {
-				ctor: '::',
-				_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-format', 'Base64'),
-				_1: {ctor: '[]'}
-			};
-		default:
-			return {
-				ctor: '::',
-				_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-format', 'Text'),
-				_1: {
-					ctor: '::',
-					_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-encoding', _p0._0),
-					_1: {ctor: '[]'}
-				}
-			};
-	}
-};
-var _norpan$elm_file_reader$FileReader$default = F2(
-	function (a, decoder) {
-		return _elm_lang$core$Json_Decode$oneOf(
-			{
-				ctor: '::',
-				_0: decoder,
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$core$Json_Decode$succeed(a),
-					_1: {ctor: '[]'}
-				}
-			});
-	});
-var _norpan$elm_file_reader$FileReader$File = F6(
-	function (a, b, c, d, e, f) {
-		return {lastModified: a, name: b, size: c, mimeType: d, dataFormat: e, data: f};
-	});
-var _norpan$elm_file_reader$FileReader$Error = F3(
-	function (a, b, c) {
-		return {code: a, name: b, message: c};
-	});
-var _norpan$elm_file_reader$FileReader$errorDecoder = A4(
-	_elm_lang$core$Json_Decode$map3,
-	_norpan$elm_file_reader$FileReader$Error,
-	A2(
-		_norpan$elm_file_reader$FileReader$default,
-		0,
-		A2(_elm_lang$core$Json_Decode$field, 'errorCode', _elm_lang$core$Json_Decode$int)),
-	A2(
-		_norpan$elm_file_reader$FileReader$default,
-		'',
-		A2(_elm_lang$core$Json_Decode$field, 'errorName', _elm_lang$core$Json_Decode$string)),
-	A2(
-		_norpan$elm_file_reader$FileReader$default,
-		'',
-		A2(_elm_lang$core$Json_Decode$field, 'errorMessage', _elm_lang$core$Json_Decode$string)));
-var _norpan$elm_file_reader$FileReader$Text = function (a) {
-	return {ctor: 'Text', _0: a};
-};
-var _norpan$elm_file_reader$FileReader$Base64 = {ctor: 'Base64'};
-var _norpan$elm_file_reader$FileReader$DataURL = {ctor: 'DataURL'};
-var _norpan$elm_file_reader$FileReader$dataFormatDecoder = A2(
-	_elm_lang$core$Json_Decode$andThen,
-	function (dataFormat) {
-		var _p1 = dataFormat;
-		switch (_p1) {
-			case 'DataURL':
-				return _elm_lang$core$Json_Decode$succeed(_norpan$elm_file_reader$FileReader$DataURL);
-			case 'Base64':
-				return _elm_lang$core$Json_Decode$succeed(_norpan$elm_file_reader$FileReader$Base64);
-			case 'Text':
-				return A2(
-					_elm_lang$core$Json_Decode$map,
-					_norpan$elm_file_reader$FileReader$Text,
-					A2(_elm_lang$core$Json_Decode$field, 'encoding', _elm_lang$core$Json_Decode$string));
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown data format: ', dataFormat));
-		}
-	},
-	A2(_elm_lang$core$Json_Decode$field, 'dataFormat', _elm_lang$core$Json_Decode$string));
-var _norpan$elm_file_reader$FileReader$fileDecoder = A7(
-	_elm_lang$core$Json_Decode$map6,
-	_norpan$elm_file_reader$FileReader$File,
-	A2(_elm_lang$core$Json_Decode$field, 'lastModified', _elm_lang$core$Json_Decode$float),
-	A2(_elm_lang$core$Json_Decode$field, 'name', _elm_lang$core$Json_Decode$string),
-	A2(_elm_lang$core$Json_Decode$field, 'size', _elm_lang$core$Json_Decode$int),
-	A2(_elm_lang$core$Json_Decode$field, 'mimeType', _elm_lang$core$Json_Decode$string),
-	_norpan$elm_file_reader$FileReader$dataFormatDecoder,
-	_elm_lang$core$Json_Decode$oneOf(
-		{
-			ctor: '::',
-			_0: A2(
-				_elm_lang$core$Json_Decode$map,
-				_elm_lang$core$Result$Ok,
-				A2(_elm_lang$core$Json_Decode$field, 'data', _elm_lang$core$Json_Decode$string)),
-			_1: {
-				ctor: '::',
-				_0: A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Result$Err, _norpan$elm_file_reader$FileReader$errorDecoder),
-				_1: {ctor: '[]'}
-			}
-		}));
-var _norpan$elm_file_reader$FileReader$fileInput = F2(
-	function (dataFormat, fileMsg) {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html_Attributes$type_('file'),
-				_1: {
-					ctor: '::',
-					_0: A2(_elm_lang$html$Html_Attributes$attribute, 'onchange', _norpan$elm_file_reader$FileReader$onChangeHandler),
-					_1: {
-						ctor: '::',
-						_0: A2(
-							_elm_lang$html$Html_Events$on,
-							'files',
-							A2(
-								_elm_lang$core$Json_Decode$map,
-								fileMsg,
-								A2(
-									_elm_lang$core$Json_Decode$field,
-									'detail',
-									A2(_elm_lang$core$Json_Decode$index, 0, _norpan$elm_file_reader$FileReader$fileDecoder)))),
-						_1: {ctor: '[]'}
-					}
-				}
-			},
-			_norpan$elm_file_reader$FileReader$dataFormatAttributes(dataFormat));
-	});
-var _norpan$elm_file_reader$FileReader$filesInput = F2(
-	function (dataFormat, filesMsg) {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html_Attributes$type_('file'),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$multiple(true),
-					_1: {
-						ctor: '::',
-						_0: A2(_elm_lang$html$Html_Attributes$attribute, 'onchange', _norpan$elm_file_reader$FileReader$onChangeHandler),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_elm_lang$html$Html_Events$on,
-								'files',
-								A2(
-									_elm_lang$core$Json_Decode$map,
-									filesMsg,
-									A2(
-										_elm_lang$core$Json_Decode$field,
-										'detail',
-										_elm_lang$core$Json_Decode$list(_norpan$elm_file_reader$FileReader$fileDecoder)))),
-							_1: {ctor: '[]'}
-						}
-					}
-				}
-			},
-			_norpan$elm_file_reader$FileReader$dataFormatAttributes(dataFormat));
-	});
-var _norpan$elm_file_reader$FileReader$dropZone = function (_p2) {
-	var _p3 = _p2;
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		{
-			ctor: '::',
-			_0: A3(
-				_elm_lang$html$Html_Events$onWithOptions,
-				'dragenter',
-				{preventDefault: true, stopPropagation: true},
-				_elm_lang$core$Json_Decode$succeed(_p3.enterMsg)),
-			_1: {
-				ctor: '::',
-				_0: A3(
-					_elm_lang$html$Html_Events$onWithOptions,
-					'dragleave',
-					{preventDefault: true, stopPropagation: true},
-					_elm_lang$core$Json_Decode$succeed(_p3.leaveMsg)),
-				_1: {
-					ctor: '::',
-					_0: A2(_elm_lang$html$Html_Attributes$attribute, 'ondragover', 'event.preventDefault(); event.stopPropagation();'),
-					_1: {
-						ctor: '::',
-						_0: A2(_elm_lang$html$Html_Attributes$attribute, 'ondrop', _norpan$elm_file_reader$FileReader$onDropHandler),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_elm_lang$html$Html_Events$on,
-								'files',
-								A2(
-									_elm_lang$core$Json_Decode$map,
-									_p3.filesMsg,
-									A2(
-										_elm_lang$core$Json_Decode$field,
-										'detail',
-										_elm_lang$core$Json_Decode$list(_norpan$elm_file_reader$FileReader$fileDecoder)))),
-							_1: {ctor: '[]'}
-						}
-					}
-				}
-			}
-		},
-		_norpan$elm_file_reader$FileReader$dataFormatAttributes(_p3.dataFormat));
-};
-
-var _ak1211$tractor$UploadPage_Msg$Mdl = function (a) {
+var _ak1211$tractor$AnalyticsPage_Msg$Mdl = function (a) {
 	return {ctor: 'Mdl', _0: a};
 };
-var _ak1211$tractor$UploadPage_Msg$DoneUploadContent = function (a) {
-	return {ctor: 'DoneUploadContent', _0: a};
-};
-var _ak1211$tractor$UploadPage_Msg$UploadContent = {ctor: 'UploadContent'};
-var _ak1211$tractor$UploadPage_Msg$UploadAllFilesContent = {ctor: 'UploadAllFilesContent'};
-var _ak1211$tractor$UploadPage_Msg$FilesDropped = function (a) {
-	return {ctor: 'FilesDropped', _0: a};
-};
-var _ak1211$tractor$UploadPage_Msg$DropZoneLeaved = {ctor: 'DropZoneLeaved'};
-var _ak1211$tractor$UploadPage_Msg$DropZoneEntered = {ctor: 'DropZoneEntered'};
-var _ak1211$tractor$UploadPage_Msg$ChangeAccessToken = function (a) {
-	return {ctor: 'ChangeAccessToken', _0: a};
-};
-
-var _ak1211$tractor$UploadPage_Model$initialUploadProgress = {
-	counter: 0,
-	total: 1,
-	todo: {ctor: '[]'},
-	done: {ctor: '[]'}
-};
-var _ak1211$tractor$UploadPage_Model$initialModel = {
-	accessToken: _elm_lang$core$Maybe$Nothing,
-	inDropZone: false,
-	fileContents: {ctor: '[]'},
-	progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress,
-	mdl: _debois$elm_mdl$Material$model
-};
-var _ak1211$tractor$UploadPage_Model$FileContent = F4(
-	function (a, b, c, d) {
-		return {name: a, marketCode: b, timeFrame: c, ohlcvs: d};
-	});
-var _ak1211$tractor$UploadPage_Model$UploadThunk = F2(
-	function (a, b) {
-		return {$function: a, ohlcv: b};
-	});
-var _ak1211$tractor$UploadPage_Model$UploadProgress = F4(
-	function (a, b, c, d) {
-		return {counter: a, total: b, todo: c, done: d};
-	});
-var _ak1211$tractor$UploadPage_Model$Model = F5(
-	function (a, b, c, d, e) {
-		return {accessToken: a, inDropZone: b, fileContents: c, progress: d, mdl: e};
-	});
-
-var _ak1211$tractor$Model$initialModel = function (initClientID) {
-	return {
-		clientID: initClientID,
-		accessToken: _elm_lang$core$Maybe$Nothing,
-		userName: _elm_lang$core$Maybe$Nothing,
-		pageHistory: {ctor: '[]'},
-		serverVersion: _elm_lang$core$Maybe$Nothing,
-		webApiDocument: _elm_lang$core$Maybe$Nothing,
-		uploadPageModel: _ak1211$tractor$UploadPage_Model$initialModel,
-		portfolioPageModel: _ak1211$tractor$PortfolioPage_Model$initialModel,
-		analyticsPageModel: _ak1211$tractor$AnalyticsPage_Model$initialModel,
-		mdl: _debois$elm_mdl$Material$model
-	};
-};
-var _ak1211$tractor$Model$Model = function (a) {
-	return function (b) {
-		return function (c) {
-			return function (d) {
-				return function (e) {
-					return function (f) {
-						return function (g) {
-							return function (h) {
-								return function (i) {
-									return function (j) {
-										return {clientID: a, accessToken: b, userName: c, pageHistory: d, serverVersion: e, webApiDocument: f, uploadPageModel: g, portfolioPageModel: h, analyticsPageModel: i, mdl: j};
-									};
-								};
-							};
-						};
-					};
-				};
-			};
-		};
-	};
-};
-
-var _ak1211$tractor$PortfolioPage_Msg$Mdl = function (a) {
-	return {ctor: 'Mdl', _0: a};
-};
-var _ak1211$tractor$PortfolioPage_Msg$NewUrl = function (a) {
-	return {ctor: 'NewUrl', _0: a};
-};
-var _ak1211$tractor$PortfolioPage_Msg$UpdatePortfolios = function (a) {
-	return {ctor: 'UpdatePortfolios', _0: a};
-};
-var _ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken = function (a) {
-	return {ctor: 'ChangeAccessToken', _0: a};
-};
-
-var _ak1211$tractor$Msg$Mdl = function (a) {
-	return {ctor: 'Mdl', _0: a};
-};
-var _ak1211$tractor$Msg$AnalyticsPageMsg = function (a) {
-	return {ctor: 'AnalyticsPageMsg', _0: a};
-};
-var _ak1211$tractor$Msg$PortfolioPageMsg = function (a) {
-	return {ctor: 'PortfolioPageMsg', _0: a};
-};
-var _ak1211$tractor$Msg$UploadPageMsg = function (a) {
-	return {ctor: 'UploadPageMsg', _0: a};
-};
-var _ak1211$tractor$Msg$UrlChange = function (a) {
+var _ak1211$tractor$AnalyticsPage_Msg$UrlChange = function (a) {
 	return {ctor: 'UrlChange', _0: a};
 };
-var _ak1211$tractor$Msg$UpdateWebApiDocument = function (a) {
-	return {ctor: 'UpdateWebApiDocument', _0: a};
+var _ak1211$tractor$AnalyticsPage_Msg$SelectTab = function (a) {
+	return {ctor: 'SelectTab', _0: a};
 };
-var _ak1211$tractor$Msg$UpdateServerVersion = function (a) {
-	return {ctor: 'UpdateServerVersion', _0: a};
+var _ak1211$tractor$AnalyticsPage_Msg$UpdateHistories = F2(
+	function (a, b) {
+		return {ctor: 'UpdateHistories', _0: a, _1: b};
+	});
+var _ak1211$tractor$AnalyticsPage_Msg$ChangeMarketCode = function (a) {
+	return {ctor: 'ChangeMarketCode', _0: a};
 };
-var _ak1211$tractor$Msg$ScrollToTop = {ctor: 'ScrollToTop'};
-var _ak1211$tractor$Msg$Nop = {ctor: 'Nop'};
-var _ak1211$tractor$Msg$NewUrl = function (a) {
-	return {ctor: 'NewUrl', _0: a};
-};
-var _ak1211$tractor$Msg$DoneOAuthExchangeCode = function (a) {
-	return {ctor: 'DoneOAuthExchangeCode', _0: a};
+var _ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken = function (a) {
+	return {ctor: 'ChangeAccessToken', _0: a};
 };
 
-var _ak1211$tractor$PortfolioPage_Update$makeAuthorizationHeader = function (token) {
-	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
+var _ak1211$tractor$AnalyticsPage_Model$initialModel = {
+	accessToken: _elm_lang$core$Maybe$Nothing,
+	marketCode: _elm_lang$core$Maybe$Nothing,
+	histories: {ctor: '[]'},
+	tab: 0,
+	mdl: _debois$elm_mdl$Material$model
 };
-var _ak1211$tractor$PortfolioPage_Update$getPortfolios = function (token) {
-	var authzHeader = _ak1211$tractor$PortfolioPage_Update$makeAuthorizationHeader(token);
-	return A2(
-		_elm_lang$http$Http$send,
-		_ak1211$tractor$PortfolioPage_Msg$UpdatePortfolios,
-		_ak1211$tractor$Generated_WebApi$getApiV1Portfolios(authzHeader));
+var _ak1211$tractor$AnalyticsPage_Model$init = A2(
+	_elm_lang$core$Platform_Cmd_ops['!'],
+	_ak1211$tractor$AnalyticsPage_Model$initialModel,
+	{
+		ctor: '::',
+		_0: _debois$elm_mdl$Material$init(_ak1211$tractor$AnalyticsPage_Msg$Mdl),
+		_1: {ctor: '[]'}
+	});
+var _ak1211$tractor$AnalyticsPage_Model$clearModel = function (model) {
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			marketCode: _elm_lang$core$Maybe$Nothing,
+			histories: {ctor: '[]'},
+			tab: 0
+		});
 };
-var _ak1211$tractor$PortfolioPage_Update$update = F2(
+var _ak1211$tractor$AnalyticsPage_Model$Model = F5(
+	function (a, b, c, d, e) {
+		return {accessToken: a, marketCode: b, histories: c, tab: d, mdl: e};
+	});
+
+var _ak1211$tractor$AnalyticsPage_Update$getHistories = F2(
+	function (token, marketCode) {
+		var authzHeader = _ak1211$tractor$Generated_WebApi$makeAuthorizationHeader(token);
+		return A2(
+			_elm_lang$http$Http$send,
+			_ak1211$tractor$AnalyticsPage_Msg$UpdateHistories(marketCode),
+			A3(
+				_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode,
+				authzHeader,
+				marketCode,
+				_elm_lang$core$Maybe$Just('1d')));
+	});
+var _ak1211$tractor$AnalyticsPage_Update$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
 			case 'ChangeAccessToken':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{accessToken: _p0._0}),
+					{ctor: '[]'});
+			case 'ChangeMarketCode':
 				if (_p0._0.ctor === 'Just') {
-					var _p1 = _p0._0._0;
+					var _p2 = _p0._0._0;
+					var _p1 = model.accessToken;
+					if (_p1.ctor === 'Just') {
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							model,
+							{
+								ctor: '::',
+								_0: A2(_ak1211$tractor$AnalyticsPage_Update$getHistories, _p1._0, _p2),
+								_1: {ctor: '[]'}
+							});
+					} else {
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{
+									marketCode: _elm_lang$core$Maybe$Just(_p2),
+									histories: {ctor: '[]'}
+								}),
+							{ctor: '[]'});
+					}
+				} else {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{
-								accessToken: _elm_lang$core$Maybe$Just(_p1)
+								marketCode: _elm_lang$core$Maybe$Nothing,
+								histories: {ctor: '[]'}
 							}),
-						{
-							ctor: '::',
-							_0: _ak1211$tractor$PortfolioPage_Update$getPortfolios(_p1),
-							_1: {ctor: '[]'}
-						});
+						{ctor: '[]'});
+				}
+			case 'UpdateHistories':
+				if (_p0._1.ctor === 'Ok') {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								marketCode: _elm_lang$core$Maybe$Just(_p0._0),
+								histories: _p0._1._0
+							}),
+						{ctor: '[]'});
 				} else {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{accessToken: _elm_lang$core$Maybe$Nothing}),
+							{
+								marketCode: _elm_lang$core$Maybe$Nothing,
+								histories: {ctor: '[]'}
+							}),
 						{ctor: '[]'});
 				}
-			case 'UpdatePortfolios':
+			case 'SelectTab':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{
-							portfolios: _elm_lang$core$Result$toMaybe(_p0._0)
-						}),
+						{tab: _p0._0}),
 					{ctor: '[]'});
-			case 'NewUrl':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					{
-						ctor: '::',
-						_0: _elm_lang$navigation$Navigation$newUrl(_p0._0),
-						_1: {ctor: '[]'}
-					});
-			default:
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$PortfolioPage_Msg$Mdl, _p0._0, model);
-		}
-	});
-
-//import Maybe, Native.List //
-
-var _elm_lang$core$Native_Regex = function() {
-
-function escape(str)
-{
-	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-}
-function caseInsensitive(re)
-{
-	return new RegExp(re.source, 'gi');
-}
-function regex(raw)
-{
-	return new RegExp(raw, 'g');
-}
-
-function contains(re, string)
-{
-	return string.match(re) !== null;
-}
-
-function find(n, re, str)
-{
-	n = n.ctor === 'All' ? Infinity : n._0;
-	var out = [];
-	var number = 0;
-	var string = str;
-	var lastIndex = re.lastIndex;
-	var prevLastIndex = -1;
-	var result;
-	while (number++ < n && (result = re.exec(string)))
-	{
-		if (prevLastIndex === re.lastIndex) break;
-		var i = result.length - 1;
-		var subs = new Array(i);
-		while (i > 0)
-		{
-			var submatch = result[i];
-			subs[--i] = submatch === undefined
-				? _elm_lang$core$Maybe$Nothing
-				: _elm_lang$core$Maybe$Just(submatch);
-		}
-		out.push({
-			match: result[0],
-			submatches: _elm_lang$core$Native_List.fromArray(subs),
-			index: result.index,
-			number: number
-		});
-		prevLastIndex = re.lastIndex;
-	}
-	re.lastIndex = lastIndex;
-	return _elm_lang$core$Native_List.fromArray(out);
-}
-
-function replace(n, re, replacer, string)
-{
-	n = n.ctor === 'All' ? Infinity : n._0;
-	var count = 0;
-	function jsReplacer(match)
-	{
-		if (count++ >= n)
-		{
-			return match;
-		}
-		var i = arguments.length - 3;
-		var submatches = new Array(i);
-		while (i > 0)
-		{
-			var submatch = arguments[i];
-			submatches[--i] = submatch === undefined
-				? _elm_lang$core$Maybe$Nothing
-				: _elm_lang$core$Maybe$Just(submatch);
-		}
-		return replacer({
-			match: match,
-			submatches: _elm_lang$core$Native_List.fromArray(submatches),
-			index: arguments[arguments.length - 2],
-			number: count
-		});
-	}
-	return string.replace(re, jsReplacer);
-}
-
-function split(n, re, str)
-{
-	n = n.ctor === 'All' ? Infinity : n._0;
-	if (n === Infinity)
-	{
-		return _elm_lang$core$Native_List.fromArray(str.split(re));
-	}
-	var string = str;
-	var result;
-	var out = [];
-	var start = re.lastIndex;
-	var restoreLastIndex = re.lastIndex;
-	while (n--)
-	{
-		if (!(result = re.exec(string))) break;
-		out.push(string.slice(start, result.index));
-		start = re.lastIndex;
-	}
-	out.push(string.slice(start));
-	re.lastIndex = restoreLastIndex;
-	return _elm_lang$core$Native_List.fromArray(out);
-}
-
-return {
-	regex: regex,
-	caseInsensitive: caseInsensitive,
-	escape: escape,
-
-	contains: F2(contains),
-	find: F3(find),
-	replace: F4(replace),
-	split: F3(split)
-};
-
-}();
-
-var _elm_lang$core$Regex$split = _elm_lang$core$Native_Regex.split;
-var _elm_lang$core$Regex$replace = _elm_lang$core$Native_Regex.replace;
-var _elm_lang$core$Regex$find = _elm_lang$core$Native_Regex.find;
-var _elm_lang$core$Regex$contains = _elm_lang$core$Native_Regex.contains;
-var _elm_lang$core$Regex$caseInsensitive = _elm_lang$core$Native_Regex.caseInsensitive;
-var _elm_lang$core$Regex$regex = _elm_lang$core$Native_Regex.regex;
-var _elm_lang$core$Regex$escape = _elm_lang$core$Native_Regex.escape;
-var _elm_lang$core$Regex$Match = F4(
-	function (a, b, c, d) {
-		return {match: a, submatches: b, index: c, number: d};
-	});
-var _elm_lang$core$Regex$Regex = {ctor: 'Regex'};
-var _elm_lang$core$Regex$AtMost = function (a) {
-	return {ctor: 'AtMost', _0: a};
-};
-var _elm_lang$core$Regex$All = {ctor: 'All'};
-
-var _lovasoa$elm_csv$Helper$parseRemaining = F4(
-	function (separator, quoted, remaining, done) {
-		parseRemaining:
-		while (true) {
-			if (_elm_lang$core$Native_Utils.eq(remaining, '')) {
-				return done;
-			} else {
-				if ((!_elm_lang$core$Native_Utils.eq(separator, '')) && ((!quoted) && A2(_elm_lang$core$String$startsWith, separator, remaining))) {
-					var nextChars = A2(
-						_elm_lang$core$String$dropLeft,
-						_elm_lang$core$String$length(separator),
-						remaining);
-					var newQuoted = false;
-					var _v0 = separator,
-						_v1 = false,
-						_v2 = nextChars,
-						_v3 = {ctor: '::', _0: '', _1: done};
-					separator = _v0;
-					quoted = _v1;
-					remaining = _v2;
-					done = _v3;
-					continue parseRemaining;
-				} else {
-					var nextNextChar = A3(_elm_lang$core$String$slice, 1, 2, remaining);
-					var nextChar = A3(_elm_lang$core$String$slice, 0, 1, remaining);
-					var isEscapedQuote = (!quoted) && ((_elm_lang$core$Native_Utils.eq(nextChar, '\\') || _elm_lang$core$Native_Utils.eq(nextChar, '\"')) && _elm_lang$core$Native_Utils.eq(nextNextChar, '\"'));
-					var nextChars = A2(
-						_elm_lang$core$String$dropLeft,
-						isEscapedQuote ? 2 : 1,
-						remaining);
-					var endQuote = quoted && (_elm_lang$core$Native_Utils.eq(nextChar, '\"') && (!isEscapedQuote));
-					var others = A2(
-						_elm_lang$core$Maybe$withDefault,
-						{ctor: '[]'},
-						_elm_lang$core$List$tail(done));
-					var current = A2(
-						_elm_lang$core$Maybe$withDefault,
-						'',
-						_elm_lang$core$List$head(done));
-					var startQuote = _elm_lang$core$Native_Utils.eq(nextChar, '\"') && ((!_elm_lang$core$Native_Utils.eq(nextNextChar, '\"')) && _elm_lang$core$Native_Utils.eq(current, ''));
-					var newQuoted = (quoted && (!endQuote)) || startQuote;
-					var newChar = isEscapedQuote ? '\"' : ((startQuote || endQuote) ? '' : nextChar);
-					var newDone = {
-						ctor: '::',
-						_0: A2(_elm_lang$core$Basics_ops['++'], current, newChar),
-						_1: others
-					};
-					var _v4 = separator,
-						_v5 = newQuoted,
-						_v6 = nextChars,
-						_v7 = newDone;
-					separator = _v4;
-					quoted = _v5;
-					remaining = _v6;
-					done = _v7;
-					continue parseRemaining;
-				}
-			}
-		}
-	});
-var _lovasoa$elm_csv$Helper$splitLineWith = F2(
-	function (separator, line) {
-		return _elm_lang$core$List$reverse(
-			A4(
-				_lovasoa$elm_csv$Helper$parseRemaining,
-				separator,
-				false,
-				line,
-				{ctor: '[]'}));
-	});
-var _lovasoa$elm_csv$Helper$splitLine = _lovasoa$elm_csv$Helper$splitLineWith(',');
-
-var _lovasoa$elm_csv$Csv$splitWith = F2(
-	function (separator, lines) {
-		var values = A2(
-			_elm_lang$core$List$filter,
-			function (x) {
-				return !_elm_lang$core$String$isEmpty(x);
-			},
-			_elm_lang$core$String$lines(lines));
-		return A2(
-			_elm_lang$core$List$map,
-			_lovasoa$elm_csv$Helper$splitLineWith(separator),
-			values);
-	});
-var _lovasoa$elm_csv$Csv$split = _lovasoa$elm_csv$Csv$splitWith(',');
-var _lovasoa$elm_csv$Csv$parseWith = F2(
-	function (separator, lines) {
-		var values = A2(_lovasoa$elm_csv$Csv$splitWith, separator, lines);
-		var headers = A2(
-			_elm_lang$core$Maybe$withDefault,
-			{ctor: '[]'},
-			_elm_lang$core$List$head(values));
-		var records = A2(_elm_lang$core$List$drop, 1, values);
-		return {headers: headers, records: records};
-	});
-var _lovasoa$elm_csv$Csv$parse = _lovasoa$elm_csv$Csv$parseWith(',');
-var _lovasoa$elm_csv$Csv$Csv = F2(
-	function (a, b) {
-		return {headers: a, records: b};
-	});
-
-var _ak1211$tractor$UploadPage_Update$makeAuthorizationHeader = function (token) {
-	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
-};
-var _ak1211$tractor$UploadPage_Update$putOhlcv = F4(
-	function (token, marketCode, timeFrame, ohlcv) {
-		var x = A2(_elm_lang$core$Debug$log, '', ohlcv);
-		var authzHeader = _ak1211$tractor$UploadPage_Update$makeAuthorizationHeader(token);
-		return A2(
-			_elm_lang$http$Http$send,
-			_ak1211$tractor$UploadPage_Msg$DoneUploadContent,
-			A4(
-				_ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode,
-				authzHeader,
-				marketCode,
-				_elm_lang$core$Maybe$Just(timeFrame),
-				{
-					ctor: '::',
-					_0: ohlcv,
-					_1: {ctor: '[]'}
-				}));
-	});
-var _ak1211$tractor$UploadPage_Update$toOhlcvt = F2(
-	function (tf, records) {
-		var time = A2(_elm_lang$core$Dict$get, 'Time', records);
-		var date = A2(_elm_lang$core$Dict$get, 'Date', records);
-		var datetime = A2(
-			_elm_lang$core$Maybe$withDefault,
-			'Date and Time parse error',
-			function () {
-				var _p0 = tf;
-				if (_p0 === '1d') {
-					return A2(
-						_elm_lang$core$Maybe$map,
-						function (a) {
-							return A2(_elm_lang$core$Basics_ops['++'], a, 'T15:00:00+0900');
-						},
-						date);
-				} else {
-					return A3(
-						_elm_lang$core$Maybe$map2,
-						F2(
-							function (a, b) {
-								return A2(
-									_elm_lang$core$Basics_ops['++'],
-									a,
-									A2(
-										_elm_lang$core$Basics_ops['++'],
-										'T',
-										A2(_elm_lang$core$Basics_ops['++'], b, '+0900')));
-							}),
-						date,
-						time);
-				}
-			}());
-		var toNumber = F2(
-			function (fn, name) {
-				return A2(
-					_elm_lang$core$Maybe$andThen,
-					function (_p1) {
-						return _elm_lang$core$Result$toMaybe(
-							fn(
-								_elm_lang$core$String$trim(_p1)));
-					},
-					A2(_elm_lang$core$Dict$get, name, records));
-			});
-		var toFloat = toNumber(_elm_lang$core$String$toFloat);
-		var toInt = toNumber(_elm_lang$core$String$toInt);
-		return {
-			at: datetime,
-			open: toFloat('Open'),
-			high: toFloat('High'),
-			low: toFloat('Low'),
-			close: toFloat('Close'),
-			volume: A2(
-				_elm_lang$core$Maybe$withDefault,
-				0,
-				toInt('Volume')),
-			source: _elm_lang$core$Maybe$Just('matsui.co.jp')
-		};
-	});
-var _ak1211$tractor$UploadPage_Update$parseFromNetstockCsv = function (data) {
-	var lines = _lovasoa$elm_csv$Csv$split(data);
-	var name = _elm_lang$core$List$head(
-		_elm_lang$core$List$concat(
-			A2(
-				_elm_lang$core$List$take,
-				1,
-				A2(_elm_lang$core$List$take, 1, lines))));
-	var hds = _elm_lang$core$List$concat(
-		A2(
-			_elm_lang$core$List$take,
-			1,
-			A2(_elm_lang$core$List$drop, 1, lines)));
-	var toDict = function (r) {
-		return _elm_lang$core$Dict$fromList(
-			A3(
-				_elm_lang$core$List$map2,
-				F2(
-					function (k, v) {
-						return {ctor: '_Tuple2', _0: k, _1: v};
-					}),
-				hds,
-				r));
-	};
-	var recs = A2(_elm_lang$core$List$drop, 2, lines);
-	return {
-		ctor: '_Tuple2',
-		_0: name,
-		_1: A2(_elm_lang$core$List$map, toDict, recs)
-	};
-};
-var _ak1211$tractor$UploadPage_Update$toUploadFileContent = function (file) {
-	var detectTimeFrame = function (records) {
-		return '1d';
-	};
-	var pack = F3(
-		function (name, mc, records) {
-			var tf = detectTimeFrame(records);
-			return {
-				name: name,
-				marketCode: mc,
-				timeFrame: tf,
-				ohlcvs: A2(
-					_elm_lang$core$List$map,
-					_ak1211$tractor$UploadPage_Update$toOhlcvt(tf),
-					records)
-			};
-		});
-	var marketCode = A2(
-		_elm_lang$core$Result$fromMaybe,
-		'CSVファイル名からマーケットコードを得られませんでした',
-		A2(
-			_elm_lang$core$Maybe$map,
-			_elm_lang$core$String$trim,
-			_elm_lang$core$List$head(
-				A2(_elm_lang$core$String$split, '.', file.name))));
-	var _p2 = file.data;
-	if (_p2.ctor === 'Ok') {
-		var _p3 = _ak1211$tractor$UploadPage_Update$parseFromNetstockCsv(_p2._0);
-		if (_p3._0.ctor === 'Just') {
-			return A2(
-				_elm_lang$core$Result$map,
-				function (mc) {
-					return A3(pack, _p3._0._0, mc, _p3._1);
-				},
-				marketCode);
-		} else {
-			return _elm_lang$core$Result$Err('CSVファイルのパースに失敗しました');
-		}
-	} else {
-		return _elm_lang$core$Result$Err(
-			A2(_elm_lang$core$Basics_ops['++'], 'parse error of ', file.name));
-	}
-};
-var _ak1211$tractor$UploadPage_Update$update = F2(
-	function (msg, model) {
-		var _p4 = msg;
-		switch (_p4.ctor) {
-			case 'ChangeAccessToken':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{accessToken: _p4._0}),
-					{ctor: '[]'});
-			case 'DropZoneEntered':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{inDropZone: true}),
-					{ctor: '[]'});
-			case 'DropZoneLeaved':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{inDropZone: false}),
-					{ctor: '[]'});
-			case 'FilesDropped':
-				var cs = A2(_elm_lang$core$List$map, _ak1211$tractor$UploadPage_Update$toUploadFileContent, _p4._0);
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{inDropZone: false, fileContents: cs, progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress}),
-					{ctor: '[]'});
-			case 'UploadAllFilesContent':
-				var _p5 = model.accessToken;
-				if (_p5.ctor === 'Just') {
-					var makeTodo = F3(
-						function (mc, tf, v) {
-							return {
-								$function: A3(_ak1211$tractor$UploadPage_Update$putOhlcv, _p5._0, mc, tf),
-								ohlcv: v
-							};
-						});
-					var makeTodoList = function (fileContent) {
-						return A2(
-							_elm_lang$core$List$map,
-							A2(makeTodo, fileContent.marketCode, fileContent.timeFrame),
-							fileContent.ohlcvs);
-					};
-					var okFiles = A2(_elm_lang$core$List$filterMap, _elm_lang$core$Result$toMaybe, model.fileContents);
-					var newUploadProgress = function () {
-						var todoList = _elm_lang$core$List$concat(
-							A2(_elm_lang$core$List$map, makeTodoList, okFiles));
-						return {
-							counter: 0,
-							total: _elm_lang$core$List$length(todoList),
-							todo: todoList,
-							done: {ctor: '[]'}
-						};
-					}();
-					var newModel = _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							fileContents: {ctor: '[]'},
-							progress: newUploadProgress
-						});
+			case 'UrlChange':
+				if (_p0._0.ctor === 'Analytics') {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
-						newModel,
+						model,
 						{
 							ctor: '::',
 							_0: A2(
 								_elm_lang$core$Task$perform,
 								_elm_lang$core$Basics$identity,
-								_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
+								_elm_lang$core$Task$succeed(
+									_ak1211$tractor$AnalyticsPage_Msg$ChangeMarketCode(_p0._0._0))),
 							_1: {ctor: '[]'}
 						});
 				} else {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
+						_ak1211$tractor$AnalyticsPage_Model$clearModel(model),
 						{ctor: '[]'});
 				}
-			case 'UploadContent':
-				var _p6 = model.progress.todo;
-				if (_p6.ctor === '::') {
-					var _p7 = _p6._0;
-					var progress = model.progress;
-					var next = _elm_lang$core$Native_Utils.update(
-						progress,
-						{
-							counter: progress.counter + 1,
-							todo: _p6._1,
-							done: {ctor: '::', _0: _p7, _1: progress.done}
-						});
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{progress: next}),
-						{
-							ctor: '::',
-							_0: _p7.$function(_p7.ohlcv),
-							_1: {ctor: '[]'}
-						});
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
-						{ctor: '[]'});
-				}
-			case 'DoneUploadContent':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					{
-						ctor: '::',
-						_0: A2(
-							_elm_lang$core$Task$perform,
-							_elm_lang$core$Basics$identity,
-							_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
-						_1: {ctor: '[]'}
-					});
 			default:
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$UploadPage_Msg$Mdl, _p4._0, model);
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$AnalyticsPage_Msg$Mdl, _p0._0, model);
 		}
 	});
 
-var _evancz$elm_markdown$Native_Markdown = function() {
-
-
-// VIRTUAL-DOM WIDGETS
-
-function toHtml(options, factList, rawMarkdown)
-{
-	var model = {
-		options: options,
-		markdown: rawMarkdown
-	};
-	return _elm_lang$virtual_dom$Native_VirtualDom.custom(factList, model, implementation);
-}
-
-
-// WIDGET IMPLEMENTATION
-
-var implementation = {
-	render: render,
-	diff: diff
-};
-
-function render(model)
-{
-	var html = marked(model.markdown, formatOptions(model.options));
-	var div = document.createElement('div');
-	div.innerHTML = html;
-	return div;
-}
-
-function diff(a, b)
-{
-	
-	if (a.model.markdown === b.model.markdown && a.model.options === b.model.options)
-	{
-		return null;
-	}
-
-	return {
-		applyPatch: applyPatch,
-		data: marked(b.model.markdown, formatOptions(b.model.options))
-	};
-}
-
-function applyPatch(domNode, data)
-{
-	domNode.innerHTML = data;
-	return domNode;
-}
-
-
-// ACTUAL MARKDOWN PARSER
-
-var marked = function() {
-	// catch the `marked` object regardless of the outer environment.
-	// (ex. a CommonJS module compatible environment.)
-	// note that this depends on marked's implementation of environment detection.
-	var module = {};
-	var exports = module.exports = {};
-
-	/**
-	 * marked - a markdown parser
-	 * Copyright (c) 2011-2014, Christopher Jeffrey. (MIT Licensed)
-	 * https://github.com/chjj/marked
-	 * commit cd2f6f5b7091154c5526e79b5f3bfb4d15995a51
-	 */
-	(function(){var block={newline:/^\n+/,code:/^( {4}[^\n]+\n*)+/,fences:noop,hr:/^( *[-*_]){3,} *(?:\n+|$)/,heading:/^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,nptable:noop,lheading:/^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/,blockquote:/^( *>[^\n]+(\n(?!def)[^\n]+)*\n*)+/,list:/^( *)(bull) [\s\S]+?(?:hr|def|\n{2,}(?! )(?!\1bull )\n*|\s*$)/,html:/^ *(?:comment *(?:\n|\s*$)|closed *(?:\n{2,}|\s*$)|closing *(?:\n{2,}|\s*$))/,def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,table:noop,paragraph:/^((?:[^\n]+\n?(?!hr|heading|lheading|blockquote|tag|def))+)\n*/,text:/^[^\n]+/};block.bullet=/(?:[*+-]|\d+\.)/;block.item=/^( *)(bull) [^\n]*(?:\n(?!\1bull )[^\n]*)*/;block.item=replace(block.item,"gm")(/bull/g,block.bullet)();block.list=replace(block.list)(/bull/g,block.bullet)("hr","\\n+(?=\\1?(?:[-*_] *){3,}(?:\\n+|$))")("def","\\n+(?="+block.def.source+")")();block.blockquote=replace(block.blockquote)("def",block.def)();block._tag="(?!(?:"+"a|em|strong|small|s|cite|q|dfn|abbr|data|time|code"+"|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo"+"|span|br|wbr|ins|del|img)\\b)\\w+(?!:/|[^\\w\\s@]*@)\\b";block.html=replace(block.html)("comment",/<!--[\s\S]*?-->/)("closed",/<(tag)[\s\S]+?<\/\1>/)("closing",/<tag(?:"[^"]*"|'[^']*'|[^'">])*?>/)(/tag/g,block._tag)();block.paragraph=replace(block.paragraph)("hr",block.hr)("heading",block.heading)("lheading",block.lheading)("blockquote",block.blockquote)("tag","<"+block._tag)("def",block.def)();block.normal=merge({},block);block.gfm=merge({},block.normal,{fences:/^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\s*\1 *(?:\n+|$)/,paragraph:/^/,heading:/^ *(#{1,6}) +([^\n]+?) *#* *(?:\n+|$)/});block.gfm.paragraph=replace(block.paragraph)("(?!","(?!"+block.gfm.fences.source.replace("\\1","\\2")+"|"+block.list.source.replace("\\1","\\3")+"|")();block.tables=merge({},block.gfm,{nptable:/^ *(\S.*\|.*)\n *([-:]+ *\|[-| :]*)\n((?:.*\|.*(?:\n|$))*)\n*/,table:/^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/});function Lexer(options){this.tokens=[];this.tokens.links={};this.options=options||marked.defaults;this.rules=block.normal;if(this.options.gfm){if(this.options.tables){this.rules=block.tables}else{this.rules=block.gfm}}}Lexer.rules=block;Lexer.lex=function(src,options){var lexer=new Lexer(options);return lexer.lex(src)};Lexer.prototype.lex=function(src){src=src.replace(/\r\n|\r/g,"\n").replace(/\t/g,"    ").replace(/\u00a0/g," ").replace(/\u2424/g,"\n");return this.token(src,true)};Lexer.prototype.token=function(src,top,bq){var src=src.replace(/^ +$/gm,""),next,loose,cap,bull,b,item,space,i,l;while(src){if(cap=this.rules.newline.exec(src)){src=src.substring(cap[0].length);if(cap[0].length>1){this.tokens.push({type:"space"})}}if(cap=this.rules.code.exec(src)){src=src.substring(cap[0].length);cap=cap[0].replace(/^ {4}/gm,"");this.tokens.push({type:"code",text:!this.options.pedantic?cap.replace(/\n+$/,""):cap});continue}if(cap=this.rules.fences.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"code",lang:cap[2],text:cap[3]||""});continue}if(cap=this.rules.heading.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"heading",depth:cap[1].length,text:cap[2]});continue}if(top&&(cap=this.rules.nptable.exec(src))){src=src.substring(cap[0].length);item={type:"table",header:cap[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:cap[2].replace(/^ *|\| *$/g,"").split(/ *\| */),cells:cap[3].replace(/\n$/,"").split("\n")};for(i=0;i<item.align.length;i++){if(/^ *-+: *$/.test(item.align[i])){item.align[i]="right"}else if(/^ *:-+: *$/.test(item.align[i])){item.align[i]="center"}else if(/^ *:-+ *$/.test(item.align[i])){item.align[i]="left"}else{item.align[i]=null}}for(i=0;i<item.cells.length;i++){item.cells[i]=item.cells[i].split(/ *\| */)}this.tokens.push(item);continue}if(cap=this.rules.lheading.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"heading",depth:cap[2]==="="?1:2,text:cap[1]});continue}if(cap=this.rules.hr.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"hr"});continue}if(cap=this.rules.blockquote.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"blockquote_start"});cap=cap[0].replace(/^ *> ?/gm,"");this.token(cap,top,true);this.tokens.push({type:"blockquote_end"});continue}if(cap=this.rules.list.exec(src)){src=src.substring(cap[0].length);bull=cap[2];this.tokens.push({type:"list_start",ordered:bull.length>1});cap=cap[0].match(this.rules.item);next=false;l=cap.length;i=0;for(;i<l;i++){item=cap[i];space=item.length;item=item.replace(/^ *([*+-]|\d+\.) +/,"");if(~item.indexOf("\n ")){space-=item.length;item=!this.options.pedantic?item.replace(new RegExp("^ {1,"+space+"}","gm"),""):item.replace(/^ {1,4}/gm,"")}if(this.options.smartLists&&i!==l-1){b=block.bullet.exec(cap[i+1])[0];if(bull!==b&&!(bull.length>1&&b.length>1)){src=cap.slice(i+1).join("\n")+src;i=l-1}}loose=next||/\n\n(?!\s*$)/.test(item);if(i!==l-1){next=item.charAt(item.length-1)==="\n";if(!loose)loose=next}this.tokens.push({type:loose?"loose_item_start":"list_item_start"});this.token(item,false,bq);this.tokens.push({type:"list_item_end"})}this.tokens.push({type:"list_end"});continue}if(cap=this.rules.html.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:this.options.sanitize?"paragraph":"html",pre:!this.options.sanitizer&&(cap[1]==="pre"||cap[1]==="script"||cap[1]==="style"),text:cap[0]});continue}if(!bq&&top&&(cap=this.rules.def.exec(src))){src=src.substring(cap[0].length);this.tokens.links[cap[1].toLowerCase()]={href:cap[2],title:cap[3]};continue}if(top&&(cap=this.rules.table.exec(src))){src=src.substring(cap[0].length);item={type:"table",header:cap[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:cap[2].replace(/^ *|\| *$/g,"").split(/ *\| */),cells:cap[3].replace(/(?: *\| *)?\n$/,"").split("\n")};for(i=0;i<item.align.length;i++){if(/^ *-+: *$/.test(item.align[i])){item.align[i]="right"}else if(/^ *:-+: *$/.test(item.align[i])){item.align[i]="center"}else if(/^ *:-+ *$/.test(item.align[i])){item.align[i]="left"}else{item.align[i]=null}}for(i=0;i<item.cells.length;i++){item.cells[i]=item.cells[i].replace(/^ *\| *| *\| *$/g,"").split(/ *\| */)}this.tokens.push(item);continue}if(top&&(cap=this.rules.paragraph.exec(src))){src=src.substring(cap[0].length);this.tokens.push({type:"paragraph",text:cap[1].charAt(cap[1].length-1)==="\n"?cap[1].slice(0,-1):cap[1]});continue}if(cap=this.rules.text.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"text",text:cap[0]});continue}if(src){throw new Error("Infinite loop on byte: "+src.charCodeAt(0))}}return this.tokens};var inline={escape:/^\\([\\`*{}\[\]()#+\-.!_>])/,autolink:/^<([^ >]+(@|:\/)[^ >]+)>/,url:noop,tag:/^<!--[\s\S]*?-->|^<\/?\w+(?:"[^"]*"|'[^']*'|[^'">])*?>/,link:/^!?\[(inside)\]\(href\)/,reflink:/^!?\[(inside)\]\s*\[([^\]]*)\]/,nolink:/^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/,strong:/^__([\s\S]+?)__(?!_)|^\*\*([\s\S]+?)\*\*(?!\*)/,em:/^\b_((?:[^_]|__)+?)_\b|^\*((?:\*\*|[\s\S])+?)\*(?!\*)/,code:/^(`+)\s*([\s\S]*?[^`])\s*\1(?!`)/,br:/^ {2,}\n(?!\s*$)/,del:noop,text:/^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/};inline._inside=/(?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*/;inline._href=/\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*/;inline.link=replace(inline.link)("inside",inline._inside)("href",inline._href)();inline.reflink=replace(inline.reflink)("inside",inline._inside)();inline.normal=merge({},inline);inline.pedantic=merge({},inline.normal,{strong:/^__(?=\S)([\s\S]*?\S)__(?!_)|^\*\*(?=\S)([\s\S]*?\S)\*\*(?!\*)/,em:/^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/});inline.gfm=merge({},inline.normal,{escape:replace(inline.escape)("])","~|])")(),url:/^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,del:/^~~(?=\S)([\s\S]*?\S)~~/,text:replace(inline.text)("]|","~]|")("|","|https?://|")()});inline.breaks=merge({},inline.gfm,{br:replace(inline.br)("{2,}","*")(),text:replace(inline.gfm.text)("{2,}","*")()});function InlineLexer(links,options){this.options=options||marked.defaults;this.links=links;this.rules=inline.normal;this.renderer=this.options.renderer||new Renderer;this.renderer.options=this.options;if(!this.links){throw new Error("Tokens array requires a `links` property.")}if(this.options.gfm){if(this.options.breaks){this.rules=inline.breaks}else{this.rules=inline.gfm}}else if(this.options.pedantic){this.rules=inline.pedantic}}InlineLexer.rules=inline;InlineLexer.output=function(src,links,options){var inline=new InlineLexer(links,options);return inline.output(src)};InlineLexer.prototype.output=function(src){var out="",link,text,href,cap;while(src){if(cap=this.rules.escape.exec(src)){src=src.substring(cap[0].length);out+=cap[1];continue}if(cap=this.rules.autolink.exec(src)){src=src.substring(cap[0].length);if(cap[2]==="@"){text=cap[1].charAt(6)===":"?this.mangle(cap[1].substring(7)):this.mangle(cap[1]);href=this.mangle("mailto:")+text}else{text=escape(cap[1]);href=text}out+=this.renderer.link(href,null,text);continue}if(!this.inLink&&(cap=this.rules.url.exec(src))){src=src.substring(cap[0].length);text=escape(cap[1]);href=text;out+=this.renderer.link(href,null,text);continue}if(cap=this.rules.tag.exec(src)){if(!this.inLink&&/^<a /i.test(cap[0])){this.inLink=true}else if(this.inLink&&/^<\/a>/i.test(cap[0])){this.inLink=false}src=src.substring(cap[0].length);out+=this.options.sanitize?this.options.sanitizer?this.options.sanitizer(cap[0]):escape(cap[0]):cap[0];continue}if(cap=this.rules.link.exec(src)){src=src.substring(cap[0].length);this.inLink=true;out+=this.outputLink(cap,{href:cap[2],title:cap[3]});this.inLink=false;continue}if((cap=this.rules.reflink.exec(src))||(cap=this.rules.nolink.exec(src))){src=src.substring(cap[0].length);link=(cap[2]||cap[1]).replace(/\s+/g," ");link=this.links[link.toLowerCase()];if(!link||!link.href){out+=cap[0].charAt(0);src=cap[0].substring(1)+src;continue}this.inLink=true;out+=this.outputLink(cap,link);this.inLink=false;continue}if(cap=this.rules.strong.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.strong(this.output(cap[2]||cap[1]));continue}if(cap=this.rules.em.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.em(this.output(cap[2]||cap[1]));continue}if(cap=this.rules.code.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.codespan(escape(cap[2],true));continue}if(cap=this.rules.br.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.br();continue}if(cap=this.rules.del.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.del(this.output(cap[1]));continue}if(cap=this.rules.text.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.text(escape(this.smartypants(cap[0])));continue}if(src){throw new Error("Infinite loop on byte: "+src.charCodeAt(0))}}return out};InlineLexer.prototype.outputLink=function(cap,link){var href=escape(link.href),title=link.title?escape(link.title):null;return cap[0].charAt(0)!=="!"?this.renderer.link(href,title,this.output(cap[1])):this.renderer.image(href,title,escape(cap[1]))};InlineLexer.prototype.smartypants=function(text){if(!this.options.smartypants)return text;return text.replace(/---/g,"—").replace(/--/g,"–").replace(/(^|[-\u2014\/(\[{"\s])'/g,"$1‘").replace(/'/g,"’").replace(/(^|[-\u2014\/(\[{\u2018\s])"/g,"$1“").replace(/"/g,"”").replace(/\.{3}/g,"…")};InlineLexer.prototype.mangle=function(text){if(!this.options.mangle)return text;var out="",l=text.length,i=0,ch;for(;i<l;i++){ch=text.charCodeAt(i);if(Math.random()>.5){ch="x"+ch.toString(16)}out+="&#"+ch+";"}return out};function Renderer(options){this.options=options||{}}Renderer.prototype.code=function(code,lang,escaped){if(this.options.highlight){var out=this.options.highlight(code,lang);if(out!=null&&out!==code){escaped=true;code=out}}if(!lang){return"<pre><code>"+(escaped?code:escape(code,true))+"\n</code></pre>"}return'<pre><code class="'+this.options.langPrefix+escape(lang,true)+'">'+(escaped?code:escape(code,true))+"\n</code></pre>\n"};Renderer.prototype.blockquote=function(quote){return"<blockquote>\n"+quote+"</blockquote>\n"};Renderer.prototype.html=function(html){return html};Renderer.prototype.heading=function(text,level,raw){return"<h"+level+' id="'+this.options.headerPrefix+raw.toLowerCase().replace(/[^\w]+/g,"-")+'">'+text+"</h"+level+">\n"};Renderer.prototype.hr=function(){return this.options.xhtml?"<hr/>\n":"<hr>\n"};Renderer.prototype.list=function(body,ordered){var type=ordered?"ol":"ul";return"<"+type+">\n"+body+"</"+type+">\n"};Renderer.prototype.listitem=function(text){return"<li>"+text+"</li>\n"};Renderer.prototype.paragraph=function(text){return"<p>"+text+"</p>\n"};Renderer.prototype.table=function(header,body){return"<table>\n"+"<thead>\n"+header+"</thead>\n"+"<tbody>\n"+body+"</tbody>\n"+"</table>\n"};Renderer.prototype.tablerow=function(content){return"<tr>\n"+content+"</tr>\n"};Renderer.prototype.tablecell=function(content,flags){var type=flags.header?"th":"td";var tag=flags.align?"<"+type+' style="text-align:'+flags.align+'">':"<"+type+">";return tag+content+"</"+type+">\n"};Renderer.prototype.strong=function(text){return"<strong>"+text+"</strong>"};Renderer.prototype.em=function(text){return"<em>"+text+"</em>"};Renderer.prototype.codespan=function(text){return"<code>"+text+"</code>"};Renderer.prototype.br=function(){return this.options.xhtml?"<br/>":"<br>"};Renderer.prototype.del=function(text){return"<del>"+text+"</del>"};Renderer.prototype.link=function(href,title,text){if(this.options.sanitize){try{var prot=decodeURIComponent(unescape(href)).replace(/[^\w:]/g,"").toLowerCase()}catch(e){return""}if(prot.indexOf("javascript:")===0||prot.indexOf("vbscript:")===0||prot.indexOf("data:")===0){return""}}var out='<a href="'+href+'"';if(title){out+=' title="'+title+'"'}out+=">"+text+"</a>";return out};Renderer.prototype.image=function(href,title,text){var out='<img src="'+href+'" alt="'+text+'"';if(title){out+=' title="'+title+'"'}out+=this.options.xhtml?"/>":">";return out};Renderer.prototype.text=function(text){return text};function Parser(options){this.tokens=[];this.token=null;this.options=options||marked.defaults;this.options.renderer=this.options.renderer||new Renderer;this.renderer=this.options.renderer;this.renderer.options=this.options}Parser.parse=function(src,options,renderer){var parser=new Parser(options,renderer);return parser.parse(src)};Parser.prototype.parse=function(src){this.inline=new InlineLexer(src.links,this.options,this.renderer);this.tokens=src.reverse();var out="";while(this.next()){out+=this.tok()}return out};Parser.prototype.next=function(){return this.token=this.tokens.pop()};Parser.prototype.peek=function(){return this.tokens[this.tokens.length-1]||0};Parser.prototype.parseText=function(){var body=this.token.text;while(this.peek().type==="text"){body+="\n"+this.next().text}return this.inline.output(body)};Parser.prototype.tok=function(){switch(this.token.type){case"space":{return""}case"hr":{return this.renderer.hr()}case"heading":{return this.renderer.heading(this.inline.output(this.token.text),this.token.depth,this.token.text)}case"code":{return this.renderer.code(this.token.text,this.token.lang,this.token.escaped)}case"table":{var header="",body="",i,row,cell,flags,j;cell="";for(i=0;i<this.token.header.length;i++){flags={header:true,align:this.token.align[i]};cell+=this.renderer.tablecell(this.inline.output(this.token.header[i]),{header:true,align:this.token.align[i]})}header+=this.renderer.tablerow(cell);for(i=0;i<this.token.cells.length;i++){row=this.token.cells[i];cell="";for(j=0;j<row.length;j++){cell+=this.renderer.tablecell(this.inline.output(row[j]),{header:false,align:this.token.align[j]})}body+=this.renderer.tablerow(cell)}return this.renderer.table(header,body)}case"blockquote_start":{var body="";while(this.next().type!=="blockquote_end"){body+=this.tok()}return this.renderer.blockquote(body)}case"list_start":{var body="",ordered=this.token.ordered;while(this.next().type!=="list_end"){body+=this.tok()}return this.renderer.list(body,ordered)}case"list_item_start":{var body="";while(this.next().type!=="list_item_end"){body+=this.token.type==="text"?this.parseText():this.tok()}return this.renderer.listitem(body)}case"loose_item_start":{var body="";while(this.next().type!=="list_item_end"){body+=this.tok()}return this.renderer.listitem(body)}case"html":{var html=!this.token.pre&&!this.options.pedantic?this.inline.output(this.token.text):this.token.text;return this.renderer.html(html)}case"paragraph":{return this.renderer.paragraph(this.inline.output(this.token.text))}case"text":{return this.renderer.paragraph(this.parseText())}}};function escape(html,encode){return html.replace(!encode?/&(?!#?\w+;)/g:/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function unescape(html){return html.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/g,function(_,n){n=n.toLowerCase();if(n==="colon")return":";if(n.charAt(0)==="#"){return n.charAt(1)==="x"?String.fromCharCode(parseInt(n.substring(2),16)):String.fromCharCode(+n.substring(1))}return""})}function replace(regex,opt){regex=regex.source;opt=opt||"";return function self(name,val){if(!name)return new RegExp(regex,opt);val=val.source||val;val=val.replace(/(^|[^\[])\^/g,"$1");regex=regex.replace(name,val);return self}}function noop(){}noop.exec=noop;function merge(obj){var i=1,target,key;for(;i<arguments.length;i++){target=arguments[i];for(key in target){if(Object.prototype.hasOwnProperty.call(target,key)){obj[key]=target[key]}}}return obj}function marked(src,opt,callback){if(callback||typeof opt==="function"){if(!callback){callback=opt;opt=null}opt=merge({},marked.defaults,opt||{});var highlight=opt.highlight,tokens,pending,i=0;try{tokens=Lexer.lex(src,opt)}catch(e){return callback(e)}pending=tokens.length;var done=function(err){if(err){opt.highlight=highlight;return callback(err)}var out;try{out=Parser.parse(tokens,opt)}catch(e){err=e}opt.highlight=highlight;return err?callback(err):callback(null,out)};if(!highlight||highlight.length<3){return done()}delete opt.highlight;if(!pending)return done();for(;i<tokens.length;i++){(function(token){if(token.type!=="code"){return--pending||done()}return highlight(token.text,token.lang,function(err,code){if(err)return done(err);if(code==null||code===token.text){return--pending||done()}token.text=code;token.escaped=true;--pending||done()})})(tokens[i])}return}try{if(opt)opt=merge({},marked.defaults,opt);return Parser.parse(Lexer.lex(src,opt),opt)}catch(e){e.message+="\nPlease report this to https://github.com/chjj/marked.";if((opt||marked.defaults).silent){return"<p>An error occured:</p><pre>"+escape(e.message+"",true)+"</pre>"}throw e}}marked.options=marked.setOptions=function(opt){merge(marked.defaults,opt);return marked};marked.defaults={gfm:true,tables:true,breaks:false,pedantic:false,sanitize:false,sanitizer:null,mangle:true,smartLists:false,silent:false,highlight:null,langPrefix:"lang-",smartypants:false,headerPrefix:"",renderer:new Renderer,xhtml:false};marked.Parser=Parser;marked.parser=Parser.parse;marked.Renderer=Renderer;marked.Lexer=Lexer;marked.lexer=Lexer.lex;marked.InlineLexer=InlineLexer;marked.inlineLexer=InlineLexer.output;marked.parse=marked;if(typeof module!=="undefined"&&typeof exports==="object"){module.exports=marked}else if(typeof define==="function"&&define.amd){define(function(){return marked})}else{this.marked=marked}}).call(function(){return this||(typeof window!=="undefined"?window:global)}());
-
-	return module.exports;
-}();
-
-
-// FORMAT OPTIONS FOR MARKED IMPLEMENTATION
-
-function formatOptions(options)
-{
-	function toHighlight(code, lang)
-	{
-		if (!lang && options.defaultHighlighting.ctor === 'Just')
-		{
-			lang = options.defaultHighlighting._0;
-		}
-
-		if (typeof hljs !== 'undefined' && lang && hljs.listLanguages().indexOf(lang) >= 0)
-		{
-			return hljs.highlight(lang, code, true).value;
-		}
-
-		return code;
-	}
-
-	var gfm = options.githubFlavored;
-	if (gfm.ctor === 'Just')
-	{
-		return {
-			highlight: toHighlight,
-			gfm: true,
-			tables: gfm._0.tables,
-			breaks: gfm._0.breaks,
-			sanitize: options.sanitize,
-			smartypants: options.smartypants
-		};
-	}
-
-	return {
-		highlight: toHighlight,
-		gfm: false,
-		tables: false,
-		breaks: false,
-		sanitize: options.sanitize,
-		smartypants: options.smartypants
-	};
-}
-
-
-// EXPORTS
-
-return {
-	toHtml: F3(toHtml)
-};
-
-}();
-
-var _evancz$elm_markdown$Markdown$toHtmlWith = _evancz$elm_markdown$Native_Markdown.toHtml;
-var _evancz$elm_markdown$Markdown$defaultOptions = {
-	githubFlavored: _elm_lang$core$Maybe$Just(
-		{tables: false, breaks: false}),
-	defaultHighlighting: _elm_lang$core$Maybe$Nothing,
-	sanitize: false,
-	smartypants: false
-};
-var _evancz$elm_markdown$Markdown$toHtml = F2(
-	function (attrs, string) {
-		return A3(_evancz$elm_markdown$Native_Markdown.toHtml, _evancz$elm_markdown$Markdown$defaultOptions, attrs, string);
+var _debois$elm_mdl$Material_Grid$clip = F3(
+	function (lower, upper, k) {
+		return A2(
+			_elm_lang$core$Basics$max,
+			lower,
+			A2(_elm_lang$core$Basics$min, k, upper));
 	});
-var _evancz$elm_markdown$Markdown$Options = F4(
-	function (a, b, c, d) {
-		return {githubFlavored: a, defaultHighlighting: b, sanitize: c, smartypants: d};
-	});
-
-var _debois$elm_mdl$Material_Card$stopClick = _debois$elm_mdl$Material_Options_Internal$attribute(
-	A2(_elm_lang$html$Html_Attributes$attribute, 'onclick', 'var event = arguments[0] || window.event; event.stopPropagation();'));
-var _debois$elm_mdl$Material_Card$block = function (block) {
-	var _p0 = block;
+var _debois$elm_mdl$Material_Grid$stretch = _debois$elm_mdl$Material_Options$cs('mdl-cell--stretch');
+var _debois$elm_mdl$Material_Grid$align = function (a) {
+	var _p0 = a;
 	switch (_p0.ctor) {
-		case 'Title':
-			return A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__title'),
-					_1: _p0._0
-				},
-				_p0._1);
-		case 'Media':
-			return A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__media'),
-					_1: _p0._0
-				},
-				_p0._1);
-		case 'SupportingText':
-			return A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__supporting-text'),
-					_1: _p0._0
-				},
-				_p0._1);
-		case 'Actions':
-			return A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__actions'),
-					_1: {ctor: '::', _0: _debois$elm_mdl$Material_Card$stopClick, _1: _p0._0}
-				},
-				_p0._1);
+		case 'Top':
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--top');
+		case 'Middle':
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--middle');
 		default:
-			return A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__menu'),
-					_1: {ctor: '::', _0: _debois$elm_mdl$Material_Card$stopClick, _1: _p0._0}
-				},
-				_p0._1);
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--bottom');
 	}
 };
-var _debois$elm_mdl$Material_Card$view = F2(
-	function (styling, views) {
+var _debois$elm_mdl$Material_Grid$suffix = function (device) {
+	var _p1 = device;
+	switch (_p1.ctor) {
+		case 'All':
+			return '';
+		case 'Desktop':
+			return '-desktop';
+		case 'Tablet':
+			return '-tablet';
+		default:
+			return '-phone';
+	}
+};
+var _debois$elm_mdl$Material_Grid$size = F2(
+	function (device, k) {
+		var c = function () {
+			var _p2 = device;
+			switch (_p2.ctor) {
+				case 'All':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
+				case 'Desktop':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
+				case 'Tablet':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 8, k);
+				default:
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 4, k);
+			}
+		}();
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(c),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'-col',
+						_debois$elm_mdl$Material_Grid$suffix(device)))));
+	});
+var _debois$elm_mdl$Material_Grid$offset = F2(
+	function (device, k) {
+		var c = function () {
+			var _p3 = device;
+			switch (_p3.ctor) {
+				case 'All':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
+				case 'Desktop':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
+				case 'Tablet':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 7, k);
+				default:
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 3, k);
+			}
+		}();
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(c),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'-offset',
+						_debois$elm_mdl$Material_Grid$suffix(device)))));
+	});
+var _debois$elm_mdl$Material_Grid$hide = function (device) {
+	return _debois$elm_mdl$Material_Options$cs(
+		function () {
+			var _p4 = device;
+			if (_p4.ctor === 'All') {
+				return '';
+			} else {
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'mdl-cell--hide-',
+					_debois$elm_mdl$Material_Grid$suffix(device));
+			}
+		}());
+};
+var _debois$elm_mdl$Material_Grid$order = F2(
+	function (device, n) {
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--order-',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(
+						A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, n)),
+					_debois$elm_mdl$Material_Grid$suffix(device))));
+	});
+var _debois$elm_mdl$Material_Grid$grid = F2(
+	function (styling, cells) {
 		return A2(
 			_debois$elm_mdl$Material_Options$div,
 			{
 				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$many(styling),
-				_1: {
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-card'),
-					_1: {
-						ctor: '::',
-						_0: A2(_debois$elm_mdl$Material_Options$css, 'min-height', '0px'),
-						_1: {ctor: '[]'}
-					}
-				}
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-grid'),
+				_1: styling
 			},
-			A2(_elm_lang$core$List$map, _debois$elm_mdl$Material_Card$block, views));
+			A2(
+				_elm_lang$core$List$map,
+				function (_p5) {
+					var _p6 = _p5;
+					return _p6._0;
+				},
+				cells));
 	});
-var _debois$elm_mdl$Material_Card$subhead = function (styling) {
-	return _debois$elm_mdl$Material_Options$span(
-		{
-			ctor: '::',
-			_0: _debois$elm_mdl$Material_Options$cs('mdl-card__subtitle-text'),
-			_1: {
-				ctor: '::',
-				_0: A2(_debois$elm_mdl$Material_Options$css, 'padding-top', '8px'),
-				_1: styling
-			}
-		});
+var _debois$elm_mdl$Material_Grid$maxWidth = function (w) {
+	return A2(_debois$elm_mdl$Material_Options$css, 'max-width', w);
 };
-var _debois$elm_mdl$Material_Card$head = function (styling) {
-	return A2(
-		_debois$elm_mdl$Material_Options$styled,
-		_elm_lang$html$Html$h1,
-		{
-			ctor: '::',
-			_0: _debois$elm_mdl$Material_Options$cs('mdl-card__title-text'),
-			_1: {
-				ctor: '::',
-				_0: A2(_debois$elm_mdl$Material_Options$css, 'align-self', 'flex-start'),
-				_1: styling
-			}
-		});
+var _debois$elm_mdl$Material_Grid$noSpacing = _debois$elm_mdl$Material_Options$cs('mdl-grid--no-spacing');
+var _debois$elm_mdl$Material_Grid$Phone = {ctor: 'Phone'};
+var _debois$elm_mdl$Material_Grid$Tablet = {ctor: 'Tablet'};
+var _debois$elm_mdl$Material_Grid$Desktop = {ctor: 'Desktop'};
+var _debois$elm_mdl$Material_Grid$All = {ctor: 'All'};
+var _debois$elm_mdl$Material_Grid$Cell = function (a) {
+	return {ctor: 'Cell', _0: a};
 };
-var _debois$elm_mdl$Material_Card$expand = _debois$elm_mdl$Material_Options$cs('mdl-card--expand');
-var _debois$elm_mdl$Material_Card$border = _debois$elm_mdl$Material_Options$cs('mdl-card--border');
-var _debois$elm_mdl$Material_Card$Actions = F2(
-	function (a, b) {
-		return {ctor: 'Actions', _0: a, _1: b};
+var _debois$elm_mdl$Material_Grid$cell = F2(
+	function (styling, elms) {
+		return _debois$elm_mdl$Material_Grid$Cell(
+			A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-cell'),
+					_1: styling
+				},
+				elms));
 	});
-var _debois$elm_mdl$Material_Card$actions = _debois$elm_mdl$Material_Card$Actions;
-var _debois$elm_mdl$Material_Card$SupportingText = F2(
-	function (a, b) {
-		return {ctor: 'SupportingText', _0: a, _1: b};
-	});
-var _debois$elm_mdl$Material_Card$text = _debois$elm_mdl$Material_Card$SupportingText;
-var _debois$elm_mdl$Material_Card$Media = F2(
-	function (a, b) {
-		return {ctor: 'Media', _0: a, _1: b};
-	});
-var _debois$elm_mdl$Material_Card$media = _debois$elm_mdl$Material_Card$Media;
-var _debois$elm_mdl$Material_Card$Menu = F2(
-	function (a, b) {
-		return {ctor: 'Menu', _0: a, _1: b};
-	});
-var _debois$elm_mdl$Material_Card$menu = F2(
-	function (styling, block) {
-		return A2(_debois$elm_mdl$Material_Card$Menu, styling, block);
-	});
-var _debois$elm_mdl$Material_Card$Title = F2(
-	function (a, b) {
-		return {ctor: 'Title', _0: a, _1: b};
-	});
-var _debois$elm_mdl$Material_Card$title = F2(
-	function (styling, block) {
-		return A2(
-			_debois$elm_mdl$Material_Card$Title,
+var _debois$elm_mdl$Material_Grid$Bottom = {ctor: 'Bottom'};
+var _debois$elm_mdl$Material_Grid$Middle = {ctor: 'Middle'};
+var _debois$elm_mdl$Material_Grid$Top = {ctor: 'Top'};
+
+var _debois$elm_mdl$Material_Table$defaultCell = {numeric: false};
+var _debois$elm_mdl$Material_Table$td = F2(
+	function (options, html) {
+		var _p0 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultCell, options);
+		var summary = _p0;
+		var config = _p0.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$td,
 			{
 				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$many(styling),
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.numeric,
+					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$sorted = function (order) {
+	return _debois$elm_mdl$Material_Options_Internal$option(
+		function (self) {
+			return _elm_lang$core$Native_Utils.update(
+				self,
+				{
+					sorted: _elm_lang$core$Maybe$Just(order)
+				});
+		});
+};
+var _debois$elm_mdl$Material_Table$numeric = _debois$elm_mdl$Material_Options_Internal$option(
+	function (self) {
+		return _elm_lang$core$Native_Utils.update(
+			self,
+			{numeric: true});
+	});
+var _debois$elm_mdl$Material_Table$defaultHeader = {numeric: false, sorted: _elm_lang$core$Maybe$Nothing};
+var _debois$elm_mdl$Material_Table$th = F2(
+	function (options, html) {
+		var _p1 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultHeader, options);
+		var summary = _p1;
+		var config = _p1.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$th,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.numeric,
+					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
 				_1: {
 					ctor: '::',
-					_0: A2(_debois$elm_mdl$Material_Options$css, 'justify-content', 'flex-end'),
+					_0: function () {
+						var _p2 = config.sorted;
+						if (_p2.ctor === 'Just') {
+							if (_p2._0.ctor === 'Ascending') {
+								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-ascending');
+							} else {
+								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-descending');
+							}
+						} else {
+							return _debois$elm_mdl$Material_Options$nop;
+						}
+					}(),
+					_1: {ctor: '[]'}
+				}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$selected = _debois$elm_mdl$Material_Options_Internal$option(
+	function (self) {
+		return _elm_lang$core$Native_Utils.update(
+			self,
+			{selected: true});
+	});
+var _debois$elm_mdl$Material_Table$defaultRow = {selected: false};
+var _debois$elm_mdl$Material_Table$tr = F2(
+	function (options, html) {
+		var _p3 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultRow, options);
+		var summary = _p3;
+		var config = _p3.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tr,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.selected,
+					_debois$elm_mdl$Material_Options$cs('is-selected')),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$tfoot = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tfoot,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$tbody = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tbody,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$thead = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$thead,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$table = F2(
+	function (options, nodes) {
+		return A3(
+			_debois$elm_mdl$Material_Options$styled,
+			_elm_lang$html$Html$table,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-data-table'),
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-js-data-table'),
 					_1: {
 						ctor: '::',
-						_0: A2(_debois$elm_mdl$Material_Options$css, 'flex-direction', 'column'),
-						_1: {
-							ctor: '::',
-							_0: A2(_debois$elm_mdl$Material_Options$css, 'align-items', 'flex-start'),
-							_1: {ctor: '[]'}
-						}
+						_0: _debois$elm_mdl$Material_Options$cs('is-upgraded'),
+						_1: options
 					}
 				}
 			},
-			block);
+			nodes);
 	});
+var _debois$elm_mdl$Material_Table$Row = function (a) {
+	return {selected: a};
+};
+var _debois$elm_mdl$Material_Table$Header = F2(
+	function (a, b) {
+		return {numeric: a, sorted: b};
+	});
+var _debois$elm_mdl$Material_Table$Cell = function (a) {
+	return {numeric: a};
+};
+var _debois$elm_mdl$Material_Table$Descending = {ctor: 'Descending'};
+var _debois$elm_mdl$Material_Table$descending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Descending);
+var _debois$elm_mdl$Material_Table$Ascending = {ctor: 'Ascending'};
+var _debois$elm_mdl$Material_Table$ascending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Ascending);
 
 var _debois$elm_mdl$Material_Color$text = function (_p0) {
 	var _p1 = _p0;
@@ -19434,6 +17831,2089 @@ var _debois$elm_mdl$Material_Color$primaryDark = _debois$elm_mdl$Material_Color$
 var _debois$elm_mdl$Material_Color$primaryContrast = _debois$elm_mdl$Material_Color$C('primary-contrast');
 var _debois$elm_mdl$Material_Color$accent = _debois$elm_mdl$Material_Color$C('accent');
 var _debois$elm_mdl$Material_Color$accentContrast = _debois$elm_mdl$Material_Color$C('accent-contrast');
+
+var _ak1211$tractor$AnalyticsPage_View$viewTable = F2(
+	function (headlines, rows) {
+		return A2(
+			_debois$elm_mdl$Material_Table$table,
+			{
+				ctor: '::',
+				_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '0 auto'),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Table$thead,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Table$tr,
+							{ctor: '[]'},
+							A2(
+								_elm_lang$core$List$map,
+								function (a) {
+									return A2(
+										_debois$elm_mdl$Material_Table$th,
+										{ctor: '[]'},
+										{
+											ctor: '::',
+											_0: a,
+											_1: {ctor: '[]'}
+										});
+								},
+								headlines)),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Table$tbody,
+						{ctor: '[]'},
+						rows),
+					_1: {ctor: '[]'}
+				}
+			});
+	});
+var _ak1211$tractor$AnalyticsPage_View$viewCell = _elm_lang$core$Maybe$withDefault('Not Available');
+var _ak1211$tractor$AnalyticsPage_View$tableOhlcv = function (data) {
+	var row = function (item) {
+		return A2(
+			_debois$elm_mdl$Material_Table$tr,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Table$td,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Table$numeric,
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(item.at),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Table$td,
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Table$numeric,
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(
+								_ak1211$tractor$AnalyticsPage_View$viewCell(
+									A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.open))),
+							_1: {ctor: '[]'}
+						}),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Table$td,
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Table$numeric,
+								_1: {ctor: '[]'}
+							},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text(
+									_ak1211$tractor$AnalyticsPage_View$viewCell(
+										A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.high))),
+								_1: {ctor: '[]'}
+							}),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_debois$elm_mdl$Material_Table$td,
+								{
+									ctor: '::',
+									_0: _debois$elm_mdl$Material_Table$numeric,
+									_1: {ctor: '[]'}
+								},
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html$text(
+										_ak1211$tractor$AnalyticsPage_View$viewCell(
+											A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.low))),
+									_1: {ctor: '[]'}
+								}),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_debois$elm_mdl$Material_Table$td,
+									{
+										ctor: '::',
+										_0: _debois$elm_mdl$Material_Table$numeric,
+										_1: {ctor: '[]'}
+									},
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html$text(
+											_ak1211$tractor$AnalyticsPage_View$viewCell(
+												A2(_elm_lang$core$Maybe$map, _elm_lang$core$Basics$toString, item.close))),
+										_1: {ctor: '[]'}
+									}),
+								_1: {
+									ctor: '::',
+									_0: A2(
+										_debois$elm_mdl$Material_Table$td,
+										{
+											ctor: '::',
+											_0: _debois$elm_mdl$Material_Table$numeric,
+											_1: {ctor: '[]'}
+										},
+										{
+											ctor: '::',
+											_0: _elm_lang$html$Html$text(
+												_elm_lang$core$Basics$toString(item.volume)),
+											_1: {ctor: '[]'}
+										}),
+									_1: {
+										ctor: '::',
+										_0: A2(
+											_debois$elm_mdl$Material_Table$td,
+											{ctor: '[]'},
+											{
+												ctor: '::',
+												_0: _elm_lang$html$Html$text(
+													_ak1211$tractor$AnalyticsPage_View$viewCell(item.source)),
+												_1: {ctor: '[]'}
+											}),
+										_1: {ctor: '[]'}
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+	};
+	var headlines = {
+		ctor: '::',
+		_0: _elm_lang$html$Html$text('時間'),
+		_1: {
+			ctor: '::',
+			_0: _elm_lang$html$Html$text('始値'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html$text('高値'),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('安値'),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('終値'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('出来高'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('入手元'),
+								_1: {ctor: '[]'}
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+	return A2(
+		_ak1211$tractor$AnalyticsPage_View$viewTable,
+		headlines,
+		A2(_elm_lang$core$List$map, row, data));
+};
+var _ak1211$tractor$AnalyticsPage_View$historiesView = function (model) {
+	return A2(
+		_debois$elm_mdl$Material_Grid$grid,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_debois$elm_mdl$Material_Grid$cell,
+				{
+					ctor: '::',
+					_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$Desktop, 12),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _ak1211$tractor$AnalyticsPage_View$tableOhlcv(model.histories),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		});
+};
+var _ak1211$tractor$AnalyticsPage_View$chartView = function (model) {
+	var chartURI = function (mc) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'https://tractor.ak1211.com/api/v1/stocks/chart/',
+			A2(_elm_lang$core$Basics_ops['++'], mc, '.svg?tf=%221d%22'));
+	};
+	var contents = function (mc) {
+		return A2(
+			_debois$elm_mdl$Material_Grid$grid,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Grid$cell,
+					{
+						ctor: '::',
+						_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
+						_1: {
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Color$background(
+								A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Brown, _debois$elm_mdl$Material_Color$S50)),
+							_1: {
+								ctor: '::',
+								_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '10px'),
+								_1: {
+									ctor: '::',
+									_0: A2(_debois$elm_mdl$Material_Options$css, 'padding', '10px'),
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					},
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$div,
+							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$img,
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html_Attributes$src(
+											chartURI(mc)),
+										_1: {
+											ctor: '::',
+											_0: _elm_lang$html$Html_Attributes$style(
+												{
+													ctor: '::',
+													_0: {ctor: '_Tuple2', _0: 'width', _1: '100%'},
+													_1: {ctor: '[]'}
+												}),
+											_1: {ctor: '[]'}
+										}
+									},
+									{ctor: '[]'}),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			});
+	};
+	var _p0 = model.marketCode;
+	if (_p0.ctor === 'Nothing') {
+		return A2(
+			_debois$elm_mdl$Material_Grid$grid,
+			{ctor: '[]'},
+			{ctor: '[]'});
+	} else {
+		return contents(_p0._0);
+	}
+};
+var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
+	var chartURI = function (mc) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'https://tractor.ak1211.com/api/v1/stocks/chart/',
+			A2(_elm_lang$core$Basics_ops['++'], mc, '.svg?tf=%221d%22'));
+	};
+	var contents = function (mc) {
+		return A2(
+			_debois$elm_mdl$Material_Grid$grid,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Grid$cell,
+					{
+						ctor: '::',
+						_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$Desktop, 3),
+						_1: {
+							ctor: '::',
+							_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$Tablet, 4),
+							_1: {
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Color$background(
+									A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Brown, _debois$elm_mdl$Material_Color$S50)),
+								_1: {
+									ctor: '::',
+									_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '10px'),
+									_1: {
+										ctor: '::',
+										_0: A2(_debois$elm_mdl$Material_Options$css, 'padding', '10px'),
+										_1: {ctor: '[]'}
+									}
+								}
+							}
+						}
+					},
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$div,
+							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$p,
+									{ctor: '[]'},
+									{
+										ctor: '::',
+										_0: A2(
+											_elm_lang$html$Html$dl,
+											{ctor: '[]'},
+											{
+												ctor: '::',
+												_0: A2(
+													_elm_lang$html$Html$dt,
+													{ctor: '[]'},
+													{
+														ctor: '::',
+														_0: _elm_lang$html$Html$text('コード'),
+														_1: {ctor: '[]'}
+													}),
+												_1: {
+													ctor: '::',
+													_0: A2(
+														_elm_lang$html$Html$dd,
+														{ctor: '[]'},
+														{
+															ctor: '::',
+															_0: _elm_lang$html$Html$text(mc),
+															_1: {ctor: '[]'}
+														}),
+													_1: {ctor: '[]'}
+												}
+											}),
+										_1: {ctor: '[]'}
+									}),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Grid$cell,
+						{
+							ctor: '::',
+							_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$Desktop, 3),
+							_1: {
+								ctor: '::',
+								_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$Tablet, 4),
+								_1: {
+									ctor: '::',
+									_0: _debois$elm_mdl$Material_Color$background(
+										A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Brown, _debois$elm_mdl$Material_Color$S50)),
+									_1: {
+										ctor: '::',
+										_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '10px'),
+										_1: {
+											ctor: '::',
+											_0: A2(_debois$elm_mdl$Material_Options$css, 'padding', '10px'),
+											_1: {ctor: '[]'}
+										}
+									}
+								}
+							}
+						},
+						{
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$div,
+								{ctor: '[]'},
+								{
+									ctor: '::',
+									_0: A2(
+										_elm_lang$html$Html$img,
+										{
+											ctor: '::',
+											_0: _elm_lang$html$Html_Attributes$src(
+												chartURI(mc)),
+											_1: {
+												ctor: '::',
+												_0: _elm_lang$html$Html_Attributes$style(
+													{
+														ctor: '::',
+														_0: {ctor: '_Tuple2', _0: 'width', _1: '100%'},
+														_1: {ctor: '[]'}
+													}),
+												_1: {ctor: '[]'}
+											}
+										},
+										{ctor: '[]'}),
+									_1: {ctor: '[]'}
+								}),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
+			});
+	};
+	var _p1 = model.marketCode;
+	if (_p1.ctor === 'Nothing') {
+		return A2(
+			_debois$elm_mdl$Material_Grid$grid,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Grid$cell,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('No Contents'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			});
+	} else {
+		return contents(_p1._0);
+	}
+};
+var _ak1211$tractor$AnalyticsPage_View$view = F2(
+	function (model, marketCode) {
+		return A6(
+			_debois$elm_mdl$Material_Tabs$render,
+			_ak1211$tractor$AnalyticsPage_Msg$Mdl,
+			{
+				ctor: '::',
+				_0: 0,
+				_1: {ctor: '[]'}
+			},
+			model.mdl,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Tabs$ripple,
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Tabs$onSelectTab(_ak1211$tractor$AnalyticsPage_Msg$SelectTab),
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Tabs$activeTab(model.tab),
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Tabs$label,
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Options$center,
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Icon$i('widgets'),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_debois$elm_mdl$Material_Options$span,
+								{
+									ctor: '::',
+									_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
+									_1: {ctor: '[]'}
+								},
+								{ctor: '[]'}),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('summary'),
+								_1: {ctor: '[]'}
+							}
+						}
+					}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Tabs$label,
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Options$center,
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Icon$i('insert_chart_outlined'),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_debois$elm_mdl$Material_Options$span,
+									{
+										ctor: '::',
+										_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
+										_1: {ctor: '[]'}
+									},
+									{ctor: '[]'}),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html$text('chart'),
+									_1: {ctor: '[]'}
+								}
+							}
+						}),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_debois$elm_mdl$Material_Tabs$label,
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Options$center,
+								_1: {ctor: '[]'}
+							},
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Icon$i('notes'),
+								_1: {
+									ctor: '::',
+									_0: A2(
+										_debois$elm_mdl$Material_Options$span,
+										{
+											ctor: '::',
+											_0: A2(_debois$elm_mdl$Material_Options$css, 'width', '4px'),
+											_1: {ctor: '[]'}
+										},
+										{ctor: '[]'}),
+									_1: {
+										ctor: '::',
+										_0: _elm_lang$html$Html$text('histories'),
+										_1: {ctor: '[]'}
+									}
+								}
+							}),
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			{
+				ctor: '::',
+				_0: function () {
+					var _p2 = model.tab;
+					switch (_p2) {
+						case 2:
+							return _ak1211$tractor$AnalyticsPage_View$historiesView(model);
+						case 1:
+							return _ak1211$tractor$AnalyticsPage_View$chartView(model);
+						default:
+							return _ak1211$tractor$AnalyticsPage_View$summaryView(model);
+					}
+				}(),
+				_1: {ctor: '[]'}
+			});
+	});
+
+var _ak1211$tractor$PortfolioPage_Msg$Mdl = function (a) {
+	return {ctor: 'Mdl', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$NewUrl = function (a) {
+	return {ctor: 'NewUrl', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$UrlChange = function (a) {
+	return {ctor: 'UrlChange', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$DoneGetPortfolios = function (a) {
+	return {ctor: 'DoneGetPortfolios', _0: a};
+};
+var _ak1211$tractor$PortfolioPage_Msg$RenewPortfolios = {ctor: 'RenewPortfolios'};
+var _ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken = function (a) {
+	return {ctor: 'ChangeAccessToken', _0: a};
+};
+
+var _ak1211$tractor$PortfolioPage_Model$initialModel = {accessToken: _elm_lang$core$Maybe$Nothing, portfolios: _elm_lang$core$Maybe$Nothing, mdl: _debois$elm_mdl$Material$model};
+var _ak1211$tractor$PortfolioPage_Model$init = A2(
+	_elm_lang$core$Platform_Cmd_ops['!'],
+	_ak1211$tractor$PortfolioPage_Model$initialModel,
+	{
+		ctor: '::',
+		_0: _debois$elm_mdl$Material$init(_ak1211$tractor$PortfolioPage_Msg$Mdl),
+		_1: {
+			ctor: '::',
+			_0: A2(
+				_elm_lang$core$Task$perform,
+				_elm_lang$core$Basics$identity,
+				_elm_lang$core$Task$succeed(_ak1211$tractor$PortfolioPage_Msg$RenewPortfolios)),
+			_1: {ctor: '[]'}
+		}
+	});
+var _ak1211$tractor$PortfolioPage_Model$clearModel = _elm_lang$core$Basics$identity;
+var _ak1211$tractor$PortfolioPage_Model$Model = F3(
+	function (a, b, c) {
+		return {accessToken: a, portfolios: b, mdl: c};
+	});
+
+var _norpan$elm_file_reader$FileReader$handleFiles = '\n    var fileObjects = [];\n    var index = 0;\n    var reader = new FileReader();\n    var dataFormat = event.target.dataset.format;\n    var encoding = event.target.dataset.encoding;\n    reader.onload = function() {\n        var data;\n        switch(dataFormat) {\n            case \'DataURL\':\n            case \'Text\':\n                data = reader.result;\n                break;\n            case \'Base64\':\n                data = reader.result.split(\',\')[1];\n                break;\n        }\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , data: data\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    reader.onerror = function () {\n        var lastModified = files[index].lastModified;\n        if (!lastModified) {\n          lastModified = files[index].lastModifiedDate.getTime();\n        }\n        var result =\n            { lastModified: lastModified\n            , name: files[index].name\n            , size: files[index].size\n            , mimeType: files[index].type\n            , dataFormat: dataFormat\n            , encoding: encoding\n            , errorCode: reader.error.code\n            , errorName: reader.error.name\n            , errorMessage: reader.error.message\n            };\n        fileObjects.push(result);\n        index++;\n        readOne();\n    }\n    function readOne() {\n        var file = files[index];\n        if (file) {\n            switch(dataFormat) {\n                case \'DataURL\':\n                case \'Base64\':\n                    reader.readAsDataURL(file);\n                    break;\n                case \'Text\':\n                    reader.readAsText(file, encoding);\n                    break;\n            }\n        } else {\n            if (fileObjects.length > 0) {\n                var filesEvent;\n                try {\n                  filesEvent = new CustomEvent(\"files\", { detail: fileObjects });\n                } catch(e) {\n                  filesEvent = document.createEvent(\"CustomEvent\");\n                  filesEvent.initCustomEvent(\"files\", false, false, fileObjects);\n                }\n                event.target.dispatchEvent(filesEvent);\n            }\n        }\n      }\n    readOne();\n';
+var _norpan$elm_file_reader$FileReader$onChangeHandler = A2(_elm_lang$core$Basics_ops['++'], '\n    event.preventDefault();\n    event.stopPropagation();\n    var files = event.target.files;\n    ', _norpan$elm_file_reader$FileReader$handleFiles);
+var _norpan$elm_file_reader$FileReader$onDropHandler = A2(_elm_lang$core$Basics_ops['++'], '\n    event.preventDefault();\n    event.stopPropagation();\n    var files = event.dataTransfer.files;\n    ', _norpan$elm_file_reader$FileReader$handleFiles);
+var _norpan$elm_file_reader$FileReader$dataFormatAttributes = function (dataFormat) {
+	var _p0 = dataFormat;
+	switch (_p0.ctor) {
+		case 'DataURL':
+			return {
+				ctor: '::',
+				_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-format', 'DataURL'),
+				_1: {ctor: '[]'}
+			};
+		case 'Base64':
+			return {
+				ctor: '::',
+				_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-format', 'Base64'),
+				_1: {ctor: '[]'}
+			};
+		default:
+			return {
+				ctor: '::',
+				_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-format', 'Text'),
+				_1: {
+					ctor: '::',
+					_0: A2(_elm_lang$html$Html_Attributes$attribute, 'data-encoding', _p0._0),
+					_1: {ctor: '[]'}
+				}
+			};
+	}
+};
+var _norpan$elm_file_reader$FileReader$default = F2(
+	function (a, decoder) {
+		return _elm_lang$core$Json_Decode$oneOf(
+			{
+				ctor: '::',
+				_0: decoder,
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$core$Json_Decode$succeed(a),
+					_1: {ctor: '[]'}
+				}
+			});
+	});
+var _norpan$elm_file_reader$FileReader$File = F6(
+	function (a, b, c, d, e, f) {
+		return {lastModified: a, name: b, size: c, mimeType: d, dataFormat: e, data: f};
+	});
+var _norpan$elm_file_reader$FileReader$Error = F3(
+	function (a, b, c) {
+		return {code: a, name: b, message: c};
+	});
+var _norpan$elm_file_reader$FileReader$errorDecoder = A4(
+	_elm_lang$core$Json_Decode$map3,
+	_norpan$elm_file_reader$FileReader$Error,
+	A2(
+		_norpan$elm_file_reader$FileReader$default,
+		0,
+		A2(_elm_lang$core$Json_Decode$field, 'errorCode', _elm_lang$core$Json_Decode$int)),
+	A2(
+		_norpan$elm_file_reader$FileReader$default,
+		'',
+		A2(_elm_lang$core$Json_Decode$field, 'errorName', _elm_lang$core$Json_Decode$string)),
+	A2(
+		_norpan$elm_file_reader$FileReader$default,
+		'',
+		A2(_elm_lang$core$Json_Decode$field, 'errorMessage', _elm_lang$core$Json_Decode$string)));
+var _norpan$elm_file_reader$FileReader$Text = function (a) {
+	return {ctor: 'Text', _0: a};
+};
+var _norpan$elm_file_reader$FileReader$Base64 = {ctor: 'Base64'};
+var _norpan$elm_file_reader$FileReader$DataURL = {ctor: 'DataURL'};
+var _norpan$elm_file_reader$FileReader$dataFormatDecoder = A2(
+	_elm_lang$core$Json_Decode$andThen,
+	function (dataFormat) {
+		var _p1 = dataFormat;
+		switch (_p1) {
+			case 'DataURL':
+				return _elm_lang$core$Json_Decode$succeed(_norpan$elm_file_reader$FileReader$DataURL);
+			case 'Base64':
+				return _elm_lang$core$Json_Decode$succeed(_norpan$elm_file_reader$FileReader$Base64);
+			case 'Text':
+				return A2(
+					_elm_lang$core$Json_Decode$map,
+					_norpan$elm_file_reader$FileReader$Text,
+					A2(_elm_lang$core$Json_Decode$field, 'encoding', _elm_lang$core$Json_Decode$string));
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown data format: ', dataFormat));
+		}
+	},
+	A2(_elm_lang$core$Json_Decode$field, 'dataFormat', _elm_lang$core$Json_Decode$string));
+var _norpan$elm_file_reader$FileReader$fileDecoder = A7(
+	_elm_lang$core$Json_Decode$map6,
+	_norpan$elm_file_reader$FileReader$File,
+	A2(_elm_lang$core$Json_Decode$field, 'lastModified', _elm_lang$core$Json_Decode$float),
+	A2(_elm_lang$core$Json_Decode$field, 'name', _elm_lang$core$Json_Decode$string),
+	A2(_elm_lang$core$Json_Decode$field, 'size', _elm_lang$core$Json_Decode$int),
+	A2(_elm_lang$core$Json_Decode$field, 'mimeType', _elm_lang$core$Json_Decode$string),
+	_norpan$elm_file_reader$FileReader$dataFormatDecoder,
+	_elm_lang$core$Json_Decode$oneOf(
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$core$Json_Decode$map,
+				_elm_lang$core$Result$Ok,
+				A2(_elm_lang$core$Json_Decode$field, 'data', _elm_lang$core$Json_Decode$string)),
+			_1: {
+				ctor: '::',
+				_0: A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Result$Err, _norpan$elm_file_reader$FileReader$errorDecoder),
+				_1: {ctor: '[]'}
+			}
+		}));
+var _norpan$elm_file_reader$FileReader$fileInput = F2(
+	function (dataFormat, fileMsg) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$type_('file'),
+				_1: {
+					ctor: '::',
+					_0: A2(_elm_lang$html$Html_Attributes$attribute, 'onchange', _norpan$elm_file_reader$FileReader$onChangeHandler),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html_Events$on,
+							'files',
+							A2(
+								_elm_lang$core$Json_Decode$map,
+								fileMsg,
+								A2(
+									_elm_lang$core$Json_Decode$field,
+									'detail',
+									A2(_elm_lang$core$Json_Decode$index, 0, _norpan$elm_file_reader$FileReader$fileDecoder)))),
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			_norpan$elm_file_reader$FileReader$dataFormatAttributes(dataFormat));
+	});
+var _norpan$elm_file_reader$FileReader$filesInput = F2(
+	function (dataFormat, filesMsg) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$type_('file'),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$multiple(true),
+					_1: {
+						ctor: '::',
+						_0: A2(_elm_lang$html$Html_Attributes$attribute, 'onchange', _norpan$elm_file_reader$FileReader$onChangeHandler),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html_Events$on,
+								'files',
+								A2(
+									_elm_lang$core$Json_Decode$map,
+									filesMsg,
+									A2(
+										_elm_lang$core$Json_Decode$field,
+										'detail',
+										_elm_lang$core$Json_Decode$list(_norpan$elm_file_reader$FileReader$fileDecoder)))),
+							_1: {ctor: '[]'}
+						}
+					}
+				}
+			},
+			_norpan$elm_file_reader$FileReader$dataFormatAttributes(dataFormat));
+	});
+var _norpan$elm_file_reader$FileReader$dropZone = function (_p2) {
+	var _p3 = _p2;
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		{
+			ctor: '::',
+			_0: A3(
+				_elm_lang$html$Html_Events$onWithOptions,
+				'dragenter',
+				{preventDefault: true, stopPropagation: true},
+				_elm_lang$core$Json_Decode$succeed(_p3.enterMsg)),
+			_1: {
+				ctor: '::',
+				_0: A3(
+					_elm_lang$html$Html_Events$onWithOptions,
+					'dragleave',
+					{preventDefault: true, stopPropagation: true},
+					_elm_lang$core$Json_Decode$succeed(_p3.leaveMsg)),
+				_1: {
+					ctor: '::',
+					_0: A2(_elm_lang$html$Html_Attributes$attribute, 'ondragover', 'event.preventDefault(); event.stopPropagation();'),
+					_1: {
+						ctor: '::',
+						_0: A2(_elm_lang$html$Html_Attributes$attribute, 'ondrop', _norpan$elm_file_reader$FileReader$onDropHandler),
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html_Events$on,
+								'files',
+								A2(
+									_elm_lang$core$Json_Decode$map,
+									_p3.filesMsg,
+									A2(
+										_elm_lang$core$Json_Decode$field,
+										'detail',
+										_elm_lang$core$Json_Decode$list(_norpan$elm_file_reader$FileReader$fileDecoder)))),
+							_1: {ctor: '[]'}
+						}
+					}
+				}
+			}
+		},
+		_norpan$elm_file_reader$FileReader$dataFormatAttributes(_p3.dataFormat));
+};
+
+var _ak1211$tractor$UploadPage_Msg$Mdl = function (a) {
+	return {ctor: 'Mdl', _0: a};
+};
+var _ak1211$tractor$UploadPage_Msg$DoneUploadContent = function (a) {
+	return {ctor: 'DoneUploadContent', _0: a};
+};
+var _ak1211$tractor$UploadPage_Msg$UploadContent = {ctor: 'UploadContent'};
+var _ak1211$tractor$UploadPage_Msg$UrlChange = function (a) {
+	return {ctor: 'UrlChange', _0: a};
+};
+var _ak1211$tractor$UploadPage_Msg$UploadAllFilesContent = {ctor: 'UploadAllFilesContent'};
+var _ak1211$tractor$UploadPage_Msg$FilesDropped = function (a) {
+	return {ctor: 'FilesDropped', _0: a};
+};
+var _ak1211$tractor$UploadPage_Msg$DropZoneLeaved = {ctor: 'DropZoneLeaved'};
+var _ak1211$tractor$UploadPage_Msg$DropZoneEntered = {ctor: 'DropZoneEntered'};
+var _ak1211$tractor$UploadPage_Msg$ChangeAccessToken = function (a) {
+	return {ctor: 'ChangeAccessToken', _0: a};
+};
+
+var _ak1211$tractor$UploadPage_Model$initialUploadProgress = {
+	counter: 0,
+	total: 1,
+	todo: {ctor: '[]'},
+	done: {ctor: '[]'}
+};
+var _ak1211$tractor$UploadPage_Model$initialModel = {
+	accessToken: _elm_lang$core$Maybe$Nothing,
+	inDropZone: false,
+	fileContents: {ctor: '[]'},
+	progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress,
+	mdl: _debois$elm_mdl$Material$model
+};
+var _ak1211$tractor$UploadPage_Model$init = A2(
+	_elm_lang$core$Platform_Cmd_ops['!'],
+	_ak1211$tractor$UploadPage_Model$initialModel,
+	{
+		ctor: '::',
+		_0: _debois$elm_mdl$Material$init(_ak1211$tractor$UploadPage_Msg$Mdl),
+		_1: {ctor: '[]'}
+	});
+var _ak1211$tractor$UploadPage_Model$clearModel = function (model) {
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			inDropZone: false,
+			fileContents: {ctor: '[]'},
+			progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress
+		});
+};
+var _ak1211$tractor$UploadPage_Model$FileContent = F4(
+	function (a, b, c, d) {
+		return {name: a, marketCode: b, timeFrame: c, ohlcvs: d};
+	});
+var _ak1211$tractor$UploadPage_Model$UploadThunk = F2(
+	function (a, b) {
+		return {$function: a, ohlcv: b};
+	});
+var _ak1211$tractor$UploadPage_Model$UploadProgress = F4(
+	function (a, b, c, d) {
+		return {counter: a, total: b, todo: c, done: d};
+	});
+var _ak1211$tractor$UploadPage_Model$Model = F5(
+	function (a, b, c, d, e) {
+		return {accessToken: a, inDropZone: b, fileContents: c, progress: d, mdl: e};
+	});
+
+var _ak1211$tractor$Model$Model = function (a) {
+	return function (b) {
+		return function (c) {
+			return function (d) {
+				return function (e) {
+					return function (f) {
+						return function (g) {
+							return function (h) {
+								return function (i) {
+									return function (j) {
+										return {clientID: a, accessToken: b, userName: c, pageHistory: d, serverVersion: e, webApiDocument: f, uploadPageModel: g, portfolioPageModel: h, analyticsPageModel: i, mdl: j};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+var _ak1211$tractor$Msg$Mdl = function (a) {
+	return {ctor: 'Mdl', _0: a};
+};
+var _ak1211$tractor$Msg$AnalyticsPageMsg = function (a) {
+	return {ctor: 'AnalyticsPageMsg', _0: a};
+};
+var _ak1211$tractor$Msg$PortfolioPageMsg = function (a) {
+	return {ctor: 'PortfolioPageMsg', _0: a};
+};
+var _ak1211$tractor$Msg$UploadPageMsg = function (a) {
+	return {ctor: 'UploadPageMsg', _0: a};
+};
+var _ak1211$tractor$Msg$UrlChange = function (a) {
+	return {ctor: 'UrlChange', _0: a};
+};
+var _ak1211$tractor$Msg$UpdateWebApiDocument = function (a) {
+	return {ctor: 'UpdateWebApiDocument', _0: a};
+};
+var _ak1211$tractor$Msg$UpdateServerVersion = function (a) {
+	return {ctor: 'UpdateServerVersion', _0: a};
+};
+var _ak1211$tractor$Msg$ScrollToTop = {ctor: 'ScrollToTop'};
+var _ak1211$tractor$Msg$Nop = {ctor: 'Nop'};
+var _ak1211$tractor$Msg$NewUrl = function (a) {
+	return {ctor: 'NewUrl', _0: a};
+};
+var _ak1211$tractor$Msg$DoneOAuthExchangeCode = function (a) {
+	return {ctor: 'DoneOAuthExchangeCode', _0: a};
+};
+
+var _elm_lang$dom$Dom$blur = _elm_lang$dom$Native_Dom.blur;
+var _elm_lang$dom$Dom$focus = _elm_lang$dom$Native_Dom.focus;
+var _elm_lang$dom$Dom$NotFound = function (a) {
+	return {ctor: 'NotFound', _0: a};
+};
+
+var _elm_lang$dom$Dom_Size$width = _elm_lang$dom$Native_Dom.width;
+var _elm_lang$dom$Dom_Size$height = _elm_lang$dom$Native_Dom.height;
+var _elm_lang$dom$Dom_Size$VisibleContentWithBordersAndMargins = {ctor: 'VisibleContentWithBordersAndMargins'};
+var _elm_lang$dom$Dom_Size$VisibleContentWithBorders = {ctor: 'VisibleContentWithBorders'};
+var _elm_lang$dom$Dom_Size$VisibleContent = {ctor: 'VisibleContent'};
+var _elm_lang$dom$Dom_Size$Content = {ctor: 'Content'};
+
+var _elm_lang$dom$Dom_Scroll$toX = _elm_lang$dom$Native_Dom.setScrollLeft;
+var _elm_lang$dom$Dom_Scroll$x = _elm_lang$dom$Native_Dom.getScrollLeft;
+var _elm_lang$dom$Dom_Scroll$toRight = _elm_lang$dom$Native_Dom.toRight;
+var _elm_lang$dom$Dom_Scroll$toLeft = function (id) {
+	return A2(_elm_lang$dom$Dom_Scroll$toX, id, 0);
+};
+var _elm_lang$dom$Dom_Scroll$toY = _elm_lang$dom$Native_Dom.setScrollTop;
+var _elm_lang$dom$Dom_Scroll$y = _elm_lang$dom$Native_Dom.getScrollTop;
+var _elm_lang$dom$Dom_Scroll$toBottom = _elm_lang$dom$Native_Dom.toBottom;
+var _elm_lang$dom$Dom_Scroll$toTop = function (id) {
+	return A2(_elm_lang$dom$Dom_Scroll$toY, id, 0);
+};
+
+var _ak1211$tractor$PortfolioPage_Update$getPortfolios = A2(_elm_lang$http$Http$send, _ak1211$tractor$PortfolioPage_Msg$DoneGetPortfolios, _ak1211$tractor$Generated_WebApi$getApiV1Portfolios);
+var _ak1211$tractor$PortfolioPage_Update$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'ChangeAccessToken':
+				if (_p0._0.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								accessToken: _elm_lang$core$Maybe$Just(_p0._0._0)
+							}),
+						{
+							ctor: '::',
+							_0: _ak1211$tractor$PortfolioPage_Update$getPortfolios,
+							_1: {ctor: '[]'}
+						});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{accessToken: _elm_lang$core$Maybe$Nothing}),
+						{ctor: '[]'});
+				}
+			case 'RenewPortfolios':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: _ak1211$tractor$PortfolioPage_Update$getPortfolios,
+						_1: {ctor: '[]'}
+					});
+			case 'DoneGetPortfolios':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							portfolios: _elm_lang$core$Result$toMaybe(_p0._0)
+						}),
+					{ctor: '[]'});
+			case 'UrlChange':
+				if (_p0._0.ctor === 'Portfolio') {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						{ctor: '[]'});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_ak1211$tractor$PortfolioPage_Model$clearModel(model),
+						{ctor: '[]'});
+				}
+			case 'NewUrl':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: _elm_lang$navigation$Navigation$newUrl(_p0._0),
+						_1: {ctor: '[]'}
+					});
+			default:
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$PortfolioPage_Msg$Mdl, _p0._0, model);
+		}
+	});
+
+//import Maybe, Native.List //
+
+var _elm_lang$core$Native_Regex = function() {
+
+function escape(str)
+{
+	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+function caseInsensitive(re)
+{
+	return new RegExp(re.source, 'gi');
+}
+function regex(raw)
+{
+	return new RegExp(raw, 'g');
+}
+
+function contains(re, string)
+{
+	return string.match(re) !== null;
+}
+
+function find(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex === re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		out.push({
+			match: result[0],
+			submatches: _elm_lang$core$Native_List.fromArray(subs),
+			index: result.index,
+			number: number
+		});
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+function replace(n, re, replacer, string)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		return replacer({
+			match: match,
+			submatches: _elm_lang$core$Native_List.fromArray(submatches),
+			index: arguments[arguments.length - 2],
+			number: count
+		});
+	}
+	return string.replace(re, jsReplacer);
+}
+
+function split(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	if (n === Infinity)
+	{
+		return _elm_lang$core$Native_List.fromArray(str.split(re));
+	}
+	var string = str;
+	var result;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		if (!(result = re.exec(string))) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+return {
+	regex: regex,
+	caseInsensitive: caseInsensitive,
+	escape: escape,
+
+	contains: F2(contains),
+	find: F3(find),
+	replace: F4(replace),
+	split: F3(split)
+};
+
+}();
+
+var _elm_lang$core$Regex$split = _elm_lang$core$Native_Regex.split;
+var _elm_lang$core$Regex$replace = _elm_lang$core$Native_Regex.replace;
+var _elm_lang$core$Regex$find = _elm_lang$core$Native_Regex.find;
+var _elm_lang$core$Regex$contains = _elm_lang$core$Native_Regex.contains;
+var _elm_lang$core$Regex$caseInsensitive = _elm_lang$core$Native_Regex.caseInsensitive;
+var _elm_lang$core$Regex$regex = _elm_lang$core$Native_Regex.regex;
+var _elm_lang$core$Regex$escape = _elm_lang$core$Native_Regex.escape;
+var _elm_lang$core$Regex$Match = F4(
+	function (a, b, c, d) {
+		return {match: a, submatches: b, index: c, number: d};
+	});
+var _elm_lang$core$Regex$Regex = {ctor: 'Regex'};
+var _elm_lang$core$Regex$AtMost = function (a) {
+	return {ctor: 'AtMost', _0: a};
+};
+var _elm_lang$core$Regex$All = {ctor: 'All'};
+
+var _lovasoa$elm_csv$Helper$parseRemaining = F4(
+	function (separator, quoted, remaining, done) {
+		parseRemaining:
+		while (true) {
+			if (_elm_lang$core$Native_Utils.eq(remaining, '')) {
+				return done;
+			} else {
+				if ((!_elm_lang$core$Native_Utils.eq(separator, '')) && ((!quoted) && A2(_elm_lang$core$String$startsWith, separator, remaining))) {
+					var nextChars = A2(
+						_elm_lang$core$String$dropLeft,
+						_elm_lang$core$String$length(separator),
+						remaining);
+					var newQuoted = false;
+					var _v0 = separator,
+						_v1 = false,
+						_v2 = nextChars,
+						_v3 = {ctor: '::', _0: '', _1: done};
+					separator = _v0;
+					quoted = _v1;
+					remaining = _v2;
+					done = _v3;
+					continue parseRemaining;
+				} else {
+					var nextNextChar = A3(_elm_lang$core$String$slice, 1, 2, remaining);
+					var nextChar = A3(_elm_lang$core$String$slice, 0, 1, remaining);
+					var isEscapedQuote = (!quoted) && ((_elm_lang$core$Native_Utils.eq(nextChar, '\\') || _elm_lang$core$Native_Utils.eq(nextChar, '\"')) && _elm_lang$core$Native_Utils.eq(nextNextChar, '\"'));
+					var nextChars = A2(
+						_elm_lang$core$String$dropLeft,
+						isEscapedQuote ? 2 : 1,
+						remaining);
+					var endQuote = quoted && (_elm_lang$core$Native_Utils.eq(nextChar, '\"') && (!isEscapedQuote));
+					var others = A2(
+						_elm_lang$core$Maybe$withDefault,
+						{ctor: '[]'},
+						_elm_lang$core$List$tail(done));
+					var current = A2(
+						_elm_lang$core$Maybe$withDefault,
+						'',
+						_elm_lang$core$List$head(done));
+					var startQuote = _elm_lang$core$Native_Utils.eq(nextChar, '\"') && ((!_elm_lang$core$Native_Utils.eq(nextNextChar, '\"')) && _elm_lang$core$Native_Utils.eq(current, ''));
+					var newQuoted = (quoted && (!endQuote)) || startQuote;
+					var newChar = isEscapedQuote ? '\"' : ((startQuote || endQuote) ? '' : nextChar);
+					var newDone = {
+						ctor: '::',
+						_0: A2(_elm_lang$core$Basics_ops['++'], current, newChar),
+						_1: others
+					};
+					var _v4 = separator,
+						_v5 = newQuoted,
+						_v6 = nextChars,
+						_v7 = newDone;
+					separator = _v4;
+					quoted = _v5;
+					remaining = _v6;
+					done = _v7;
+					continue parseRemaining;
+				}
+			}
+		}
+	});
+var _lovasoa$elm_csv$Helper$splitLineWith = F2(
+	function (separator, line) {
+		return _elm_lang$core$List$reverse(
+			A4(
+				_lovasoa$elm_csv$Helper$parseRemaining,
+				separator,
+				false,
+				line,
+				{ctor: '[]'}));
+	});
+var _lovasoa$elm_csv$Helper$splitLine = _lovasoa$elm_csv$Helper$splitLineWith(',');
+
+var _lovasoa$elm_csv$Csv$splitWith = F2(
+	function (separator, lines) {
+		var values = A2(
+			_elm_lang$core$List$filter,
+			function (x) {
+				return !_elm_lang$core$String$isEmpty(x);
+			},
+			_elm_lang$core$String$lines(lines));
+		return A2(
+			_elm_lang$core$List$map,
+			_lovasoa$elm_csv$Helper$splitLineWith(separator),
+			values);
+	});
+var _lovasoa$elm_csv$Csv$split = _lovasoa$elm_csv$Csv$splitWith(',');
+var _lovasoa$elm_csv$Csv$parseWith = F2(
+	function (separator, lines) {
+		var values = A2(_lovasoa$elm_csv$Csv$splitWith, separator, lines);
+		var headers = A2(
+			_elm_lang$core$Maybe$withDefault,
+			{ctor: '[]'},
+			_elm_lang$core$List$head(values));
+		var records = A2(_elm_lang$core$List$drop, 1, values);
+		return {headers: headers, records: records};
+	});
+var _lovasoa$elm_csv$Csv$parse = _lovasoa$elm_csv$Csv$parseWith(',');
+var _lovasoa$elm_csv$Csv$Csv = F2(
+	function (a, b) {
+		return {headers: a, records: b};
+	});
+
+var _ak1211$tractor$UploadPage_Update$putOhlcv = F4(
+	function (token, marketCode, timeFrame, ohlcv) {
+		var x = A2(_elm_lang$core$Debug$log, '', ohlcv);
+		var authzHeader = _ak1211$tractor$Generated_WebApi$makeAuthorizationHeader(token);
+		return A2(
+			_elm_lang$http$Http$send,
+			_ak1211$tractor$UploadPage_Msg$DoneUploadContent,
+			A4(
+				_ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode,
+				authzHeader,
+				marketCode,
+				_elm_lang$core$Maybe$Just(timeFrame),
+				{
+					ctor: '::',
+					_0: ohlcv,
+					_1: {ctor: '[]'}
+				}));
+	});
+var _ak1211$tractor$UploadPage_Update$toOhlcvt = F2(
+	function (tf, records) {
+		var time = A2(_elm_lang$core$Dict$get, 'Time', records);
+		var date = A2(_elm_lang$core$Dict$get, 'Date', records);
+		var datetime = A2(
+			_elm_lang$core$Maybe$withDefault,
+			'Date and Time parse error',
+			function () {
+				var _p0 = tf;
+				if (_p0 === '1d') {
+					return A2(
+						_elm_lang$core$Maybe$map,
+						function (a) {
+							return A2(_elm_lang$core$Basics_ops['++'], a, 'T15:00:00+0900');
+						},
+						date);
+				} else {
+					return A3(
+						_elm_lang$core$Maybe$map2,
+						F2(
+							function (a, b) {
+								return A2(
+									_elm_lang$core$Basics_ops['++'],
+									a,
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										'T',
+										A2(_elm_lang$core$Basics_ops['++'], b, '+0900')));
+							}),
+						date,
+						time);
+				}
+			}());
+		var toNumber = F2(
+			function (fn, name) {
+				return A2(
+					_elm_lang$core$Maybe$andThen,
+					function (_p1) {
+						return _elm_lang$core$Result$toMaybe(
+							fn(
+								_elm_lang$core$String$trim(_p1)));
+					},
+					A2(_elm_lang$core$Dict$get, name, records));
+			});
+		var toFloat = toNumber(_elm_lang$core$String$toFloat);
+		var toInt = toNumber(_elm_lang$core$String$toInt);
+		return {
+			at: datetime,
+			open: toFloat('Open'),
+			high: toFloat('High'),
+			low: toFloat('Low'),
+			close: toFloat('Close'),
+			volume: A2(
+				_elm_lang$core$Maybe$withDefault,
+				0,
+				toInt('Volume')),
+			source: _elm_lang$core$Maybe$Just('matsui.co.jp')
+		};
+	});
+var _ak1211$tractor$UploadPage_Update$parseFromNetstockCsv = function (data) {
+	var lines = _lovasoa$elm_csv$Csv$split(data);
+	var name = _elm_lang$core$List$head(
+		_elm_lang$core$List$concat(
+			A2(
+				_elm_lang$core$List$take,
+				1,
+				A2(_elm_lang$core$List$take, 1, lines))));
+	var hds = _elm_lang$core$List$concat(
+		A2(
+			_elm_lang$core$List$take,
+			1,
+			A2(_elm_lang$core$List$drop, 1, lines)));
+	var toDict = function (r) {
+		return _elm_lang$core$Dict$fromList(
+			A3(
+				_elm_lang$core$List$map2,
+				F2(
+					function (k, v) {
+						return {ctor: '_Tuple2', _0: k, _1: v};
+					}),
+				hds,
+				r));
+	};
+	var recs = A2(_elm_lang$core$List$drop, 2, lines);
+	return {
+		ctor: '_Tuple2',
+		_0: name,
+		_1: A2(_elm_lang$core$List$map, toDict, recs)
+	};
+};
+var _ak1211$tractor$UploadPage_Update$toUploadFileContent = function (file) {
+	var detectTimeFrame = function (records) {
+		return '1d';
+	};
+	var pack = F3(
+		function (name, mc, records) {
+			var tf = detectTimeFrame(records);
+			return {
+				name: name,
+				marketCode: mc,
+				timeFrame: tf,
+				ohlcvs: A2(
+					_elm_lang$core$List$map,
+					_ak1211$tractor$UploadPage_Update$toOhlcvt(tf),
+					records)
+			};
+		});
+	var marketCode = A2(
+		_elm_lang$core$Result$fromMaybe,
+		'CSVファイル名からマーケットコードを得られませんでした',
+		A2(
+			_elm_lang$core$Maybe$map,
+			_elm_lang$core$String$trim,
+			_elm_lang$core$List$head(
+				A2(_elm_lang$core$String$split, '.', file.name))));
+	var _p2 = file.data;
+	if (_p2.ctor === 'Ok') {
+		var _p3 = _ak1211$tractor$UploadPage_Update$parseFromNetstockCsv(_p2._0);
+		if (_p3._0.ctor === 'Just') {
+			return A2(
+				_elm_lang$core$Result$map,
+				function (mc) {
+					return A3(pack, _p3._0._0, mc, _p3._1);
+				},
+				marketCode);
+		} else {
+			return _elm_lang$core$Result$Err('CSVファイルのパースに失敗しました');
+		}
+	} else {
+		return _elm_lang$core$Result$Err(
+			A2(_elm_lang$core$Basics_ops['++'], 'parse error of ', file.name));
+	}
+};
+var _ak1211$tractor$UploadPage_Update$update = F2(
+	function (msg, model) {
+		var _p4 = msg;
+		switch (_p4.ctor) {
+			case 'ChangeAccessToken':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{accessToken: _p4._0}),
+					{ctor: '[]'});
+			case 'DropZoneEntered':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{inDropZone: true}),
+					{ctor: '[]'});
+			case 'DropZoneLeaved':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{inDropZone: false}),
+					{ctor: '[]'});
+			case 'FilesDropped':
+				var cs = A2(_elm_lang$core$List$map, _ak1211$tractor$UploadPage_Update$toUploadFileContent, _p4._0);
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{inDropZone: false, fileContents: cs, progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress}),
+					{ctor: '[]'});
+			case 'UploadAllFilesContent':
+				var _p5 = model.accessToken;
+				if (_p5.ctor === 'Just') {
+					var makeTodo = F3(
+						function (mc, tf, v) {
+							return {
+								$function: A3(_ak1211$tractor$UploadPage_Update$putOhlcv, _p5._0, mc, tf),
+								ohlcv: v
+							};
+						});
+					var makeTodoList = function (fileContent) {
+						return A2(
+							_elm_lang$core$List$map,
+							A2(makeTodo, fileContent.marketCode, fileContent.timeFrame),
+							fileContent.ohlcvs);
+					};
+					var okFiles = A2(_elm_lang$core$List$filterMap, _elm_lang$core$Result$toMaybe, model.fileContents);
+					var newUploadProgress = function () {
+						var todoList = _elm_lang$core$List$concat(
+							A2(_elm_lang$core$List$map, makeTodoList, okFiles));
+						return {
+							counter: 0,
+							total: _elm_lang$core$List$length(todoList),
+							todo: todoList,
+							done: {ctor: '[]'}
+						};
+					}();
+					var newModel = _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							fileContents: {ctor: '[]'},
+							progress: newUploadProgress
+						});
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						newModel,
+						{
+							ctor: '::',
+							_0: A2(
+								_elm_lang$core$Task$perform,
+								_elm_lang$core$Basics$identity,
+								_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
+							_1: {ctor: '[]'}
+						});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						{ctor: '[]'});
+				}
+			case 'UploadContent':
+				var _p6 = model.progress.todo;
+				if (_p6.ctor === '::') {
+					var _p7 = _p6._0;
+					var progress = model.progress;
+					var next = _elm_lang$core$Native_Utils.update(
+						progress,
+						{
+							counter: progress.counter + 1,
+							todo: _p6._1,
+							done: {ctor: '::', _0: _p7, _1: progress.done}
+						});
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{progress: next}),
+						{
+							ctor: '::',
+							_0: _p7.$function(_p7.ohlcv),
+							_1: {ctor: '[]'}
+						});
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						{ctor: '[]'});
+				}
+			case 'DoneUploadContent':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Task$perform,
+							_elm_lang$core$Basics$identity,
+							_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
+						_1: {ctor: '[]'}
+					});
+			case 'UrlChange':
+				if (_p4._0.ctor === 'Upload') {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _ak1211$tractor$UploadPage_Model$clearModel(model),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
+			default:
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$UploadPage_Msg$Mdl, _p4._0, model);
+		}
+	});
+
+var _ak1211$tractor$Update$urlUpdate = F2(
+	function (model, location) {
+		var _p0 = _ak1211$tractor$Route$fromLocation(location);
+		if (_p0.ctor === 'Just') {
+			var _p4 = _p0._0;
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{
+						pageHistory: {ctor: '::', _0: _p4, _1: model.pageHistory}
+					}),
+				{
+					ctor: '::',
+					_0: A2(
+						_elm_lang$core$Task$attempt,
+						_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
+						_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
+					_1: {
+						ctor: '::',
+						_0: function (_p1) {
+							return A2(
+								_elm_lang$core$Task$perform,
+								_elm_lang$core$Basics$identity,
+								_elm_lang$core$Task$succeed(_p1));
+						}(
+							_ak1211$tractor$Msg$UploadPageMsg(
+								_ak1211$tractor$UploadPage_Msg$UrlChange(_p4))),
+						_1: {
+							ctor: '::',
+							_0: function (_p2) {
+								return A2(
+									_elm_lang$core$Task$perform,
+									_elm_lang$core$Basics$identity,
+									_elm_lang$core$Task$succeed(_p2));
+							}(
+								_ak1211$tractor$Msg$PortfolioPageMsg(
+									_ak1211$tractor$PortfolioPage_Msg$UrlChange(_p4))),
+							_1: {
+								ctor: '::',
+								_0: function (_p3) {
+									return A2(
+										_elm_lang$core$Task$perform,
+										_elm_lang$core$Basics$identity,
+										_elm_lang$core$Task$succeed(_p3));
+								}(
+									_ak1211$tractor$Msg$AnalyticsPageMsg(
+										_ak1211$tractor$AnalyticsPage_Msg$UrlChange(_p4))),
+								_1: {ctor: '[]'}
+							}
+						}
+					}
+				});
+		} else {
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				model,
+				{ctor: '[]'});
+		}
+	});
+var _ak1211$tractor$Update$update = F2(
+	function (msg, model) {
+		var _p5 = msg;
+		switch (_p5.ctor) {
+			case 'DoneOAuthExchangeCode':
+				var _p6 = function () {
+					var _p7 = _p5._0;
+					if (_p7.ctor === 'Ok') {
+						var _p8 = _p7._0;
+						var m = _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								accessToken: _elm_lang$core$Maybe$Just(_p8.accessToken),
+								userName: _elm_lang$core$Maybe$Just(_p8.userName)
+							});
+						return {
+							ctor: '_Tuple2',
+							_0: m,
+							_1: _elm_lang$core$Maybe$Just(_p8.accessToken)
+						};
+					} else {
+						var m = _elm_lang$core$Native_Utils.update(
+							model,
+							{accessToken: _elm_lang$core$Maybe$Nothing, userName: _elm_lang$core$Maybe$Nothing});
+						return {ctor: '_Tuple2', _0: m, _1: _elm_lang$core$Maybe$Nothing};
+					}
+				}();
+				var newModel = _p6._0;
+				var token = _p6._1;
+				var msgs = {
+					ctor: '::',
+					_0: _ak1211$tractor$Msg$UploadPageMsg(
+						_ak1211$tractor$UploadPage_Msg$ChangeAccessToken(token)),
+					_1: {
+						ctor: '::',
+						_0: _ak1211$tractor$Msg$PortfolioPageMsg(
+							_ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken(token)),
+						_1: {
+							ctor: '::',
+							_0: _ak1211$tractor$Msg$AnalyticsPageMsg(
+								_ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken(token)),
+							_1: {ctor: '[]'}
+						}
+					}
+				};
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					newModel,
+					A2(
+						_elm_lang$core$List$map,
+						function (_p9) {
+							return A2(
+								_elm_lang$core$Task$perform,
+								_elm_lang$core$Basics$identity,
+								_elm_lang$core$Task$succeed(_p9));
+						},
+						msgs));
+			case 'UploadPageMsg':
+				var _p10 = A2(_ak1211$tractor$UploadPage_Update$update, _p5._0, model.uploadPageModel);
+				var newModel = _p10._0;
+				var newCmd = _p10._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{uploadPageModel: newModel}),
+					{
+						ctor: '::',
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, newCmd),
+						_1: {ctor: '[]'}
+					});
+			case 'PortfolioPageMsg':
+				var _p11 = A2(_ak1211$tractor$PortfolioPage_Update$update, _p5._0, model.portfolioPageModel);
+				var newModel = _p11._0;
+				var newCmd = _p11._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{portfolioPageModel: newModel}),
+					{
+						ctor: '::',
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$PortfolioPageMsg, newCmd),
+						_1: {ctor: '[]'}
+					});
+			case 'AnalyticsPageMsg':
+				var _p12 = A2(_ak1211$tractor$AnalyticsPage_Update$update, _p5._0, model.analyticsPageModel);
+				var newModel = _p12._0;
+				var newCmd = _p12._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{analyticsPageModel: newModel}),
+					{
+						ctor: '::',
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$AnalyticsPageMsg, newCmd),
+						_1: {ctor: '[]'}
+					});
+			case 'Mdl':
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p5._0, model);
+			case 'NewUrl':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: _elm_lang$navigation$Navigation$newUrl(_p5._0),
+						_1: {ctor: '[]'}
+					});
+			case 'Nop':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			case 'ScrollToTop':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Task$attempt,
+							_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
+							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
+						_1: {ctor: '[]'}
+					});
+			case 'UpdateServerVersion':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							serverVersion: _elm_lang$core$Result$toMaybe(_p5._0)
+						}),
+					{ctor: '[]'});
+			case 'UpdateWebApiDocument':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							webApiDocument: _elm_lang$core$Result$toMaybe(_p5._0)
+						}),
+					{ctor: '[]'});
+			default:
+				return A2(_ak1211$tractor$Update$urlUpdate, model, _p5._0);
+		}
+	});
+
+var _evancz$elm_markdown$Native_Markdown = function() {
+
+
+// VIRTUAL-DOM WIDGETS
+
+function toHtml(options, factList, rawMarkdown)
+{
+	var model = {
+		options: options,
+		markdown: rawMarkdown
+	};
+	return _elm_lang$virtual_dom$Native_VirtualDom.custom(factList, model, implementation);
+}
+
+
+// WIDGET IMPLEMENTATION
+
+var implementation = {
+	render: render,
+	diff: diff
+};
+
+function render(model)
+{
+	var html = marked(model.markdown, formatOptions(model.options));
+	var div = document.createElement('div');
+	div.innerHTML = html;
+	return div;
+}
+
+function diff(a, b)
+{
+	
+	if (a.model.markdown === b.model.markdown && a.model.options === b.model.options)
+	{
+		return null;
+	}
+
+	return {
+		applyPatch: applyPatch,
+		data: marked(b.model.markdown, formatOptions(b.model.options))
+	};
+}
+
+function applyPatch(domNode, data)
+{
+	domNode.innerHTML = data;
+	return domNode;
+}
+
+
+// ACTUAL MARKDOWN PARSER
+
+var marked = function() {
+	// catch the `marked` object regardless of the outer environment.
+	// (ex. a CommonJS module compatible environment.)
+	// note that this depends on marked's implementation of environment detection.
+	var module = {};
+	var exports = module.exports = {};
+
+	/**
+	 * marked - a markdown parser
+	 * Copyright (c) 2011-2014, Christopher Jeffrey. (MIT Licensed)
+	 * https://github.com/chjj/marked
+	 * commit cd2f6f5b7091154c5526e79b5f3bfb4d15995a51
+	 */
+	(function(){var block={newline:/^\n+/,code:/^( {4}[^\n]+\n*)+/,fences:noop,hr:/^( *[-*_]){3,} *(?:\n+|$)/,heading:/^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,nptable:noop,lheading:/^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/,blockquote:/^( *>[^\n]+(\n(?!def)[^\n]+)*\n*)+/,list:/^( *)(bull) [\s\S]+?(?:hr|def|\n{2,}(?! )(?!\1bull )\n*|\s*$)/,html:/^ *(?:comment *(?:\n|\s*$)|closed *(?:\n{2,}|\s*$)|closing *(?:\n{2,}|\s*$))/,def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,table:noop,paragraph:/^((?:[^\n]+\n?(?!hr|heading|lheading|blockquote|tag|def))+)\n*/,text:/^[^\n]+/};block.bullet=/(?:[*+-]|\d+\.)/;block.item=/^( *)(bull) [^\n]*(?:\n(?!\1bull )[^\n]*)*/;block.item=replace(block.item,"gm")(/bull/g,block.bullet)();block.list=replace(block.list)(/bull/g,block.bullet)("hr","\\n+(?=\\1?(?:[-*_] *){3,}(?:\\n+|$))")("def","\\n+(?="+block.def.source+")")();block.blockquote=replace(block.blockquote)("def",block.def)();block._tag="(?!(?:"+"a|em|strong|small|s|cite|q|dfn|abbr|data|time|code"+"|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo"+"|span|br|wbr|ins|del|img)\\b)\\w+(?!:/|[^\\w\\s@]*@)\\b";block.html=replace(block.html)("comment",/<!--[\s\S]*?-->/)("closed",/<(tag)[\s\S]+?<\/\1>/)("closing",/<tag(?:"[^"]*"|'[^']*'|[^'">])*?>/)(/tag/g,block._tag)();block.paragraph=replace(block.paragraph)("hr",block.hr)("heading",block.heading)("lheading",block.lheading)("blockquote",block.blockquote)("tag","<"+block._tag)("def",block.def)();block.normal=merge({},block);block.gfm=merge({},block.normal,{fences:/^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\s*\1 *(?:\n+|$)/,paragraph:/^/,heading:/^ *(#{1,6}) +([^\n]+?) *#* *(?:\n+|$)/});block.gfm.paragraph=replace(block.paragraph)("(?!","(?!"+block.gfm.fences.source.replace("\\1","\\2")+"|"+block.list.source.replace("\\1","\\3")+"|")();block.tables=merge({},block.gfm,{nptable:/^ *(\S.*\|.*)\n *([-:]+ *\|[-| :]*)\n((?:.*\|.*(?:\n|$))*)\n*/,table:/^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/});function Lexer(options){this.tokens=[];this.tokens.links={};this.options=options||marked.defaults;this.rules=block.normal;if(this.options.gfm){if(this.options.tables){this.rules=block.tables}else{this.rules=block.gfm}}}Lexer.rules=block;Lexer.lex=function(src,options){var lexer=new Lexer(options);return lexer.lex(src)};Lexer.prototype.lex=function(src){src=src.replace(/\r\n|\r/g,"\n").replace(/\t/g,"    ").replace(/\u00a0/g," ").replace(/\u2424/g,"\n");return this.token(src,true)};Lexer.prototype.token=function(src,top,bq){var src=src.replace(/^ +$/gm,""),next,loose,cap,bull,b,item,space,i,l;while(src){if(cap=this.rules.newline.exec(src)){src=src.substring(cap[0].length);if(cap[0].length>1){this.tokens.push({type:"space"})}}if(cap=this.rules.code.exec(src)){src=src.substring(cap[0].length);cap=cap[0].replace(/^ {4}/gm,"");this.tokens.push({type:"code",text:!this.options.pedantic?cap.replace(/\n+$/,""):cap});continue}if(cap=this.rules.fences.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"code",lang:cap[2],text:cap[3]||""});continue}if(cap=this.rules.heading.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"heading",depth:cap[1].length,text:cap[2]});continue}if(top&&(cap=this.rules.nptable.exec(src))){src=src.substring(cap[0].length);item={type:"table",header:cap[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:cap[2].replace(/^ *|\| *$/g,"").split(/ *\| */),cells:cap[3].replace(/\n$/,"").split("\n")};for(i=0;i<item.align.length;i++){if(/^ *-+: *$/.test(item.align[i])){item.align[i]="right"}else if(/^ *:-+: *$/.test(item.align[i])){item.align[i]="center"}else if(/^ *:-+ *$/.test(item.align[i])){item.align[i]="left"}else{item.align[i]=null}}for(i=0;i<item.cells.length;i++){item.cells[i]=item.cells[i].split(/ *\| */)}this.tokens.push(item);continue}if(cap=this.rules.lheading.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"heading",depth:cap[2]==="="?1:2,text:cap[1]});continue}if(cap=this.rules.hr.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"hr"});continue}if(cap=this.rules.blockquote.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"blockquote_start"});cap=cap[0].replace(/^ *> ?/gm,"");this.token(cap,top,true);this.tokens.push({type:"blockquote_end"});continue}if(cap=this.rules.list.exec(src)){src=src.substring(cap[0].length);bull=cap[2];this.tokens.push({type:"list_start",ordered:bull.length>1});cap=cap[0].match(this.rules.item);next=false;l=cap.length;i=0;for(;i<l;i++){item=cap[i];space=item.length;item=item.replace(/^ *([*+-]|\d+\.) +/,"");if(~item.indexOf("\n ")){space-=item.length;item=!this.options.pedantic?item.replace(new RegExp("^ {1,"+space+"}","gm"),""):item.replace(/^ {1,4}/gm,"")}if(this.options.smartLists&&i!==l-1){b=block.bullet.exec(cap[i+1])[0];if(bull!==b&&!(bull.length>1&&b.length>1)){src=cap.slice(i+1).join("\n")+src;i=l-1}}loose=next||/\n\n(?!\s*$)/.test(item);if(i!==l-1){next=item.charAt(item.length-1)==="\n";if(!loose)loose=next}this.tokens.push({type:loose?"loose_item_start":"list_item_start"});this.token(item,false,bq);this.tokens.push({type:"list_item_end"})}this.tokens.push({type:"list_end"});continue}if(cap=this.rules.html.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:this.options.sanitize?"paragraph":"html",pre:!this.options.sanitizer&&(cap[1]==="pre"||cap[1]==="script"||cap[1]==="style"),text:cap[0]});continue}if(!bq&&top&&(cap=this.rules.def.exec(src))){src=src.substring(cap[0].length);this.tokens.links[cap[1].toLowerCase()]={href:cap[2],title:cap[3]};continue}if(top&&(cap=this.rules.table.exec(src))){src=src.substring(cap[0].length);item={type:"table",header:cap[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:cap[2].replace(/^ *|\| *$/g,"").split(/ *\| */),cells:cap[3].replace(/(?: *\| *)?\n$/,"").split("\n")};for(i=0;i<item.align.length;i++){if(/^ *-+: *$/.test(item.align[i])){item.align[i]="right"}else if(/^ *:-+: *$/.test(item.align[i])){item.align[i]="center"}else if(/^ *:-+ *$/.test(item.align[i])){item.align[i]="left"}else{item.align[i]=null}}for(i=0;i<item.cells.length;i++){item.cells[i]=item.cells[i].replace(/^ *\| *| *\| *$/g,"").split(/ *\| */)}this.tokens.push(item);continue}if(top&&(cap=this.rules.paragraph.exec(src))){src=src.substring(cap[0].length);this.tokens.push({type:"paragraph",text:cap[1].charAt(cap[1].length-1)==="\n"?cap[1].slice(0,-1):cap[1]});continue}if(cap=this.rules.text.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"text",text:cap[0]});continue}if(src){throw new Error("Infinite loop on byte: "+src.charCodeAt(0))}}return this.tokens};var inline={escape:/^\\([\\`*{}\[\]()#+\-.!_>])/,autolink:/^<([^ >]+(@|:\/)[^ >]+)>/,url:noop,tag:/^<!--[\s\S]*?-->|^<\/?\w+(?:"[^"]*"|'[^']*'|[^'">])*?>/,link:/^!?\[(inside)\]\(href\)/,reflink:/^!?\[(inside)\]\s*\[([^\]]*)\]/,nolink:/^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/,strong:/^__([\s\S]+?)__(?!_)|^\*\*([\s\S]+?)\*\*(?!\*)/,em:/^\b_((?:[^_]|__)+?)_\b|^\*((?:\*\*|[\s\S])+?)\*(?!\*)/,code:/^(`+)\s*([\s\S]*?[^`])\s*\1(?!`)/,br:/^ {2,}\n(?!\s*$)/,del:noop,text:/^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/};inline._inside=/(?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*/;inline._href=/\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*/;inline.link=replace(inline.link)("inside",inline._inside)("href",inline._href)();inline.reflink=replace(inline.reflink)("inside",inline._inside)();inline.normal=merge({},inline);inline.pedantic=merge({},inline.normal,{strong:/^__(?=\S)([\s\S]*?\S)__(?!_)|^\*\*(?=\S)([\s\S]*?\S)\*\*(?!\*)/,em:/^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/});inline.gfm=merge({},inline.normal,{escape:replace(inline.escape)("])","~|])")(),url:/^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,del:/^~~(?=\S)([\s\S]*?\S)~~/,text:replace(inline.text)("]|","~]|")("|","|https?://|")()});inline.breaks=merge({},inline.gfm,{br:replace(inline.br)("{2,}","*")(),text:replace(inline.gfm.text)("{2,}","*")()});function InlineLexer(links,options){this.options=options||marked.defaults;this.links=links;this.rules=inline.normal;this.renderer=this.options.renderer||new Renderer;this.renderer.options=this.options;if(!this.links){throw new Error("Tokens array requires a `links` property.")}if(this.options.gfm){if(this.options.breaks){this.rules=inline.breaks}else{this.rules=inline.gfm}}else if(this.options.pedantic){this.rules=inline.pedantic}}InlineLexer.rules=inline;InlineLexer.output=function(src,links,options){var inline=new InlineLexer(links,options);return inline.output(src)};InlineLexer.prototype.output=function(src){var out="",link,text,href,cap;while(src){if(cap=this.rules.escape.exec(src)){src=src.substring(cap[0].length);out+=cap[1];continue}if(cap=this.rules.autolink.exec(src)){src=src.substring(cap[0].length);if(cap[2]==="@"){text=cap[1].charAt(6)===":"?this.mangle(cap[1].substring(7)):this.mangle(cap[1]);href=this.mangle("mailto:")+text}else{text=escape(cap[1]);href=text}out+=this.renderer.link(href,null,text);continue}if(!this.inLink&&(cap=this.rules.url.exec(src))){src=src.substring(cap[0].length);text=escape(cap[1]);href=text;out+=this.renderer.link(href,null,text);continue}if(cap=this.rules.tag.exec(src)){if(!this.inLink&&/^<a /i.test(cap[0])){this.inLink=true}else if(this.inLink&&/^<\/a>/i.test(cap[0])){this.inLink=false}src=src.substring(cap[0].length);out+=this.options.sanitize?this.options.sanitizer?this.options.sanitizer(cap[0]):escape(cap[0]):cap[0];continue}if(cap=this.rules.link.exec(src)){src=src.substring(cap[0].length);this.inLink=true;out+=this.outputLink(cap,{href:cap[2],title:cap[3]});this.inLink=false;continue}if((cap=this.rules.reflink.exec(src))||(cap=this.rules.nolink.exec(src))){src=src.substring(cap[0].length);link=(cap[2]||cap[1]).replace(/\s+/g," ");link=this.links[link.toLowerCase()];if(!link||!link.href){out+=cap[0].charAt(0);src=cap[0].substring(1)+src;continue}this.inLink=true;out+=this.outputLink(cap,link);this.inLink=false;continue}if(cap=this.rules.strong.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.strong(this.output(cap[2]||cap[1]));continue}if(cap=this.rules.em.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.em(this.output(cap[2]||cap[1]));continue}if(cap=this.rules.code.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.codespan(escape(cap[2],true));continue}if(cap=this.rules.br.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.br();continue}if(cap=this.rules.del.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.del(this.output(cap[1]));continue}if(cap=this.rules.text.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.text(escape(this.smartypants(cap[0])));continue}if(src){throw new Error("Infinite loop on byte: "+src.charCodeAt(0))}}return out};InlineLexer.prototype.outputLink=function(cap,link){var href=escape(link.href),title=link.title?escape(link.title):null;return cap[0].charAt(0)!=="!"?this.renderer.link(href,title,this.output(cap[1])):this.renderer.image(href,title,escape(cap[1]))};InlineLexer.prototype.smartypants=function(text){if(!this.options.smartypants)return text;return text.replace(/---/g,"—").replace(/--/g,"–").replace(/(^|[-\u2014\/(\[{"\s])'/g,"$1‘").replace(/'/g,"’").replace(/(^|[-\u2014\/(\[{\u2018\s])"/g,"$1“").replace(/"/g,"”").replace(/\.{3}/g,"…")};InlineLexer.prototype.mangle=function(text){if(!this.options.mangle)return text;var out="",l=text.length,i=0,ch;for(;i<l;i++){ch=text.charCodeAt(i);if(Math.random()>.5){ch="x"+ch.toString(16)}out+="&#"+ch+";"}return out};function Renderer(options){this.options=options||{}}Renderer.prototype.code=function(code,lang,escaped){if(this.options.highlight){var out=this.options.highlight(code,lang);if(out!=null&&out!==code){escaped=true;code=out}}if(!lang){return"<pre><code>"+(escaped?code:escape(code,true))+"\n</code></pre>"}return'<pre><code class="'+this.options.langPrefix+escape(lang,true)+'">'+(escaped?code:escape(code,true))+"\n</code></pre>\n"};Renderer.prototype.blockquote=function(quote){return"<blockquote>\n"+quote+"</blockquote>\n"};Renderer.prototype.html=function(html){return html};Renderer.prototype.heading=function(text,level,raw){return"<h"+level+' id="'+this.options.headerPrefix+raw.toLowerCase().replace(/[^\w]+/g,"-")+'">'+text+"</h"+level+">\n"};Renderer.prototype.hr=function(){return this.options.xhtml?"<hr/>\n":"<hr>\n"};Renderer.prototype.list=function(body,ordered){var type=ordered?"ol":"ul";return"<"+type+">\n"+body+"</"+type+">\n"};Renderer.prototype.listitem=function(text){return"<li>"+text+"</li>\n"};Renderer.prototype.paragraph=function(text){return"<p>"+text+"</p>\n"};Renderer.prototype.table=function(header,body){return"<table>\n"+"<thead>\n"+header+"</thead>\n"+"<tbody>\n"+body+"</tbody>\n"+"</table>\n"};Renderer.prototype.tablerow=function(content){return"<tr>\n"+content+"</tr>\n"};Renderer.prototype.tablecell=function(content,flags){var type=flags.header?"th":"td";var tag=flags.align?"<"+type+' style="text-align:'+flags.align+'">':"<"+type+">";return tag+content+"</"+type+">\n"};Renderer.prototype.strong=function(text){return"<strong>"+text+"</strong>"};Renderer.prototype.em=function(text){return"<em>"+text+"</em>"};Renderer.prototype.codespan=function(text){return"<code>"+text+"</code>"};Renderer.prototype.br=function(){return this.options.xhtml?"<br/>":"<br>"};Renderer.prototype.del=function(text){return"<del>"+text+"</del>"};Renderer.prototype.link=function(href,title,text){if(this.options.sanitize){try{var prot=decodeURIComponent(unescape(href)).replace(/[^\w:]/g,"").toLowerCase()}catch(e){return""}if(prot.indexOf("javascript:")===0||prot.indexOf("vbscript:")===0||prot.indexOf("data:")===0){return""}}var out='<a href="'+href+'"';if(title){out+=' title="'+title+'"'}out+=">"+text+"</a>";return out};Renderer.prototype.image=function(href,title,text){var out='<img src="'+href+'" alt="'+text+'"';if(title){out+=' title="'+title+'"'}out+=this.options.xhtml?"/>":">";return out};Renderer.prototype.text=function(text){return text};function Parser(options){this.tokens=[];this.token=null;this.options=options||marked.defaults;this.options.renderer=this.options.renderer||new Renderer;this.renderer=this.options.renderer;this.renderer.options=this.options}Parser.parse=function(src,options,renderer){var parser=new Parser(options,renderer);return parser.parse(src)};Parser.prototype.parse=function(src){this.inline=new InlineLexer(src.links,this.options,this.renderer);this.tokens=src.reverse();var out="";while(this.next()){out+=this.tok()}return out};Parser.prototype.next=function(){return this.token=this.tokens.pop()};Parser.prototype.peek=function(){return this.tokens[this.tokens.length-1]||0};Parser.prototype.parseText=function(){var body=this.token.text;while(this.peek().type==="text"){body+="\n"+this.next().text}return this.inline.output(body)};Parser.prototype.tok=function(){switch(this.token.type){case"space":{return""}case"hr":{return this.renderer.hr()}case"heading":{return this.renderer.heading(this.inline.output(this.token.text),this.token.depth,this.token.text)}case"code":{return this.renderer.code(this.token.text,this.token.lang,this.token.escaped)}case"table":{var header="",body="",i,row,cell,flags,j;cell="";for(i=0;i<this.token.header.length;i++){flags={header:true,align:this.token.align[i]};cell+=this.renderer.tablecell(this.inline.output(this.token.header[i]),{header:true,align:this.token.align[i]})}header+=this.renderer.tablerow(cell);for(i=0;i<this.token.cells.length;i++){row=this.token.cells[i];cell="";for(j=0;j<row.length;j++){cell+=this.renderer.tablecell(this.inline.output(row[j]),{header:false,align:this.token.align[j]})}body+=this.renderer.tablerow(cell)}return this.renderer.table(header,body)}case"blockquote_start":{var body="";while(this.next().type!=="blockquote_end"){body+=this.tok()}return this.renderer.blockquote(body)}case"list_start":{var body="",ordered=this.token.ordered;while(this.next().type!=="list_end"){body+=this.tok()}return this.renderer.list(body,ordered)}case"list_item_start":{var body="";while(this.next().type!=="list_item_end"){body+=this.token.type==="text"?this.parseText():this.tok()}return this.renderer.listitem(body)}case"loose_item_start":{var body="";while(this.next().type!=="list_item_end"){body+=this.tok()}return this.renderer.listitem(body)}case"html":{var html=!this.token.pre&&!this.options.pedantic?this.inline.output(this.token.text):this.token.text;return this.renderer.html(html)}case"paragraph":{return this.renderer.paragraph(this.inline.output(this.token.text))}case"text":{return this.renderer.paragraph(this.parseText())}}};function escape(html,encode){return html.replace(!encode?/&(?!#?\w+;)/g:/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function unescape(html){return html.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/g,function(_,n){n=n.toLowerCase();if(n==="colon")return":";if(n.charAt(0)==="#"){return n.charAt(1)==="x"?String.fromCharCode(parseInt(n.substring(2),16)):String.fromCharCode(+n.substring(1))}return""})}function replace(regex,opt){regex=regex.source;opt=opt||"";return function self(name,val){if(!name)return new RegExp(regex,opt);val=val.source||val;val=val.replace(/(^|[^\[])\^/g,"$1");regex=regex.replace(name,val);return self}}function noop(){}noop.exec=noop;function merge(obj){var i=1,target,key;for(;i<arguments.length;i++){target=arguments[i];for(key in target){if(Object.prototype.hasOwnProperty.call(target,key)){obj[key]=target[key]}}}return obj}function marked(src,opt,callback){if(callback||typeof opt==="function"){if(!callback){callback=opt;opt=null}opt=merge({},marked.defaults,opt||{});var highlight=opt.highlight,tokens,pending,i=0;try{tokens=Lexer.lex(src,opt)}catch(e){return callback(e)}pending=tokens.length;var done=function(err){if(err){opt.highlight=highlight;return callback(err)}var out;try{out=Parser.parse(tokens,opt)}catch(e){err=e}opt.highlight=highlight;return err?callback(err):callback(null,out)};if(!highlight||highlight.length<3){return done()}delete opt.highlight;if(!pending)return done();for(;i<tokens.length;i++){(function(token){if(token.type!=="code"){return--pending||done()}return highlight(token.text,token.lang,function(err,code){if(err)return done(err);if(code==null||code===token.text){return--pending||done()}token.text=code;token.escaped=true;--pending||done()})})(tokens[i])}return}try{if(opt)opt=merge({},marked.defaults,opt);return Parser.parse(Lexer.lex(src,opt),opt)}catch(e){e.message+="\nPlease report this to https://github.com/chjj/marked.";if((opt||marked.defaults).silent){return"<p>An error occured:</p><pre>"+escape(e.message+"",true)+"</pre>"}throw e}}marked.options=marked.setOptions=function(opt){merge(marked.defaults,opt);return marked};marked.defaults={gfm:true,tables:true,breaks:false,pedantic:false,sanitize:false,sanitizer:null,mangle:true,smartLists:false,silent:false,highlight:null,langPrefix:"lang-",smartypants:false,headerPrefix:"",renderer:new Renderer,xhtml:false};marked.Parser=Parser;marked.parser=Parser.parse;marked.Renderer=Renderer;marked.Lexer=Lexer;marked.lexer=Lexer.lex;marked.InlineLexer=InlineLexer;marked.inlineLexer=InlineLexer.output;marked.parse=marked;if(typeof module!=="undefined"&&typeof exports==="object"){module.exports=marked}else if(typeof define==="function"&&define.amd){define(function(){return marked})}else{this.marked=marked}}).call(function(){return this||(typeof window!=="undefined"?window:global)}());
+
+	return module.exports;
+}();
+
+
+// FORMAT OPTIONS FOR MARKED IMPLEMENTATION
+
+function formatOptions(options)
+{
+	function toHighlight(code, lang)
+	{
+		if (!lang && options.defaultHighlighting.ctor === 'Just')
+		{
+			lang = options.defaultHighlighting._0;
+		}
+
+		if (typeof hljs !== 'undefined' && lang && hljs.listLanguages().indexOf(lang) >= 0)
+		{
+			return hljs.highlight(lang, code, true).value;
+		}
+
+		return code;
+	}
+
+	var gfm = options.githubFlavored;
+	if (gfm.ctor === 'Just')
+	{
+		return {
+			highlight: toHighlight,
+			gfm: true,
+			tables: gfm._0.tables,
+			breaks: gfm._0.breaks,
+			sanitize: options.sanitize,
+			smartypants: options.smartypants
+		};
+	}
+
+	return {
+		highlight: toHighlight,
+		gfm: false,
+		tables: false,
+		breaks: false,
+		sanitize: options.sanitize,
+		smartypants: options.smartypants
+	};
+}
+
+
+// EXPORTS
+
+return {
+	toHtml: F3(toHtml)
+};
+
+}();
+
+var _evancz$elm_markdown$Markdown$toHtmlWith = _evancz$elm_markdown$Native_Markdown.toHtml;
+var _evancz$elm_markdown$Markdown$defaultOptions = {
+	githubFlavored: _elm_lang$core$Maybe$Just(
+		{tables: false, breaks: false}),
+	defaultHighlighting: _elm_lang$core$Maybe$Nothing,
+	sanitize: false,
+	smartypants: false
+};
+var _evancz$elm_markdown$Markdown$toHtml = F2(
+	function (attrs, string) {
+		return A3(_evancz$elm_markdown$Native_Markdown.toHtml, _evancz$elm_markdown$Markdown$defaultOptions, attrs, string);
+	});
+var _evancz$elm_markdown$Markdown$Options = F4(
+	function (a, b, c, d) {
+		return {githubFlavored: a, defaultHighlighting: b, sanitize: c, smartypants: d};
+	});
+
+var _debois$elm_mdl$Material_Card$stopClick = _debois$elm_mdl$Material_Options_Internal$attribute(
+	A2(_elm_lang$html$Html_Attributes$attribute, 'onclick', 'var event = arguments[0] || window.event; event.stopPropagation();'));
+var _debois$elm_mdl$Material_Card$block = function (block) {
+	var _p0 = block;
+	switch (_p0.ctor) {
+		case 'Title':
+			return A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__title'),
+					_1: _p0._0
+				},
+				_p0._1);
+		case 'Media':
+			return A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__media'),
+					_1: _p0._0
+				},
+				_p0._1);
+		case 'SupportingText':
+			return A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__supporting-text'),
+					_1: _p0._0
+				},
+				_p0._1);
+		case 'Actions':
+			return A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__actions'),
+					_1: {ctor: '::', _0: _debois$elm_mdl$Material_Card$stopClick, _1: _p0._0}
+				},
+				_p0._1);
+		default:
+			return A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-card__menu'),
+					_1: {ctor: '::', _0: _debois$elm_mdl$Material_Card$stopClick, _1: _p0._0}
+				},
+				_p0._1);
+	}
+};
+var _debois$elm_mdl$Material_Card$view = F2(
+	function (styling, views) {
+		return A2(
+			_debois$elm_mdl$Material_Options$div,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$many(styling),
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-card'),
+					_1: {
+						ctor: '::',
+						_0: A2(_debois$elm_mdl$Material_Options$css, 'min-height', '0px'),
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			A2(_elm_lang$core$List$map, _debois$elm_mdl$Material_Card$block, views));
+	});
+var _debois$elm_mdl$Material_Card$subhead = function (styling) {
+	return _debois$elm_mdl$Material_Options$span(
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-card__subtitle-text'),
+			_1: {
+				ctor: '::',
+				_0: A2(_debois$elm_mdl$Material_Options$css, 'padding-top', '8px'),
+				_1: styling
+			}
+		});
+};
+var _debois$elm_mdl$Material_Card$head = function (styling) {
+	return A2(
+		_debois$elm_mdl$Material_Options$styled,
+		_elm_lang$html$Html$h1,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-card__title-text'),
+			_1: {
+				ctor: '::',
+				_0: A2(_debois$elm_mdl$Material_Options$css, 'align-self', 'flex-start'),
+				_1: styling
+			}
+		});
+};
+var _debois$elm_mdl$Material_Card$expand = _debois$elm_mdl$Material_Options$cs('mdl-card--expand');
+var _debois$elm_mdl$Material_Card$border = _debois$elm_mdl$Material_Options$cs('mdl-card--border');
+var _debois$elm_mdl$Material_Card$Actions = F2(
+	function (a, b) {
+		return {ctor: 'Actions', _0: a, _1: b};
+	});
+var _debois$elm_mdl$Material_Card$actions = _debois$elm_mdl$Material_Card$Actions;
+var _debois$elm_mdl$Material_Card$SupportingText = F2(
+	function (a, b) {
+		return {ctor: 'SupportingText', _0: a, _1: b};
+	});
+var _debois$elm_mdl$Material_Card$text = _debois$elm_mdl$Material_Card$SupportingText;
+var _debois$elm_mdl$Material_Card$Media = F2(
+	function (a, b) {
+		return {ctor: 'Media', _0: a, _1: b};
+	});
+var _debois$elm_mdl$Material_Card$media = _debois$elm_mdl$Material_Card$Media;
+var _debois$elm_mdl$Material_Card$Menu = F2(
+	function (a, b) {
+		return {ctor: 'Menu', _0: a, _1: b};
+	});
+var _debois$elm_mdl$Material_Card$menu = F2(
+	function (styling, block) {
+		return A2(_debois$elm_mdl$Material_Card$Menu, styling, block);
+	});
+var _debois$elm_mdl$Material_Card$Title = F2(
+	function (a, b) {
+		return {ctor: 'Title', _0: a, _1: b};
+	});
+var _debois$elm_mdl$Material_Card$title = F2(
+	function (styling, block) {
+		return A2(
+			_debois$elm_mdl$Material_Card$Title,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$many(styling),
+				_1: {
+					ctor: '::',
+					_0: A2(_debois$elm_mdl$Material_Options$css, 'justify-content', 'flex-end'),
+					_1: {
+						ctor: '::',
+						_0: A2(_debois$elm_mdl$Material_Options$css, 'flex-direction', 'column'),
+						_1: {
+							ctor: '::',
+							_0: A2(_debois$elm_mdl$Material_Options$css, 'align-items', 'flex-start'),
+							_1: {ctor: '[]'}
+						}
+					}
+				}
+			},
+			block);
+	});
 
 var _debois$elm_mdl$Material_Dialog$theDialog = 'elm-mdl-singleton-dialog';
 var _debois$elm_mdl$Material_Dialog$openOn = function () {
@@ -20149,7 +20629,15 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 				return false;
 			}
 		};
-		return A2(_elm_lang$core$List$any, hasOk, model.fileContents);
+		var hasAccessToken = function () {
+			var _p1 = model.accessToken;
+			if (_p1.ctor === 'Just') {
+				return true;
+			} else {
+				return false;
+			}
+		}();
+		return hasAccessToken && A2(_elm_lang$core$List$any, hasOk, model.fileContents);
 	}();
 	var show = A3(
 		_debois$elm_mdl$Material_Options$styled,
@@ -20160,11 +20648,11 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 			_1: {ctor: '[]'}
 		},
 		function () {
-			var _p1 = model.progress.done;
-			if (_p1.ctor === '::') {
+			var _p2 = model.progress.done;
+			if (_p2.ctor === '::') {
 				return {
 					ctor: '::',
-					_0: _elm_lang$html$Html$text(_p1._0.ohlcv.at),
+					_0: _elm_lang$html$Html$text(_p2._0.ohlcv.at),
 					_1: {
 						ctor: '::',
 						_0: _elm_lang$html$Html$text(' is now uploading.'),
@@ -20632,11 +21120,11 @@ var _ak1211$tractor$UploadPage_View$viewFileContent = F2(
 				});
 		};
 		var margin = A2(_debois$elm_mdl$Material_Options$css, 'margin', '0 auto');
-		var _p2 = content;
-		if (_p2.ctor === 'Ok') {
-			return dijestContent(_p2._0);
+		var _p3 = content;
+		if (_p3.ctor === 'Ok') {
+			return dijestContent(_p3._0);
 		} else {
-			return errorContent(_p2._0);
+			return errorContent(_p3._0);
 		}
 	});
 var _ak1211$tractor$UploadPage_View$fileContents = function (model) {
@@ -21802,20 +22290,17 @@ var _ak1211$tractor$View$MenuItem = F2(
 var _ak1211$tractor$Main$subscriptions = function (model) {
 	return A2(_debois$elm_mdl$Material$subscriptions, _ak1211$tractor$Msg$Mdl, model);
 };
-var _ak1211$tractor$Main$makeAuthorizationHeader = function (token) {
-	return A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token);
-};
 var _ak1211$tractor$Main$getServerVersion = A2(_elm_lang$http$Http$send, _ak1211$tractor$Msg$UpdateServerVersion, _ak1211$tractor$Generated_WebApi$getApiV1Version);
+var _ak1211$tractor$Main$getWebApiDocument = A2(
+	_elm_lang$http$Http$send,
+	_ak1211$tractor$Msg$UpdateWebApiDocument,
+	_elm_lang$http$Http$getString('public/WebApiDocument.md'));
 var _ak1211$tractor$Main$exchangeOAuthCodeForToken = function (code) {
 	return A2(
 		_elm_lang$http$Http$send,
 		_ak1211$tractor$Msg$DoneOAuthExchangeCode,
 		_ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode(code));
 };
-var _ak1211$tractor$Main$getWebApiDocument = A2(
-	_elm_lang$http$Http$send,
-	_ak1211$tractor$Msg$UpdateWebApiDocument,
-	_elm_lang$http$Http$getString('public/WebApiDocument.md'));
 var _ak1211$tractor$Main$init = F2(
 	function (flags, location) {
 		var exchangeCode = function () {
@@ -21826,16 +22311,36 @@ var _ak1211$tractor$Main$init = F2(
 				return _elm_lang$core$Platform_Cmd$none;
 			}
 		}();
-		var initialModel = _ak1211$tractor$Model$initialModel(flags.client_id);
+		var _p1 = _ak1211$tractor$UploadPage_Model$init;
+		var uploadPageModel = _p1._0;
+		var uploadPageCmd = _p1._1;
+		var _p2 = _ak1211$tractor$PortfolioPage_Model$init;
+		var portfolioPageModel = _p2._0;
+		var portfolioPageCmd = _p2._1;
+		var _p3 = _ak1211$tractor$AnalyticsPage_Model$init;
+		var analyticsPageModel = _p3._0;
+		var analyticsPageCmd = _p3._1;
+		var initialModel = {
+			clientID: flags.client_id,
+			accessToken: _elm_lang$core$Maybe$Nothing,
+			userName: _elm_lang$core$Maybe$Nothing,
+			pageHistory: {ctor: '[]'},
+			serverVersion: _elm_lang$core$Maybe$Nothing,
+			webApiDocument: _elm_lang$core$Maybe$Nothing,
+			uploadPageModel: uploadPageModel,
+			portfolioPageModel: portfolioPageModel,
+			analyticsPageModel: analyticsPageModel,
+			mdl: _debois$elm_mdl$Material$model
+		};
 		var model = function () {
-			var _p1 = _ak1211$tractor$Route$fromLocation(location);
-			if (_p1.ctor === 'Just') {
+			var _p4 = _ak1211$tractor$Route$fromLocation(location);
+			if (_p4.ctor === 'Just') {
 				return _elm_lang$core$Native_Utils.update(
 					initialModel,
 					{
 						pageHistory: {
 							ctor: '::',
-							_0: _p1._0,
+							_0: _p4._0,
 							_1: {ctor: '[]'}
 						}
 					});
@@ -21848,221 +22353,38 @@ var _ak1211$tractor$Main$init = F2(
 			model,
 			{
 				ctor: '::',
-				_0: _ak1211$tractor$Main$getServerVersion,
+				_0: _debois$elm_mdl$Material$init(_ak1211$tractor$Msg$Mdl),
 				_1: {
 					ctor: '::',
-					_0: _ak1211$tractor$Main$getWebApiDocument,
+					_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$AnalyticsPageMsg, analyticsPageCmd),
 					_1: {
 						ctor: '::',
-						_0: exchangeCode,
+						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$PortfolioPageMsg, portfolioPageCmd),
 						_1: {
 							ctor: '::',
-							_0: _debois$elm_mdl$Material$init(_ak1211$tractor$Msg$Mdl),
-							_1: {ctor: '[]'}
+							_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, uploadPageCmd),
+							_1: {
+								ctor: '::',
+								_0: _ak1211$tractor$Main$getServerVersion,
+								_1: {
+									ctor: '::',
+									_0: _ak1211$tractor$Main$getWebApiDocument,
+									_1: {
+										ctor: '::',
+										_0: exchangeCode,
+										_1: {ctor: '[]'}
+									}
+								}
+							}
 						}
 					}
 				}
 			});
 	});
-var _ak1211$tractor$Main$urlUpdate = F2(
-	function (model, location) {
-		var _p2 = _ak1211$tractor$Route$fromLocation(location);
-		if (_p2.ctor === 'Just') {
-			if (_p2._0.ctor === 'Analytics') {
-				var _p3 = _p2._0._0;
-				var msg = _ak1211$tractor$Msg$AnalyticsPageMsg(
-					_ak1211$tractor$AnalyticsPage_Msg$ChangeMarketCode(_p3));
-				var cmd = A2(
-					_elm_lang$core$Task$perform,
-					_elm_lang$core$Basics$identity,
-					_elm_lang$core$Task$succeed(msg));
-				var next = _ak1211$tractor$Route$Analytics(_p3);
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							pageHistory: {ctor: '::', _0: next, _1: model.pageHistory}
-						}),
-					{
-						ctor: '::',
-						_0: cmd,
-						_1: {ctor: '[]'}
-					});
-			} else {
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							pageHistory: {ctor: '::', _0: _p2._0, _1: model.pageHistory}
-						}),
-					{
-						ctor: '::',
-						_0: A2(
-							_elm_lang$core$Task$attempt,
-							_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
-							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
-						_1: {ctor: '[]'}
-					});
-			}
-		} else {
-			return A2(
-				_elm_lang$core$Platform_Cmd_ops['!'],
-				model,
-				{ctor: '[]'});
-		}
-	});
-var _ak1211$tractor$Main$update = F2(
-	function (msg, model) {
-		var _p4 = msg;
-		switch (_p4.ctor) {
-			case 'DoneOAuthExchangeCode':
-				var _p5 = function () {
-					var _p6 = _p4._0;
-					if (_p6.ctor === 'Ok') {
-						var _p7 = _p6._0;
-						var m = _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								accessToken: _elm_lang$core$Maybe$Just(_p7.accessToken),
-								userName: _elm_lang$core$Maybe$Just(_p7.userName)
-							});
-						return {
-							ctor: '_Tuple2',
-							_0: m,
-							_1: _elm_lang$core$Maybe$Just(_p7.accessToken)
-						};
-					} else {
-						var m = _elm_lang$core$Native_Utils.update(
-							model,
-							{accessToken: _elm_lang$core$Maybe$Nothing, userName: _elm_lang$core$Maybe$Nothing});
-						return {ctor: '_Tuple2', _0: m, _1: _elm_lang$core$Maybe$Nothing};
-					}
-				}();
-				var newModel = _p5._0;
-				var token = _p5._1;
-				var msgs = {
-					ctor: '::',
-					_0: _ak1211$tractor$Msg$UploadPageMsg(
-						_ak1211$tractor$UploadPage_Msg$ChangeAccessToken(token)),
-					_1: {
-						ctor: '::',
-						_0: _ak1211$tractor$Msg$PortfolioPageMsg(
-							_ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken(token)),
-						_1: {
-							ctor: '::',
-							_0: _ak1211$tractor$Msg$AnalyticsPageMsg(
-								_ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken(token)),
-							_1: {ctor: '[]'}
-						}
-					}
-				};
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					newModel,
-					A2(
-						_elm_lang$core$List$map,
-						function (_p8) {
-							return A2(
-								_elm_lang$core$Task$perform,
-								_elm_lang$core$Basics$identity,
-								_elm_lang$core$Task$succeed(_p8));
-						},
-						msgs));
-			case 'UploadPageMsg':
-				var _p9 = A2(_ak1211$tractor$UploadPage_Update$update, _p4._0, model.uploadPageModel);
-				var newModel = _p9._0;
-				var newCmd = _p9._1;
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{uploadPageModel: newModel}),
-					{
-						ctor: '::',
-						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$UploadPageMsg, newCmd),
-						_1: {ctor: '[]'}
-					});
-			case 'PortfolioPageMsg':
-				var _p10 = A2(_ak1211$tractor$PortfolioPage_Update$update, _p4._0, model.portfolioPageModel);
-				var newModel = _p10._0;
-				var newCmd = _p10._1;
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{portfolioPageModel: newModel}),
-					{
-						ctor: '::',
-						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$PortfolioPageMsg, newCmd),
-						_1: {ctor: '[]'}
-					});
-			case 'AnalyticsPageMsg':
-				var _p11 = A2(_ak1211$tractor$AnalyticsPage_Update$update, _p4._0, model.analyticsPageModel);
-				var newModel = _p11._0;
-				var newCmd = _p11._1;
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{analyticsPageModel: newModel}),
-					{
-						ctor: '::',
-						_0: A2(_elm_lang$core$Platform_Cmd$map, _ak1211$tractor$Msg$AnalyticsPageMsg, newCmd),
-						_1: {ctor: '[]'}
-					});
-			case 'Mdl':
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p4._0, model);
-			case 'NewUrl':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					{
-						ctor: '::',
-						_0: _elm_lang$navigation$Navigation$newUrl(_p4._0),
-						_1: {ctor: '[]'}
-					});
-			case 'Nop':
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			case 'ScrollToTop':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					{
-						ctor: '::',
-						_0: A2(
-							_elm_lang$core$Task$attempt,
-							_elm_lang$core$Basics$always(_ak1211$tractor$Msg$Nop),
-							_elm_lang$dom$Dom_Scroll$toTop(_debois$elm_mdl$Material_Layout$mainId)),
-						_1: {ctor: '[]'}
-					});
-			case 'UpdateServerVersion':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							serverVersion: _elm_lang$core$Result$toMaybe(_p4._0)
-						}),
-					{ctor: '[]'});
-			case 'UpdateWebApiDocument':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							webApiDocument: _elm_lang$core$Result$toMaybe(_p4._0)
-						}),
-					{ctor: '[]'});
-			default:
-				return A2(_ak1211$tractor$Main$urlUpdate, model, _p4._0);
-		}
-	});
 var _ak1211$tractor$Main$main = A2(
 	_elm_lang$navigation$Navigation$programWithFlags,
 	_ak1211$tractor$Msg$UrlChange,
-	{init: _ak1211$tractor$Main$init, view: _ak1211$tractor$View$view, subscriptions: _ak1211$tractor$Main$subscriptions, update: _ak1211$tractor$Main$update})(
+	{init: _ak1211$tractor$Main$init, view: _ak1211$tractor$View$view, subscriptions: _ak1211$tractor$Main$subscriptions, update: _ak1211$tractor$Update$update})(
 	A2(
 		_elm_lang$core$Json_Decode$andThen,
 		function (client_id) {

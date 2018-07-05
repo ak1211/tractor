@@ -49,6 +49,7 @@ import           Control.Monad.Trans.Maybe    (MaybeT (..))
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
+import qualified Data.CaseInsensitive         as CI
 import qualified Data.Maybe                   as Maybe
 import           Data.Monoid                  ((<>))
 import           Data.Proxy                   (Proxy (..))
@@ -70,10 +71,12 @@ import           Servant.API                  ((:<|>) (..), (:>), Capture,
                                                NoContent, Patch, PostAccepted,
                                                Put, QueryParam', Raw, ReqBody,
                                                Required, Strict, Summary)
+import qualified Servant.API                  as API
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
 import           Servant.HTML.Lucid           (HTML)
+import           System.IO.Temp               (withSystemTempDirectory)
 
 import qualified BackOffice.Agency            as Agency
 import qualified BrokerBackend                as BB
@@ -81,18 +84,32 @@ import qualified Conf
 import           Model                        (TimeFrame (..))
 import qualified Model
 import           NetService.ApiTypes          (ApiOhlcv, ApiPortfolio,
-                                               OAuthAccessResponse (..))
+                                               OAuthAccessResponse (..), SVG,
+                                               SvgBinary (..))
 import qualified NetService.ApiTypes          as ApiTypes
 import           NetService.HomePage          (HomePage (..))
+import qualified NetService.PlotChart         as PlotChart
 
 -- |
 -- このサーバーで使う設定情報
 data Config = Config
     { cVerRev :: ApiTypes.VerRev
-    , cConf :: Conf.Info
-    , cPool :: MySQL.ConnectionPool
-    , cChan :: ApiTypes.ServerTChan
+    , cConf   :: Conf.Info
+    , cPool   :: MySQL.ConnectionPool
+    , cChan   :: ApiTypes.ServerTChan
     }
+
+newtype Chart = Chart SvgBinary
+instance Servant.Docs.ToSample Chart where
+    toSamples _ =
+        Servant.Docs.noSamples
+
+instance API.MimeRender SVG Chart where
+    mimeRender ctype (Chart val) =
+        render val
+        where
+        render :: SvgBinary -> BL8.ByteString
+        render = API.mimeRender ctype
 
 -- |
 --
@@ -157,7 +174,7 @@ type HAuthorization = Header' '[Required, Strict] "Authorization" AuthzValue
 --
 type GetOAuthReply  = Get '[JSON] ApiTypes.OAuthReply
 --
-type GetApiPortfolios = HAuthorization :> Get '[JSON] [ApiPortfolio]
+type GetApiPortfolios = Get '[JSON] [ApiPortfolio]
 --
 type GetApiOhlcvs   = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
 type PutApiOhlcvs   = QTimeFrame :> HAuthorization :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
@@ -167,6 +184,9 @@ type DeleteApiOhlcv = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv]
 type WebApiServer
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
+ :<|> Summary "Get Chart"
+   :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> Get '[SVG] Chart
+ --
  :<|> WebApi
 
 -- |
@@ -197,11 +217,12 @@ webApiServer cnf =
     in
     return (HomePage clientID)
     :<|> Servant.serveDirectoryFileServer "elm-src/public"
+    :<|> getChartHandler cnf
     --
     :<|> exchangeTempCodeHandler cnf
     :<|> publishZmqHandler cnf
     :<|> return (cVerRev cnf)
-    :<|> portfolioHandler cnf
+    :<|> getPortfolioHandler cnf
     --
     :<|> updateHistoriesHandler cnf
     :<|> getHistoriesHandler cnf
@@ -225,6 +246,11 @@ authzFailed a b =
 --
 err400BadRequest :: Servant.Handler a
 err400BadRequest = Servant.throwError Servant.err400
+
+--
+--
+err404NotFound :: Servant.Handler a
+err404NotFound = Servant.throwError Servant.err404
 
 --
 --
@@ -327,11 +353,9 @@ publishZmqHandler cnf code auth
 
 -- |
 --
-portfolioHandler :: Config -> AuthzValue -> Servant.Handler [ApiPortfolio]
-portfolioHandler cnf auth
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise =
-        map (ApiTypes.toApiPortfolio . DB.entityVal) <$> M.liftIO selectList
+getPortfolioHandler :: Config -> Servant.Handler [ApiPortfolio]
+getPortfolioHandler cnf =
+    map (ApiTypes.toApiPortfolio . DB.entityVal) <$> M.liftIO selectList
     where
     --
     --
@@ -519,6 +543,47 @@ deleteOhlcv pool Model.Ohlcv{..} =
             Just key -> do
                 DB.deleteWhere [ Model.OhlcvId ==. key ]
                 return $ Right ()
+
+-- |
+--
+getChartHandler :: Config -> MarketCode -> TimeFrame -> Servant.Handler Chart
+getChartHandler cnf codeStr timeFrame =
+    go $ Model.toTickerSymbol codeBody
+    where
+    (codeBody, codeSuffix) = span (/= '.') codeStr
+    --
+    --
+    chartSVG :: PlotChart.ChartData -> Servant.Handler SvgBinary
+    chartSVG chartData =
+        M.liftIO . withSystemTempDirectory "tractor" $ \fpath -> do
+            let fname = fpath ++ "/plot.svg"
+            M.void $ PlotChart.plotSVG fname chartData
+            SvgBinary <$> BL8.readFile fname
+    --
+    --
+    go Nothing =
+        err400BadRequest
+    --
+    --
+    go (Just ticker)
+        | CI.mk codeSuffix == ".svg" = do
+            ohlcvs <- map DB.entityVal <$> M.liftIO (selectList ticker)
+            let chartData = PlotChart.ChartData
+                                { cSize = (500, 500)
+                                , cTitle = "stock prices"
+                                , cOhlcvs = ohlcvs
+                                }
+            Chart <$> chartSVG chartData
+        | otherwise =
+            err404NotFound
+    --
+    --
+    selectList ticker =
+        flip DB.runSqlPersistMPool (cPool cnf) $
+            DB.selectList   [ Model.OhlcvTf     ==. timeFrame
+                            , Model.OhlcvTicker ==. ticker
+                            ]
+                            [DB.Asc Model.OhlcvAt]
 
 --
 --

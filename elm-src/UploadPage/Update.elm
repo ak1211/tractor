@@ -28,7 +28,7 @@
 -}
 
 
-module UploadPage.Update exposing (..)
+module UploadPage.Update exposing (update)
 
 import Http
 import Csv exposing (Csv)
@@ -37,6 +37,7 @@ import Task
 import Dict exposing (Dict)
 import Generated.WebApi as WebApi
 import Material
+import Route
 import UploadPage.Model as UploadPage
 import UploadPage.Msg as UploadPage
 
@@ -127,6 +128,14 @@ update msg model =
 
         UploadPage.DoneUploadContent _ ->
             model ! [ Task.perform identity <| Task.succeed UploadPage.UploadContent ]
+
+        UploadPage.UrlChange Route.Upload ->
+            -- 自ページ内に移動
+            ( model, Cmd.none )
+
+        UploadPage.UrlChange _ ->
+            -- 他のページに移動
+            ( UploadPage.clearModel model, Cmd.none )
 
         UploadPage.Mdl subMsg ->
             Material.update UploadPage.Mdl subMsg model
@@ -237,16 +246,11 @@ toOhlcvt tf records =
         }
 
 
-makeAuthorizationHeader : WebApi.AccessToken -> WebApi.AuthzValue
-makeAuthorizationHeader token =
-    "Bearer " ++ token
-
-
 putOhlcv : WebApi.AccessToken -> WebApi.MarketCode -> WebApi.TimeFrame -> WebApi.ApiOhlcv -> Cmd UploadPage.Msg
 putOhlcv token marketCode timeFrame ohlcv =
     let
         authzHeader =
-            makeAuthorizationHeader token
+            WebApi.makeAuthorizationHeader token
 
         x =
             Debug.log "" ohlcv

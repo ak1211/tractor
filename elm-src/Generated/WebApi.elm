@@ -15,6 +15,10 @@ type alias MarketCode = String
 
 type alias AuthzValue = String
 
+makeAuthorizationHeader : AccessToken -> AuthzValue
+
+makeAuthorizationHeader token = "Bearer " ++ token
+
 type alias VerRev =
     { version : String
     , buildArch : String
@@ -212,14 +216,13 @@ getApiV1Version =
             False
         }
 
-getApiV1Portfolios : String -> Http.Request (List (ApiPortfolio))
-getApiV1Portfolios header_Authorization =
+getApiV1Portfolios : Http.Request (List (ApiPortfolio))
+getApiV1Portfolios =
     Http.request
         { method =
             "GET"
         , headers =
-            [ Http.header "Authorization" header_Authorization
-            ]
+            []
         , url =
             String.join "/"
                 [ "https://tractor.ak1211.com"

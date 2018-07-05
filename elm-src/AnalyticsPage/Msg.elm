@@ -28,11 +28,12 @@
 -}
 
 
-module AnalyticsPage.Msg exposing (..)
+module AnalyticsPage.Msg exposing (Msg(..))
 
 import Generated.WebApi as WebApi
 import Http
 import Material
+import Route exposing (Route)
 
 
 type Msg
@@ -40,4 +41,5 @@ type Msg
     | ChangeMarketCode (Maybe WebApi.MarketCode)
     | UpdateHistories WebApi.MarketCode (Result Http.Error (List WebApi.ApiOhlcv))
     | SelectTab Int
+    | UrlChange Route
     | Mdl (Material.Msg Msg)

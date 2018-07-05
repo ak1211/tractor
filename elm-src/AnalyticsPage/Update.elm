@@ -28,13 +28,15 @@
 -}
 
 
-module AnalyticsPage.Update exposing (..)
+module AnalyticsPage.Update exposing (update)
 
 import Generated.WebApi as WebApi
 import Http
 import Material
 import AnalyticsPage.Model as AnalyticsPage
 import AnalyticsPage.Msg as AnalyticsPage
+import Route
+import Task
 
 
 update : AnalyticsPage.Msg -> AnalyticsPage.Model -> ( AnalyticsPage.Model, Cmd AnalyticsPage.Msg )
@@ -49,40 +51,43 @@ update msg model =
                     model ! [ getHistories token newMarketCode ]
 
                 Nothing ->
-                    { model | quotes = Nothing } ! []
+                    { model
+                        | marketCode = Just newMarketCode
+                        , histories = []
+                    }
+                        ! []
 
         AnalyticsPage.ChangeMarketCode Nothing ->
-            { model | quotes = Nothing } ! []
+            { model | marketCode = Nothing, histories = [] } ! []
 
         AnalyticsPage.UpdateHistories newMarketCode (Ok ohlcvs) ->
-            let
-                newQuotes =
-                    { marketCode = newMarketCode
-                    , histories = ohlcvs
-                    }
-            in
-                { model | quotes = Just newQuotes } ! []
+            { model | marketCode = Just newMarketCode, histories = ohlcvs } ! []
 
         AnalyticsPage.UpdateHistories _ (Err _) ->
-            { model | quotes = Nothing } ! []
+            { model | marketCode = Nothing, histories = [] } ! []
 
         AnalyticsPage.SelectTab n ->
             { model | tab = n } ! []
 
+        AnalyticsPage.UrlChange (Route.Analytics marketCode) ->
+            -- 自ページ内に移動
+            model
+                ! [ Task.perform identity <| Task.succeed (AnalyticsPage.ChangeMarketCode marketCode)
+                  ]
+
+        AnalyticsPage.UrlChange _ ->
+            -- 他のページに移動
+            AnalyticsPage.clearModel model ! []
+
         AnalyticsPage.Mdl subMsg ->
             Material.update AnalyticsPage.Mdl subMsg model
-
-
-makeAuthorizationHeader : WebApi.AccessToken -> WebApi.AuthzValue
-makeAuthorizationHeader token =
-    "Bearer " ++ token
 
 
 getHistories : WebApi.AccessToken -> WebApi.MarketCode -> Cmd AnalyticsPage.Msg
 getHistories token marketCode =
     let
         authzHeader =
-            makeAuthorizationHeader token
+            WebApi.makeAuthorizationHeader token
     in
         Http.send (AnalyticsPage.UpdateHistories marketCode) <|
             WebApi.getApiV1StocksHistoryByMarketCode authzHeader marketCode (Just "1d")

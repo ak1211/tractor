@@ -28,7 +28,7 @@
 -}
 
 
-module Msg exposing (..)
+module Msg exposing (Msg(..))
 
 import Generated.WebApi as WebApi
 import Http

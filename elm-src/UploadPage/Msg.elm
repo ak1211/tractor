@@ -28,11 +28,12 @@
 -}
 
 
-module UploadPage.Msg exposing (..)
+module UploadPage.Msg exposing (Msg(..))
 
 import FileReader
 import Generated.WebApi as WebApi
 import Http
+import Route exposing (Route)
 import Material
 
 
@@ -42,6 +43,7 @@ type Msg
     | DropZoneLeaved
     | FilesDropped (List FileReader.File)
     | UploadAllFilesContent
+    | UrlChange Route
     | UploadContent
     | DoneUploadContent (Result Http.Error (List WebApi.ApiOhlcv))
     | Mdl (Material.Msg Msg)

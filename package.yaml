@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.14
+version:            0.4.15
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -42,6 +42,12 @@ library:
   source-dirs: src
   ghc-options: -Wall
   dependencies:
+  - Chart
+  - Chart-cairo
+  - colour
+  - data-default-class
+  - lens
+  - temporary
   - aeson
   - attoparsec
   - case-insensitive

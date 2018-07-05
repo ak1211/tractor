@@ -28,7 +28,7 @@
 -}
 
 
-module PortfolioPage.View exposing (..)
+module PortfolioPage.View exposing (view)
 
 import Generated.WebApi as WebApi
 import Html exposing (Html)

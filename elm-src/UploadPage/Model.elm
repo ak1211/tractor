@@ -28,7 +28,16 @@
 -}
 
 
-module UploadPage.Model exposing (..)
+module UploadPage.Model
+    exposing
+        ( FileContent
+        , UploadThunk
+        , UploadProgress
+        , Model
+        , initialUploadProgress
+        , clearModel
+        , init
+        )
 
 import Generated.WebApi as WebApi
 import Material
@@ -66,6 +75,15 @@ type alias Model =
     }
 
 
+clearModel : Model -> Model
+clearModel model =
+    { model
+        | inDropZone = False
+        , fileContents = []
+        , progress = initialUploadProgress
+    }
+
+
 initialUploadProgress : UploadProgress
 initialUploadProgress =
     { counter = 0
@@ -83,3 +101,8 @@ initialModel =
     , progress = initialUploadProgress
     , mdl = Material.model
     }
+
+
+init : ( Model, Cmd UploadPage.Msg )
+init =
+    initialModel ! [ Material.init UploadPage.Mdl ]

@@ -39,6 +39,7 @@ import Material.Grid as Grid
 import Material.Icon as Icon
 import Material.Options as Options
 import Material.Table as Table
+import Material.Color as Color
 import Material.Tabs as Tabs
 
 
@@ -53,9 +54,15 @@ view model marketCode =
         ]
         [ Tabs.label
             [ Options.center ]
-            [ Icon.i "insert_chart_outlined"
+            [ Icon.i "widgets"
             , Options.span [ Options.css "width" "4px" ] []
             , Html.text "summary"
+            ]
+        , Tabs.label
+            [ Options.center ]
+            [ Icon.i "insert_chart_outlined"
+            , Options.span [ Options.css "width" "4px" ] []
+            , Html.text "chart"
             ]
         , Tabs.label
             [ Options.center ]
@@ -65,8 +72,11 @@ view model marketCode =
             ]
         ]
         [ case model.tab of
-            1 ->
+            2 ->
                 historiesView model
+
+            1 ->
+                chartView model
 
             _ ->
                 summaryView model
@@ -76,43 +86,90 @@ view model marketCode =
 summaryView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
 summaryView model =
     let
-        marketCode =
-            Maybe.map (\q -> q.marketCode) model.quotes
-                |> Maybe.withDefault "Not Available"
+        chartURI mc =
+            "https://tractor.ak1211.com/api/v1/stocks/chart/" ++ mc ++ ".svg?tf=%221d%22"
 
-        contents =
-            Html.dl []
-                [ Html.dt [] [ Html.text "コード" ]
-                , Html.dd [] [ Html.text marketCode ]
-                ]
-
-        width =
-            "500px"
-    in
-        Grid.grid []
-            [ Grid.cell [ Grid.size Grid.All 12 ]
-                [ Html.p
-                    [ Attr.style
-                        [ ( "width", width )
-                        , ( "margin", "0 auto" )
+        contents mc =
+            Grid.grid []
+                [ Grid.cell
+                    [ Grid.size Grid.Desktop 3
+                    , Grid.size Grid.Tablet 4
+                    , Color.background <| Color.color Color.Brown Color.S50
+                    , Options.css "margin" "10px"
+                    , Options.css "padding" "10px"
+                    ]
+                    [ Html.div []
+                        [ Html.p []
+                            [ Html.dl []
+                                [ Html.dt [] [ Html.text "コード" ]
+                                , Html.dd [] [ Html.text mc ]
+                                ]
+                            ]
                         ]
                     ]
-                    [ contents ]
+                , Grid.cell
+                    [ Grid.size Grid.Desktop 3
+                    , Grid.size Grid.Tablet 4
+                    , Color.background <| Color.color Color.Brown Color.S50
+                    , Options.css "margin" "10px"
+                    , Options.css "padding" "10px"
+                    ]
+                    [ Html.div []
+                        [ Html.img
+                            [ Attr.src (chartURI mc)
+                            , Attr.style [ ( "width", "100%" ) ]
+                            ]
+                            []
+                        ]
+                    ]
                 ]
-            ]
+    in
+        case model.marketCode of
+            Nothing ->
+                Grid.grid [] [ Grid.cell [] [ Html.text "No Contents" ] ]
+
+            Just mc ->
+                contents mc
+
+
+chartView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
+chartView model =
+    let
+        chartURI mc =
+            "https://tractor.ak1211.com/api/v1/stocks/chart/" ++ mc ++ ".svg?tf=%221d%22"
+
+        contents mc =
+            Grid.grid []
+                [ Grid.cell
+                    [ Grid.size Grid.All 12
+                    , Color.background <| Color.color Color.Brown Color.S50
+                    , Options.css "margin" "10px"
+                    , Options.css "padding" "10px"
+                    ]
+                    [ Html.div []
+                        [ Html.img
+                            [ Attr.src (chartURI mc)
+                            , Attr.style [ ( "width", "100%" ) ]
+                            ]
+                            []
+                        ]
+                    ]
+                ]
+    in
+        case model.marketCode of
+            Nothing ->
+                Grid.grid [] []
+
+            Just mc ->
+                contents mc
 
 
 historiesView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
 historiesView model =
-    let
-        hs =
-            Maybe.map (\q -> q.histories) model.quotes
-                |> Maybe.withDefault []
-    in
-        Grid.grid []
-            [ Grid.cell [ Grid.size Grid.All 12 ]
-                [ tableOhlcv hs ]
-            ]
+    Grid.grid []
+        [ Grid.cell [ Grid.size Grid.Desktop 12 ]
+            [ tableOhlcv model.histories ]
+        ]
 
 
 viewCell : Maybe String -> String

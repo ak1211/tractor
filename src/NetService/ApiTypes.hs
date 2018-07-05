@@ -29,13 +29,16 @@ Portability :  POSIX
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE StrictData            #-}
-{-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NetService.ApiTypes
-    ( ServerTChan
+    ( SVG
+    , SvgBinary(..)
+    , ServerTChan
     , ApiPortfolio
     , toApiPortfolio
     , ApiOhlcv
@@ -46,22 +49,36 @@ module NetService.ApiTypes
     , VerRev(..)
     )
     where
-import qualified Control.Concurrent.STM as STM
-import           Control.Monad          (guard)
-import           Data.Aeson             ((.:), (.:?))
-import qualified Data.Aeson             as Aeson
-import           Data.Csv               ((.=))
-import qualified Data.Csv               as Csv
-import           Data.Int               (Int64)
-import qualified Data.Text              as T
-import qualified Data.Time              as Time
-import           GHC.Generics           (Generic)
+import qualified Control.Concurrent.STM     as STM
+import           Control.Monad              (guard)
+import           Data.Aeson                 ((.:), (.:?))
+import qualified Data.Aeson                 as Aeson
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import           Data.Csv                   ((.=))
+import qualified Data.Csv                   as Csv
+import           Data.Int                   (Int64)
+import qualified Data.Text                  as T
+import qualified Data.Time                  as Time
+import           GHC.Generics               (Generic)
+import Network.HTTP.Media        ((//))
+import           Servant.API                (Accept, MimeRender, contentType,
+                                             mimeRender)
 import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Web.FormUrlEncoded
 
-import           Lib                    (toISO8601DateTime, tzAsiaTokyo)
+import           Lib                        (toISO8601DateTime, tzAsiaTokyo)
 import qualified Model
+
+newtype SvgBinary = SvgBinary { getSvgBinary :: BL8.ByteString }
+
+data SVG
+
+instance Accept SVG where
+    contentType _ = "image" // "svg+xml"
+
+instance MimeRender SVG SvgBinary where
+    mimeRender _ = getSvgBinary
 
 --
 --

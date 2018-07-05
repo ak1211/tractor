@@ -28,9 +28,16 @@
 -}
 
 
-module PortfolioPage.Model exposing (..)
+module PortfolioPage.Model
+    exposing
+        ( Model
+        , clearModel
+        , init
+        )
 
 import Generated.WebApi as WebApi
+import PortfolioPage.Msg as PortfolioPage
+import Task
 import Material
 
 
@@ -41,9 +48,22 @@ type alias Model =
     }
 
 
+clearModel : Model -> Model
+clearModel =
+    identity
+
+
 initialModel : Model
 initialModel =
     { accessToken = Nothing
     , portfolios = Nothing
     , mdl = Material.model
     }
+
+
+init : ( Model, Cmd PortfolioPage.Msg )
+init =
+    initialModel
+        ! [ Material.init PortfolioPage.Mdl
+          , Task.perform identity <| Task.succeed PortfolioPage.RenewPortfolios
+          ]

@@ -52,6 +52,8 @@ spec =
         : "type alias TimeFrame = String"
         : "type alias MarketCode = String"
         : "type alias AuthzValue = String"
+        : "makeAuthorizationHeader : AccessToken -> AuthzValue"
+        : "makeAuthorizationHeader token = \"Bearer \" ++ token"
         --
         : Elm.toElmTypeSource    (Proxy :: Proxy VerRev)
         : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)

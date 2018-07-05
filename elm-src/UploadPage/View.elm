@@ -28,7 +28,7 @@
 -}
 
 
-module UploadPage.View exposing (..)
+module UploadPage.View exposing (view)
 
 import FileReader
 import Generated.WebApi as WebApi
@@ -139,6 +139,14 @@ controlPanel model =
 
         isUploadable =
             let
+                hasAccessToken =
+                    case model.accessToken of
+                        Just _ ->
+                            True
+
+                        Nothing ->
+                            False
+
                 hasOk x =
                     case x of
                         Ok _ ->
@@ -147,7 +155,7 @@ controlPanel model =
                         Err _ ->
                             False
             in
-                List.any hasOk model.fileContents
+                hasAccessToken && List.any hasOk model.fileContents
 
         isEmpty =
             List.isEmpty model.progress.todo && List.isEmpty model.progress.done

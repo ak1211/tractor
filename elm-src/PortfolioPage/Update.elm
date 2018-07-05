@@ -28,12 +28,13 @@
 -}
 
 
-module PortfolioPage.Update exposing (..)
+module PortfolioPage.Update exposing (update)
 
 import Generated.WebApi as WebApi
 import Http
 import Material
 import Navigation
+import Route
 import PortfolioPage.Model as PortfolioPage
 import PortfolioPage.Msg as PortfolioPage
 
@@ -42,13 +43,24 @@ update : PortfolioPage.Msg -> PortfolioPage.Model -> ( PortfolioPage.Model, Cmd 
 update msg model =
     case msg of
         PortfolioPage.ChangeAccessToken (Just newToken) ->
-            { model | accessToken = Just newToken } ! [ getPortfolios newToken ]
+            { model | accessToken = Just newToken } ! [ getPortfolios ]
 
         PortfolioPage.ChangeAccessToken Nothing ->
             { model | accessToken = Nothing } ! []
 
-        PortfolioPage.UpdatePortfolios res ->
+        PortfolioPage.RenewPortfolios ->
+            model ! [ getPortfolios ]
+
+        PortfolioPage.DoneGetPortfolios res ->
             { model | portfolios = Result.toMaybe res } ! []
+
+        PortfolioPage.UrlChange Route.Portfolio ->
+            -- 自ページ内に移動
+            model ! []
+
+        PortfolioPage.UrlChange _ ->
+            -- 他のページに移動
+            PortfolioPage.clearModel model ! []
 
         PortfolioPage.NewUrl url ->
             model ! [ Navigation.newUrl url ]
@@ -57,16 +69,6 @@ update msg model =
             Material.update PortfolioPage.Mdl subMsg model
 
 
-makeAuthorizationHeader : WebApi.AccessToken -> WebApi.AuthzValue
-makeAuthorizationHeader token =
-    "Bearer " ++ token
-
-
-getPortfolios : WebApi.AccessToken -> Cmd PortfolioPage.Msg
-getPortfolios token =
-    let
-        authzHeader =
-            makeAuthorizationHeader token
-    in
-        Http.send PortfolioPage.UpdatePortfolios <|
-            WebApi.getApiV1Portfolios authzHeader
+getPortfolios : Cmd PortfolioPage.Msg
+getPortfolios =
+    Http.send PortfolioPage.DoneGetPortfolios WebApi.getApiV1Portfolios

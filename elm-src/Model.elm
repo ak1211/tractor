@@ -28,7 +28,11 @@
 -}
 
 
-module Model exposing (..)
+module Model
+    exposing
+        ( DocMarkDown
+        , Model
+        )
 
 import AnalyticsPage.Model as AnalyticsPage
 import Generated.WebApi as WebApi
@@ -53,19 +57,4 @@ type alias Model =
     , portfolioPageModel : PortfolioPage.Model
     , analyticsPageModel : AnalyticsPage.Model
     , mdl : Material.Model
-    }
-
-
-initialModel : String -> Model
-initialModel initClientID =
-    { clientID = initClientID
-    , accessToken = Nothing
-    , userName = Nothing
-    , pageHistory = []
-    , serverVersion = Nothing
-    , webApiDocument = Nothing
-    , uploadPageModel = UploadPage.initialModel
-    , portfolioPageModel = PortfolioPage.initialModel
-    , analyticsPageModel = AnalyticsPage.initialModel
-    , mdl = Material.model
     }

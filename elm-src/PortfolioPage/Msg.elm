@@ -28,15 +28,18 @@
 -}
 
 
-module PortfolioPage.Msg exposing (..)
+module PortfolioPage.Msg exposing (Msg(..))
 
 import Generated.WebApi as WebApi
 import Http
 import Material
+import Route exposing (Route)
 
 
 type Msg
     = ChangeAccessToken (Maybe WebApi.AccessToken)
-    | UpdatePortfolios (Result Http.Error (List WebApi.ApiPortfolio))
+    | RenewPortfolios
+    | DoneGetPortfolios (Result Http.Error (List WebApi.ApiPortfolio))
+    | UrlChange Route
     | NewUrl String
     | Mdl (Material.Msg Msg)

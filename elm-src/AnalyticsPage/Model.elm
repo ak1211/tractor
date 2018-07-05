@@ -28,30 +28,41 @@
 -}
 
 
-module AnalyticsPage.Model exposing (..)
+module AnalyticsPage.Model exposing (Model, clearModel, init)
 
 import Generated.WebApi as WebApi
+import AnalyticsPage.Msg as AnalyticsPage
 import Material
-
-
-type alias Quotes =
-    { marketCode : WebApi.MarketCode
-    , histories : List WebApi.ApiOhlcv
-    }
 
 
 type alias Model =
     { accessToken : Maybe WebApi.AccessToken
-    , quotes : Maybe Quotes
+    , marketCode : Maybe WebApi.MarketCode
+    , histories : List WebApi.ApiOhlcv
     , tab : Int
     , mdl : Material.Model
+    }
+
+
+clearModel : Model -> Model
+clearModel model =
+    { model
+        | marketCode = Nothing
+        , histories = []
+        , tab = 0
     }
 
 
 initialModel : Model
 initialModel =
     { accessToken = Nothing
-    , quotes = Nothing
+    , marketCode = Nothing
+    , histories = []
     , tab = 0
     , mdl = Material.model
     }
+
+
+init : ( Model, Cmd AnalyticsPage.Msg )
+init =
+    initialModel ! [ Material.init AnalyticsPage.Mdl ]

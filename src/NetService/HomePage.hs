@@ -38,8 +38,7 @@ import qualified Servant.Docs
 
 -- |
 -- アプリケーションのホームページ
-data HomePage = HomePage
-    { clientId :: T.Text }
+newtype HomePage = HomePage { clientId :: T.Text }
 
 instance Lucid.ToHtml HomePage where
     --
@@ -63,7 +62,7 @@ instance Lucid.ToHtml HomePage where
                 --
             body_ $ do
                 script_ [src_ "public/main.js"] T.empty
-                script_ [] (launchElm)
+                script_ [] launchElm
         where
         launchElm = TLB.toLazyText $ mempty
             <> "var flags = {client_id: '"
