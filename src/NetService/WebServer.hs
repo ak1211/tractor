@@ -608,7 +608,7 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
                                 , cTitle = "stock prices"
                                 , cOhlcvs = ohlcvs
                                 }
-            API.addHeader "no-store" . Chart <$> chartSVG chartData
+            API.addHeader "private, no-store, no-cache, must-revalidate" . Chart <$> chartSVG chartData
         | otherwise =
             err404NotFound
     --
