@@ -95,7 +95,7 @@
 
 ## GET /api/v1/stocks/chart/:marketCode
 
-### Get Chart
+### Get Chart, suffix is only .svg
 
 
 ### Captures:
@@ -107,6 +107,14 @@
 - tf
      - **Values**: *1h, 1d*
      - **Description**: prices of a time frame.
+
+- w
+     - **Values**: *int*
+     - **Description**: compose chart width. default is 500
+
+- h
+     - **Values**: *int*
+     - **Description**: compose chart height. default is 500
 
 
 ### Response:

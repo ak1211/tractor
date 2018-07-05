@@ -105,7 +105,7 @@ update msg model =
                         newModel ! [ Task.perform identity <| Task.succeed UploadPage.UploadContent ]
 
                 Nothing ->
-                    model ! []
+                    Debug.log "upload fail : no access token " <| model ! []
 
         UploadPage.UploadContent ->
             case model.progress.todo of
@@ -251,9 +251,6 @@ putOhlcv token marketCode timeFrame ohlcv =
     let
         authzHeader =
             WebApi.makeAuthorizationHeader token
-
-        x =
-            Debug.log "" ohlcv
     in
         WebApi.putApiV1StocksHistoryByMarketCode
             authzHeader

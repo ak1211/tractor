@@ -35,11 +35,11 @@ import AnalyticsPage.Msg as AnalyticsPage
 import Generated.WebApi as WebApi
 import Html exposing (Html)
 import Html.Attributes as Attr
+import Material.Color as Color
 import Material.Grid as Grid
 import Material.Icon as Icon
 import Material.Options as Options
 import Material.Table as Table
-import Material.Color as Color
 import Material.Tabs as Tabs
 
 
@@ -83,12 +83,20 @@ view model marketCode =
         ]
 
 
+chartURI : WebApi.MarketCode -> ( Int, Int ) -> String
+chartURI mc ( w, h ) =
+    "https://tractor.ak1211.com/api/v1/stocks/chart/"
+        ++ mc
+        ++ ".svg?tf=%221d%22"
+        ++ "&w="
+        ++ toString w
+        ++ "&h="
+        ++ toString h
+
+
 summaryView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
 summaryView model =
     let
-        chartURI mc =
-            "https://tractor.ak1211.com/api/v1/stocks/chart/" ++ mc ++ ".svg?tf=%221d%22"
-
         contents mc =
             Grid.grid []
                 [ Grid.cell
@@ -116,7 +124,7 @@ summaryView model =
                     ]
                     [ Html.div []
                         [ Html.img
-                            [ Attr.src (chartURI mc)
+                            [ Attr.src <| chartURI mc ( 500, 500 )
                             , Attr.style [ ( "width", "100%" ) ]
                             ]
                             []
@@ -135,9 +143,6 @@ summaryView model =
 chartView : AnalyticsPage.Model -> Html AnalyticsPage.Msg
 chartView model =
     let
-        chartURI mc =
-            "https://tractor.ak1211.com/api/v1/stocks/chart/" ++ mc ++ ".svg?tf=%221d%22"
-
         contents mc =
             Grid.grid []
                 [ Grid.cell
@@ -148,7 +153,7 @@ chartView model =
                     ]
                     [ Html.div []
                         [ Html.img
-                            [ Attr.src (chartURI mc)
+                            [ Attr.src <| chartURI mc ( 1000, 1000 )
                             , Attr.style [ ( "width", "100%" ) ]
                             ]
                             []

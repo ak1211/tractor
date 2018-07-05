@@ -17119,339 +17119,6 @@ var _ak1211$tractor$AnalyticsPage_Update$update = F2(
 		}
 	});
 
-var _debois$elm_mdl$Material_Grid$clip = F3(
-	function (lower, upper, k) {
-		return A2(
-			_elm_lang$core$Basics$max,
-			lower,
-			A2(_elm_lang$core$Basics$min, k, upper));
-	});
-var _debois$elm_mdl$Material_Grid$stretch = _debois$elm_mdl$Material_Options$cs('mdl-cell--stretch');
-var _debois$elm_mdl$Material_Grid$align = function (a) {
-	var _p0 = a;
-	switch (_p0.ctor) {
-		case 'Top':
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--top');
-		case 'Middle':
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--middle');
-		default:
-			return _debois$elm_mdl$Material_Options$cs('mdl-cell--bottom');
-	}
-};
-var _debois$elm_mdl$Material_Grid$suffix = function (device) {
-	var _p1 = device;
-	switch (_p1.ctor) {
-		case 'All':
-			return '';
-		case 'Desktop':
-			return '-desktop';
-		case 'Tablet':
-			return '-tablet';
-		default:
-			return '-phone';
-	}
-};
-var _debois$elm_mdl$Material_Grid$size = F2(
-	function (device, k) {
-		var c = function () {
-			var _p2 = device;
-			switch (_p2.ctor) {
-				case 'All':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
-				case 'Desktop':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
-				case 'Tablet':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 8, k);
-				default:
-					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 4, k);
-			}
-		}();
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(c),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'-col',
-						_debois$elm_mdl$Material_Grid$suffix(device)))));
-	});
-var _debois$elm_mdl$Material_Grid$offset = F2(
-	function (device, k) {
-		var c = function () {
-			var _p3 = device;
-			switch (_p3.ctor) {
-				case 'All':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
-				case 'Desktop':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
-				case 'Tablet':
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 7, k);
-				default:
-					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 3, k);
-			}
-		}();
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(c),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'-offset',
-						_debois$elm_mdl$Material_Grid$suffix(device)))));
-	});
-var _debois$elm_mdl$Material_Grid$hide = function (device) {
-	return _debois$elm_mdl$Material_Options$cs(
-		function () {
-			var _p4 = device;
-			if (_p4.ctor === 'All') {
-				return '';
-			} else {
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					'mdl-cell--hide-',
-					_debois$elm_mdl$Material_Grid$suffix(device));
-			}
-		}());
-};
-var _debois$elm_mdl$Material_Grid$order = F2(
-	function (device, n) {
-		return _debois$elm_mdl$Material_Options$cs(
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				'mdl-cell--order-',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(
-						A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, n)),
-					_debois$elm_mdl$Material_Grid$suffix(device))));
-	});
-var _debois$elm_mdl$Material_Grid$grid = F2(
-	function (styling, cells) {
-		return A2(
-			_debois$elm_mdl$Material_Options$div,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$cs('mdl-grid'),
-				_1: styling
-			},
-			A2(
-				_elm_lang$core$List$map,
-				function (_p5) {
-					var _p6 = _p5;
-					return _p6._0;
-				},
-				cells));
-	});
-var _debois$elm_mdl$Material_Grid$maxWidth = function (w) {
-	return A2(_debois$elm_mdl$Material_Options$css, 'max-width', w);
-};
-var _debois$elm_mdl$Material_Grid$noSpacing = _debois$elm_mdl$Material_Options$cs('mdl-grid--no-spacing');
-var _debois$elm_mdl$Material_Grid$Phone = {ctor: 'Phone'};
-var _debois$elm_mdl$Material_Grid$Tablet = {ctor: 'Tablet'};
-var _debois$elm_mdl$Material_Grid$Desktop = {ctor: 'Desktop'};
-var _debois$elm_mdl$Material_Grid$All = {ctor: 'All'};
-var _debois$elm_mdl$Material_Grid$Cell = function (a) {
-	return {ctor: 'Cell', _0: a};
-};
-var _debois$elm_mdl$Material_Grid$cell = F2(
-	function (styling, elms) {
-		return _debois$elm_mdl$Material_Grid$Cell(
-			A2(
-				_debois$elm_mdl$Material_Options$div,
-				{
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-cell'),
-					_1: styling
-				},
-				elms));
-	});
-var _debois$elm_mdl$Material_Grid$Bottom = {ctor: 'Bottom'};
-var _debois$elm_mdl$Material_Grid$Middle = {ctor: 'Middle'};
-var _debois$elm_mdl$Material_Grid$Top = {ctor: 'Top'};
-
-var _debois$elm_mdl$Material_Table$defaultCell = {numeric: false};
-var _debois$elm_mdl$Material_Table$td = F2(
-	function (options, html) {
-		var _p0 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultCell, options);
-		var summary = _p0;
-		var config = _p0.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$td,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.numeric,
-					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
-				_1: {ctor: '[]'}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$sorted = function (order) {
-	return _debois$elm_mdl$Material_Options_Internal$option(
-		function (self) {
-			return _elm_lang$core$Native_Utils.update(
-				self,
-				{
-					sorted: _elm_lang$core$Maybe$Just(order)
-				});
-		});
-};
-var _debois$elm_mdl$Material_Table$numeric = _debois$elm_mdl$Material_Options_Internal$option(
-	function (self) {
-		return _elm_lang$core$Native_Utils.update(
-			self,
-			{numeric: true});
-	});
-var _debois$elm_mdl$Material_Table$defaultHeader = {numeric: false, sorted: _elm_lang$core$Maybe$Nothing};
-var _debois$elm_mdl$Material_Table$th = F2(
-	function (options, html) {
-		var _p1 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultHeader, options);
-		var summary = _p1;
-		var config = _p1.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$th,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.numeric,
-					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
-				_1: {
-					ctor: '::',
-					_0: function () {
-						var _p2 = config.sorted;
-						if (_p2.ctor === 'Just') {
-							if (_p2._0.ctor === 'Ascending') {
-								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-ascending');
-							} else {
-								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-descending');
-							}
-						} else {
-							return _debois$elm_mdl$Material_Options$nop;
-						}
-					}(),
-					_1: {ctor: '[]'}
-				}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$selected = _debois$elm_mdl$Material_Options_Internal$option(
-	function (self) {
-		return _elm_lang$core$Native_Utils.update(
-			self,
-			{selected: true});
-	});
-var _debois$elm_mdl$Material_Table$defaultRow = {selected: false};
-var _debois$elm_mdl$Material_Table$tr = F2(
-	function (options, html) {
-		var _p3 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultRow, options);
-		var summary = _p3;
-		var config = _p3.config;
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tr,
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Options$when,
-					config.selected,
-					_debois$elm_mdl$Material_Options$cs('is-selected')),
-				_1: {ctor: '[]'}
-			},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$tfoot = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tfoot,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$tbody = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$tbody,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$thead = F2(
-	function (options, html) {
-		var summary = A2(
-			_debois$elm_mdl$Material_Options_Internal$collect,
-			{},
-			options);
-		return A5(
-			_debois$elm_mdl$Material_Options_Internal$apply,
-			summary,
-			_elm_lang$html$Html$thead,
-			{ctor: '[]'},
-			{ctor: '[]'},
-			html);
-	});
-var _debois$elm_mdl$Material_Table$table = F2(
-	function (options, nodes) {
-		return A3(
-			_debois$elm_mdl$Material_Options$styled,
-			_elm_lang$html$Html$table,
-			{
-				ctor: '::',
-				_0: _debois$elm_mdl$Material_Options$cs('mdl-data-table'),
-				_1: {
-					ctor: '::',
-					_0: _debois$elm_mdl$Material_Options$cs('mdl-js-data-table'),
-					_1: {
-						ctor: '::',
-						_0: _debois$elm_mdl$Material_Options$cs('is-upgraded'),
-						_1: options
-					}
-				}
-			},
-			nodes);
-	});
-var _debois$elm_mdl$Material_Table$Row = function (a) {
-	return {selected: a};
-};
-var _debois$elm_mdl$Material_Table$Header = F2(
-	function (a, b) {
-		return {numeric: a, sorted: b};
-	});
-var _debois$elm_mdl$Material_Table$Cell = function (a) {
-	return {numeric: a};
-};
-var _debois$elm_mdl$Material_Table$Descending = {ctor: 'Descending'};
-var _debois$elm_mdl$Material_Table$descending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Descending);
-var _debois$elm_mdl$Material_Table$Ascending = {ctor: 'Ascending'};
-var _debois$elm_mdl$Material_Table$ascending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Ascending);
-
 var _debois$elm_mdl$Material_Color$text = function (_p0) {
 	var _p1 = _p0;
 	return _debois$elm_mdl$Material_Options$cs(
@@ -17832,6 +17499,339 @@ var _debois$elm_mdl$Material_Color$primaryContrast = _debois$elm_mdl$Material_Co
 var _debois$elm_mdl$Material_Color$accent = _debois$elm_mdl$Material_Color$C('accent');
 var _debois$elm_mdl$Material_Color$accentContrast = _debois$elm_mdl$Material_Color$C('accent-contrast');
 
+var _debois$elm_mdl$Material_Grid$clip = F3(
+	function (lower, upper, k) {
+		return A2(
+			_elm_lang$core$Basics$max,
+			lower,
+			A2(_elm_lang$core$Basics$min, k, upper));
+	});
+var _debois$elm_mdl$Material_Grid$stretch = _debois$elm_mdl$Material_Options$cs('mdl-cell--stretch');
+var _debois$elm_mdl$Material_Grid$align = function (a) {
+	var _p0 = a;
+	switch (_p0.ctor) {
+		case 'Top':
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--top');
+		case 'Middle':
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--middle');
+		default:
+			return _debois$elm_mdl$Material_Options$cs('mdl-cell--bottom');
+	}
+};
+var _debois$elm_mdl$Material_Grid$suffix = function (device) {
+	var _p1 = device;
+	switch (_p1.ctor) {
+		case 'All':
+			return '';
+		case 'Desktop':
+			return '-desktop';
+		case 'Tablet':
+			return '-tablet';
+		default:
+			return '-phone';
+	}
+};
+var _debois$elm_mdl$Material_Grid$size = F2(
+	function (device, k) {
+		var c = function () {
+			var _p2 = device;
+			switch (_p2.ctor) {
+				case 'All':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
+				case 'Desktop':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, k);
+				case 'Tablet':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 8, k);
+				default:
+					return A3(_debois$elm_mdl$Material_Grid$clip, 1, 4, k);
+			}
+		}();
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(c),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'-col',
+						_debois$elm_mdl$Material_Grid$suffix(device)))));
+	});
+var _debois$elm_mdl$Material_Grid$offset = F2(
+	function (device, k) {
+		var c = function () {
+			var _p3 = device;
+			switch (_p3.ctor) {
+				case 'All':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
+				case 'Desktop':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 11, k);
+				case 'Tablet':
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 7, k);
+				default:
+					return A3(_debois$elm_mdl$Material_Grid$clip, 0, 3, k);
+			}
+		}();
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(c),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'-offset',
+						_debois$elm_mdl$Material_Grid$suffix(device)))));
+	});
+var _debois$elm_mdl$Material_Grid$hide = function (device) {
+	return _debois$elm_mdl$Material_Options$cs(
+		function () {
+			var _p4 = device;
+			if (_p4.ctor === 'All') {
+				return '';
+			} else {
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'mdl-cell--hide-',
+					_debois$elm_mdl$Material_Grid$suffix(device));
+			}
+		}());
+};
+var _debois$elm_mdl$Material_Grid$order = F2(
+	function (device, n) {
+		return _debois$elm_mdl$Material_Options$cs(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'mdl-cell--order-',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(
+						A3(_debois$elm_mdl$Material_Grid$clip, 1, 12, n)),
+					_debois$elm_mdl$Material_Grid$suffix(device))));
+	});
+var _debois$elm_mdl$Material_Grid$grid = F2(
+	function (styling, cells) {
+		return A2(
+			_debois$elm_mdl$Material_Options$div,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-grid'),
+				_1: styling
+			},
+			A2(
+				_elm_lang$core$List$map,
+				function (_p5) {
+					var _p6 = _p5;
+					return _p6._0;
+				},
+				cells));
+	});
+var _debois$elm_mdl$Material_Grid$maxWidth = function (w) {
+	return A2(_debois$elm_mdl$Material_Options$css, 'max-width', w);
+};
+var _debois$elm_mdl$Material_Grid$noSpacing = _debois$elm_mdl$Material_Options$cs('mdl-grid--no-spacing');
+var _debois$elm_mdl$Material_Grid$Phone = {ctor: 'Phone'};
+var _debois$elm_mdl$Material_Grid$Tablet = {ctor: 'Tablet'};
+var _debois$elm_mdl$Material_Grid$Desktop = {ctor: 'Desktop'};
+var _debois$elm_mdl$Material_Grid$All = {ctor: 'All'};
+var _debois$elm_mdl$Material_Grid$Cell = function (a) {
+	return {ctor: 'Cell', _0: a};
+};
+var _debois$elm_mdl$Material_Grid$cell = F2(
+	function (styling, elms) {
+		return _debois$elm_mdl$Material_Grid$Cell(
+			A2(
+				_debois$elm_mdl$Material_Options$div,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-cell'),
+					_1: styling
+				},
+				elms));
+	});
+var _debois$elm_mdl$Material_Grid$Bottom = {ctor: 'Bottom'};
+var _debois$elm_mdl$Material_Grid$Middle = {ctor: 'Middle'};
+var _debois$elm_mdl$Material_Grid$Top = {ctor: 'Top'};
+
+var _debois$elm_mdl$Material_Table$defaultCell = {numeric: false};
+var _debois$elm_mdl$Material_Table$td = F2(
+	function (options, html) {
+		var _p0 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultCell, options);
+		var summary = _p0;
+		var config = _p0.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$td,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.numeric,
+					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$sorted = function (order) {
+	return _debois$elm_mdl$Material_Options_Internal$option(
+		function (self) {
+			return _elm_lang$core$Native_Utils.update(
+				self,
+				{
+					sorted: _elm_lang$core$Maybe$Just(order)
+				});
+		});
+};
+var _debois$elm_mdl$Material_Table$numeric = _debois$elm_mdl$Material_Options_Internal$option(
+	function (self) {
+		return _elm_lang$core$Native_Utils.update(
+			self,
+			{numeric: true});
+	});
+var _debois$elm_mdl$Material_Table$defaultHeader = {numeric: false, sorted: _elm_lang$core$Maybe$Nothing};
+var _debois$elm_mdl$Material_Table$th = F2(
+	function (options, html) {
+		var _p1 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultHeader, options);
+		var summary = _p1;
+		var config = _p1.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$th,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.numeric,
+					_debois$elm_mdl$Material_Options$cs('mdl-data-table__cell--non-numeric')),
+				_1: {
+					ctor: '::',
+					_0: function () {
+						var _p2 = config.sorted;
+						if (_p2.ctor === 'Just') {
+							if (_p2._0.ctor === 'Ascending') {
+								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-ascending');
+							} else {
+								return _debois$elm_mdl$Material_Options$cs('mdl-data-table__header--sorted-descending');
+							}
+						} else {
+							return _debois$elm_mdl$Material_Options$nop;
+						}
+					}(),
+					_1: {ctor: '[]'}
+				}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$selected = _debois$elm_mdl$Material_Options_Internal$option(
+	function (self) {
+		return _elm_lang$core$Native_Utils.update(
+			self,
+			{selected: true});
+	});
+var _debois$elm_mdl$Material_Table$defaultRow = {selected: false};
+var _debois$elm_mdl$Material_Table$tr = F2(
+	function (options, html) {
+		var _p3 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Table$defaultRow, options);
+		var summary = _p3;
+		var config = _p3.config;
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tr,
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.selected,
+					_debois$elm_mdl$Material_Options$cs('is-selected')),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$tfoot = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tfoot,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$tbody = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$tbody,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$thead = F2(
+	function (options, html) {
+		var summary = A2(
+			_debois$elm_mdl$Material_Options_Internal$collect,
+			{},
+			options);
+		return A5(
+			_debois$elm_mdl$Material_Options_Internal$apply,
+			summary,
+			_elm_lang$html$Html$thead,
+			{ctor: '[]'},
+			{ctor: '[]'},
+			html);
+	});
+var _debois$elm_mdl$Material_Table$table = F2(
+	function (options, nodes) {
+		return A3(
+			_debois$elm_mdl$Material_Options$styled,
+			_elm_lang$html$Html$table,
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$cs('mdl-data-table'),
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$cs('mdl-js-data-table'),
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Options$cs('is-upgraded'),
+						_1: options
+					}
+				}
+			},
+			nodes);
+	});
+var _debois$elm_mdl$Material_Table$Row = function (a) {
+	return {selected: a};
+};
+var _debois$elm_mdl$Material_Table$Header = F2(
+	function (a, b) {
+		return {numeric: a, sorted: b};
+	});
+var _debois$elm_mdl$Material_Table$Cell = function (a) {
+	return {numeric: a};
+};
+var _debois$elm_mdl$Material_Table$Descending = {ctor: 'Descending'};
+var _debois$elm_mdl$Material_Table$descending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Descending);
+var _debois$elm_mdl$Material_Table$Ascending = {ctor: 'Ascending'};
+var _debois$elm_mdl$Material_Table$ascending = _debois$elm_mdl$Material_Table$sorted(_debois$elm_mdl$Material_Table$Ascending);
+
 var _ak1211$tractor$AnalyticsPage_View$viewTable = F2(
 	function (headlines, rows) {
 		return A2(
@@ -18050,88 +18050,30 @@ var _ak1211$tractor$AnalyticsPage_View$historiesView = function (model) {
 			_1: {ctor: '[]'}
 		});
 };
-var _ak1211$tractor$AnalyticsPage_View$chartView = function (model) {
-	var chartURI = function (mc) {
+var _ak1211$tractor$AnalyticsPage_View$chartURI = F2(
+	function (mc, _p0) {
+		var _p1 = _p0;
 		return A2(
 			_elm_lang$core$Basics_ops['++'],
 			'https://tractor.ak1211.com/api/v1/stocks/chart/',
-			A2(_elm_lang$core$Basics_ops['++'], mc, '.svg?tf=%221d%22'));
-	};
-	var contents = function (mc) {
-		return A2(
-			_debois$elm_mdl$Material_Grid$grid,
-			{ctor: '[]'},
-			{
-				ctor: '::',
-				_0: A2(
-					_debois$elm_mdl$Material_Grid$cell,
-					{
-						ctor: '::',
-						_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
-						_1: {
-							ctor: '::',
-							_0: _debois$elm_mdl$Material_Color$background(
-								A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Brown, _debois$elm_mdl$Material_Color$S50)),
-							_1: {
-								ctor: '::',
-								_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '10px'),
-								_1: {
-									ctor: '::',
-									_0: A2(_debois$elm_mdl$Material_Options$css, 'padding', '10px'),
-									_1: {ctor: '[]'}
-								}
-							}
-						}
-					},
-					{
-						ctor: '::',
-						_0: A2(
-							_elm_lang$html$Html$div,
-							{ctor: '[]'},
-							{
-								ctor: '::',
-								_0: A2(
-									_elm_lang$html$Html$img,
-									{
-										ctor: '::',
-										_0: _elm_lang$html$Html_Attributes$src(
-											chartURI(mc)),
-										_1: {
-											ctor: '::',
-											_0: _elm_lang$html$Html_Attributes$style(
-												{
-													ctor: '::',
-													_0: {ctor: '_Tuple2', _0: 'width', _1: '100%'},
-													_1: {ctor: '[]'}
-												}),
-											_1: {ctor: '[]'}
-										}
-									},
-									{ctor: '[]'}),
-								_1: {ctor: '[]'}
-							}),
-						_1: {ctor: '[]'}
-					}),
-				_1: {ctor: '[]'}
-			});
-	};
-	var _p0 = model.marketCode;
-	if (_p0.ctor === 'Nothing') {
-		return A2(
-			_debois$elm_mdl$Material_Grid$grid,
-			{ctor: '[]'},
-			{ctor: '[]'});
-	} else {
-		return contents(_p0._0);
-	}
-};
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				mc,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'.svg?tf=%221d%22',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'&w=',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(_p1._0),
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								'&h=',
+								_elm_lang$core$Basics$toString(_p1._1)))))));
+	});
 var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
-	var chartURI = function (mc) {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			'https://tractor.ak1211.com/api/v1/stocks/chart/',
-			A2(_elm_lang$core$Basics_ops['++'], mc, '.svg?tf=%221d%22'));
-	};
 	var contents = function (mc) {
 		return A2(
 			_debois$elm_mdl$Material_Grid$grid,
@@ -18244,7 +18186,10 @@ var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
 										{
 											ctor: '::',
 											_0: _elm_lang$html$Html_Attributes$src(
-												chartURI(mc)),
+												A2(
+													_ak1211$tractor$AnalyticsPage_View$chartURI,
+													mc,
+													{ctor: '_Tuple2', _0: 500, _1: 500})),
 											_1: {
 												ctor: '::',
 												_0: _elm_lang$html$Html_Attributes$style(
@@ -18265,8 +18210,8 @@ var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
 				}
 			});
 	};
-	var _p1 = model.marketCode;
-	if (_p1.ctor === 'Nothing') {
+	var _p2 = model.marketCode;
+	if (_p2.ctor === 'Nothing') {
 		return A2(
 			_debois$elm_mdl$Material_Grid$grid,
 			{ctor: '[]'},
@@ -18283,7 +18228,79 @@ var _ak1211$tractor$AnalyticsPage_View$summaryView = function (model) {
 				_1: {ctor: '[]'}
 			});
 	} else {
-		return contents(_p1._0);
+		return contents(_p2._0);
+	}
+};
+var _ak1211$tractor$AnalyticsPage_View$chartView = function (model) {
+	var contents = function (mc) {
+		return A2(
+			_debois$elm_mdl$Material_Grid$grid,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Grid$cell,
+					{
+						ctor: '::',
+						_0: A2(_debois$elm_mdl$Material_Grid$size, _debois$elm_mdl$Material_Grid$All, 12),
+						_1: {
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Color$background(
+								A2(_debois$elm_mdl$Material_Color$color, _debois$elm_mdl$Material_Color$Brown, _debois$elm_mdl$Material_Color$S50)),
+							_1: {
+								ctor: '::',
+								_0: A2(_debois$elm_mdl$Material_Options$css, 'margin', '10px'),
+								_1: {
+									ctor: '::',
+									_0: A2(_debois$elm_mdl$Material_Options$css, 'padding', '10px'),
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					},
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$div,
+							{ctor: '[]'},
+							{
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$img,
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html_Attributes$src(
+											A2(
+												_ak1211$tractor$AnalyticsPage_View$chartURI,
+												mc,
+												{ctor: '_Tuple2', _0: 1000, _1: 1000})),
+										_1: {
+											ctor: '::',
+											_0: _elm_lang$html$Html_Attributes$style(
+												{
+													ctor: '::',
+													_0: {ctor: '_Tuple2', _0: 'width', _1: '100%'},
+													_1: {ctor: '[]'}
+												}),
+											_1: {ctor: '[]'}
+										}
+									},
+									{ctor: '[]'}),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			});
+	};
+	var _p3 = model.marketCode;
+	if (_p3.ctor === 'Nothing') {
+		return A2(
+			_debois$elm_mdl$Material_Grid$grid,
+			{ctor: '[]'},
+			{ctor: '[]'});
+	} else {
+		return contents(_p3._0);
 	}
 };
 var _ak1211$tractor$AnalyticsPage_View$view = F2(
@@ -18404,8 +18421,8 @@ var _ak1211$tractor$AnalyticsPage_View$view = F2(
 			{
 				ctor: '::',
 				_0: function () {
-					var _p2 = model.tab;
-					switch (_p2) {
+					var _p4 = model.tab;
+					switch (_p4) {
 						case 2:
 							return _ak1211$tractor$AnalyticsPage_View$historiesView(model);
 						case 1:
@@ -19131,7 +19148,6 @@ var _lovasoa$elm_csv$Csv$Csv = F2(
 
 var _ak1211$tractor$UploadPage_Update$putOhlcv = F4(
 	function (token, marketCode, timeFrame, ohlcv) {
-		var x = A2(_elm_lang$core$Debug$log, '', ohlcv);
 		var authzHeader = _ak1211$tractor$Generated_WebApi$makeAuthorizationHeader(token);
 		return A2(
 			_elm_lang$http$Http$send,
@@ -19359,9 +19375,12 @@ var _ak1211$tractor$UploadPage_Update$update = F2(
 						});
 				} else {
 					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
-						{ctor: '[]'});
+						_elm_lang$core$Debug$log,
+						'upload fail : no access token ',
+						A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							model,
+							{ctor: '[]'}));
 				}
 			case 'UploadContent':
 				var _p6 = model.progress.todo;

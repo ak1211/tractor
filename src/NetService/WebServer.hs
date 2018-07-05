@@ -69,8 +69,9 @@ import qualified Servant
 import           Servant.API                  ((:<|>) (..), (:>), Capture,
                                                Delete, Get, Header', JSON,
                                                NoContent, Patch, PostAccepted,
-                                               Put, QueryParam', Raw, ReqBody,
-                                               Required, Strict, Summary)
+                                               Put, QueryParam, QueryParam',
+                                               Raw, ReqBody, Required, Strict,
+                                               Summary)
 import qualified Servant.API                  as API
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
@@ -167,6 +168,25 @@ instance Servant.ToHttpApiData TimeFrame where
 
 -- |
 --
+type QWidth = QueryParam "w" Int
+type QHeight = QueryParam "h" Int
+
+defQWidth :: Int
+defQWidth = 500
+
+defQHeight :: Int
+defQHeight = 500
+
+instance Servant.Docs.ToParam QWidth where
+    toParam _ =
+        Servant.Docs.DocQueryParam "w" ["int"] ("compose chart width. default is " ++ show defQWidth) Servant.Docs.Normal
+
+instance Servant.Docs.ToParam QHeight where
+    toParam _ =
+        Servant.Docs.DocQueryParam "h" ["int"] ("compose chart height. default is " ++ show defQHeight) Servant.Docs.Normal
+
+-- |
+--
 type AuthzValue     = T.Text
 type HAuthorization = Header' '[Required, Strict] "Authorization" AuthzValue
 
@@ -184,8 +204,8 @@ type DeleteApiOhlcv = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv]
 type WebApiServer
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
- :<|> Summary "Get Chart"
-   :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> Get '[SVG] Chart
+ :<|> Summary "Get Chart, suffix is only .svg"
+   :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] Chart
  --
  :<|> WebApi
 
@@ -546,11 +566,19 @@ deleteOhlcv pool Model.Ohlcv{..} =
 
 -- |
 --
-getChartHandler :: Config -> MarketCode -> TimeFrame -> Servant.Handler Chart
-getChartHandler cnf codeStr timeFrame =
+getChartHandler :: Config -> MarketCode -> TimeFrame -> Maybe Int -> Maybe Int ->Servant.Handler Chart
+getChartHandler cnf codeStr timeFrame qWidth qHeight =
     go $ Model.toTickerSymbol codeBody
     where
+    --
+    --
     (codeBody, codeSuffix) = span (/= '.') codeStr
+    --
+    --
+    chartSize =
+        ( Maybe.fromMaybe defQWidth qWidth
+        , Maybe.fromMaybe defQHeight qHeight
+        )
     --
     --
     chartSVG :: PlotChart.ChartData -> Servant.Handler SvgBinary
@@ -569,7 +597,7 @@ getChartHandler cnf codeStr timeFrame =
         | CI.mk codeSuffix == ".svg" = do
             ohlcvs <- map DB.entityVal <$> M.liftIO (selectList ticker)
             let chartData = PlotChart.ChartData
-                                { cSize = (500, 500)
+                                { cSize = chartSize
                                 , cTitle = "stock prices"
                                 , cOhlcvs = ohlcvs
                                 }
