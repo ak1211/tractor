@@ -67,11 +67,11 @@ import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
 import qualified Servant
 import           Servant.API                  ((:<|>) (..), (:>), Capture,
-                                               Delete, Get, Header', JSON,
-                                               NoContent, Patch, PostAccepted,
-                                               Put, QueryParam, QueryParam',
-                                               Raw, ReqBody, Required, Strict,
-                                               Summary)
+                                               Delete, Get, Header, Header',
+                                               Headers, JSON, NoContent, Patch,
+                                               PostAccepted, Put, QueryParam,
+                                               QueryParam', Raw, ReqBody,
+                                               Required, Strict, Summary)
 import qualified Servant.API                  as API
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
@@ -184,6 +184,13 @@ instance Servant.Docs.ToParam QWidth where
 instance Servant.Docs.ToParam QHeight where
     toParam _ =
         Servant.Docs.DocQueryParam "h" ["int"] ("compose chart height. default is " ++ show defQHeight) Servant.Docs.Normal
+-- |
+--
+type ChartWithCacheControl = Headers '[Header "Cache-Conrol" T.Text] Chart
+
+instance Servant.Docs.ToSample T.Text where
+    toSamples _ =
+        Servant.Docs.singleSample "no-store"
 
 -- |
 --
@@ -205,7 +212,7 @@ type WebApiServer
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
  :<|> Summary "Get Chart, suffix is only .svg"
-   :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] Chart
+   :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
  --
  :<|> WebApi
 
@@ -566,7 +573,7 @@ deleteOhlcv pool Model.Ohlcv{..} =
 
 -- |
 --
-getChartHandler :: Config -> MarketCode -> TimeFrame -> Maybe Int -> Maybe Int ->Servant.Handler Chart
+getChartHandler :: Config -> MarketCode -> TimeFrame -> Maybe Int -> Maybe Int -> Servant.Handler ChartWithCacheControl
 getChartHandler cnf codeStr timeFrame qWidth qHeight =
     go $ Model.toTickerSymbol codeBody
     where
@@ -601,7 +608,7 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
                                 , cTitle = "stock prices"
                                 , cOhlcvs = ohlcvs
                                 }
-            Chart <$> chartSVG chartData
+            API.addHeader "no-store" . Chart <$> chartSVG chartData
         | otherwise =
             err404NotFound
     --

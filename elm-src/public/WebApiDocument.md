@@ -120,7 +120,7 @@
 ### Response:
 
 - Status code 200
-- Headers: []
+- Headers: [("Cache-Conrol","no-store")]
 
 - Supported content types are:
 
