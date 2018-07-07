@@ -36,7 +36,7 @@ chart chartData =
 
     candle  = plot_candle_line_style  .~ lineStyle 1 black
             $ plot_candle_fill        .~ True
-            $ plot_candle_rise_fill_style .~ solidFillStyle (opaque green)
+            $ plot_candle_rise_fill_style .~ solidFillStyle (opaque blue)
             $ plot_candle_fall_fill_style .~ solidFillStyle (opaque red)
             $ plot_candle_tick_length .~ 0
             $ plot_candle_width       .~ 2

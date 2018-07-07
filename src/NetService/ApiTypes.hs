@@ -59,7 +59,6 @@ import qualified Data.Csv                   as Csv
 import           Data.Int                   (Int64)
 import qualified Data.Text                  as T
 import qualified Data.Time                  as Time
-import qualified Data.Time.Calendar         as Time
 import           GHC.Generics               (Generic)
 import           Network.HTTP.Media         ((//))
 import           Servant.API                (Accept, MimeRender, contentType,
