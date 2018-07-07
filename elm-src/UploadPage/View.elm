@@ -40,7 +40,9 @@ import Material.Icon as Icon
 import Material.List as Lists
 import Material.Options as Options
 import Material.Progress as Loading
+import Material.Spinner as Loading
 import Material.Table as Table
+import Material.Toggles as Toggles
 import Material.Typography as Typo
 import UploadPage.Model as UploadPage
 import UploadPage.Msg as UploadPage
@@ -117,25 +119,44 @@ controlPanel model =
                 Html.p
                 [ Typo.display1 ]
             <|
-                if isEmpty then
-                    [ Html.text " Let's upload."
-                    ]
-                else
+                if model.isPendingUpload then
                     [ Html.text (toString model.progress.counter)
                     , Html.text " / "
                     , Html.text (toString model.progress.total)
                     ]
+                else
+                    case List.head model.progress.done of
+                        Just _ ->
+                            [ Html.text "Done" ]
 
-        show =
+                        Nothing ->
+                            [ Html.text "Let's upload." ]
+
+        display =
             Options.styled Html.p [ Typo.body1 ] <|
-                case model.progress.done of
-                    x :: _ ->
-                        [ Html.text x.ohlcv.at
-                        , Html.text " is now uploading."
-                        ]
+                Maybe.withDefault [] <|
+                    Maybe.map displayBody <|
+                        if model.isPendingUpload then
+                            List.head model.progress.done
+                        else
+                            Nothing
 
-                    [] ->
-                        []
+        displayBody x =
+            let
+                append =
+                    if model.isStepByStepMode then
+                        List.head model.progress.done
+                            |> Maybe.map (\x -> x.ohlcvs)
+                            |> Maybe.andThen List.head
+                            |> Maybe.map (\x -> [ Html.text " / ", Html.text x.at ])
+                    else
+                        Nothing
+            in
+                List.concat
+                    [ [ Html.text x.marketCode, Html.text " / ", Html.text x.timeFrame ]
+                    , Maybe.withDefault [] append
+                    , [ Html.text " is now sended." ]
+                    ]
 
         isUploadable =
             let
@@ -157,9 +178,6 @@ controlPanel model =
             in
                 hasAccessToken && List.any hasOk model.fileContents
 
-        isEmpty =
-            List.isEmpty model.progress.todo && List.isEmpty model.progress.done
-
         uploadButton enabled =
             Html.div
                 [ Attr.style [ ( "margin-top", "16px" ) ] ]
@@ -177,23 +195,52 @@ controlPanel model =
                     [ Icon.i "cloud_upload" ]
                 ]
 
+        uploadMode =
+            Html.div
+                []
+                [ Options.styled
+                    Html.p
+                    [ Typo.headline ]
+                    [ Html.text "upload mode" ]
+                , Html.p []
+                    [ Toggles.radio UploadPage.Mdl
+                        [ 0 ]
+                        model.mdl
+                        [ Toggles.value (model.isStepByStepMode)
+                        , Toggles.group "ModeGroup"
+                        , Toggles.ripple
+                        , Options.onToggle (UploadPage.ChangeStepByStepMode True)
+                        ]
+                        [ Html.text "Step By Step" ]
+                    , Toggles.radio UploadPage.Mdl
+                        [ 1 ]
+                        model.mdl
+                        [ Options.css "margin-left" "2em"
+                        , Toggles.value (not model.isStepByStepMode)
+                        , Toggles.group "ModeGroup"
+                        , Toggles.ripple
+                        , Options.onToggle (UploadPage.ChangeStepByStepMode False)
+                        ]
+                        [ Html.text "Batch" ]
+                    ]
+                ]
+
         style =
             Attr.style
-                [ ( "margin", "auto" )
+                [ ( "margin", "16px auto" )
                 , ( "max-width", "500px" )
                 , ( "text-align", "center" )
                 ]
     in
         Html.div [ style ]
-            [ show
+            [ uploadMode
+            , Html.div [ Attr.style [ ( "margin-top", "4em" ) ] ] []
+            , display
             , numOfTotal
             , Loading.progress percent
-            , uploadButton
-                (if model.progress.counter == 0 then
-                    isUploadable
-                 else
-                    False
-                )
+            , Html.div [ Attr.style [ ( "margin", "16px" ) ] ]
+                [ Loading.spinner [ Loading.active model.isPendingUpload ] ]
+            , uploadButton (not model.isPendingUpload && isUploadable)
             ]
 
 

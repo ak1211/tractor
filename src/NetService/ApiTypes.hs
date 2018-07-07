@@ -60,7 +60,7 @@ import           Data.Int                   (Int64)
 import qualified Data.Text                  as T
 import qualified Data.Time                  as Time
 import           GHC.Generics               (Generic)
-import Network.HTTP.Media        ((//))
+import           Network.HTTP.Media         ((//))
 import           Servant.API                (Accept, MimeRender, contentType,
                                              mimeRender)
 import qualified Servant.Docs
@@ -291,15 +291,18 @@ fromApiOhlcv ticker timeFrame o = do
     isValid :: Time.UTCTime -> Bool
     isValid utc =
         let
-            t@(Time.TimeOfDay h m s) = Time.localTimeOfDay
+            t@(Time.TimeOfDay _ m s) = Time.localTimeOfDay
                                         $ Time.utcToLocalTime tzAsiaTokyo utc
-            open = Time.TimeOfDay 9 0 0
-            close = Time.TimeOfDay 15 0 0
         in
+        withinTradingHours t &&
         case timeFrame of
-            Model.TF1h -> (m == 0) && (s== 0)
-            Model.TF1d -> (m == 0) && (s== 0) && (h == 15)
-        && (open <= t) && (t <= close)
+            Model.TF1h -> m == 0 && s == 0
+            Model.TF1d -> Time.TimeOfDay 15 0 0 == t
+    --
+    --
+    withinTradingHours :: Time.TimeOfDay -> Bool
+    withinTradingHours t =
+        Time.TimeOfDay 9 0 0 <= t && t <= Time.TimeOfDay 15 0 0
     --
     --
     toUTCTime :: String -> Maybe Time.UTCTime

@@ -45,5 +45,6 @@ type Msg
     | UploadAllFilesContent
     | UrlChange Route
     | UploadContent
+    | ChangeStepByStepMode Bool
     | DoneUploadContent (Result Http.Error (List WebApi.ApiOhlcv))
     | Mdl (Material.Msg Msg)

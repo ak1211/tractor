@@ -45,11 +45,13 @@ import qualified Control.Monad                as M
 import qualified Control.Monad.IO.Class       as M
 import qualified Control.Monad.Logger         as Logger
 import qualified Control.Monad.Trans          as MonadTrans
+import           Control.Monad.Trans.Either   (EitherT, newEitherT, runEitherT)
 import           Control.Monad.Trans.Maybe    (MaybeT (..))
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.Aeson                   as Aeson
 import qualified Data.ByteString.Lazy.Char8   as BL8
 import qualified Data.CaseInsensitive         as CI
+import qualified Data.Either                  as Either
 import qualified Data.Maybe                   as Maybe
 import           Data.Monoid                  ((<>))
 import           Data.Proxy                   (Proxy (..))
@@ -271,8 +273,13 @@ authzFailed a b =
 
 --
 --
-err400BadRequest :: Servant.Handler a
-err400BadRequest = Servant.throwError Servant.err400
+err400BadRequest :: BL8.ByteString -> Servant.Handler a
+err400BadRequest x = Servant.throwError Servant.err400 { Servant.errBody = x }
+
+--
+--
+err401Unauthorized :: Servant.Handler a
+err401Unauthorized = Servant.throwError Servant.err401
 
 --
 --
@@ -281,8 +288,8 @@ err404NotFound = Servant.throwError Servant.err404
 
 --
 --
-err401Unauthorized :: Servant.Handler a
-err401Unauthorized = Servant.throwError Servant.err401
+err409Conflict :: BL8.ByteString -> Servant.Handler a
+err409Conflict x = Servant.throwError Servant.err409 { Servant.errBody = x }
 
 --
 --
@@ -356,12 +363,12 @@ updateHistoriesHandler cnf auth
 -- |
 --
 publishZmqHandler :: Config -> MarketCode -> AuthzValue -> Servant.Handler Servant.NoContent
-publishZmqHandler cnf code auth
+publishZmqHandler cnf codeStr auth
     | authzFailed cnf auth = err401Unauthorized
     | otherwise =
-        case Model.toTickerSymbol code of
+        case Model.toTickerSymbol codeStr of
             Nothing ->
-                err400BadRequest
+                err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
             Just ts -> do
                 M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
                 return Servant.NoContent
@@ -401,7 +408,7 @@ getHistoriesHandler cnf codeStr timeFrame auth
     --
     --
     go Nothing =
-        err400BadRequest
+        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
     --
     --
     go (Just ticker) =
@@ -426,23 +433,30 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     --
     go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
     go Nothing =
-        err400BadRequest
-    go (Just ticker) =
-        Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . insert ticker) apiOhlcvs
+        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
+    go (Just ticker) = do
+        responce <- M.mapM (M.liftIO . runEitherT . insert ticker) apiOhlcvs
+        case (Either.lefts responce, Either.rights responce) of
+            ([], rights) ->
+                -- 成功
+                return rights
+            (lefts, _) ->
+                -- 部分的成功または失敗
+                err409Conflict (BL8.pack $ show lefts)
     --
     --
-    insert :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
+    insert :: Model.TickerSymbol -> ApiOhlcv -> EitherT ApiOhlcv IO ApiOhlcv
     insert ticker apiOhlcv =
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
             Nothing ->
-                MaybeT (return Nothing)
+                newEitherT . return $ Left apiOhlcv
             Just ohlcv -> do
                 MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
                 >>= \case
                     Left () ->
-                        MaybeT (return Nothing)
+                        newEitherT . return $ Left apiOhlcv
                     Right () ->
-                        MaybeT (return $ Just apiOhlcv)
+                        newEitherT . return $ Right apiOhlcv
 
 -- |
 -- データを入れる(INSERT)
@@ -450,18 +464,19 @@ insertOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
 insertOhlcv pool ohlcv@Model.Ohlcv{..} =
     flip DB.runSqlPersistMPool pool $ do
         -- 同じ時間の物があるか探してみる
-        c <- DB.count
+        exists <- Maybe.isJust <$> DB.selectFirst
                 [ Model.OhlcvTicker ==. ohlcvTicker
                 , Model.OhlcvTf ==. ohlcvTf
                 , Model.OhlcvAt ==. ohlcvAt
                 ]
+                []
         -- 無かった場合は新規挿入, 有った場合は何もしない
-        if c == 0
-        then do
+        if exists
+        then
+            return $ Left ()
+        else do
             M.void $ DB.insert ohlcv
             return $ Right ()
-        else
-            return $ Left ()
 
 --- |
 -- 既存のデータを入れ替える(UPDATE / INSERT)
@@ -474,7 +489,7 @@ patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     --
     go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
     go Nothing =
-        err400BadRequest
+        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
     go (Just ticker) =
         Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . store ticker) apiOhlcvs
     --
@@ -528,7 +543,7 @@ deleteHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     --
     go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
     go Nothing =
-        err400BadRequest
+        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
     go (Just ticker) =
         Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . delete ticker) apiOhlcvs
     --
@@ -597,7 +612,7 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
     --
     --
     go Nothing =
-        err400BadRequest
+        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
     --
     --
     go (Just ticker)
@@ -618,7 +633,8 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
             DB.selectList   [ Model.OhlcvTf     ==. timeFrame
                             , Model.OhlcvTicker ==. ticker
                             ]
-                            [DB.Asc Model.OhlcvAt]
+                            [DB.Asc Model.OhlcvAt
+                            ,DB.LimitTo 300]
 
 --
 --

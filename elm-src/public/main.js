@@ -18697,6 +18697,9 @@ var _ak1211$tractor$UploadPage_Msg$Mdl = function (a) {
 var _ak1211$tractor$UploadPage_Msg$DoneUploadContent = function (a) {
 	return {ctor: 'DoneUploadContent', _0: a};
 };
+var _ak1211$tractor$UploadPage_Msg$ChangeStepByStepMode = function (a) {
+	return {ctor: 'ChangeStepByStepMode', _0: a};
+};
 var _ak1211$tractor$UploadPage_Msg$UploadContent = {ctor: 'UploadContent'};
 var _ak1211$tractor$UploadPage_Msg$UrlChange = function (a) {
 	return {ctor: 'UrlChange', _0: a};
@@ -18721,6 +18724,8 @@ var _ak1211$tractor$UploadPage_Model$initialModel = {
 	accessToken: _elm_lang$core$Maybe$Nothing,
 	inDropZone: false,
 	fileContents: {ctor: '[]'},
+	isStepByStepMode: false,
+	isPendingUpload: false,
 	progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress,
 	mdl: _debois$elm_mdl$Material$model
 };
@@ -18738,6 +18743,8 @@ var _ak1211$tractor$UploadPage_Model$clearModel = function (model) {
 		{
 			inDropZone: false,
 			fileContents: {ctor: '[]'},
+			isStepByStepMode: false,
+			isPendingUpload: false,
 			progress: _ak1211$tractor$UploadPage_Model$initialUploadProgress
 		});
 };
@@ -18745,17 +18752,17 @@ var _ak1211$tractor$UploadPage_Model$FileContent = F4(
 	function (a, b, c, d) {
 		return {name: a, marketCode: b, timeFrame: c, ohlcvs: d};
 	});
-var _ak1211$tractor$UploadPage_Model$UploadThunk = F2(
-	function (a, b) {
-		return {$function: a, ohlcv: b};
+var _ak1211$tractor$UploadPage_Model$UploadThunk = F4(
+	function (a, b, c, d) {
+		return {$function: a, marketCode: b, timeFrame: c, ohlcvs: d};
 	});
 var _ak1211$tractor$UploadPage_Model$UploadProgress = F4(
 	function (a, b, c, d) {
 		return {counter: a, total: b, todo: c, done: d};
 	});
-var _ak1211$tractor$UploadPage_Model$Model = F5(
-	function (a, b, c, d, e) {
-		return {accessToken: a, inDropZone: b, fileContents: c, progress: d, mdl: e};
+var _ak1211$tractor$UploadPage_Model$Model = F7(
+	function (a, b, c, d, e, f, g) {
+		return {accessToken: a, inDropZone: b, fileContents: c, isStepByStepMode: d, isPendingUpload: e, progress: f, mdl: g};
 	});
 
 var _ak1211$tractor$Model$Model = function (a) {
@@ -19147,7 +19154,7 @@ var _lovasoa$elm_csv$Csv$Csv = F2(
 	});
 
 var _ak1211$tractor$UploadPage_Update$putOhlcv = F4(
-	function (token, marketCode, timeFrame, ohlcv) {
+	function (token, marketCode, timeFrame, ohlcvs) {
 		var authzHeader = _ak1211$tractor$Generated_WebApi$makeAuthorizationHeader(token);
 		return A2(
 			_elm_lang$http$Http$send,
@@ -19157,11 +19164,7 @@ var _ak1211$tractor$UploadPage_Update$putOhlcv = F4(
 				authzHeader,
 				marketCode,
 				_elm_lang$core$Maybe$Just(timeFrame),
-				{
-					ctor: '::',
-					_0: ohlcv,
-					_1: {ctor: '[]'}
-				}));
+				ohlcvs));
 	});
 var _ak1211$tractor$UploadPage_Update$toOhlcvt = F2(
 	function (tf, records) {
@@ -19333,17 +19336,33 @@ var _ak1211$tractor$UploadPage_Update$update = F2(
 				var _p5 = model.accessToken;
 				if (_p5.ctor === 'Just') {
 					var makeTodo = F3(
-						function (mc, tf, v) {
+						function (mc, tf, vs) {
 							return {
-								$function: A3(_ak1211$tractor$UploadPage_Update$putOhlcv, _p5._0, mc, tf),
-								ohlcv: v
+								$function: _ak1211$tractor$UploadPage_Update$putOhlcv(_p5._0),
+								marketCode: mc,
+								timeFrame: tf,
+								ohlcvs: vs
 							};
 						});
 					var makeTodoList = function (fileContent) {
-						return A2(
+						return model.isStepByStepMode ? A2(
 							_elm_lang$core$List$map,
-							A2(makeTodo, fileContent.marketCode, fileContent.timeFrame),
-							fileContent.ohlcvs);
+							function (x) {
+								return A3(
+									makeTodo,
+									fileContent.marketCode,
+									fileContent.timeFrame,
+									{
+										ctor: '::',
+										_0: x,
+										_1: {ctor: '[]'}
+									});
+							},
+							fileContent.ohlcvs) : {
+							ctor: '::',
+							_0: A3(makeTodo, fileContent.marketCode, fileContent.timeFrame, fileContent.ohlcvs),
+							_1: {ctor: '[]'}
+						};
 					};
 					var okFiles = A2(_elm_lang$core$List$filterMap, _elm_lang$core$Result$toMaybe, model.fileContents);
 					var newUploadProgress = function () {
@@ -19360,7 +19379,8 @@ var _ak1211$tractor$UploadPage_Update$update = F2(
 						model,
 						{
 							fileContents: {ctor: '[]'},
-							progress: newUploadProgress
+							progress: newUploadProgress,
+							isPendingUpload: true
 						});
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
@@ -19401,27 +19421,73 @@ var _ak1211$tractor$UploadPage_Update$update = F2(
 							{progress: next}),
 						{
 							ctor: '::',
-							_0: _p7.$function(_p7.ohlcv),
+							_0: A3(_p7.$function, _p7.marketCode, _p7.timeFrame, _p7.ohlcvs),
 							_1: {ctor: '[]'}
 						});
 				} else {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{isPendingUpload: false}),
 						{ctor: '[]'});
 				}
 			case 'DoneUploadContent':
+				if (_p4._0.ctor === 'Ok') {
+					var workInProgress = model.progress.done;
+					var marketCode = A2(
+						_elm_lang$core$Maybe$withDefault,
+						'def marketCode',
+						A2(
+							_elm_lang$core$Maybe$map,
+							function (x) {
+								return x.marketCode;
+							},
+							_elm_lang$core$List$head(workInProgress)));
+					var logMessage = _elm_lang$core$Native_Utils.eq(
+						_elm_lang$core$List$length(_p4._0._0),
+						_elm_lang$core$List$length(workInProgress)) ? A2(
+						_elm_lang$core$Basics_ops['++'],
+						'DoneUploadContent : ',
+						A2(_elm_lang$core$Basics_ops['++'], marketCode, ' success.')) : A2(
+						_elm_lang$core$Basics_ops['++'],
+						'DoneUploadContent : ',
+						A2(_elm_lang$core$Basics_ops['++'], marketCode, ' error.'));
+					return A2(
+						_elm_lang$core$Debug$log,
+						logMessage,
+						A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							model,
+							{
+								ctor: '::',
+								_0: A2(
+									_elm_lang$core$Task$perform,
+									_elm_lang$core$Basics$identity,
+									_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
+								_1: {ctor: '[]'}
+							}));
+				} else {
+					var _p8 = A2(_elm_lang$core$Debug$log, 'DoneUploadContent : Err', _p4._0._0);
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						{
+							ctor: '::',
+							_0: A2(
+								_elm_lang$core$Task$perform,
+								_elm_lang$core$Basics$identity,
+								_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
+							_1: {ctor: '[]'}
+						});
+				}
+			case 'ChangeStepByStepMode':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					{
-						ctor: '::',
-						_0: A2(
-							_elm_lang$core$Task$perform,
-							_elm_lang$core$Basics$identity,
-							_elm_lang$core$Task$succeed(_ak1211$tractor$UploadPage_Msg$UploadContent)),
-						_1: {ctor: '[]'}
-					});
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{isStepByStepMode: _p4._0}),
+					{ctor: '[]'});
 			case 'UrlChange':
 				if (_p4._0.ctor === 'Upload') {
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
@@ -20534,6 +20600,123 @@ var _debois$elm_mdl$Material_Progress$progress = function (p) {
 };
 var _debois$elm_mdl$Material_Progress$indeterminate = A4(_debois$elm_mdl$Material_Progress$bar, true, false, 0, 100);
 
+var _debois$elm_mdl$Material_Spinner$layer = function (n) {
+	return A2(
+		_debois$elm_mdl$Material_Options$div,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'mdl-spinner__layer mdl-spinner__layer-',
+					_elm_lang$core$Basics$toString(n))),
+			_1: {ctor: '[]'}
+		},
+		A2(
+			_elm_lang$core$List$map,
+			F2(
+				function (x, y) {
+					return y(x);
+				})(
+				{
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Options$div,
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Options$cs('mdl-spinner__circle'),
+							_1: {ctor: '[]'}
+						},
+						{ctor: '[]'}),
+					_1: {ctor: '[]'}
+				}),
+			{
+				ctor: '::',
+				_0: _debois$elm_mdl$Material_Options$div(
+					{
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Options$cs('mdl-spinner__circle-clipper mdl-spinner__left'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Options$div(
+						{
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Options$cs('mdl-spinner__gap-patch'),
+							_1: {ctor: '[]'}
+						}),
+					_1: {
+						ctor: '::',
+						_0: _debois$elm_mdl$Material_Options$div(
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Options$cs('mdl-spinner__circle-clipper mdl-spinner__right'),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}
+				}
+			}));
+};
+var _debois$elm_mdl$Material_Spinner$layers = A2(
+	_elm_lang$core$List$map,
+	_debois$elm_mdl$Material_Spinner$layer,
+	A2(_elm_lang$core$List$range, 1, 4));
+var _debois$elm_mdl$Material_Spinner$defaultConfig = {active: false, singleColor: false};
+var _debois$elm_mdl$Material_Spinner$singleColor = function (_p0) {
+	return _debois$elm_mdl$Material_Options_Internal$option(
+		F2(
+			function (value, config) {
+				return _elm_lang$core$Native_Utils.update(
+					config,
+					{singleColor: value});
+			})(_p0));
+};
+var _debois$elm_mdl$Material_Spinner$active = function (_p1) {
+	return _debois$elm_mdl$Material_Options_Internal$option(
+		F2(
+			function (value, config) {
+				return _elm_lang$core$Native_Utils.update(
+					config,
+					{active: value});
+			})(_p1));
+};
+var _debois$elm_mdl$Material_Spinner$spinner = function (options) {
+	var _p2 = A2(_debois$elm_mdl$Material_Options_Internal$collect, _debois$elm_mdl$Material_Spinner$defaultConfig, options);
+	var summary = _p2;
+	var config = _p2.config;
+	return A5(
+		_debois$elm_mdl$Material_Options_Internal$apply,
+		summary,
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _debois$elm_mdl$Material_Options$cs('mdl-spinner mdl-js-spinner is-upgraded'),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_debois$elm_mdl$Material_Options$when,
+					config.active,
+					_debois$elm_mdl$Material_Options$cs('is-active')),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_debois$elm_mdl$Material_Options$when,
+						config.singleColor,
+						_debois$elm_mdl$Material_Options$cs('mdl-spinner--single-color')),
+					_1: {ctor: '[]'}
+				}
+			}
+		},
+		{ctor: '[]'},
+		_debois$elm_mdl$Material_Spinner$layers);
+};
+var _debois$elm_mdl$Material_Spinner$Config = F2(
+	function (a, b) {
+		return {active: a, singleColor: b};
+	});
+
 var _ak1211$tractor$UploadPage_View$viewTable = F2(
 	function (headlines, rows) {
 		return A2(
@@ -20578,7 +20761,7 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 	var style = _elm_lang$html$Html_Attributes$style(
 		{
 			ctor: '::',
-			_0: {ctor: '_Tuple2', _0: 'margin', _1: 'auto'},
+			_0: {ctor: '_Tuple2', _0: 'margin', _1: '16px auto'},
 			_1: {
 				ctor: '::',
 				_0: {ctor: '_Tuple2', _0: 'max-width', _1: '500px'},
@@ -20587,6 +20770,107 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 					_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
 					_1: {ctor: '[]'}
 				}
+			}
+		});
+	var uploadMode = A2(
+		_elm_lang$html$Html$div,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A3(
+				_debois$elm_mdl$Material_Options$styled,
+				_elm_lang$html$Html$p,
+				{
+					ctor: '::',
+					_0: _debois$elm_mdl$Material_Typography$headline,
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('upload mode'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$p,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: A5(
+							_debois$elm_mdl$Material_Toggles$radio,
+							_ak1211$tractor$UploadPage_Msg$Mdl,
+							{
+								ctor: '::',
+								_0: 0,
+								_1: {ctor: '[]'}
+							},
+							model.mdl,
+							{
+								ctor: '::',
+								_0: _debois$elm_mdl$Material_Toggles$value(model.isStepByStepMode),
+								_1: {
+									ctor: '::',
+									_0: _debois$elm_mdl$Material_Toggles$group('ModeGroup'),
+									_1: {
+										ctor: '::',
+										_0: _debois$elm_mdl$Material_Toggles$ripple,
+										_1: {
+											ctor: '::',
+											_0: _debois$elm_mdl$Material_Options$onToggle(
+												_ak1211$tractor$UploadPage_Msg$ChangeStepByStepMode(true)),
+											_1: {ctor: '[]'}
+										}
+									}
+								}
+							},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('Step By Step'),
+								_1: {ctor: '[]'}
+							}),
+						_1: {
+							ctor: '::',
+							_0: A5(
+								_debois$elm_mdl$Material_Toggles$radio,
+								_ak1211$tractor$UploadPage_Msg$Mdl,
+								{
+									ctor: '::',
+									_0: 1,
+									_1: {ctor: '[]'}
+								},
+								model.mdl,
+								{
+									ctor: '::',
+									_0: A2(_debois$elm_mdl$Material_Options$css, 'margin-left', '2em'),
+									_1: {
+										ctor: '::',
+										_0: _debois$elm_mdl$Material_Toggles$value(!model.isStepByStepMode),
+										_1: {
+											ctor: '::',
+											_0: _debois$elm_mdl$Material_Toggles$group('ModeGroup'),
+											_1: {
+												ctor: '::',
+												_0: _debois$elm_mdl$Material_Toggles$ripple,
+												_1: {
+													ctor: '::',
+													_0: _debois$elm_mdl$Material_Options$onToggle(
+														_ak1211$tractor$UploadPage_Msg$ChangeStepByStepMode(false)),
+													_1: {ctor: '[]'}
+												}
+											}
+										}
+									}
+								},
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html$text('Batch'),
+									_1: {ctor: '[]'}
+								}),
+							_1: {ctor: '[]'}
+						}
+					}),
+				_1: {ctor: '[]'}
 			}
 		});
 	var uploadButton = function (enabled) {
@@ -20638,7 +20922,6 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 				_1: {ctor: '[]'}
 			});
 	};
-	var isEmpty = _elm_lang$core$List$isEmpty(model.progress.todo) && _elm_lang$core$List$isEmpty(model.progress.done);
 	var isUploadable = function () {
 		var hasOk = function (x) {
 			var _p0 = x;
@@ -20658,7 +20941,64 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 		}();
 		return hasAccessToken && A2(_elm_lang$core$List$any, hasOk, model.fileContents);
 	}();
-	var show = A3(
+	var displayBody = function (x) {
+		var append = model.isStepByStepMode ? A2(
+			_elm_lang$core$Maybe$map,
+			function (x) {
+				return {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(' / '),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(x.at),
+						_1: {ctor: '[]'}
+					}
+				};
+			},
+			A2(
+				_elm_lang$core$Maybe$andThen,
+				_elm_lang$core$List$head,
+				A2(
+					_elm_lang$core$Maybe$map,
+					function (x) {
+						return x.ohlcvs;
+					},
+					_elm_lang$core$List$head(model.progress.done)))) : _elm_lang$core$Maybe$Nothing;
+		return _elm_lang$core$List$concat(
+			{
+				ctor: '::',
+				_0: {
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(x.marketCode),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(' / '),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(x.timeFrame),
+							_1: {ctor: '[]'}
+						}
+					}
+				},
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$core$Maybe$withDefault,
+						{ctor: '[]'},
+						append),
+					_1: {
+						ctor: '::',
+						_0: {
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(' is now sended.'),
+							_1: {ctor: '[]'}
+						},
+						_1: {ctor: '[]'}
+					}
+				}
+			});
+	};
+	var display = A3(
 		_debois$elm_mdl$Material_Options$styled,
 		_elm_lang$html$Html$p,
 		{
@@ -20666,22 +21006,13 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 			_0: _debois$elm_mdl$Material_Typography$body1,
 			_1: {ctor: '[]'}
 		},
-		function () {
-			var _p2 = model.progress.done;
-			if (_p2.ctor === '::') {
-				return {
-					ctor: '::',
-					_0: _elm_lang$html$Html$text(_p2._0.ohlcv.at),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(' is now uploading.'),
-						_1: {ctor: '[]'}
-					}
-				};
-			} else {
-				return {ctor: '[]'};
-			}
-		}());
+		A2(
+			_elm_lang$core$Maybe$withDefault,
+			{ctor: '[]'},
+			A2(
+				_elm_lang$core$Maybe$map,
+				displayBody,
+				model.isPendingUpload ? _elm_lang$core$List$head(model.progress.done) : _elm_lang$core$Maybe$Nothing)));
 	var numOfTotal = A3(
 		_debois$elm_mdl$Material_Options$styled,
 		_elm_lang$html$Html$p,
@@ -20690,25 +21021,40 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 			_0: _debois$elm_mdl$Material_Typography$display1,
 			_1: {ctor: '[]'}
 		},
-		isEmpty ? {
-			ctor: '::',
-			_0: _elm_lang$html$Html$text(' Let\'s upload.'),
-			_1: {ctor: '[]'}
-		} : {
-			ctor: '::',
-			_0: _elm_lang$html$Html$text(
-				_elm_lang$core$Basics$toString(model.progress.counter)),
-			_1: {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text(' / '),
-				_1: {
+		function () {
+			if (model.isPendingUpload) {
+				return {
 					ctor: '::',
 					_0: _elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(model.progress.total)),
-					_1: {ctor: '[]'}
+						_elm_lang$core$Basics$toString(model.progress.counter)),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(' / '),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(
+								_elm_lang$core$Basics$toString(model.progress.total)),
+							_1: {ctor: '[]'}
+						}
+					}
+				};
+			} else {
+				var _p2 = _elm_lang$core$List$head(model.progress.done);
+				if (_p2.ctor === 'Just') {
+					return {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('Done'),
+						_1: {ctor: '[]'}
+					};
+				} else {
+					return {
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('Let\'s upload.'),
+						_1: {ctor: '[]'}
+					};
 				}
 			}
-		});
+		}());
 	var percent = (_elm_lang$core$Basics$toFloat(model.progress.counter) / _elm_lang$core$Basics$toFloat(model.progress.total)) * 100.0;
 	return A2(
 		_elm_lang$html$Html$div,
@@ -20719,18 +21065,62 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 		},
 		{
 			ctor: '::',
-			_0: show,
+			_0: uploadMode,
 			_1: {
 				ctor: '::',
-				_0: numOfTotal,
+				_0: A2(
+					_elm_lang$html$Html$div,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$style(
+							{
+								ctor: '::',
+								_0: {ctor: '_Tuple2', _0: 'margin-top', _1: '4em'},
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					},
+					{ctor: '[]'}),
 				_1: {
 					ctor: '::',
-					_0: _debois$elm_mdl$Material_Progress$progress(percent),
+					_0: display,
 					_1: {
 						ctor: '::',
-						_0: uploadButton(
-							_elm_lang$core$Native_Utils.eq(model.progress.counter, 0) ? isUploadable : false),
-						_1: {ctor: '[]'}
+						_0: numOfTotal,
+						_1: {
+							ctor: '::',
+							_0: _debois$elm_mdl$Material_Progress$progress(percent),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$div,
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html_Attributes$style(
+											{
+												ctor: '::',
+												_0: {ctor: '_Tuple2', _0: 'margin', _1: '16px'},
+												_1: {ctor: '[]'}
+											}),
+										_1: {ctor: '[]'}
+									},
+									{
+										ctor: '::',
+										_0: _debois$elm_mdl$Material_Spinner$spinner(
+											{
+												ctor: '::',
+												_0: _debois$elm_mdl$Material_Spinner$active(model.isPendingUpload),
+												_1: {ctor: '[]'}
+											}),
+										_1: {ctor: '[]'}
+									}),
+								_1: {
+									ctor: '::',
+									_0: uploadButton((!model.isPendingUpload) && isUploadable),
+									_1: {ctor: '[]'}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -22235,7 +22625,7 @@ var _ak1211$tractor$View$dialogAbout = function (model) {
 var _ak1211$tractor$View$view = function (model) {
 	return A3(
 		_debois$elm_mdl$Material_Scheme$topWithScheme,
-		_debois$elm_mdl$Material_Color$LightGreen,
+		_debois$elm_mdl$Material_Color$Green,
 		_debois$elm_mdl$Material_Color$Indigo,
 		A4(
 			_debois$elm_mdl$Material_Layout$render,

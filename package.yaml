@@ -75,6 +75,7 @@ library:
   - tagsoup
   - template-haskell
   - transformers
+  - transformers-either
   - vector
   - wai
   - warp

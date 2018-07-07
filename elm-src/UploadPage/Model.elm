@@ -53,8 +53,10 @@ type alias FileContent =
 
 
 type alias UploadThunk =
-    { function : WebApi.ApiOhlcv -> Cmd UploadPage.Msg
-    , ohlcv : WebApi.ApiOhlcv
+    { function : WebApi.MarketCode -> WebApi.TimeFrame -> List WebApi.ApiOhlcv -> Cmd UploadPage.Msg
+    , marketCode : WebApi.MarketCode
+    , timeFrame : WebApi.TimeFrame
+    , ohlcvs : List WebApi.ApiOhlcv
     }
 
 
@@ -67,9 +69,11 @@ type alias UploadProgress =
 
 
 type alias Model =
-    { accessToken : Maybe String
+    { accessToken : Maybe WebApi.AccessToken
     , inDropZone : Bool
     , fileContents : List (Result String FileContent)
+    , isStepByStepMode : Bool
+    , isPendingUpload : Bool
     , progress : UploadProgress
     , mdl : Material.Model
     }
@@ -80,6 +84,8 @@ clearModel model =
     { model
         | inDropZone = False
         , fileContents = []
+        , isStepByStepMode = False
+        , isPendingUpload = False
         , progress = initialUploadProgress
     }
 
@@ -98,6 +104,8 @@ initialModel =
     { accessToken = Nothing
     , inDropZone = False
     , fileContents = []
+    , isStepByStepMode = False
+    , isPendingUpload = False
     , progress = initialUploadProgress
     , mdl = Material.model
     }

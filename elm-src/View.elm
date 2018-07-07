@@ -111,7 +111,7 @@ view model =
         , tabs = ( [], [] )
         , main = [ viewBody model, dialogAbout model ]
         }
-        |> Material.Scheme.topWithScheme Color.LightGreen Color.Indigo
+        |> Material.Scheme.topWithScheme Color.Green Color.Indigo
 
 
 viewHeader : Model -> Html Msg

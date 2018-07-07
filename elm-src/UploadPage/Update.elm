@@ -74,15 +74,20 @@ update msg model =
                         okFiles =
                             List.filterMap Result.toMaybe model.fileContents
 
-                        makeTodo : WebApi.MarketCode -> WebApi.TimeFrame -> WebApi.ApiOhlcv -> UploadPage.UploadThunk
-                        makeTodo mc tf v =
-                            { function = putOhlcv token mc tf
-                            , ohlcv = v
+                        makeTodo : WebApi.MarketCode -> WebApi.TimeFrame -> List WebApi.ApiOhlcv -> UploadPage.UploadThunk
+                        makeTodo mc tf vs =
+                            { function = putOhlcv token
+                            , marketCode = mc
+                            , timeFrame = tf
+                            , ohlcvs = vs
                             }
 
                         makeTodoList : UploadPage.FileContent -> List UploadPage.UploadThunk
                         makeTodoList fileContent =
-                            List.map (makeTodo fileContent.marketCode fileContent.timeFrame) fileContent.ohlcvs
+                            if model.isStepByStepMode then
+                                List.map (\x -> makeTodo fileContent.marketCode fileContent.timeFrame [ x ]) fileContent.ohlcvs
+                            else
+                                [ makeTodo fileContent.marketCode fileContent.timeFrame fileContent.ohlcvs ]
 
                         newUploadProgress : UploadPage.UploadProgress
                         newUploadProgress =
@@ -100,6 +105,7 @@ update msg model =
                             { model
                                 | fileContents = []
                                 , progress = newUploadProgress
+                                , isPendingUpload = True
                             }
                     in
                         newModel ! [ Task.perform identity <| Task.succeed UploadPage.UploadContent ]
@@ -121,13 +127,41 @@ update msg model =
                                 , done = x :: progress.done
                             }
                     in
-                        { model | progress = next } ! [ x.function x.ohlcv ]
+                        { model | progress = next } ! [ x.function x.marketCode x.timeFrame x.ohlcvs ]
 
                 [] ->
-                    model ! []
+                    { model | isPendingUpload = False } ! []
 
-        UploadPage.DoneUploadContent _ ->
-            model ! [ Task.perform identity <| Task.succeed UploadPage.UploadContent ]
+        UploadPage.DoneUploadContent (Ok accepted) ->
+            let
+                workInProgress =
+                    model.progress.done
+
+                marketCode =
+                    List.head workInProgress
+                        |> Maybe.map (\x -> x.marketCode)
+                        |> Maybe.withDefault "def marketCode"
+
+                logMessage =
+                    if List.length accepted == List.length workInProgress then
+                        "DoneUploadContent : " ++ marketCode ++ " success."
+                    else
+                        "DoneUploadContent : " ++ marketCode ++ " error."
+            in
+                Debug.log logMessage <|
+                    model
+                        ! [ Task.perform identity <| Task.succeed UploadPage.UploadContent ]
+
+        UploadPage.DoneUploadContent (Err err) ->
+            let
+                _ =
+                    Debug.log "DoneUploadContent : Err" err
+            in
+                model
+                    ! [ Task.perform identity <| Task.succeed UploadPage.UploadContent ]
+
+        UploadPage.ChangeStepByStepMode newMode ->
+            { model | isStepByStepMode = newMode } ! []
 
         UploadPage.UrlChange Route.Upload ->
             -- 自ページ内に移動
@@ -246,8 +280,8 @@ toOhlcvt tf records =
         }
 
 
-putOhlcv : WebApi.AccessToken -> WebApi.MarketCode -> WebApi.TimeFrame -> WebApi.ApiOhlcv -> Cmd UploadPage.Msg
-putOhlcv token marketCode timeFrame ohlcv =
+putOhlcv : WebApi.AccessToken -> WebApi.MarketCode -> WebApi.TimeFrame -> List WebApi.ApiOhlcv -> Cmd UploadPage.Msg
+putOhlcv token marketCode timeFrame ohlcvs =
     let
         authzHeader =
             WebApi.makeAuthorizationHeader token
@@ -256,5 +290,5 @@ putOhlcv token marketCode timeFrame ohlcv =
             authzHeader
             marketCode
             (Just timeFrame)
-            [ ohlcv ]
+            ohlcvs
             |> Http.send UploadPage.DoneUploadContent
