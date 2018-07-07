@@ -59,6 +59,7 @@ import qualified Data.Csv                   as Csv
 import           Data.Int                   (Int64)
 import qualified Data.Text                  as T
 import qualified Data.Time                  as Time
+import qualified Data.Time.Calendar         as Time
 import           GHC.Generics               (Generic)
 import           Network.HTTP.Media         ((//))
 import           Servant.API                (Accept, MimeRender, contentType,
@@ -252,7 +253,20 @@ instance Csv.DefaultOrdered ApiOhlcv where
         , "source"
         ]
 
---
+-- |
+-- >>> :{
+-- >>> toApiOhlcv $ Model.Ohlcv { Model.ohlcvTicker = Model.TSTYO 1320
+-- >>>                          , Model.ohlcvTf     = Model.TF1d
+-- >>>                          , Model.ohlcvAt     = Time.UTCTime (Time.ModifiedJulianDay 0) 0
+-- >>>                          , Model.ohlcvOpen   = Just 23250.0
+-- >>>                          , Model.ohlcvHigh   = Just 23340.0
+-- >>>                          , Model.ohlcvLow    = Just 23230.0
+-- >>>                          , Model.ohlcvClose  = Just 23330.0
+-- >>>                          , Model.ohlcvVolume = 31384
+-- >>>                          , Model.ohlcvSource = Nothing
+-- >>>                          }
+-- >>> :}
+-- ApiOhlcv {at = "1858-11-17T09:00:00+0900", open = Just 23250.0, high = Just 23340.0, low = Just 23230.0, close = Just 23330.0, volume = 31384, source = Nothing}
 --
 toApiOhlcv :: Model.Ohlcv -> ApiOhlcv
 toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
@@ -265,7 +279,32 @@ toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
     , source = T.unpack <$> ohlcvSource
     }
 
+-- |
+-- >>> :{
+-- >>> fromApiOhlcv (Model.TSTYO 1320) Model.TF1d
+-- >>>              (ApiOhlcv { at     = "2018-06-22T00:00:00+0900"
+-- >>>                        , open   = Just 23250.0
+-- >>>                        , high   = Just 23340.0
+-- >>>                        , low    = Just 23230.0
+-- >>>                        , close  = Just 23330.0
+-- >>>                        , volume = 31384
+-- >>>                        , source = Nothing
+-- >>>                        })
+-- >>> :}
+-- Nothing
 --
+-- >>> :{
+-- >>> fromApiOhlcv (Model.TSTYO 1320) Model.TF1d
+-- >>>              (ApiOhlcv { at     = "2018-06-22T15:00:00+0900"
+-- >>>                        , open   = Just 23250.0
+-- >>>                        , high   = Just 23340.0
+-- >>>                        , low    = Just 23230.0
+-- >>>                        , close  = Just 23330.0
+-- >>>                        , volume = 31384
+-- >>>                        , source = Nothing
+-- >>>                        })
+-- >>> :}
+-- Just (Ohlcv {ohlcvTicker = TSTYO 1320, ohlcvTf = TF1d, ohlcvAt = 2018-06-22 06:00:00 UTC, ohlcvOpen = Just 23250.0, ohlcvHigh = Just 23340.0, ohlcvLow = Just 23230.0, ohlcvClose = Just 23330.0, ohlcvVolume = 31384, ohlcvSource = Nothing})
 --
 fromApiOhlcv    :: Model.TickerSymbol
                 -> Model.TimeFrame

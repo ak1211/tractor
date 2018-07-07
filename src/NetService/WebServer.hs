@@ -442,13 +442,14 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
                 return rights
             (lefts, _) ->
                 -- 部分的成功または失敗
-                err409Conflict (BL8.pack $ show lefts)
+                err409Conflict (Aeson.encode lefts)
     --
     --
     insert :: Model.TickerSymbol -> ApiOhlcv -> EitherT ApiOhlcv IO ApiOhlcv
     insert ticker apiOhlcv =
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Nothing ->
+            Nothing -> do
+                M.liftIO . putStrLn $ show apiOhlcv
                 newEitherT . return $ Left apiOhlcv
             Just ohlcv -> do
                 MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
