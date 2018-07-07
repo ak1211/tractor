@@ -618,7 +618,7 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
     --
     go (Just ticker)
         | CI.mk codeSuffix == ".svg" = do
-            ohlcvs <- map DB.entityVal <$> M.liftIO (selectList ticker)
+            ohlcvs <- reverse . map DB.entityVal <$> M.liftIO (selectList ticker)
             let chartData = PlotChart.ChartData
                                 { cSize = chartSize
                                 , cTitle = "stock prices"
@@ -634,8 +634,8 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
             DB.selectList   [ Model.OhlcvTf     ==. timeFrame
                             , Model.OhlcvTicker ==. ticker
                             ]
-                            [DB.Asc Model.OhlcvAt
-                            ,DB.LimitTo 300]
+                            [DB.Desc Model.OhlcvAt
+                            ,DB.LimitTo 100]
 
 --
 --
