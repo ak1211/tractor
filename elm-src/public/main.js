@@ -18273,13 +18273,13 @@ var _ak1211$tractor$AnalyticsPage_View$chartView = function (model) {
 											A2(
 												_ak1211$tractor$AnalyticsPage_View$chartURI,
 												mc,
-												{ctor: '_Tuple2', _0: 1000, _1: 1000})),
+												{ctor: '_Tuple2', _0: 1200, _1: 600})),
 										_1: {
 											ctor: '::',
 											_0: _elm_lang$html$Html_Attributes$style(
 												{
 													ctor: '::',
-													_0: {ctor: '_Tuple2', _0: 'width', _1: '100%'},
+													_0: {ctor: '_Tuple2', _0: 'height', _1: '100%'},
 													_1: {ctor: '[]'}
 												}),
 											_1: {ctor: '[]'}
@@ -21012,7 +21012,7 @@ var _ak1211$tractor$UploadPage_View$controlPanel = function (model) {
 			A2(
 				_elm_lang$core$Maybe$map,
 				displayBody,
-				model.isPendingUpload ? _elm_lang$core$List$head(model.progress.done) : _elm_lang$core$Maybe$Nothing)));
+				_elm_lang$core$List$head(model.progress.done))));
 	var numOfTotal = A3(
 		_debois$elm_mdl$Material_Options$styled,
 		_elm_lang$html$Html$p,

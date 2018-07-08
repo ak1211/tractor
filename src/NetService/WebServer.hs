@@ -28,7 +28,6 @@ Web API サーバーモジュールです
 -}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -447,17 +446,15 @@ putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     --
     insert :: Model.TickerSymbol -> ApiOhlcv -> EitherT ApiOhlcv IO ApiOhlcv
     insert ticker apiOhlcv =
+        let err _ = newEitherT . return $ Left apiOhlcv
+            ok _  = newEitherT . return $ Right apiOhlcv
+        in
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Nothing -> do
-                M.liftIO . putStrLn $ show apiOhlcv
-                newEitherT . return $ Left apiOhlcv
-            Just ohlcv -> do
-                MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
-                >>= \case
-                    Left () ->
-                        newEitherT . return $ Left apiOhlcv
-                    Right () ->
-                        newEitherT . return $ Right apiOhlcv
+            Left x ->
+                err x
+            Right ohlcv -> do
+                responce <- MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
+                either err ok responce
 
 -- |
 -- データを入れる(INSERT)
@@ -498,9 +495,9 @@ patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     store :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
     store ticker apiOhlcv =
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Nothing ->
+            Left _ ->
                 MaybeT (return Nothing)
-            Just val -> do
+            Right val -> do
                 MonadTrans.lift (insertOrUpdateOhlcv (cPool cnf) val)
                 MaybeT (return $ Just apiOhlcv)
 
@@ -552,9 +549,9 @@ deleteHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
     delete :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
     delete ticker apiOhlcv =
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Nothing ->
+            Left _ ->
                 MaybeT (return Nothing)
-            Just ohlcv -> do
+            Right ohlcv -> do
                 let err _ = MaybeT $ return Nothing
                 let ok _  = MaybeT $ return (Just apiOhlcv)
                 result <- MonadTrans.lift $ deleteOhlcv (cPool cnf) ohlcv

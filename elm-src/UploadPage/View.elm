@@ -136,10 +136,7 @@ controlPanel model =
             Options.styled Html.p [ Typo.body1 ] <|
                 Maybe.withDefault [] <|
                     Maybe.map displayBody <|
-                        if model.isPendingUpload then
-                            List.head model.progress.done
-                        else
-                            Nothing
+                        List.head model.progress.done
 
         displayBody x =
             let

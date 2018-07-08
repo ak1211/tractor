@@ -50,7 +50,6 @@ module NetService.ApiTypes
     )
     where
 import qualified Control.Concurrent.STM     as STM
-import           Control.Monad              (guard)
 import           Data.Aeson                 ((.:), (.:?))
 import qualified Data.Aeson                 as Aeson
 import qualified Data.ByteString.Lazy.Char8 as BL8
@@ -290,7 +289,7 @@ toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
 -- >>>                        , source = Nothing
 -- >>>                        })
 -- >>> :}
--- Nothing
+-- Left "out of trading hours"
 --
 -- >>> :{
 -- >>> fromApiOhlcv (Model.TSTYO 1320) Model.TF1d
@@ -303,19 +302,18 @@ toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
 -- >>>                        , source = Nothing
 -- >>>                        })
 -- >>> :}
--- Just (Ohlcv {ohlcvTicker = TSTYO 1320, ohlcvTf = TF1d, ohlcvAt = 2018-06-22 06:00:00 UTC, ohlcvOpen = Just 23250.0, ohlcvHigh = Just 23340.0, ohlcvLow = Just 23230.0, ohlcvClose = Just 23330.0, ohlcvVolume = 31384, ohlcvSource = Nothing})
+-- Right (Ohlcv {ohlcvTicker = TSTYO 1320, ohlcvTf = TF1d, ohlcvAt = 2018-06-22 06:00:00 UTC, ohlcvOpen = Just 23250.0, ohlcvHigh = Just 23340.0, ohlcvLow = Just 23230.0, ohlcvClose = Just 23330.0, ohlcvVolume = 31384, ohlcvSource = Nothing})
 --
 fromApiOhlcv    :: Model.TickerSymbol
                 -> Model.TimeFrame
                 -> ApiOhlcv
-                -> Maybe Model.Ohlcv
+                -> Either String Model.Ohlcv
 fromApiOhlcv ticker timeFrame o = do
-    at'<- toUTCTime (at o)
-    guard (isValid at')
-    Just Model.Ohlcv
+    time <- validation =<< toUTCTime (at o)
+    Right Model.Ohlcv
         { ohlcvTicker = ticker
         , ohlcvTf     = timeFrame
-        , ohlcvAt     = at'
+        , ohlcvAt     = time
         , ohlcvOpen   = open o
         , ohlcvHigh   = high o
         , ohlcvLow    = low o
@@ -326,24 +324,37 @@ fromApiOhlcv ticker timeFrame o = do
     where
     --
     --
-    isValid :: Time.UTCTime -> Bool
-    isValid utc =
-        let
-            t@(Time.TimeOfDay _ m s) = Time.localTimeOfDay
-                                        $ Time.utcToLocalTime tzAsiaTokyo utc
+    tokyoTime =
+        Time.localTimeOfDay . Time.utcToLocalTime tzAsiaTokyo
+    --
+    --
+    validation :: Time.UTCTime -> Either String Time.UTCTime
+    validation utc =
+        inTradingHours utc >> inTimeFrame utc
+    --
+    --
+    inTradingHours utc =
+        let t = tokyoTime utc
         in
-        withinTradingHours t &&
+        if Time.TimeOfDay 9 0 0 <= t && t <= Time.TimeOfDay 15 0 0
+        then
+            Right utc
+        else
+            Left "out of trading hours"
+    --
+    --
+    inTimeFrame utc =
+        let t@(Time.TimeOfDay _ m s) = tokyoTime utc
+        in
         case timeFrame of
-            Model.TF1h -> m == 0 && s == 0
-            Model.TF1d -> Time.TimeOfDay 15 0 0 == t
+            Model.TF1h | m == 0 && s == 0 ->
+                Right utc
+            Model.TF1d | Time.TimeOfDay 15 0 0 == t ->
+                Right utc
+            _ ->
+                Left "out of time frame"
     --
     --
-    withinTradingHours :: Time.TimeOfDay -> Bool
-    withinTradingHours t =
-        Time.TimeOfDay 9 0 0 <= t && t <= Time.TimeOfDay 15 0 0
-    --
-    --
-    toUTCTime :: String -> Maybe Time.UTCTime
     toUTCTime timeStr =
         let parser = Time.parseTimeM True Time.defaultTimeLocale
             format = Time.iso8601DateFormat (Just "%H:%M:%S%z")
