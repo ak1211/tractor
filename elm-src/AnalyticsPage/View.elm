@@ -153,7 +153,7 @@ chartView model =
                     ]
                     [ Html.div []
                         [ Html.img
-                            [ Attr.src <| chartURI mc ( 1200, 600 )
+                            [ Attr.src <| chartURI mc ( 1200, 400 )
                             , Attr.style [ ( "height", "100%" ) ]
                             ]
                             []

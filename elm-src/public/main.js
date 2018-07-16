@@ -18273,7 +18273,7 @@ var _ak1211$tractor$AnalyticsPage_View$chartView = function (model) {
 											A2(
 												_ak1211$tractor$AnalyticsPage_View$chartURI,
 												mc,
-												{ctor: '_Tuple2', _0: 1200, _1: 600})),
+												{ctor: '_Tuple2', _0: 1200, _1: 400})),
 										_1: {
 											ctor: '::',
 											_0: _elm_lang$html$Html_Attributes$style(

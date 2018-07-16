@@ -68,6 +68,7 @@ library:
   - persistent-template
   - safe
   - servant
+  - servant-auth-server
   - servant-cassava
   - servant-docs
   - servant-lucid

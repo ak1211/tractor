@@ -66,14 +66,13 @@ import qualified Network.HTTP.Types.Header    as Header
 import qualified Network.URI                  as URI
 import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
-import qualified Servant
-import           Servant.API                  ((:<|>) (..), (:>), Capture,
+import           Servant                      ((:<|>) (..), (:>), Capture,
                                                Delete, Get, Header, Header',
                                                Headers, JSON, NoContent, Patch,
                                                PostAccepted, Put, QueryParam,
                                                QueryParam', Raw, ReqBody,
                                                Required, Strict, Summary)
-import qualified Servant.API                  as API
+import qualified Servant
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
@@ -106,12 +105,12 @@ instance Servant.Docs.ToSample Chart where
     toSamples _ =
         Servant.Docs.noSamples
 
-instance API.MimeRender SVG Chart where
+instance Servant.MimeRender SVG Chart where
     mimeRender ctype (Chart val) =
         render val
         where
         render :: SvgBinary -> BL8.ByteString
-        render = API.mimeRender ctype
+        render = Servant.mimeRender ctype
 
 -- |
 --
@@ -509,7 +508,7 @@ insertOrUpdateOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO ()
 insertOrUpdateOhlcv pool ohlcv@Model.Ohlcv{..} =
     flip DB.runSqlPersistMPool pool $ do
         -- 同じ時間の物があるか探してみる
-        entity <-DB.selectFirst
+        entity <- DB.selectFirst
                     [ Model.OhlcvTicker ==. ohlcvTicker
                     , Model.OhlcvTf ==. ohlcvTf
                     , Model.OhlcvAt ==. ohlcvAt
@@ -588,7 +587,14 @@ deleteOhlcv pool Model.Ohlcv{..} =
 --
 getChartHandler :: Config -> MarketCode -> TimeFrame -> Maybe Int -> Maybe Int -> Servant.Handler ChartWithCacheControl
 getChartHandler cnf codeStr timeFrame qWidth qHeight =
-    go $ Model.toTickerSymbol codeBody
+    case Model.toTickerSymbol codeBody of
+        Nothing ->
+            err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
+        Just ticker
+            | CI.mk codeSuffix == ".svg" ->
+                go ticker
+            | otherwise ->
+                err404NotFound
     where
     --
     --
@@ -609,21 +615,14 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
             SvgBinary <$> BL8.readFile fname
     --
     --
-    go Nothing =
-        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-    --
-    --
-    go (Just ticker)
-        | CI.mk codeSuffix == ".svg" = do
-            ohlcvs <- reverse . map DB.entityVal <$> M.liftIO (selectList ticker)
-            let chartData = PlotChart.ChartData
-                                { cSize = chartSize
-                                , cTitle = "stock prices"
-                                , cOhlcvs = ohlcvs
-                                }
-            API.addHeader "private, no-store, no-cache, must-revalidate" . Chart <$> chartSVG chartData
-        | otherwise =
-            err404NotFound
+    go ticker = do
+        ohlcvs <- reverse . map DB.entityVal <$> M.liftIO (selectList ticker)
+        let chartData = PlotChart.ChartData
+                            { cSize = chartSize
+                            , cTitle = "stock prices"
+                            , cOhlcvs = ohlcvs
+                            }
+        Servant.addHeader "private, no-store, no-cache, must-revalidate" . Chart <$> chartSVG chartData
     --
     --
     selectList ticker =

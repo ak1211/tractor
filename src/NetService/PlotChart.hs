@@ -28,7 +28,9 @@ chart chartData =
     where
     layout = layout_title .~ cTitle chartData
            $ layout_background .~ solidFillStyle (withOpacity white 0.9)
-           $ layout_left_axis_visibility . axis_show_ticks .~ False
+           $ layout_right_axis_visibility . axis_show_labels .~ True
+           $ layout_right_axis_visibility . axis_show_line .~ True
+           $ layout_right_axis_visibility . axis_show_ticks .~ True
            $ layout_plots .~ [toPlot candle]
            $ def
 
@@ -36,8 +38,8 @@ chart chartData =
 
     candle  = plot_candle_line_style  .~ lineStyle 1 black
             $ plot_candle_fill        .~ True
-            $ plot_candle_rise_fill_style .~ solidFillStyle (opaque blue)
-            $ plot_candle_fall_fill_style .~ solidFillStyle (opaque red)
+            $ plot_candle_rise_fill_style .~ solidFillStyle (opaque red)
+            $ plot_candle_fall_fill_style .~ solidFillStyle (opaque blue)
             $ plot_candle_tick_length .~ 0
             $ plot_candle_width       .~ 2
             $ plot_candle_values      .~ mapOhlcvs (cOhlcvs chartData)
