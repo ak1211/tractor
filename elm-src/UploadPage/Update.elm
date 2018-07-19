@@ -289,6 +289,6 @@ putOhlcv token marketCode timeFrame ohlcvs =
         WebApi.putApiV1StocksHistoryByMarketCode
             authzHeader
             marketCode
-            (Just timeFrame)
+            timeFrame
             ohlcvs
             |> Http.send UploadPage.DoneUploadContent

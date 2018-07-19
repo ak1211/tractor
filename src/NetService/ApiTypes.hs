@@ -46,6 +46,7 @@ module NetService.ApiTypes
     , fromApiOhlcv
     , OAuthAccessResponse(..)
     , OAuthReply(..)
+    , BearerToken(..)
     , VerRev(..)
     )
     where
@@ -62,6 +63,7 @@ import           GHC.Generics               (Generic)
 import           Network.HTTP.Media         ((//))
 import           Servant.API                (Accept, MimeRender, contentType,
                                              mimeRender)
+import           Servant.Auth.Server        (FromJWT, ToJWT)
 import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Web.FormUrlEncoded
@@ -153,6 +155,8 @@ data OAuthReply = OAuthReply
 
 instance Aeson.FromJSON OAuthReply
 instance Aeson.ToJSON OAuthReply
+instance FromJWT OAuthReply
+instance ToJWT OAuthReply
 instance Servant.Elm.ElmType OAuthReply
 instance Servant.Docs.ToSample OAuthReply where
     toSamples _ =
@@ -160,6 +164,22 @@ instance Servant.Docs.ToSample OAuthReply where
             "xoxp-????????????-????????????-????????????-????????????????????????????????"
             "identify.basic"
             "John Doe"
+
+-- |
+--
+newtype BearerToken = BearerToken
+    { getBearerToken :: T.Text
+    } deriving (Eq, Show, Generic)
+instance Aeson.FromJSON BearerToken
+instance Aeson.ToJSON BearerToken
+instance FromJWT BearerToken
+instance ToJWT BearerToken
+instance Servant.Elm.ElmType BearerToken
+instance Servant.Docs.ToSample BearerToken where
+    toSamples _ =
+        Servant.Docs.singleSample $ BearerToken
+            "xoxp-????????????-????????????-????????????-????????????????????????????????"
+
 
 -- |
 -- ポートフォリオ

@@ -25,8 +25,12 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE StrictData        #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE StrictData         #-}
 module Main where
 import           Data.Proxy           (Proxy (..))
 import qualified Elm
@@ -34,9 +38,10 @@ import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Shelly
 
-import           NetService.ApiTypes  (ApiOhlcv, ApiPortfolio, OAuthReply,
-                                       VerRev)
-import qualified NetService.WebServer as WebServer
+import           NetService.ApiTypes  (ApiOhlcv, ApiPortfolio, BearerToken,
+                                       OAuthReply, VerRev)
+import           NetService.WebServer (ApiForDocument, ApiForFrontend)
+
 
 elmOpts :: Servant.Elm.ElmOptions
 elmOpts =
@@ -63,6 +68,10 @@ spec =
         : Elm.toElmDecoderSource (Proxy :: Proxy OAuthReply)
         : Elm.toElmEncoderSource (Proxy :: Proxy OAuthReply)
         --
+        : Elm.toElmTypeSource    (Proxy :: Proxy BearerToken)
+        : Elm.toElmDecoderSource (Proxy :: Proxy BearerToken)
+        : Elm.toElmEncoderSource (Proxy :: Proxy BearerToken)
+        --
         : Elm.toElmTypeSource    (Proxy :: Proxy ApiPortfolio)
         : Elm.toElmDecoderSource (Proxy :: Proxy ApiPortfolio)
         : Elm.toElmEncoderSource (Proxy :: Proxy ApiPortfolio)
@@ -72,11 +81,12 @@ spec =
         : Elm.toElmEncoderSource (Proxy :: Proxy ApiOhlcv)
         --
         : "type alias NoContent = {}"
-        : Servant.Elm.generateElmForAPIWith elmOpts  (Proxy :: Proxy WebServer.WebApi))
+        : Servant.Elm.generateElmForAPIWith elmOpts (Proxy :: Proxy ApiForFrontend)
+        )
 
 webApiDocs :: Servant.Docs.API
 webApiDocs =
-    Servant.Docs.docs WebServer.proxyWebApiServer
+    Servant.Docs.docs (Proxy :: Proxy ApiForDocument)
 
 webApiDocMarkdown :: String
 webApiDocMarkdown =

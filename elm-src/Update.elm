@@ -36,6 +36,7 @@ import Dom.Scroll
 import Material
 import Material.Layout as Layout
 import Maybe
+import Result
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Navigation
@@ -43,8 +44,38 @@ import PortfolioPage.Msg as PortfolioPage
 import PortfolioPage.Update as PortfolioPage
 import Route exposing (QueryCode, Route)
 import Task
+import Json.Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (required, decode)
 import UploadPage.Msg as UploadPage
 import UploadPage.Update as UploadPage
+import Generated.WebApi as WebApi
+import Jwt
+
+
+type alias JWTContents =
+    { dat : WebApi.OAuthReply
+    }
+
+
+decodeJWTContents : Decoder JWTContents
+decodeJWTContents =
+    decode JWTContents
+        |> required "dat" WebApi.decodeOAuthReply
+
+
+oauthRepFromReceivedJWT : String -> Maybe WebApi.OAuthReply
+oauthRepFromReceivedJWT jwt =
+    let
+        jwtContents : Result Jwt.JwtError JWTContents
+        jwtContents =
+            Jwt.decodeToken decodeJWTContents jwt
+    in
+        case jwtContents of
+            Ok a ->
+                Just a.dat
+
+            Err a ->
+                Debug.log (toString a) Nothing
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -52,32 +83,21 @@ update msg model =
     case msg of
         Msg.DoneOAuthExchangeCode result ->
             let
-                ( newModel, token ) =
-                    case result of
-                        Ok ok ->
-                            let
-                                m =
-                                    { model
-                                        | accessToken = Just ok.accessToken
-                                        , userName = Just ok.userName
-                                    }
-                            in
-                                ( m, Just ok.accessToken )
+                receivedToken =
+                    Maybe.map (\a -> a.getBearerToken) <| Result.toMaybe result
 
-                        Err _ ->
-                            let
-                                m =
-                                    { model
-                                        | accessToken = Nothing
-                                        , userName = Nothing
-                                    }
-                            in
-                                ( m, Nothing )
+                uname =
+                    receivedToken
+                        |> Maybe.andThen oauthRepFromReceivedJWT
+                        |> Maybe.map (\a -> a.userName)
+
+                newModel =
+                    { model | accessToken = receivedToken, userName = uname }
 
                 msgs =
-                    [ Msg.UploadPageMsg (UploadPage.ChangeAccessToken token)
-                    , Msg.PortfolioPageMsg (PortfolioPage.ChangeAccessToken token)
-                    , Msg.AnalyticsPageMsg (AnalyticsPage.ChangeAccessToken token)
+                    [ Msg.UploadPageMsg (UploadPage.ChangeAccessToken receivedToken)
+                    , Msg.PortfolioPageMsg (PortfolioPage.ChangeAccessToken receivedToken)
+                    , Msg.AnalyticsPageMsg (AnalyticsPage.ChangeAccessToken receivedToken)
                     ]
             in
                 newModel ! List.map (Task.perform identity << Task.succeed) msgs

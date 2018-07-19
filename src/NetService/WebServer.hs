@@ -36,8 +36,8 @@ Web API サーバーモジュールです
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NetService.WebServer
     ( runWebServer
-    , WebApi
-    , proxyWebApiServer
+    , ApiForFrontend
+    , ApiForDocument
     ) where
 import qualified Control.Concurrent.STM       as STM
 import qualified Control.Monad                as M
@@ -67,12 +67,15 @@ import qualified Network.URI                  as URI
 import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
 import           Servant                      ((:<|>) (..), (:>), Capture,
-                                               Delete, Get, Header, Header',
-                                               Headers, JSON, NoContent, Patch,
-                                               PostAccepted, Put, QueryParam,
-                                               QueryParam', Raw, ReqBody,
-                                               Required, Strict, Summary)
+                                               Context (..), Delete, Get,
+                                               Header, Header', Headers, JSON,
+                                               NoContent, Patch, PostAccepted,
+                                               Put, QueryParam, QueryParam',
+                                               Raw, ReqBody, Required, Strict,
+                                               Summary)
 import qualified Servant
+import           Servant.Auth.Server          (Auth)
+import qualified Servant.Auth.Server          as Auth
 import           Servant.CSV.Cassava          (CSV)
 import qualified Servant.Docs
 import qualified Servant.Elm
@@ -85,7 +88,9 @@ import qualified Conf
 import           Model                        (TimeFrame (..))
 import qualified Model
 import           NetService.ApiTypes          (ApiOhlcv, ApiPortfolio,
-                                               OAuthAccessResponse (..), SVG,
+                                               BearerToken (..),
+                                               OAuthAccessResponse (..),
+                                               OAuthReply (..), SVG,
                                                SvgBinary (..))
 import qualified NetService.ApiTypes          as ApiTypes
 import           NetService.HomePage          (HomePage (..))
@@ -95,6 +100,7 @@ import qualified NetService.PlotChart         as PlotChart
 -- このサーバーで使う設定情報
 data Config = Config
     { cVerRev :: ApiTypes.VerRev
+    , cJWTS   :: Auth.JWTSettings
     , cConf   :: Conf.Info
     , cPool   :: MySQL.ConnectionPool
     , cChan   :: ApiTypes.ServerTChan
@@ -197,77 +203,107 @@ instance Servant.Docs.ToSample T.Text where
 type AuthzValue     = T.Text
 type HAuthorization = Header' '[Required, Strict] "Authorization" AuthzValue
 
+type ApiForFrontend
+    = Summary "publish price on the zeroMQ infrastructure."
+        :> "api" :> "v1" :> "publish" :> "zmq" :> CMarketCode :> HAuthorization :> Put '[JSON] NoContent
+ :<|> Summary "This endpoint runs the crawler."
+        :> "api" :> "v1" :> "stocks" :> "history" :> "all" :> PostAccepted '[JSON] NoContent
+ :<|> Summary "Select prices"
+        :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
+ :<|> Summary "Insert prices"
+        :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
+ :<|> Summary "Update / Insert prices"
+        :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
+ :<|> Summary "Delete prices"
+        :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
+ :<|> "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> CTempCode :> Get '[JSON] BearerToken
+ :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
+ :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
+
+type ApiForDocument
+    = ApiForFrontend
+ :<|> Summary "Get Chart, suffix is only .svg"
+       :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
+
 -- |
 --
-type GetOAuthReply  = Get '[JSON] ApiTypes.OAuthReply
---
-type GetApiPortfolios = Get '[JSON] [ApiPortfolio]
---
-type GetApiOhlcvs   = QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
-type PutApiOhlcvs   = QTimeFrame :> HAuthorization :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
-type PatchApiOhlcv  = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
-type DeleteApiOhlcv = QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
+type Protected
+    = "api" :> "v1" :> "publish" :> "zmq" :> CMarketCode :> Put '[JSON] NoContent
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> "all" :> PostAccepted '[JSON] NoContent
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> Get '[JSON, CSV] [ApiOhlcv]
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
 
-type WebApiServer
+-- |
+--
+type Unprotected
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
- :<|> Summary "Get Chart, suffix is only .svg"
-   :> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
- --
- :<|> WebApi
+ :<|> "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> CTempCode :> Get '[JSON] BearerToken
+ :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
+ :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
+ :<|> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
 
 -- |
--- web front 接続用 JSON API
-type WebApi
-    = "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> CTempCode :> GetOAuthReply
- :<|> "api" :> "v1" :> "publish" :> "zmq" :> CMarketCode :> HAuthorization :> Put '[JSON] NoContent
- :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
- :<|> "api" :> "v1" :> "portfolios" :> GetApiPortfolios
- --
- :<|> Summary "This endpoint runs the crawler."
-   :> "api" :> "v1" :> "stocks" :> "history" :> "all" :> HAuthorization :> PostAccepted '[JSON] NoContent
- --
- :<|> Summary "Select prices"
-   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> GetApiOhlcvs
- :<|> Summary "Insert prices"
-   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PutApiOhlcvs
- :<|> Summary "Update / Insert prices"
-   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> PatchApiOhlcv
- :<|> Summary "Delete prices"
-   :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> DeleteApiOhlcv
+--
+protected :: Config -> Auth.AuthResult OAuthReply-> Servant.Server Protected
+protected cnf result =
+    case result of
+    Auth.Authenticated _ ->
+        publishZmqHandler cnf
+        :<|> updateHistoriesHandler cnf
+        :<|> getHistoriesHandler cnf
+        :<|> putHistoriesHandler cnf
+        :<|> patchHistoriesHandler cnf
+        :<|> deleteHistoriesHandler cnf
+    Auth.BadPassword ->
+        Auth.throwAll Servant.err401 { Servant.errBody = "bad password" }
+    Auth.NoSuchUser ->
+        Auth.throwAll Servant.err401 { Servant.errBody = "no such user" }
+    Auth.Indefinite ->
+        Auth.throwAll Servant.err401 { Servant.errBody = "indefinite" }
 
+-- |
 --
---
-webApiServer :: Config -> Servant.Server WebApiServer
-webApiServer cnf =
-    let clientID = Conf.clientID . Conf.slack . cConf $ cnf
-    in
-    return (HomePage clientID)
+unprotected :: Config -> Servant.Server Unprotected
+unprotected cnf
+    = return (HomePage clientID)
     :<|> Servant.serveDirectoryFileServer "elm-src/public"
-    :<|> getChartHandler cnf
-    --
     :<|> exchangeTempCodeHandler cnf
-    :<|> publishZmqHandler cnf
     :<|> return (cVerRev cnf)
     :<|> getPortfolioHandler cnf
-    --
-    :<|> updateHistoriesHandler cnf
-    :<|> getHistoriesHandler cnf
-    :<|> putHistoriesHandler cnf
-    :<|> patchHistoriesHandler cnf
-    :<|> deleteHistoriesHandler cnf
+    :<|> getChartHandler cnf
+    where
+    clientID = Conf.clientID . Conf.slack . cConf $ cnf
 
 -- |
 --
-allowed :: Config -> AuthzValue -> Bool
-allowed cnf value =
-    value == T.unwords ["Bearer", token]
-    where
-    token = Conf.oauthAccessToken . Conf.slack $ cConf cnf
+type WebApi = (Auth '[Auth.JWT] OAuthReply:> Protected) :<|> Unprotected
 
-authzFailed :: Config -> AuthzValue -> Bool
-authzFailed a b =
-    not (allowed a b)
+-- |
+--
+webApiServer :: Config -> Servant.Server WebApi
+webApiServer cfg = protected cfg :<|> unprotected cfg
+
+-- |
+-- Web API サーバーを起動する
+runWebServer :: ApiTypes.VerRev -> Conf.Info -> ApiTypes.ServerTChan -> IO ()
+runWebServer versionRevision conf chan = do
+    pool <- Logger.runStdoutLoggingT . runResourceT $ createPool
+    myKey <- Auth.generateKey
+    let api = Proxy :: Proxy WebApi
+        jwtCfg = Auth.defaultJWTSettings myKey
+        context = jwtCfg :. Auth.defaultCookieSettings :. Servant.EmptyContext
+        server = webApiServer (Config versionRevision jwtCfg conf pool chan)
+    Warp.runSettings settings (Servant.serveWithContext api context server)
+    where
+    --
+    --
+    createPool = MySQL.createMySQLPool connInfo poolSize
+    connInfo = Conf.connInfoDB $ Conf.mariaDB conf
+    poolSize = 8
+    settings = Warp.setPort 8739 Warp.defaultSettings
 
 --
 --
@@ -296,48 +332,45 @@ err500InternalServerError = Servant.throwError Servant.err500
 
 -- |
 -- 仮コードをアクセストークンに交換する
-exchangeTempCodeHandler :: Config
-                        -> TempCode
-                        -> Servant.Handler ApiTypes.OAuthReply
+exchangeTempCodeHandler :: Config -> TempCode -> Servant.Handler BearerToken
 exchangeTempCodeHandler cnf tempCode =
-    maybe err500InternalServerError go methodURI
+    case methodURI of
+    Just uri -> do
+        token <- maybe err401Unauthorized makeJWT =<< takeOAuthReply <$> doExchange uri
+        M.liftIO . putStrLn $ show token
+        return $ BearerToken token
+    Nothing ->
+        err500InternalServerError
     where
     --
     --
-    go uri = do
+    doExchange uri = M.liftIO $ do
         -- HTTPS接続ですよ
-        manager <- M.liftIO $ N.newManager N.tlsManagerSettings
+        manager <- N.newManager N.tlsManagerSettings
         -- Slack APIへアクセスする
-        httpsResp <- M.liftIO $ BB.fetchHTTP manager [contentType] Nothing [] uri
+        httpsResp <- BB.fetchHTTP manager [contentType] Nothing [] uri
         -- レスポンスボディにはJSON応答が入っている
         let json = N.responseBody httpsResp :: BL8.ByteString
         -- JSONをパースする
-        let response = Aeson.eitherDecode json
-        --
-        -- デバッグ用にコンソールに出す
-        --
-        M.liftIO $ do
-            print methodURI
-            print json
-            print response
-        --
-        --
-        --
-        maybe err401Unauthorized return $ pack response
+        return $ Aeson.eitherDecode json
     --
     --
-    pack    :: Either String OAuthAccessResponse
-            -> Maybe ApiTypes.OAuthReply
-    pack (Right r)
-        | respOk r = do
-            accessToken <- respAccessToken r
-            scope <- respScope r
-            userName <- respUserName r
-            Just ApiTypes.OAuthReply{..}
-        | otherwise =
-            Nothing
-    pack (Left _) =
-        Nothing
+    takeOAuthReply :: Either a ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.OAuthReply
+    takeOAuthReply x = do
+        y <- either (const Nothing) Just x
+        M.guard (respOk y)
+        accessToken <- respAccessToken y
+        scope <- respScope y
+        userName <- respUserName y
+        Just ApiTypes.OAuthReply{..}
+    --
+    --
+    makeJWT oauthrep =
+        either err ok =<< M.liftIO (Auth.makeJWT oauthrep settings Nothing)
+        where
+        settings = cJWTS cnf
+        err _ = err401Unauthorized
+        ok = pure . T.pack . BL8.unpack
     --
     --
     methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"
@@ -351,25 +384,21 @@ exchangeTempCodeHandler cnf tempCode =
 
 -- |
 --
-updateHistoriesHandler :: Config -> AuthzValue -> Servant.Handler Servant.NoContent
-updateHistoriesHandler cnf auth
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise = do
-        M.liftIO . Agency.updateSomeRates $ cConf cnf
-        return Servant.NoContent
+updateHistoriesHandler :: Config -> Servant.Handler Servant.NoContent
+updateHistoriesHandler cnf = do
+    M.liftIO . Agency.updateSomeRates $ cConf cnf
+    return Servant.NoContent
 
 -- |
 --
-publishZmqHandler :: Config -> MarketCode -> AuthzValue -> Servant.Handler Servant.NoContent
-publishZmqHandler cnf codeStr auth
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise =
-        case Model.toTickerSymbol codeStr of
-            Nothing ->
-                err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-            Just ts -> do
-                M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
-                return Servant.NoContent
+publishZmqHandler :: Config -> MarketCode -> Servant.Handler Servant.NoContent
+publishZmqHandler cnf codeStr =
+    case Model.toTickerSymbol codeStr of
+        Nothing ->
+            err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
+        Just ts -> do
+            M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
+            return Servant.NoContent
     where
     --
     --
@@ -397,11 +426,9 @@ getPortfolioHandler cnf =
 
 -- |
 --
-getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> Servant.Handler [ApiOhlcv]
-getHistoriesHandler cnf codeStr timeFrame auth
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise =
-        go $ Model.toTickerSymbol codeStr
+getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> Servant.Handler [ApiOhlcv]
+getHistoriesHandler cnf codeStr timeFrame =
+    go $ Model.toTickerSymbol codeStr
     where
     --
     --
@@ -422,10 +449,9 @@ getHistoriesHandler cnf codeStr timeFrame auth
 
 -- |
 -- 新規挿入(INSERT)
-putHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
-putHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise = go $ Model.toTickerSymbol codeStr
+putHistoriesHandler :: Config -> MarketCode -> TimeFrame -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+putHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
+    go $ Model.toTickerSymbol codeStr
     where
     --
     --
@@ -477,10 +503,9 @@ insertOhlcv pool ohlcv@Model.Ohlcv{..} =
 
 --- |
 -- 既存のデータを入れ替える(UPDATE / INSERT)
-patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
-patchHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise = go $ Model.toTickerSymbol codeStr
+patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+patchHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
+    go $ Model.toTickerSymbol codeStr
     where
     --
     --
@@ -531,10 +556,9 @@ insertOrUpdateOhlcv pool ohlcv@Model.Ohlcv{..} =
 
 -- |
 -- 既存のデータを削除する(DELETE)
-deleteHistoriesHandler :: Config -> MarketCode -> TimeFrame -> AuthzValue -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
-deleteHistoriesHandler cnf codeStr timeFrame auth apiOhlcvs
-    | authzFailed cnf auth = err401Unauthorized
-    | otherwise = go $ Model.toTickerSymbol codeStr
+deleteHistoriesHandler :: Config -> MarketCode -> TimeFrame -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+deleteHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
+    go $ Model.toTickerSymbol codeStr
     where
     --
     --
@@ -632,27 +656,4 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
                             ]
                             [DB.Desc Model.OhlcvAt
                             ,DB.LimitTo 100]
-
---
---
-proxyWebApiServer :: Proxy WebApiServer
-proxyWebApiServer = Proxy
-
---
---
-app :: Config -> Servant.Application
-app c =
-    Servant.serve proxyWebApiServer $ webApiServer c
-
--- |
--- Web API サーバーを起動する
-runWebServer :: ApiTypes.VerRev -> Conf.Info -> ApiTypes.ServerTChan -> IO ()
-runWebServer versionRevision conf chan = do
-    pool <- Logger.runStdoutLoggingT . runResourceT $ createPool
-    Warp.runSettings settings . app $ Config versionRevision conf pool chan
-    where
-    createPool = MySQL.createMySQLPool connInfo poolSize
-    connInfo = Conf.connInfoDB $ Conf.mariaDB conf
-    poolSize = 8
-    settings = Warp.setPort 8739 Warp.defaultSettings
 

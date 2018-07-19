@@ -76,6 +76,21 @@ encodeOAuthReply x =
         , ( "userName", Json.Encode.string x.userName )
         ]
 
+type alias BearerToken =
+    { getBearerToken : String
+    }
+
+decodeBearerToken : Decoder BearerToken
+decodeBearerToken =
+    decode BearerToken
+        |> required "getBearerToken" string
+
+encodeBearerToken : BearerToken -> Json.Encode.Value
+encodeBearerToken x =
+    Json.Encode.object
+        [ ( "getBearerToken", Json.Encode.string x.getBearerToken )
+        ]
+
 type alias ApiPortfolio =
     { code : String
     , caption : Maybe (String)
@@ -132,41 +147,15 @@ encodeApiOhlcv x =
 
 type alias NoContent = {}
 
-getApiV1ExchangeTemporaryCodeByTempCode : String -> Http.Request (OAuthReply)
-getApiV1ExchangeTemporaryCodeByTempCode capture_tempCode =
-    Http.request
-        { method =
-            "GET"
-        , headers =
-            []
-        , url =
-            String.join "/"
-                [ "https://tractor.ak1211.com"
-                , "api"
-                , "v1"
-                , "exchange"
-                , "temporary"
-                , "code"
-                , capture_tempCode |> Http.encodeUri
-                ]
-        , body =
-            Http.emptyBody
-        , expect =
-            Http.expectJson decodeOAuthReply
-        , timeout =
-            Nothing
-        , withCredentials =
-            False
-        }
-
 putApiV1PublishZmqByMarketCode : String -> String -> Http.Request (NoContent)
 putApiV1PublishZmqByMarketCode header_Authorization capture_marketCode =
     Http.request
         { method =
             "PUT"
         , headers =
-            [ Http.header "Authorization" header_Authorization
-            ]
+            List.filterMap identity
+                [ Maybe.map (Http.header "Authorization") (Just header_Authorization)
+                ]
         , url =
             String.join "/"
                 [ "https://tractor.ak1211.com"
@@ -186,6 +175,225 @@ putApiV1PublishZmqByMarketCode header_Authorization capture_marketCode =
                     else
                         Err "Expected the response body to be empty"
                 )
+        , timeout =
+            Nothing
+        , withCredentials =
+            False
+        }
+
+postApiV1StocksHistoryAll : Http.Request (NoContent)
+postApiV1StocksHistoryAll =
+    Http.request
+        { method =
+            "POST"
+        , headers =
+            []
+        , url =
+            String.join "/"
+                [ "https://tractor.ak1211.com"
+                , "api"
+                , "v1"
+                , "stocks"
+                , "history"
+                , "all"
+                ]
+        , body =
+            Http.emptyBody
+        , expect =
+            Http.expectStringResponse
+                (\{ body } ->
+                    if String.isEmpty body then
+                        Ok NoContent
+                    else
+                        Err "Expected the response body to be empty"
+                )
+        , timeout =
+            Nothing
+        , withCredentials =
+            False
+        }
+
+getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Http.Request (List (ApiOhlcv))
+getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf =
+    let
+        params =
+            List.filter (not << String.isEmpty)
+                [ Just query_tf
+                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
+                    |> Maybe.withDefault ""
+                ]
+    in
+        Http.request
+            { method =
+                "GET"
+            , headers =
+                List.filterMap identity
+                    [ Maybe.map (Http.header "Authorization") (Just header_Authorization)
+                    ]
+            , url =
+                String.join "/"
+                    [ "https://tractor.ak1211.com"
+                    , "api"
+                    , "v1"
+                    , "stocks"
+                    , "history"
+                    , capture_marketCode |> Http.encodeUri
+                    ]
+                ++ if List.isEmpty params then
+                       ""
+                   else
+                       "?" ++ String.join "&" params
+            , body =
+                Http.emptyBody
+            , expect =
+                Http.expectJson (list decodeApiOhlcv)
+            , timeout =
+                Nothing
+            , withCredentials =
+                False
+            }
+
+putApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> List (ApiOhlcv) -> Http.Request (List (ApiOhlcv))
+putApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
+    let
+        params =
+            List.filter (not << String.isEmpty)
+                [ Just query_tf
+                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
+                    |> Maybe.withDefault ""
+                ]
+    in
+        Http.request
+            { method =
+                "PUT"
+            , headers =
+                List.filterMap identity
+                    [ Maybe.map (Http.header "Authorization") (Just header_Authorization)
+                    ]
+            , url =
+                String.join "/"
+                    [ "https://tractor.ak1211.com"
+                    , "api"
+                    , "v1"
+                    , "stocks"
+                    , "history"
+                    , capture_marketCode |> Http.encodeUri
+                    ]
+                ++ if List.isEmpty params then
+                       ""
+                   else
+                       "?" ++ String.join "&" params
+            , body =
+                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
+            , expect =
+                Http.expectJson (list decodeApiOhlcv)
+            , timeout =
+                Nothing
+            , withCredentials =
+                False
+            }
+
+patchApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> List (ApiOhlcv) -> Http.Request (List (ApiOhlcv))
+patchApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
+    let
+        params =
+            List.filter (not << String.isEmpty)
+                [ Just query_tf
+                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
+                    |> Maybe.withDefault ""
+                ]
+    in
+        Http.request
+            { method =
+                "PATCH"
+            , headers =
+                List.filterMap identity
+                    [ Maybe.map (Http.header "Authorization") (Just header_Authorization)
+                    ]
+            , url =
+                String.join "/"
+                    [ "https://tractor.ak1211.com"
+                    , "api"
+                    , "v1"
+                    , "stocks"
+                    , "history"
+                    , capture_marketCode |> Http.encodeUri
+                    ]
+                ++ if List.isEmpty params then
+                       ""
+                   else
+                       "?" ++ String.join "&" params
+            , body =
+                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
+            , expect =
+                Http.expectJson (list decodeApiOhlcv)
+            , timeout =
+                Nothing
+            , withCredentials =
+                False
+            }
+
+deleteApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> List (ApiOhlcv) -> Http.Request (List (ApiOhlcv))
+deleteApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
+    let
+        params =
+            List.filter (not << String.isEmpty)
+                [ Just query_tf
+                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
+                    |> Maybe.withDefault ""
+                ]
+    in
+        Http.request
+            { method =
+                "DELETE"
+            , headers =
+                List.filterMap identity
+                    [ Maybe.map (Http.header "Authorization") (Just header_Authorization)
+                    ]
+            , url =
+                String.join "/"
+                    [ "https://tractor.ak1211.com"
+                    , "api"
+                    , "v1"
+                    , "stocks"
+                    , "history"
+                    , capture_marketCode |> Http.encodeUri
+                    ]
+                ++ if List.isEmpty params then
+                       ""
+                   else
+                       "?" ++ String.join "&" params
+            , body =
+                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
+            , expect =
+                Http.expectJson (list decodeApiOhlcv)
+            , timeout =
+                Nothing
+            , withCredentials =
+                False
+            }
+
+getApiV1ExchangeTemporaryCodeByTempCode : String -> Http.Request (BearerToken)
+getApiV1ExchangeTemporaryCodeByTempCode capture_tempCode =
+    Http.request
+        { method =
+            "GET"
+        , headers =
+            []
+        , url =
+            String.join "/"
+                [ "https://tractor.ak1211.com"
+                , "api"
+                , "v1"
+                , "exchange"
+                , "temporary"
+                , "code"
+                , capture_tempCode |> Http.encodeUri
+                ]
+        , body =
+            Http.emptyBody
+        , expect =
+            Http.expectJson decodeBearerToken
         , timeout =
             Nothing
         , withCredentials =
@@ -239,192 +447,3 @@ getApiV1Portfolios =
         , withCredentials =
             False
         }
-
-postApiV1StocksHistoryAll : String -> Http.Request (NoContent)
-postApiV1StocksHistoryAll header_Authorization =
-    Http.request
-        { method =
-            "POST"
-        , headers =
-            [ Http.header "Authorization" header_Authorization
-            ]
-        , url =
-            String.join "/"
-                [ "https://tractor.ak1211.com"
-                , "api"
-                , "v1"
-                , "stocks"
-                , "history"
-                , "all"
-                ]
-        , body =
-            Http.emptyBody
-        , expect =
-            Http.expectStringResponse
-                (\{ body } ->
-                    if String.isEmpty body then
-                        Ok NoContent
-                    else
-                        Err "Expected the response body to be empty"
-                )
-        , timeout =
-            Nothing
-        , withCredentials =
-            False
-        }
-
-getApiV1StocksHistoryByMarketCode : String -> String -> Maybe (TimeFrame) -> Http.Request (List (ApiOhlcv))
-getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf =
-    let
-        params =
-            List.filter (not << String.isEmpty)
-                [ query_tf
-                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
-                    |> Maybe.withDefault ""
-                ]
-    in
-        Http.request
-            { method =
-                "GET"
-            , headers =
-                [ Http.header "Authorization" header_Authorization
-                ]
-            , url =
-                String.join "/"
-                    [ "https://tractor.ak1211.com"
-                    , "api"
-                    , "v1"
-                    , "stocks"
-                    , "history"
-                    , capture_marketCode |> Http.encodeUri
-                    ]
-                ++ if List.isEmpty params then
-                       ""
-                   else
-                       "?" ++ String.join "&" params
-            , body =
-                Http.emptyBody
-            , expect =
-                Http.expectJson (list decodeApiOhlcv)
-            , timeout =
-                Nothing
-            , withCredentials =
-                False
-            }
-
-putApiV1StocksHistoryByMarketCode : String -> String -> Maybe (TimeFrame) -> List (ApiOhlcv) -> Http.Request (List (ApiOhlcv))
-putApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
-    let
-        params =
-            List.filter (not << String.isEmpty)
-                [ query_tf
-                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
-                    |> Maybe.withDefault ""
-                ]
-    in
-        Http.request
-            { method =
-                "PUT"
-            , headers =
-                [ Http.header "Authorization" header_Authorization
-                ]
-            , url =
-                String.join "/"
-                    [ "https://tractor.ak1211.com"
-                    , "api"
-                    , "v1"
-                    , "stocks"
-                    , "history"
-                    , capture_marketCode |> Http.encodeUri
-                    ]
-                ++ if List.isEmpty params then
-                       ""
-                   else
-                       "?" ++ String.join "&" params
-            , body =
-                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
-            , expect =
-                Http.expectJson (list decodeApiOhlcv)
-            , timeout =
-                Nothing
-            , withCredentials =
-                False
-            }
-
-patchApiV1StocksHistoryByMarketCode : String -> String -> Maybe (TimeFrame) -> List (ApiOhlcv) -> Http.Request (List (ApiOhlcv))
-patchApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
-    let
-        params =
-            List.filter (not << String.isEmpty)
-                [ query_tf
-                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
-                    |> Maybe.withDefault ""
-                ]
-    in
-        Http.request
-            { method =
-                "PATCH"
-            , headers =
-                [ Http.header "Authorization" header_Authorization
-                ]
-            , url =
-                String.join "/"
-                    [ "https://tractor.ak1211.com"
-                    , "api"
-                    , "v1"
-                    , "stocks"
-                    , "history"
-                    , capture_marketCode |> Http.encodeUri
-                    ]
-                ++ if List.isEmpty params then
-                       ""
-                   else
-                       "?" ++ String.join "&" params
-            , body =
-                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
-            , expect =
-                Http.expectJson (list decodeApiOhlcv)
-            , timeout =
-                Nothing
-            , withCredentials =
-                False
-            }
-
-deleteApiV1StocksHistoryByMarketCode : String -> String -> Maybe (TimeFrame) -> List (ApiOhlcv) -> Http.Request (List (ApiOhlcv))
-deleteApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf body =
-    let
-        params =
-            List.filter (not << String.isEmpty)
-                [ query_tf
-                    |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
-                    |> Maybe.withDefault ""
-                ]
-    in
-        Http.request
-            { method =
-                "DELETE"
-            , headers =
-                [ Http.header "Authorization" header_Authorization
-                ]
-            , url =
-                String.join "/"
-                    [ "https://tractor.ak1211.com"
-                    , "api"
-                    , "v1"
-                    , "stocks"
-                    , "history"
-                    , capture_marketCode |> Http.encodeUri
-                    ]
-                ++ if List.isEmpty params then
-                       ""
-                   else
-                       "?" ++ String.join "&" params
-            , body =
-                Http.jsonBody ((Json.Encode.list << List.map encodeApiOhlcv) body)
-            , expect =
-                Http.expectJson (list decodeApiOhlcv)
-            , timeout =
-                Nothing
-            , withCredentials =
-                False
-            }

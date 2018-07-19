@@ -90,4 +90,4 @@ getHistories token marketCode =
             WebApi.makeAuthorizationHeader token
     in
         Http.send (AnalyticsPage.UpdateHistories marketCode) <|
-            WebApi.getApiV1StocksHistoryByMarketCode authzHeader marketCode (Just "1d")
+            WebApi.getApiV1StocksHistoryByMarketCode authzHeader marketCode "1d"

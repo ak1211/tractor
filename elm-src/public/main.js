@@ -6733,6 +6733,18 @@ var _ak1211$tractor$Generated_WebApi$encodeApiPortfolio = function (x) {
 			}
 		});
 };
+var _ak1211$tractor$Generated_WebApi$encodeBearerToken = function (x) {
+	return _elm_lang$core$Json_Encode$object(
+		{
+			ctor: '::',
+			_0: {
+				ctor: '_Tuple2',
+				_0: 'getBearerToken',
+				_1: _elm_lang$core$Json_Encode$string(x.getBearerToken)
+			},
+			_1: {ctor: '[]'}
+		});
+};
 var _ak1211$tractor$Generated_WebApi$encodeOAuthReply = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
@@ -6915,6 +6927,14 @@ var _ak1211$tractor$Generated_WebApi$decodeOAuthReply = A3(
 			'accessToken',
 			_elm_lang$core$Json_Decode$string,
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$OAuthReply))));
+var _ak1211$tractor$Generated_WebApi$BearerToken = function (a) {
+	return {getBearerToken: a};
+};
+var _ak1211$tractor$Generated_WebApi$decodeBearerToken = A3(
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+	'getBearerToken',
+	_elm_lang$core$Json_Decode$string,
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$BearerToken));
 var _ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode = function (capture_tempCode) {
 	return _elm_lang$http$Http$request(
 		{
@@ -6953,7 +6973,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode = f
 					}
 				}),
 			body: _elm_lang$http$Http$emptyBody,
-			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeOAuthReply),
+			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeBearerToken),
 			timeout: _elm_lang$core$Maybe$Nothing,
 			withCredentials: false
 		});
@@ -7062,17 +7082,23 @@ var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
 								_elm_lang$http$Http$encodeUri(
 									_elm_lang$core$Basics$toString(_p8)));
 						},
-						query_tf)),
+						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
 			});
 		return _elm_lang$http$Http$request(
 			{
 				method: 'GET',
-				headers: {
-					ctor: '::',
-					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-					_1: {ctor: '[]'}
-				},
+				headers: A2(
+					_elm_lang$core$List$filterMap,
+					_elm_lang$core$Basics$identity,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Maybe$map,
+							_elm_lang$http$Http$header('Authorization'),
+							_elm_lang$core$Maybe$Just(header_Authorization)),
+						_1: {ctor: '[]'}
+					}),
 				url: A2(
 					_elm_lang$core$Basics_ops['++'],
 					A2(
@@ -7138,17 +7164,23 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 								_elm_lang$http$Http$encodeUri(
 									_elm_lang$core$Basics$toString(_p10)));
 						},
-						query_tf)),
+						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
 			});
 		return _elm_lang$http$Http$request(
 			{
 				method: 'PUT',
-				headers: {
-					ctor: '::',
-					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-					_1: {ctor: '[]'}
-				},
+				headers: A2(
+					_elm_lang$core$List$filterMap,
+					_elm_lang$core$Basics$identity,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Maybe$map,
+							_elm_lang$http$Http$header('Authorization'),
+							_elm_lang$core$Maybe$Just(header_Authorization)),
+						_1: {ctor: '[]'}
+					}),
 				url: A2(
 					_elm_lang$core$Basics_ops['++'],
 					A2(
@@ -7218,17 +7250,23 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 								_elm_lang$http$Http$encodeUri(
 									_elm_lang$core$Basics$toString(_p13)));
 						},
-						query_tf)),
+						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
 			});
 		return _elm_lang$http$Http$request(
 			{
 				method: 'PATCH',
-				headers: {
-					ctor: '::',
-					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-					_1: {ctor: '[]'}
-				},
+				headers: A2(
+					_elm_lang$core$List$filterMap,
+					_elm_lang$core$Basics$identity,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Maybe$map,
+							_elm_lang$http$Http$header('Authorization'),
+							_elm_lang$core$Maybe$Just(header_Authorization)),
+						_1: {ctor: '[]'}
+					}),
 				url: A2(
 					_elm_lang$core$Basics_ops['++'],
 					A2(
@@ -7298,17 +7336,23 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 								_elm_lang$http$Http$encodeUri(
 									_elm_lang$core$Basics$toString(_p16)));
 						},
-						query_tf)),
+						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
 			});
 		return _elm_lang$http$Http$request(
 			{
 				method: 'DELETE',
-				headers: {
-					ctor: '::',
-					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-					_1: {ctor: '[]'}
-				},
+				headers: A2(
+					_elm_lang$core$List$filterMap,
+					_elm_lang$core$Basics$identity,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Maybe$map,
+							_elm_lang$http$Http$header('Authorization'),
+							_elm_lang$core$Maybe$Just(header_Authorization)),
+						_1: {ctor: '[]'}
+					}),
 				url: A2(
 					_elm_lang$core$Basics_ops['++'],
 					A2(
@@ -7360,11 +7404,17 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByMarketCode = F2(
 		return _elm_lang$http$Http$request(
 			{
 				method: 'PUT',
-				headers: {
-					ctor: '::',
-					_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-					_1: {ctor: '[]'}
-				},
+				headers: A2(
+					_elm_lang$core$List$filterMap,
+					_elm_lang$core$Basics$identity,
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Maybe$map,
+							_elm_lang$http$Http$header('Authorization'),
+							_elm_lang$core$Maybe$Just(header_Authorization)),
+						_1: {ctor: '[]'}
+					}),
 				url: A2(
 					_elm_lang$core$String$join,
 					'/',
@@ -7403,53 +7453,47 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByMarketCode = F2(
 				withCredentials: false
 			});
 	});
-var _ak1211$tractor$Generated_WebApi$postApiV1StocksHistoryAll = function (header_Authorization) {
-	return _elm_lang$http$Http$request(
-		{
-			method: 'POST',
-			headers: {
+var _ak1211$tractor$Generated_WebApi$postApiV1StocksHistoryAll = _elm_lang$http$Http$request(
+	{
+		method: 'POST',
+		headers: {ctor: '[]'},
+		url: A2(
+			_elm_lang$core$String$join,
+			'/',
+			{
 				ctor: '::',
-				_0: A2(_elm_lang$http$Http$header, 'Authorization', header_Authorization),
-				_1: {ctor: '[]'}
-			},
-			url: A2(
-				_elm_lang$core$String$join,
-				'/',
-				{
+				_0: 'https://tractor.ak1211.com',
+				_1: {
 					ctor: '::',
-					_0: 'https://tractor.ak1211.com',
+					_0: 'api',
 					_1: {
 						ctor: '::',
-						_0: 'api',
+						_0: 'v1',
 						_1: {
 							ctor: '::',
-							_0: 'v1',
+							_0: 'stocks',
 							_1: {
 								ctor: '::',
-								_0: 'stocks',
+								_0: 'history',
 								_1: {
 									ctor: '::',
-									_0: 'history',
-									_1: {
-										ctor: '::',
-										_0: 'all',
-										_1: {ctor: '[]'}
-									}
+									_0: 'all',
+									_1: {ctor: '[]'}
 								}
 							}
 						}
 					}
-				}),
-			body: _elm_lang$http$Http$emptyBody,
-			expect: _elm_lang$http$Http$expectStringResponse(
-				function (_p20) {
-					var _p21 = _p20;
-					return _elm_lang$core$String$isEmpty(_p21.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
-				}),
-			timeout: _elm_lang$core$Maybe$Nothing,
-			withCredentials: false
-		});
-};
+				}
+			}),
+		body: _elm_lang$http$Http$emptyBody,
+		expect: _elm_lang$http$Http$expectStringResponse(
+			function (_p20) {
+				var _p21 = _p20;
+				return _elm_lang$core$String$isEmpty(_p21.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+			}),
+		timeout: _elm_lang$core$Maybe$Nothing,
+		withCredentials: false
+	});
 
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrap;
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrapWithFlags;
@@ -17013,11 +17057,7 @@ var _ak1211$tractor$AnalyticsPage_Update$getHistories = F2(
 		return A2(
 			_elm_lang$http$Http$send,
 			_ak1211$tractor$AnalyticsPage_Msg$UpdateHistories(marketCode),
-			A3(
-				_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode,
-				authzHeader,
-				marketCode,
-				_elm_lang$core$Maybe$Just('1d')));
+			A3(_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode, authzHeader, marketCode, '1d'));
 	});
 var _ak1211$tractor$AnalyticsPage_Update$update = F2(
 	function (msg, model) {
@@ -19159,12 +19199,7 @@ var _ak1211$tractor$UploadPage_Update$putOhlcv = F4(
 		return A2(
 			_elm_lang$http$Http$send,
 			_ak1211$tractor$UploadPage_Msg$DoneUploadContent,
-			A4(
-				_ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode,
-				authzHeader,
-				marketCode,
-				_elm_lang$core$Maybe$Just(timeFrame),
-				ohlcvs));
+			A4(_ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode, authzHeader, marketCode, timeFrame, ohlcvs));
 	});
 var _ak1211$tractor$UploadPage_Update$toOhlcvt = F2(
 	function (tf, records) {
@@ -19503,6 +19538,837 @@ var _ak1211$tractor$UploadPage_Update$update = F2(
 		}
 	});
 
+var _elm_lang$core$Native_Bitwise = function() {
+
+return {
+	and: F2(function and(a, b) { return a & b; }),
+	or: F2(function or(a, b) { return a | b; }),
+	xor: F2(function xor(a, b) { return a ^ b; }),
+	complement: function complement(a) { return ~a; },
+	shiftLeftBy: F2(function(offset, a) { return a << offset; }),
+	shiftRightBy: F2(function(offset, a) { return a >> offset; }),
+	shiftRightZfBy: F2(function(offset, a) { return a >>> offset; })
+};
+
+}();
+
+var _elm_lang$core$Bitwise$shiftRightZfBy = _elm_lang$core$Native_Bitwise.shiftRightZfBy;
+var _elm_lang$core$Bitwise$shiftRightBy = _elm_lang$core$Native_Bitwise.shiftRightBy;
+var _elm_lang$core$Bitwise$shiftLeftBy = _elm_lang$core$Native_Bitwise.shiftLeftBy;
+var _elm_lang$core$Bitwise$complement = _elm_lang$core$Native_Bitwise.complement;
+var _elm_lang$core$Bitwise$xor = _elm_lang$core$Native_Bitwise.xor;
+var _elm_lang$core$Bitwise$or = _elm_lang$core$Native_Bitwise.or;
+var _elm_lang$core$Bitwise$and = _elm_lang$core$Native_Bitwise.and;
+
+var _truqu$elm_base64$Base64_Decode$charToInt = function ($char) {
+	var _p0 = $char;
+	switch (_p0.valueOf()) {
+		case 'A':
+			return 0;
+		case 'B':
+			return 1;
+		case 'C':
+			return 2;
+		case 'D':
+			return 3;
+		case 'E':
+			return 4;
+		case 'F':
+			return 5;
+		case 'G':
+			return 6;
+		case 'H':
+			return 7;
+		case 'I':
+			return 8;
+		case 'J':
+			return 9;
+		case 'K':
+			return 10;
+		case 'L':
+			return 11;
+		case 'M':
+			return 12;
+		case 'N':
+			return 13;
+		case 'O':
+			return 14;
+		case 'P':
+			return 15;
+		case 'Q':
+			return 16;
+		case 'R':
+			return 17;
+		case 'S':
+			return 18;
+		case 'T':
+			return 19;
+		case 'U':
+			return 20;
+		case 'V':
+			return 21;
+		case 'W':
+			return 22;
+		case 'X':
+			return 23;
+		case 'Y':
+			return 24;
+		case 'Z':
+			return 25;
+		case 'a':
+			return 26;
+		case 'b':
+			return 27;
+		case 'c':
+			return 28;
+		case 'd':
+			return 29;
+		case 'e':
+			return 30;
+		case 'f':
+			return 31;
+		case 'g':
+			return 32;
+		case 'h':
+			return 33;
+		case 'i':
+			return 34;
+		case 'j':
+			return 35;
+		case 'k':
+			return 36;
+		case 'l':
+			return 37;
+		case 'm':
+			return 38;
+		case 'n':
+			return 39;
+		case 'o':
+			return 40;
+		case 'p':
+			return 41;
+		case 'q':
+			return 42;
+		case 'r':
+			return 43;
+		case 's':
+			return 44;
+		case 't':
+			return 45;
+		case 'u':
+			return 46;
+		case 'v':
+			return 47;
+		case 'w':
+			return 48;
+		case 'x':
+			return 49;
+		case 'y':
+			return 50;
+		case 'z':
+			return 51;
+		case '0':
+			return 52;
+		case '1':
+			return 53;
+		case '2':
+			return 54;
+		case '3':
+			return 55;
+		case '4':
+			return 56;
+		case '5':
+			return 57;
+		case '6':
+			return 58;
+		case '7':
+			return 59;
+		case '8':
+			return 60;
+		case '9':
+			return 61;
+		case '+':
+			return 62;
+		case '/':
+			return 63;
+		default:
+			return 0;
+	}
+};
+var _truqu$elm_base64$Base64_Decode$intToString = function ($int) {
+	if (_elm_lang$core$Native_Utils.cmp($int, 65536) < 1) {
+		return _elm_lang$core$String$fromChar(
+			_elm_lang$core$Char$fromCode($int));
+	} else {
+		var c = $int - 65536;
+		return _elm_lang$core$String$fromList(
+			{
+				ctor: '::',
+				_0: _elm_lang$core$Char$fromCode(55296 | (c >>> 10)),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$core$Char$fromCode(56320 | (1023 & c)),
+					_1: {ctor: '[]'}
+				}
+			});
+	}
+};
+var _truqu$elm_base64$Base64_Decode$add = F2(
+	function ($char, _p1) {
+		var _p2 = _p1;
+		var _p4 = _p2._2;
+		var _p3 = _p2._1;
+		var shiftAndAdd = function ($int) {
+			return (63 & $int) | (_p2._0 << 6);
+		};
+		return _elm_lang$core$Native_Utils.eq(_p3, 0) ? (_elm_lang$core$Native_Utils.eq(128 & $char, 0) ? {
+			ctor: '_Tuple3',
+			_0: 0,
+			_1: 0,
+			_2: A2(
+				_elm_lang$core$Basics_ops['++'],
+				_p4,
+				_truqu$elm_base64$Base64_Decode$intToString($char))
+		} : (_elm_lang$core$Native_Utils.eq(224 & $char, 192) ? {ctor: '_Tuple3', _0: 31 & $char, _1: 1, _2: _p4} : (_elm_lang$core$Native_Utils.eq(240 & $char, 224) ? {ctor: '_Tuple3', _0: 15 & $char, _1: 2, _2: _p4} : {ctor: '_Tuple3', _0: 7 & $char, _1: 3, _2: _p4}))) : (_elm_lang$core$Native_Utils.eq(_p3, 1) ? {
+			ctor: '_Tuple3',
+			_0: 0,
+			_1: 0,
+			_2: A2(
+				_elm_lang$core$Basics_ops['++'],
+				_p4,
+				_truqu$elm_base64$Base64_Decode$intToString(
+					shiftAndAdd($char)))
+		} : {
+			ctor: '_Tuple3',
+			_0: shiftAndAdd($char),
+			_1: _p3 - 1,
+			_2: _p4
+		});
+	});
+var _truqu$elm_base64$Base64_Decode$toUTF16 = F2(
+	function ($char, acc) {
+		return {
+			ctor: '_Tuple3',
+			_0: 0,
+			_1: 0,
+			_2: A2(
+				_truqu$elm_base64$Base64_Decode$add,
+				255 & ($char >>> 0),
+				A2(
+					_truqu$elm_base64$Base64_Decode$add,
+					255 & ($char >>> 8),
+					A2(_truqu$elm_base64$Base64_Decode$add, 255 & ($char >>> 16), acc)))
+		};
+	});
+var _truqu$elm_base64$Base64_Decode$chomp = F2(
+	function (char_, _p5) {
+		var _p6 = _p5;
+		var _p10 = _p6._2;
+		var _p9 = _p6._0;
+		var _p8 = _p6._1;
+		var $char = _truqu$elm_base64$Base64_Decode$charToInt(char_);
+		var _p7 = _p8;
+		if (_p7 === 3) {
+			return A2(_truqu$elm_base64$Base64_Decode$toUTF16, _p9 | $char, _p10);
+		} else {
+			return {ctor: '_Tuple3', _0: ($char << ((3 - _p8) * 6)) | _p9, _1: _p8 + 1, _2: _p10};
+		}
+	});
+var _truqu$elm_base64$Base64_Decode$initial = {
+	ctor: '_Tuple3',
+	_0: 0,
+	_1: 0,
+	_2: {ctor: '_Tuple3', _0: 0, _1: 0, _2: ''}
+};
+var _truqu$elm_base64$Base64_Decode$wrapUp = function (_p11) {
+	var _p12 = _p11;
+	return (_elm_lang$core$Native_Utils.cmp(_p12._2._1, 0) > 0) ? _elm_lang$core$Result$Err('Invalid UTF-16') : _elm_lang$core$Result$Ok(_p12._2._2);
+};
+var _truqu$elm_base64$Base64_Decode$stripNulls = F2(
+	function (input, output) {
+		return A2(_elm_lang$core$String$endsWith, '==', input) ? A2(_elm_lang$core$String$dropRight, 2, output) : (A2(_elm_lang$core$String$endsWith, '=', input) ? A2(_elm_lang$core$String$dropRight, 1, output) : output);
+	});
+var _truqu$elm_base64$Base64_Decode$validBase64Regex = _elm_lang$core$Regex$regex('^([A-Za-z0-9\\/+]{4})*([A-Za-z0-9\\/+]{2}[A-Za-z0-9\\/+=]{2})?$');
+var _truqu$elm_base64$Base64_Decode$validate = function (input) {
+	return A2(_elm_lang$core$Regex$contains, _truqu$elm_base64$Base64_Decode$validBase64Regex, input) ? _elm_lang$core$Result$Ok(input) : _elm_lang$core$Result$Err('Invalid base64');
+};
+var _truqu$elm_base64$Base64_Decode$pad = function (input) {
+	var _p13 = A2(
+		_elm_lang$core$Basics$rem,
+		_elm_lang$core$String$length(input),
+		4);
+	switch (_p13) {
+		case 3:
+			return A2(_elm_lang$core$Basics_ops['++'], input, '=');
+		case 2:
+			return A2(_elm_lang$core$Basics_ops['++'], input, '==');
+		default:
+			return input;
+	}
+};
+var _truqu$elm_base64$Base64_Decode$validateAndDecode = function (input) {
+	return A2(
+		_elm_lang$core$Result$map,
+		_truqu$elm_base64$Base64_Decode$stripNulls(input),
+		A2(
+			_elm_lang$core$Result$andThen,
+			function (_p14) {
+				return _truqu$elm_base64$Base64_Decode$wrapUp(
+					A3(_elm_lang$core$String$foldl, _truqu$elm_base64$Base64_Decode$chomp, _truqu$elm_base64$Base64_Decode$initial, _p14));
+			},
+			_truqu$elm_base64$Base64_Decode$validate(input)));
+};
+var _truqu$elm_base64$Base64_Decode$decode = function (_p15) {
+	return _truqu$elm_base64$Base64_Decode$validateAndDecode(
+		_truqu$elm_base64$Base64_Decode$pad(_p15));
+};
+
+var _truqu$elm_base64$Base64_Encode$intToBase64 = function (i) {
+	var _p0 = i;
+	switch (_p0) {
+		case 0:
+			return 'A';
+		case 1:
+			return 'B';
+		case 2:
+			return 'C';
+		case 3:
+			return 'D';
+		case 4:
+			return 'E';
+		case 5:
+			return 'F';
+		case 6:
+			return 'G';
+		case 7:
+			return 'H';
+		case 8:
+			return 'I';
+		case 9:
+			return 'J';
+		case 10:
+			return 'K';
+		case 11:
+			return 'L';
+		case 12:
+			return 'M';
+		case 13:
+			return 'N';
+		case 14:
+			return 'O';
+		case 15:
+			return 'P';
+		case 16:
+			return 'Q';
+		case 17:
+			return 'R';
+		case 18:
+			return 'S';
+		case 19:
+			return 'T';
+		case 20:
+			return 'U';
+		case 21:
+			return 'V';
+		case 22:
+			return 'W';
+		case 23:
+			return 'X';
+		case 24:
+			return 'Y';
+		case 25:
+			return 'Z';
+		case 26:
+			return 'a';
+		case 27:
+			return 'b';
+		case 28:
+			return 'c';
+		case 29:
+			return 'd';
+		case 30:
+			return 'e';
+		case 31:
+			return 'f';
+		case 32:
+			return 'g';
+		case 33:
+			return 'h';
+		case 34:
+			return 'i';
+		case 35:
+			return 'j';
+		case 36:
+			return 'k';
+		case 37:
+			return 'l';
+		case 38:
+			return 'm';
+		case 39:
+			return 'n';
+		case 40:
+			return 'o';
+		case 41:
+			return 'p';
+		case 42:
+			return 'q';
+		case 43:
+			return 'r';
+		case 44:
+			return 's';
+		case 45:
+			return 't';
+		case 46:
+			return 'u';
+		case 47:
+			return 'v';
+		case 48:
+			return 'w';
+		case 49:
+			return 'x';
+		case 50:
+			return 'y';
+		case 51:
+			return 'z';
+		case 52:
+			return '0';
+		case 53:
+			return '1';
+		case 54:
+			return '2';
+		case 55:
+			return '3';
+		case 56:
+			return '4';
+		case 57:
+			return '5';
+		case 58:
+			return '6';
+		case 59:
+			return '7';
+		case 60:
+			return '8';
+		case 61:
+			return '9';
+		case 62:
+			return '+';
+		default:
+			return '/';
+	}
+};
+var _truqu$elm_base64$Base64_Encode$toBase64 = function ($int) {
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_truqu$elm_base64$Base64_Encode$intToBase64(63 & ($int >>> 18)),
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			_truqu$elm_base64$Base64_Encode$intToBase64(63 & ($int >>> 12)),
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_truqu$elm_base64$Base64_Encode$intToBase64(63 & ($int >>> 6)),
+				_truqu$elm_base64$Base64_Encode$intToBase64(63 & ($int >>> 0)))));
+};
+var _truqu$elm_base64$Base64_Encode$add = F2(
+	function ($char, _p1) {
+		var _p2 = _p1;
+		var _p5 = _p2._0;
+		var _p4 = _p2._1;
+		var current = (_p2._2 << 8) | $char;
+		var _p3 = _p4;
+		if (_p3 === 2) {
+			return {
+				ctor: '_Tuple3',
+				_0: A2(
+					_elm_lang$core$Basics_ops['++'],
+					_p5,
+					_truqu$elm_base64$Base64_Encode$toBase64(current)),
+				_1: 0,
+				_2: 0
+			};
+		} else {
+			return {ctor: '_Tuple3', _0: _p5, _1: _p4 + 1, _2: current};
+		}
+	});
+var _truqu$elm_base64$Base64_Encode$chomp = F2(
+	function (char_, _p6) {
+		var _p7 = _p6;
+		var _p9 = _p7._1;
+		var $char = _elm_lang$core$Char$toCode(char_);
+		var _p8 = _p7._0;
+		if (_p8.ctor === 'Nothing') {
+			return (_elm_lang$core$Native_Utils.cmp($char, 128) < 0) ? {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Maybe$Nothing,
+				_1: A2(_truqu$elm_base64$Base64_Encode$add, $char, _p9)
+			} : ((_elm_lang$core$Native_Utils.cmp($char, 2048) < 0) ? {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Maybe$Nothing,
+				_1: A2(
+					_truqu$elm_base64$Base64_Encode$add,
+					128 | (63 & $char),
+					A2(_truqu$elm_base64$Base64_Encode$add, 192 | ($char >>> 6), _p9))
+			} : (((_elm_lang$core$Native_Utils.cmp($char, 55296) < 0) || (_elm_lang$core$Native_Utils.cmp($char, 57344) > -1)) ? {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Maybe$Nothing,
+				_1: A2(
+					_truqu$elm_base64$Base64_Encode$add,
+					128 | (63 & $char),
+					A2(
+						_truqu$elm_base64$Base64_Encode$add,
+						128 | (63 & ($char >>> 6)),
+						A2(_truqu$elm_base64$Base64_Encode$add, 224 | ($char >>> 12), _p9)))
+			} : {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Maybe$Just($char),
+				_1: _p9
+			}));
+		} else {
+			var combined = A2(
+				F2(
+					function (x, y) {
+						return x + y;
+					}),
+				65536,
+				(1023 & $char) | ((1023 & _p8._0) << 10));
+			return {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Maybe$Nothing,
+				_1: A2(
+					_truqu$elm_base64$Base64_Encode$add,
+					128 | (63 & combined),
+					A2(
+						_truqu$elm_base64$Base64_Encode$add,
+						128 | (63 & (combined >>> 6)),
+						A2(
+							_truqu$elm_base64$Base64_Encode$add,
+							128 | (63 & (combined >>> 12)),
+							A2(_truqu$elm_base64$Base64_Encode$add, 240 | (combined >>> 18), _p9))))
+			};
+		}
+	});
+var _truqu$elm_base64$Base64_Encode$wrapUp = function (_p10) {
+	var _p11 = _p10;
+	var _p14 = _p11._1._0;
+	var _p13 = _p11._1._2;
+	var _p12 = _p11._1._1;
+	switch (_p12) {
+		case 1:
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				_p14,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_truqu$elm_base64$Base64_Encode$intToBase64(63 & (_p13 >>> 2)),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_truqu$elm_base64$Base64_Encode$intToBase64(63 & (_p13 << 4)),
+						'==')));
+		case 2:
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				_p14,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_truqu$elm_base64$Base64_Encode$intToBase64(63 & (_p13 >>> 10)),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_truqu$elm_base64$Base64_Encode$intToBase64(63 & (_p13 >>> 4)),
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_truqu$elm_base64$Base64_Encode$intToBase64(63 & (_p13 << 2)),
+							'='))));
+		default:
+			return _p14;
+	}
+};
+var _truqu$elm_base64$Base64_Encode$initial = {
+	ctor: '_Tuple2',
+	_0: _elm_lang$core$Maybe$Nothing,
+	_1: {ctor: '_Tuple3', _0: '', _1: 0, _2: 0}
+};
+var _truqu$elm_base64$Base64_Encode$encode = function (input) {
+	return _truqu$elm_base64$Base64_Encode$wrapUp(
+		A3(_elm_lang$core$String$foldl, _truqu$elm_base64$Base64_Encode$chomp, _truqu$elm_base64$Base64_Encode$initial, input));
+};
+
+var _truqu$elm_base64$Base64$decode = _truqu$elm_base64$Base64_Decode$decode;
+var _truqu$elm_base64$Base64$encode = _truqu$elm_base64$Base64_Encode$encode;
+
+var _simonh1000$elm_jwt$Jwt$authenticate = F3(
+	function (url, dec, credentials) {
+		return A3(
+			_elm_lang$http$Http$post,
+			url,
+			_elm_lang$http$Http$jsonBody(credentials),
+			dec);
+	});
+var _simonh1000$elm_jwt$Jwt$createRequestObject = F5(
+	function (method, token, url, body, dec) {
+		return {
+			method: method,
+			headers: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$http$Http$header,
+					'Authorization',
+					A2(_elm_lang$core$Basics_ops['++'], 'Bearer ', token)),
+				_1: {ctor: '[]'}
+			},
+			url: url,
+			body: body,
+			expect: _elm_lang$http$Http$expectJson(dec),
+			timeout: _elm_lang$core$Maybe$Nothing,
+			withCredentials: false
+		};
+	});
+var _simonh1000$elm_jwt$Jwt$createRequest = F4(
+	function (method, token, url, body) {
+		return function (_p0) {
+			return _elm_lang$http$Http$request(
+				A5(_simonh1000$elm_jwt$Jwt$createRequestObject, method, token, url, body, _p0));
+		};
+	});
+var _simonh1000$elm_jwt$Jwt$get = F3(
+	function (token, url, dec) {
+		return A5(_simonh1000$elm_jwt$Jwt$createRequest, 'GET', token, url, _elm_lang$http$Http$emptyBody, dec);
+	});
+var _simonh1000$elm_jwt$Jwt$post = _simonh1000$elm_jwt$Jwt$createRequest('POST');
+var _simonh1000$elm_jwt$Jwt$put = _simonh1000$elm_jwt$Jwt$createRequest('PUT');
+var _simonh1000$elm_jwt$Jwt$delete = F3(
+	function (token, url, dec) {
+		return A5(_simonh1000$elm_jwt$Jwt$createRequest, 'DELETE', token, url, _elm_lang$http$Http$emptyBody, dec);
+	});
+var _simonh1000$elm_jwt$Jwt$unurl = function () {
+	var fix = function (c) {
+		var _p1 = c;
+		switch (_p1.valueOf()) {
+			case '-':
+				return _elm_lang$core$Native_Utils.chr('+');
+			case '_':
+				return _elm_lang$core$Native_Utils.chr('/');
+			default:
+				return c;
+		}
+	};
+	return _elm_lang$core$String$map(fix);
+}();
+var _simonh1000$elm_jwt$Jwt$TokenDecodeError = function (a) {
+	return {ctor: 'TokenDecodeError', _0: a};
+};
+var _simonh1000$elm_jwt$Jwt$TokenProcessingError = function (a) {
+	return {ctor: 'TokenProcessingError', _0: a};
+};
+var _simonh1000$elm_jwt$Jwt$fixlength = function (s) {
+	var _p2 = A2(
+		_elm_lang$core$Basics_ops['%'],
+		_elm_lang$core$String$length(s),
+		4);
+	switch (_p2) {
+		case 0:
+			return _elm_lang$core$Result$Ok(s);
+		case 2:
+			return _elm_lang$core$Result$Ok(
+				_elm_lang$core$String$concat(
+					{
+						ctor: '::',
+						_0: s,
+						_1: {
+							ctor: '::',
+							_0: '==',
+							_1: {ctor: '[]'}
+						}
+					}));
+		case 3:
+			return _elm_lang$core$Result$Ok(
+				_elm_lang$core$String$concat(
+					{
+						ctor: '::',
+						_0: s,
+						_1: {
+							ctor: '::',
+							_0: '=',
+							_1: {ctor: '[]'}
+						}
+					}));
+		default:
+			return _elm_lang$core$Result$Err(
+				_simonh1000$elm_jwt$Jwt$TokenProcessingError('Wrong length'));
+	}
+};
+var _simonh1000$elm_jwt$Jwt$getTokenBody = function (token) {
+	var processor = function (_p3) {
+		return A2(
+			_elm_lang$core$List$map,
+			_simonh1000$elm_jwt$Jwt$fixlength,
+			A2(
+				_elm_lang$core$String$split,
+				'.',
+				_simonh1000$elm_jwt$Jwt$unurl(_p3)));
+	};
+	var _p4 = processor(token);
+	_v2_2:
+	do {
+		if ((_p4.ctor === '::') && (_p4._1.ctor === '::')) {
+			if (_p4._1._0.ctor === 'Err') {
+				if ((_p4._1._1.ctor === '::') && (_p4._1._1._1.ctor === '[]')) {
+					return _elm_lang$core$Result$Err(_p4._1._0._0);
+				} else {
+					break _v2_2;
+				}
+			} else {
+				if ((_p4._1._1.ctor === '::') && (_p4._1._1._1.ctor === '[]')) {
+					return _elm_lang$core$Result$Ok(_p4._1._0._0);
+				} else {
+					break _v2_2;
+				}
+			}
+		} else {
+			break _v2_2;
+		}
+	} while(false);
+	return _elm_lang$core$Result$Err(
+		_simonh1000$elm_jwt$Jwt$TokenProcessingError('Token has invalid shape'));
+};
+var _simonh1000$elm_jwt$Jwt$decodeToken = function (dec) {
+	return function (_p5) {
+		return A2(
+			_elm_lang$core$Result$andThen,
+			function (_p6) {
+				return A2(
+					_elm_lang$core$Result$mapError,
+					_simonh1000$elm_jwt$Jwt$TokenDecodeError,
+					A2(_elm_lang$core$Json_Decode$decodeString, dec, _p6));
+			},
+			A2(
+				_elm_lang$core$Result$andThen,
+				function (_p7) {
+					return A2(
+						_elm_lang$core$Result$mapError,
+						_simonh1000$elm_jwt$Jwt$TokenDecodeError,
+						_truqu$elm_base64$Base64$decode(_p7));
+				},
+				_simonh1000$elm_jwt$Jwt$getTokenBody(_p5)));
+	};
+};
+var _simonh1000$elm_jwt$Jwt$isExpired = F2(
+	function (now, token) {
+		return A2(
+			_elm_lang$core$Result$map,
+			function (exp) {
+				return _elm_lang$core$Native_Utils.cmp(now, exp * 1000) > 0;
+			},
+			A2(
+				_simonh1000$elm_jwt$Jwt$decodeToken,
+				A2(_elm_lang$core$Json_Decode$field, 'exp', _elm_lang$core$Json_Decode$float),
+				token));
+	});
+var _simonh1000$elm_jwt$Jwt$tokenDecoder = function (inner) {
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		function (tokenStr) {
+			var transformedToken = A2(
+				_elm_lang$core$Result$andThen,
+				_elm_lang$core$Json_Decode$decodeString(inner),
+				A2(
+					_elm_lang$core$Result$mapError,
+					F2(
+						function (x, y) {
+							return A2(_elm_lang$core$Basics_ops['++'], x, y);
+						})('base64 error: '),
+					A2(
+						_elm_lang$core$Result$andThen,
+						_truqu$elm_base64$Base64$decode,
+						A2(
+							_elm_lang$core$Result$mapError,
+							_elm_lang$core$Basics$toString,
+							_simonh1000$elm_jwt$Jwt$getTokenBody(tokenStr)))));
+			var _p8 = transformedToken;
+			if (_p8.ctor === 'Ok') {
+				return _elm_lang$core$Json_Decode$succeed(_p8._0);
+			} else {
+				return _elm_lang$core$Json_Decode$fail(_p8._0);
+			}
+		},
+		_elm_lang$core$Json_Decode$string);
+};
+var _simonh1000$elm_jwt$Jwt$TokenNotExpired = {ctor: 'TokenNotExpired'};
+var _simonh1000$elm_jwt$Jwt$TokenExpired = {ctor: 'TokenExpired'};
+var _simonh1000$elm_jwt$Jwt$checkUnacceptedToken = F2(
+	function (token, now) {
+		var _p9 = A2(_simonh1000$elm_jwt$Jwt$isExpired, now, token);
+		if (_p9.ctor === 'Ok') {
+			if (_p9._0 === true) {
+				return _simonh1000$elm_jwt$Jwt$TokenExpired;
+			} else {
+				return _simonh1000$elm_jwt$Jwt$TokenNotExpired;
+			}
+		} else {
+			return _p9._0;
+		}
+	});
+var _simonh1000$elm_jwt$Jwt$checkTokenExpiry = function (token) {
+	return A2(
+		_elm_lang$core$Task$andThen,
+		function (_p10) {
+			return _elm_lang$core$Task$succeed(
+				A2(_simonh1000$elm_jwt$Jwt$checkUnacceptedToken, token, _p10));
+		},
+		_elm_lang$core$Time$now);
+};
+var _simonh1000$elm_jwt$Jwt$Unauthorized = {ctor: 'Unauthorized'};
+var _simonh1000$elm_jwt$Jwt$HttpError = function (a) {
+	return {ctor: 'HttpError', _0: a};
+};
+var _simonh1000$elm_jwt$Jwt$promote401 = function (err) {
+	var _p11 = err;
+	if (_p11.ctor === 'BadStatus') {
+		return _elm_lang$core$Native_Utils.eq(_p11._0.status.code, 401) ? _simonh1000$elm_jwt$Jwt$Unauthorized : _simonh1000$elm_jwt$Jwt$HttpError(err);
+	} else {
+		return _simonh1000$elm_jwt$Jwt$HttpError(err);
+	}
+};
+var _simonh1000$elm_jwt$Jwt$send = F2(
+	function (msgCreator, req) {
+		var conv = function (fn) {
+			return function (_p12) {
+				return fn(
+					A2(_elm_lang$core$Result$mapError, _simonh1000$elm_jwt$Jwt$promote401, _p12));
+			};
+		};
+		return A2(
+			_elm_lang$http$Http$send,
+			conv(msgCreator),
+			req);
+	});
+var _simonh1000$elm_jwt$Jwt$handleError = F2(
+	function (token, err) {
+		var _p13 = _simonh1000$elm_jwt$Jwt$promote401(err);
+		if (_p13.ctor === 'Unauthorized') {
+			return _simonh1000$elm_jwt$Jwt$checkTokenExpiry(token);
+		} else {
+			return _elm_lang$core$Task$succeed(
+				_simonh1000$elm_jwt$Jwt$HttpError(err));
+		}
+	});
+var _simonh1000$elm_jwt$Jwt$sendCheckExpired = F3(
+	function (token, msgCreator, req) {
+		return A2(
+			_elm_lang$core$Task$perform,
+			msgCreator,
+			A2(
+				_elm_lang$core$Task$onError,
+				function (_p14) {
+					return A2(
+						_elm_lang$core$Task$map,
+						_elm_lang$core$Result$Err,
+						A2(_simonh1000$elm_jwt$Jwt$handleError, token, _p14));
+				},
+				A2(
+					_elm_lang$core$Task$map,
+					_elm_lang$core$Result$Ok,
+					_elm_lang$http$Http$toTask(req))));
+	});
+
 var _ak1211$tractor$Update$urlUpdate = F2(
 	function (model, location) {
 		var _p0 = _ak1211$tractor$Route$fromLocation(location);
@@ -19563,47 +20429,58 @@ var _ak1211$tractor$Update$urlUpdate = F2(
 				{ctor: '[]'});
 		}
 	});
+var _ak1211$tractor$Update$JWTContents = function (a) {
+	return {dat: a};
+};
+var _ak1211$tractor$Update$decodeJWTContents = A3(
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+	'dat',
+	_ak1211$tractor$Generated_WebApi$decodeOAuthReply,
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Update$JWTContents));
+var _ak1211$tractor$Update$oauthRepFromReceivedJWT = function (jwt) {
+	var jwtContents = A2(_simonh1000$elm_jwt$Jwt$decodeToken, _ak1211$tractor$Update$decodeJWTContents, jwt);
+	var _p5 = jwtContents;
+	if (_p5.ctor === 'Ok') {
+		return _elm_lang$core$Maybe$Just(_p5._0.dat);
+	} else {
+		return A2(
+			_elm_lang$core$Debug$log,
+			_elm_lang$core$Basics$toString(_p5._0),
+			_elm_lang$core$Maybe$Nothing);
+	}
+};
 var _ak1211$tractor$Update$update = F2(
 	function (msg, model) {
-		var _p5 = msg;
-		switch (_p5.ctor) {
+		var _p6 = msg;
+		switch (_p6.ctor) {
 			case 'DoneOAuthExchangeCode':
-				var _p6 = function () {
-					var _p7 = _p5._0;
-					if (_p7.ctor === 'Ok') {
-						var _p8 = _p7._0;
-						var m = _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								accessToken: _elm_lang$core$Maybe$Just(_p8.accessToken),
-								userName: _elm_lang$core$Maybe$Just(_p8.userName)
-							});
-						return {
-							ctor: '_Tuple2',
-							_0: m,
-							_1: _elm_lang$core$Maybe$Just(_p8.accessToken)
-						};
-					} else {
-						var m = _elm_lang$core$Native_Utils.update(
-							model,
-							{accessToken: _elm_lang$core$Maybe$Nothing, userName: _elm_lang$core$Maybe$Nothing});
-						return {ctor: '_Tuple2', _0: m, _1: _elm_lang$core$Maybe$Nothing};
-					}
-				}();
-				var newModel = _p6._0;
-				var token = _p6._1;
+				var receivedToken = A2(
+					_elm_lang$core$Maybe$map,
+					function (a) {
+						return a.getBearerToken;
+					},
+					_elm_lang$core$Result$toMaybe(_p6._0));
+				var uname = A2(
+					_elm_lang$core$Maybe$map,
+					function (a) {
+						return a.userName;
+					},
+					A2(_elm_lang$core$Maybe$andThen, _ak1211$tractor$Update$oauthRepFromReceivedJWT, receivedToken));
+				var newModel = _elm_lang$core$Native_Utils.update(
+					model,
+					{accessToken: receivedToken, userName: uname});
 				var msgs = {
 					ctor: '::',
 					_0: _ak1211$tractor$Msg$UploadPageMsg(
-						_ak1211$tractor$UploadPage_Msg$ChangeAccessToken(token)),
+						_ak1211$tractor$UploadPage_Msg$ChangeAccessToken(receivedToken)),
 					_1: {
 						ctor: '::',
 						_0: _ak1211$tractor$Msg$PortfolioPageMsg(
-							_ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken(token)),
+							_ak1211$tractor$PortfolioPage_Msg$ChangeAccessToken(receivedToken)),
 						_1: {
 							ctor: '::',
 							_0: _ak1211$tractor$Msg$AnalyticsPageMsg(
-								_ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken(token)),
+								_ak1211$tractor$AnalyticsPage_Msg$ChangeAccessToken(receivedToken)),
 							_1: {ctor: '[]'}
 						}
 					}
@@ -19613,17 +20490,17 @@ var _ak1211$tractor$Update$update = F2(
 					newModel,
 					A2(
 						_elm_lang$core$List$map,
-						function (_p9) {
+						function (_p7) {
 							return A2(
 								_elm_lang$core$Task$perform,
 								_elm_lang$core$Basics$identity,
-								_elm_lang$core$Task$succeed(_p9));
+								_elm_lang$core$Task$succeed(_p7));
 						},
 						msgs));
 			case 'UploadPageMsg':
-				var _p10 = A2(_ak1211$tractor$UploadPage_Update$update, _p5._0, model.uploadPageModel);
-				var newModel = _p10._0;
-				var newCmd = _p10._1;
+				var _p8 = A2(_ak1211$tractor$UploadPage_Update$update, _p6._0, model.uploadPageModel);
+				var newModel = _p8._0;
+				var newCmd = _p8._1;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -19635,9 +20512,9 @@ var _ak1211$tractor$Update$update = F2(
 						_1: {ctor: '[]'}
 					});
 			case 'PortfolioPageMsg':
-				var _p11 = A2(_ak1211$tractor$PortfolioPage_Update$update, _p5._0, model.portfolioPageModel);
-				var newModel = _p11._0;
-				var newCmd = _p11._1;
+				var _p9 = A2(_ak1211$tractor$PortfolioPage_Update$update, _p6._0, model.portfolioPageModel);
+				var newModel = _p9._0;
+				var newCmd = _p9._1;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -19649,9 +20526,9 @@ var _ak1211$tractor$Update$update = F2(
 						_1: {ctor: '[]'}
 					});
 			case 'AnalyticsPageMsg':
-				var _p12 = A2(_ak1211$tractor$AnalyticsPage_Update$update, _p5._0, model.analyticsPageModel);
-				var newModel = _p12._0;
-				var newCmd = _p12._1;
+				var _p10 = A2(_ak1211$tractor$AnalyticsPage_Update$update, _p6._0, model.analyticsPageModel);
+				var newModel = _p10._0;
+				var newCmd = _p10._1;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -19663,14 +20540,14 @@ var _ak1211$tractor$Update$update = F2(
 						_1: {ctor: '[]'}
 					});
 			case 'Mdl':
-				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p5._0, model);
+				return A3(_debois$elm_mdl$Material$update, _ak1211$tractor$Msg$Mdl, _p6._0, model);
 			case 'NewUrl':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					model,
 					{
 						ctor: '::',
-						_0: _elm_lang$navigation$Navigation$newUrl(_p5._0),
+						_0: _elm_lang$navigation$Navigation$newUrl(_p6._0),
 						_1: {ctor: '[]'}
 					});
 			case 'Nop':
@@ -19693,7 +20570,7 @@ var _ak1211$tractor$Update$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							serverVersion: _elm_lang$core$Result$toMaybe(_p5._0)
+							serverVersion: _elm_lang$core$Result$toMaybe(_p6._0)
 						}),
 					{ctor: '[]'});
 			case 'UpdateWebApiDocument':
@@ -19702,11 +20579,11 @@ var _ak1211$tractor$Update$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							webApiDocument: _elm_lang$core$Result$toMaybe(_p5._0)
+							webApiDocument: _elm_lang$core$Result$toMaybe(_p6._0)
 						}),
 					{ctor: '[]'});
 			default:
-				return A2(_ak1211$tractor$Update$urlUpdate, model, _p5._0);
+				return A2(_ak1211$tractor$Update$urlUpdate, model, _p6._0);
 		}
 	});
 
