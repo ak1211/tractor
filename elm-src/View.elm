@@ -355,7 +355,7 @@ viewDashboard model =
                 , Typo.center
                 ]
                 [ model.userName
-                    |> Maybe.withDefault "Unauthorized user"
+                    |> Maybe.withDefault "Unauthenticated user"
                     |> Html.text
                 ]
             , Options.styled
