@@ -317,6 +317,11 @@ err401Unauthorized = Servant.throwError Servant.err401
 
 --
 --
+err403Forbidden :: Servant.Handler a
+err403Forbidden = Servant.throwError Servant.err403
+
+--
+--
 err404NotFound :: Servant.Handler a
 err404NotFound = Servant.throwError Servant.err404
 
@@ -341,7 +346,9 @@ exchangeTempCodeHandler cnf tempCode = do
             jwt <- makeJWT genuineReply
             M.liftIO . putStrLn . show $ jwt
             pure . BearerToken . T.pack . BL8.unpack $ jwt
-        _ ->
+        Just _ ->
+            err403Forbidden
+        Nothing ->
             err401Unauthorized
     where
     --
