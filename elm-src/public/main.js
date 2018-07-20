@@ -22944,7 +22944,7 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 				},
 				{
 					ctor: '::',
-					_0: A3(card, 'user', 'Authorization information', viewSigninUser),
+					_0: A3(card, 'user', 'Logged in user information', viewSigninUser),
 					_1: {ctor: '[]'}
 				}),
 			_1: {

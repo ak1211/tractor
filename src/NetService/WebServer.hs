@@ -333,14 +333,16 @@ err500InternalServerError = Servant.throwError Servant.err500
 -- |
 -- 仮コードをアクセストークンに交換する
 exchangeTempCodeHandler :: Config -> TempCode -> Servant.Handler BearerToken
-exchangeTempCodeHandler cnf tempCode =
-    case methodURI of
-    Just uri -> do
-        token <- maybe err401Unauthorized makeJWT =<< takeOAuthReply <$> doExchange uri
-        M.liftIO . putStrLn $ show token
-        return $ BearerToken token
-    Nothing ->
-        err500InternalServerError
+exchangeTempCodeHandler cnf tempCode = do
+    uri <- maybe err500InternalServerError pure methodURI
+    unverifiedReply <- takeOAuthReply <$> doExchange uri
+    case unverifiedReply of
+        Just genuineReply | verifyCredentials genuineReply -> do
+            jwt <- makeJWT genuineReply
+            M.liftIO . putStrLn . show $ jwt
+            pure . BearerToken . T.pack . BL8.unpack $ jwt
+        _ ->
+            err401Unauthorized
     where
     --
     --
@@ -365,12 +367,18 @@ exchangeTempCodeHandler cnf tempCode =
         Just ApiTypes.OAuthReply{..}
     --
     --
+    makeJWT :: ApiTypes.OAuthReply -> Servant.Handler BL8.ByteString
     makeJWT oauthrep =
         either err ok =<< M.liftIO (Auth.makeJWT oauthrep settings Nothing)
         where
         settings = cJWTS cnf
         err _ = err401Unauthorized
-        ok = pure . T.pack . BL8.unpack
+        ok = pure
+    --
+    --
+    verifyCredentials :: ApiTypes.OAuthReply -> Bool
+    verifyCredentials ApiTypes.OAuthReply{..} =
+        (Conf.oauthAccessToken . Conf.slack $ cConf cnf) == accessToken
     --
     --
     methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"

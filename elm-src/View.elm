@@ -429,7 +429,7 @@ viewDashboard model =
             []
             [ Grid.cell
                 [ Grid.size Grid.All 4 ]
-                [ card "user" "Authorization information" viewSigninUser
+                [ card "user" "Logged in user information" viewSigninUser
                 ]
             , Grid.cell
                 [ Grid.size Grid.All 4 ]
