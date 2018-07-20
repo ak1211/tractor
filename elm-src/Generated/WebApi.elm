@@ -56,23 +56,23 @@ encodeVerRev x =
         ]
 
 type alias OAuthReply =
-    { accessToken : String
-    , scope : String
+    { scope : String
+    , userId : String
     , userName : String
     }
 
 decodeOAuthReply : Decoder OAuthReply
 decodeOAuthReply =
     decode OAuthReply
-        |> required "accessToken" string
         |> required "scope" string
+        |> required "userId" string
         |> required "userName" string
 
 encodeOAuthReply : OAuthReply -> Json.Encode.Value
 encodeOAuthReply x =
     Json.Encode.object
-        [ ( "accessToken", Json.Encode.string x.accessToken )
-        , ( "scope", Json.Encode.string x.scope )
+        [ ( "scope", Json.Encode.string x.scope )
+        , ( "userId", Json.Encode.string x.userId )
         , ( "userName", Json.Encode.string x.userName )
         ]
 

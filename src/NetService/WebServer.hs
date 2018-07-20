@@ -247,7 +247,7 @@ type Unprotected
 
 -- |
 --
-protected :: Config -> Auth.AuthResult OAuthReply-> Servant.Server Protected
+protected :: Config -> Auth.AuthResult OAuthReply -> Servant.Server Protected
 protected cnf result =
     case result of
     Auth.Authenticated _ ->
@@ -279,7 +279,7 @@ unprotected cnf
 
 -- |
 --
-type WebApi = (Auth '[Auth.JWT] OAuthReply:> Protected) :<|> Unprotected
+type WebApi = (Auth '[Auth.JWT] OAuthReply :> Protected) :<|> Unprotected
 
 -- |
 --
@@ -340,10 +340,10 @@ err500InternalServerError = Servant.throwError Servant.err500
 exchangeTempCodeHandler :: Config -> TempCode -> Servant.Handler BearerToken
 exchangeTempCodeHandler cnf tempCode = do
     uri <- maybe err500InternalServerError pure methodURI
-    unverifiedReply <- takeOAuthReply <$> doExchange uri
-    case unverifiedReply of
+    response <- doExchange uri
+    case takeOAuthReply =<< response of
         Just genuineReply
-            | verifyCredentials genuineReply -> do
+            | verifyToken (respAccessToken =<< response) -> do
                 jwt <- makeJWT genuineReply
                 M.liftIO . putStrLn . show $ jwt
                 pure . BearerToken . T.pack . BL8.unpack $ jwt
@@ -362,16 +362,15 @@ exchangeTempCodeHandler cnf tempCode = do
         -- レスポンスボディにはJSON応答が入っている
         let json = N.responseBody httpsResp :: BL8.ByteString
         -- JSONをパースする
-        return $ Aeson.eitherDecode json
+        return $ Aeson.decode json
     --
     --
-    takeOAuthReply :: Either a ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.OAuthReply
+    takeOAuthReply :: ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.OAuthReply
     takeOAuthReply x = do
-        y <- either (const Nothing) Just x
-        M.guard (respOk y)
-        accessToken <- respAccessToken y
-        scope <- respScope y
-        userName <- respUserName y
+        M.guard (respOk x)
+        scope <- respScope x
+        userId <- respUserId x
+        userName <- respUserName x
         Just ApiTypes.OAuthReply{..}
     --
     --
@@ -384,9 +383,8 @@ exchangeTempCodeHandler cnf tempCode = do
         ok = pure
     --
     --
-    verifyCredentials :: ApiTypes.OAuthReply -> Bool
-    verifyCredentials ApiTypes.OAuthReply{..} =
-        (Conf.oauthAccessToken . Conf.slack $ cConf cnf) == accessToken
+    verifyToken x =
+        Just (Conf.oauthAccessToken . Conf.slack $ cConf cnf) == x
     --
     --
     methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"

@@ -148,8 +148,8 @@ instance Aeson.FromJSON OAuthAccessResponse where
 -- |
 -- OAuth返答
 data OAuthReply = OAuthReply
-    { accessToken :: T.Text
-    , scope       :: T.Text
+    { scope       :: T.Text
+    , userId      :: T.Text
     , userName    :: T.Text
     } deriving (Eq, Show, Generic)
 
@@ -160,10 +160,7 @@ instance ToJWT OAuthReply
 instance Servant.Elm.ElmType OAuthReply
 instance Servant.Docs.ToSample OAuthReply where
     toSamples _ =
-        Servant.Docs.singleSample $ OAuthReply
-            "xoxp-????????????-????????????-????????????-????????????????????????????????"
-            "identify.basic"
-            "John Doe"
+        Servant.Docs.singleSample $ OAuthReply "identify.basic" "xxxx" "John Doe"
 
 -- |
 --

@@ -6751,15 +6751,15 @@ var _ak1211$tractor$Generated_WebApi$encodeOAuthReply = function (x) {
 			ctor: '::',
 			_0: {
 				ctor: '_Tuple2',
-				_0: 'accessToken',
-				_1: _elm_lang$core$Json_Encode$string(x.accessToken)
+				_0: 'scope',
+				_1: _elm_lang$core$Json_Encode$string(x.scope)
 			},
 			_1: {
 				ctor: '::',
 				_0: {
 					ctor: '_Tuple2',
-					_0: 'scope',
-					_1: _elm_lang$core$Json_Encode$string(x.scope)
+					_0: 'userId',
+					_1: _elm_lang$core$Json_Encode$string(x.userId)
 				},
 				_1: {
 					ctor: '::',
@@ -6912,7 +6912,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Version = _elm_lang$http$Http$reque
 	});
 var _ak1211$tractor$Generated_WebApi$OAuthReply = F3(
 	function (a, b, c) {
-		return {accessToken: a, scope: b, userName: c};
+		return {scope: a, userId: b, userName: c};
 	});
 var _ak1211$tractor$Generated_WebApi$decodeOAuthReply = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
@@ -6920,11 +6920,11 @@ var _ak1211$tractor$Generated_WebApi$decodeOAuthReply = A3(
 	_elm_lang$core$Json_Decode$string,
 	A3(
 		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-		'scope',
+		'userId',
 		_elm_lang$core$Json_Decode$string,
 		A3(
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-			'accessToken',
+			'scope',
 			_elm_lang$core$Json_Decode$string,
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$OAuthReply))));
 var _ak1211$tractor$Generated_WebApi$BearerToken = function (a) {
