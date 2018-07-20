@@ -57,6 +57,7 @@ import           Data.Proxy                   (Proxy (..))
 import qualified Data.Text                    as T
 import qualified Data.Text.Lazy               as TL
 import qualified Data.Text.Lazy.Builder       as TLB
+import qualified Data.Time                    as Time
 import           Database.Persist             ((=.), (==.))
 import qualified Database.Persist             as DB
 import qualified Database.Persist.MySQL       as MySQL
@@ -154,7 +155,7 @@ instance Servant.Docs.ToParam QTimeFrame where
 
 instance Servant.FromHttpApiData TimeFrame where
     parseQueryParam x =
-        let y = T.filter ('"' /=)$ URI.decodeText x
+        let y = T.filter ('"' /=) $ URI.decodeText x
         in
         case Model.toTimeFrame =<< parse y of
             Nothing ->
@@ -341,16 +342,16 @@ exchangeTempCodeHandler :: Config -> TempCode -> Servant.Handler BearerToken
 exchangeTempCodeHandler cnf tempCode = do
     uri <- maybe err500InternalServerError pure methodURI
     response <- doExchange uri
-    case takeOAuthReply =<< response of
-        Just genuineReply
-            | verifyToken (respAccessToken =<< response) -> do
-                jwt <- makeJWT genuineReply
-                M.liftIO . putStrLn . show $ jwt
-                pure . BearerToken . T.pack . BL8.unpack $ jwt
-            | otherwise ->
-                err403Forbidden
-        Nothing ->
-            err401Unauthorized
+    reply <- maybe err401Unauthorized pure $ takeOAuthReply =<< response
+    let validationToken = respAccessToken =<< response
+        myToken         = Conf.oauthAccessToken . Conf.slack $ cConf cnf
+    if validationToken == Just myToken
+    then do
+        jwt <- makeJWT reply
+        M.liftIO $ print jwt
+        pure . BearerToken . T.pack . BL8.unpack $ jwt
+    else
+        err403Forbidden
     where
     --
     --
@@ -375,16 +376,14 @@ exchangeTempCodeHandler cnf tempCode = do
     --
     --
     makeJWT :: ApiTypes.OAuthReply -> Servant.Handler BL8.ByteString
-    makeJWT oauthrep =
-        either err ok =<< M.liftIO (Auth.makeJWT oauthrep settings Nothing)
+    makeJWT oauthrep = do
+        tomorrow <- Time.addUTCTime Time.nominalDay <$> M.liftIO Time.getCurrentTime
+        jwt <- M.liftIO (Auth.makeJWT oauthrep settings $ Just tomorrow)
+        either err ok jwt
         where
         settings = cJWTS cnf
         err _ = err401Unauthorized
         ok = pure
-    --
-    --
-    verifyToken x =
-        Just (Conf.oauthAccessToken . Conf.slack $ cConf cnf) == x
     --
     --
     methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"
