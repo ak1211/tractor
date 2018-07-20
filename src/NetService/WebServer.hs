@@ -342,12 +342,13 @@ exchangeTempCodeHandler cnf tempCode = do
     uri <- maybe err500InternalServerError pure methodURI
     unverifiedReply <- takeOAuthReply <$> doExchange uri
     case unverifiedReply of
-        Just genuineReply | verifyCredentials genuineReply -> do
-            jwt <- makeJWT genuineReply
-            M.liftIO . putStrLn . show $ jwt
-            pure . BearerToken . T.pack . BL8.unpack $ jwt
-        Just _ ->
-            err403Forbidden
+        Just genuineReply
+            | verifyCredentials genuineReply -> do
+                jwt <- makeJWT genuineReply
+                M.liftIO . putStrLn . show $ jwt
+                pure . BearerToken . T.pack . BL8.unpack $ jwt
+            | otherwise ->
+                err403Forbidden
         Nothing ->
             err401Unauthorized
     where
