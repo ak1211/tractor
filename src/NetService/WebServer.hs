@@ -91,7 +91,7 @@ import qualified Model
 import           NetService.ApiTypes          (ApiOhlcv, ApiPortfolio,
                                                BearerToken (..),
                                                OAuthAccessResponse (..),
-                                               OAuthReply (..), SVG,
+                                               AuthenticatedUser (..), SVG,
                                                SvgBinary (..))
 import qualified NetService.ApiTypes          as ApiTypes
 import           NetService.HomePage          (HomePage (..))
@@ -248,7 +248,7 @@ type Unprotected
 
 -- |
 --
-protected :: Config -> Auth.AuthResult OAuthReply -> Servant.Server Protected
+protected :: Config -> Auth.AuthResult AuthenticatedUser -> Servant.Server Protected
 protected cnf result =
     case result of
     Auth.Authenticated _ ->
@@ -280,7 +280,7 @@ unprotected cnf
 
 -- |
 --
-type WebApi = (Auth '[Auth.JWT] OAuthReply :> Protected) :<|> Unprotected
+type WebApi = (Auth '[Auth.JWT] AuthenticatedUser :> Protected) :<|> Unprotected
 
 -- |
 --
@@ -341,13 +341,16 @@ err500InternalServerError = Servant.throwError Servant.err500
 exchangeTempCodeHandler :: Config -> TempCode -> Servant.Handler BearerToken
 exchangeTempCodeHandler cnf tempCode = do
     uri <- maybe err500InternalServerError pure methodURI
-    response <- doExchange uri
-    reply <- maybe err401Unauthorized pure $ takeOAuthReply =<< response
-    let validationToken = respAccessToken =<< response
+    json <- Aeson.decode <$> M.liftIO (doExchange uri)
+    oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
+    user <- maybe err401Unauthorized pure $ takeAuthenticatedUser oauthResp
+    --
+    -- 自分のトークンとの一致を確認する
+    let validationToken = respAccessToken oauthResp
         myToken         = Conf.oauthAccessToken . Conf.slack $ cConf cnf
     if validationToken == Just myToken
     then do
-        jwt <- makeJWT reply
+        jwt <- makeJWT user
         M.liftIO $ print jwt
         pure . BearerToken . T.pack . BL8.unpack $ jwt
     else
@@ -355,27 +358,26 @@ exchangeTempCodeHandler cnf tempCode = do
     where
     --
     --
-    doExchange uri = M.liftIO $ do
+    doExchange :: URI.URI -> IO BL8.ByteString
+    doExchange uri = do
         -- HTTPS接続ですよ
         manager <- N.newManager N.tlsManagerSettings
         -- Slack APIへアクセスする
         httpsResp <- BB.fetchHTTP manager [contentType] Nothing [] uri
         -- レスポンスボディにはJSON応答が入っている
-        let json = N.responseBody httpsResp :: BL8.ByteString
-        -- JSONをパースする
-        return $ Aeson.decode json
+        return $ N.responseBody httpsResp
     --
     --
-    takeOAuthReply :: ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.OAuthReply
-    takeOAuthReply x = do
+    takeAuthenticatedUser :: ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.AuthenticatedUser
+    takeAuthenticatedUser x = do
         M.guard (respOk x)
         scope <- respScope x
         userId <- respUserId x
         userName <- respUserName x
-        Just ApiTypes.OAuthReply{..}
+        Just ApiTypes.AuthenticatedUser{..}
     --
     --
-    makeJWT :: ApiTypes.OAuthReply -> Servant.Handler BL8.ByteString
+    makeJWT :: ApiTypes.AuthenticatedUser -> Servant.Handler BL8.ByteString
     makeJWT oauthrep = do
         tomorrow <- Time.addUTCTime Time.nominalDay <$> M.liftIO Time.getCurrentTime
         jwt <- M.liftIO (Auth.makeJWT oauthrep settings $ Just tomorrow)

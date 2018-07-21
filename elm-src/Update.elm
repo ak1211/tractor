@@ -53,18 +53,18 @@ import Jwt
 
 
 type alias JWTContents =
-    { dat : WebApi.OAuthReply
+    { dat : WebApi.AuthenticatedUser
     }
 
 
 decodeJWTContents : Decoder JWTContents
 decodeJWTContents =
     decode JWTContents
-        |> required "dat" WebApi.decodeOAuthReply
+        |> required "dat" WebApi.decodeAuthenticatedUser
 
 
-oauthRepFromReceivedJWT : String -> Maybe WebApi.OAuthReply
-oauthRepFromReceivedJWT jwt =
+auserFromReceivedJWT : String -> Maybe WebApi.AuthenticatedUser
+auserFromReceivedJWT jwt =
     let
         jwtContents : Result Jwt.JwtError JWTContents
         jwtContents =
@@ -88,7 +88,7 @@ update msg model =
 
                 uname =
                     receivedToken
-                        |> Maybe.andThen oauthRepFromReceivedJWT
+                        |> Maybe.andThen auserFromReceivedJWT
                         |> Maybe.map (\a -> a.userName)
 
                 newModel =

@@ -6745,7 +6745,7 @@ var _ak1211$tractor$Generated_WebApi$encodeBearerToken = function (x) {
 			_1: {ctor: '[]'}
 		});
 };
-var _ak1211$tractor$Generated_WebApi$encodeOAuthReply = function (x) {
+var _ak1211$tractor$Generated_WebApi$encodeAuthenticatedUser = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
 			ctor: '::',
@@ -6910,11 +6910,11 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Version = _elm_lang$http$Http$reque
 		timeout: _elm_lang$core$Maybe$Nothing,
 		withCredentials: false
 	});
-var _ak1211$tractor$Generated_WebApi$OAuthReply = F3(
+var _ak1211$tractor$Generated_WebApi$AuthenticatedUser = F3(
 	function (a, b, c) {
 		return {scope: a, userId: b, userName: c};
 	});
-var _ak1211$tractor$Generated_WebApi$decodeOAuthReply = A3(
+var _ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 	'userName',
 	_elm_lang$core$Json_Decode$string,
@@ -6926,7 +6926,7 @@ var _ak1211$tractor$Generated_WebApi$decodeOAuthReply = A3(
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 			'scope',
 			_elm_lang$core$Json_Decode$string,
-			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$OAuthReply))));
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))));
 var _ak1211$tractor$Generated_WebApi$BearerToken = function (a) {
 	return {getBearerToken: a};
 };
@@ -20435,9 +20435,9 @@ var _ak1211$tractor$Update$JWTContents = function (a) {
 var _ak1211$tractor$Update$decodeJWTContents = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 	'dat',
-	_ak1211$tractor$Generated_WebApi$decodeOAuthReply,
+	_ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser,
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Update$JWTContents));
-var _ak1211$tractor$Update$oauthRepFromReceivedJWT = function (jwt) {
+var _ak1211$tractor$Update$auserFromReceivedJWT = function (jwt) {
 	var jwtContents = A2(_simonh1000$elm_jwt$Jwt$decodeToken, _ak1211$tractor$Update$decodeJWTContents, jwt);
 	var _p5 = jwtContents;
 	if (_p5.ctor === 'Ok') {
@@ -20465,7 +20465,7 @@ var _ak1211$tractor$Update$update = F2(
 					function (a) {
 						return a.userName;
 					},
-					A2(_elm_lang$core$Maybe$andThen, _ak1211$tractor$Update$oauthRepFromReceivedJWT, receivedToken));
+					A2(_elm_lang$core$Maybe$andThen, _ak1211$tractor$Update$auserFromReceivedJWT, receivedToken));
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
 					{accessToken: receivedToken, userName: uname});

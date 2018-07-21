@@ -45,7 +45,7 @@ module NetService.ApiTypes
     , toApiOhlcv
     , fromApiOhlcv
     , OAuthAccessResponse(..)
-    , OAuthReply(..)
+    , AuthenticatedUser(..)
     , BearerToken(..)
     , VerRev(..)
     )
@@ -146,21 +146,21 @@ instance Aeson.FromJSON OAuthAccessResponse where
         return OAuthAccessResponse{..}
 
 -- |
--- OAuth返答
-data OAuthReply = OAuthReply
+-- AuthenticatedUser
+data AuthenticatedUser = AuthenticatedUser
     { scope       :: T.Text
     , userId      :: T.Text
     , userName    :: T.Text
     } deriving (Eq, Show, Generic)
 
-instance Aeson.FromJSON OAuthReply
-instance Aeson.ToJSON OAuthReply
-instance FromJWT OAuthReply
-instance ToJWT OAuthReply
-instance Servant.Elm.ElmType OAuthReply
-instance Servant.Docs.ToSample OAuthReply where
+instance Aeson.FromJSON AuthenticatedUser
+instance Aeson.ToJSON AuthenticatedUser
+instance FromJWT AuthenticatedUser
+instance ToJWT AuthenticatedUser
+instance Servant.Elm.ElmType AuthenticatedUser
+instance Servant.Docs.ToSample AuthenticatedUser where
     toSamples _ =
-        Servant.Docs.singleSample $ OAuthReply "identify.basic" "xxxx" "John Doe"
+        Servant.Docs.singleSample $ AuthenticatedUser "identify.basic" "xxxx" "John Doe"
 
 -- |
 --

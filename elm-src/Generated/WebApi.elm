@@ -55,21 +55,21 @@ encodeVerRev x =
         , ( "gitStatus", Json.Encode.string x.gitStatus )
         ]
 
-type alias OAuthReply =
+type alias AuthenticatedUser =
     { scope : String
     , userId : String
     , userName : String
     }
 
-decodeOAuthReply : Decoder OAuthReply
-decodeOAuthReply =
-    decode OAuthReply
+decodeAuthenticatedUser : Decoder AuthenticatedUser
+decodeAuthenticatedUser =
+    decode AuthenticatedUser
         |> required "scope" string
         |> required "userId" string
         |> required "userName" string
 
-encodeOAuthReply : OAuthReply -> Json.Encode.Value
-encodeOAuthReply x =
+encodeAuthenticatedUser : AuthenticatedUser -> Json.Encode.Value
+encodeAuthenticatedUser x =
     Json.Encode.object
         [ ( "scope", Json.Encode.string x.scope )
         , ( "userId", Json.Encode.string x.userId )

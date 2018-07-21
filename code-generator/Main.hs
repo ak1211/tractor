@@ -39,7 +39,7 @@ import qualified Servant.Elm
 import qualified Shelly
 
 import           NetService.ApiTypes  (ApiOhlcv, ApiPortfolio, BearerToken,
-                                       OAuthReply, VerRev)
+                                       AuthenticatedUser, VerRev)
 import           NetService.WebServer (ApiForDocument, ApiForFrontend)
 
 
@@ -64,9 +64,9 @@ spec =
         : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)
         : Elm.toElmEncoderSource (Proxy :: Proxy VerRev)
         --
-        : Elm.toElmTypeSource    (Proxy :: Proxy OAuthReply)
-        : Elm.toElmDecoderSource (Proxy :: Proxy OAuthReply)
-        : Elm.toElmEncoderSource (Proxy :: Proxy OAuthReply)
+        : Elm.toElmTypeSource    (Proxy :: Proxy AuthenticatedUser)
+        : Elm.toElmDecoderSource (Proxy :: Proxy AuthenticatedUser)
+        : Elm.toElmEncoderSource (Proxy :: Proxy AuthenticatedUser)
         --
         : Elm.toElmTypeSource    (Proxy :: Proxy BearerToken)
         : Elm.toElmDecoderSource (Proxy :: Proxy BearerToken)
