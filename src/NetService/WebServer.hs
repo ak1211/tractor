@@ -201,8 +201,7 @@ instance Servant.Docs.ToSample T.Text where
 
 -- |
 --
-type AuthzValue     = T.Text
-type HAuthorization = Header' '[Required, Strict] "Authorization" AuthzValue
+type HAuthorization = Header' '[Required, Strict] "Authorization" T.Text
 
 type ApiForFrontend
     = Summary "publish price on the zeroMQ infrastructure."
@@ -259,11 +258,18 @@ protected cnf result =
         :<|> patchHistoriesHandler cnf
         :<|> deleteHistoriesHandler cnf
     Auth.BadPassword ->
-        Auth.throwAll Servant.err401 { Servant.errBody = "bad password" }
+        Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", badPassword)] }
     Auth.NoSuchUser ->
-        Auth.throwAll Servant.err401 { Servant.errBody = "no such user" }
+        Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", noSuchUser)] }
     Auth.Indefinite ->
-        Auth.throwAll Servant.err401 { Servant.errBody = "indefinite" }
+        Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", indefinite)] }
+    where
+    badPassword =
+        "Bearer realm=\"Protected API\",\r\nerror=\"invalid_token\",\r\nerror_description=\"bad password\""
+    noSuchUser =
+        "Bearer realm=\"Protected API\",\r\nerror=\"invalid_token\",\r\nerror_description=\"no such user\""
+    indefinite =
+        "Bearer realm=\"Protected API\",\r\nerror=\"invalid_token\",\r\nerror_description=\"indefinite\""
 
 -- |
 --
@@ -345,10 +351,10 @@ exchangeTempCodeHandler cnf tempCode = do
     oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
     user <- maybe err401Unauthorized pure $ takeAuthenticatedUser oauthResp
     --
-    -- 自分のトークンとの一致を確認する
-    let validationToken = respAccessToken oauthResp
-        myToken         = Conf.oauthAccessToken . Conf.slack $ cConf cnf
-    if validationToken == Just myToken
+    -- 自分のSlackトークンとの一致を確認する
+    let testToken = respAccessToken oauthResp
+        myToken   = Conf.oauthAccessToken . Conf.slack $ cConf cnf
+    if testToken == Just myToken
     then do
         jwt <- makeJWT user
         M.liftIO $ print jwt
