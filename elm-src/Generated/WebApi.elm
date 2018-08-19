@@ -76,19 +76,19 @@ encodeAuthenticatedUser x =
         , ( "userName", Json.Encode.string x.userName )
         ]
 
-type alias JsonWebToken =
-    { getJsonWebToken : String
+type alias ApiAccessToken =
+    { token : String
     }
 
-decodeJsonWebToken : Decoder JsonWebToken
-decodeJsonWebToken =
-    decode JsonWebToken
-        |> required "getJsonWebToken" string
+decodeApiAccessToken : Decoder ApiAccessToken
+decodeApiAccessToken =
+    decode ApiAccessToken
+        |> required "token" string
 
-encodeJsonWebToken : JsonWebToken -> Json.Encode.Value
-encodeJsonWebToken x =
+encodeApiAccessToken : ApiAccessToken -> Json.Encode.Value
+encodeApiAccessToken x =
     Json.Encode.object
-        [ ( "getJsonWebToken", Json.Encode.string x.getJsonWebToken )
+        [ ( "token", Json.Encode.string x.token )
         ]
 
 type alias ApiPortfolio =
@@ -373,7 +373,7 @@ deleteApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode que
                 False
             }
 
-postApiV1Auth : String -> Http.Request (JsonWebToken)
+postApiV1Auth : String -> Http.Request (ApiAccessToken)
 postApiV1Auth query_code =
     let
         params =
@@ -402,7 +402,7 @@ postApiV1Auth query_code =
             , body =
                 Http.emptyBody
             , expect =
-                Http.expectJson decodeJsonWebToken
+                Http.expectJson decodeApiAccessToken
             , timeout =
                 Nothing
             , withCredentials =

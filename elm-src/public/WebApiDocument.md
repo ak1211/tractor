@@ -20,7 +20,7 @@
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"getJsonWebToken":"API Access Token"}
+{"token":"API Access Token"}
     ```
 
 ## GET /api/v1/portfolios

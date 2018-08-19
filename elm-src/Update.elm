@@ -84,7 +84,7 @@ update msg model =
         Msg.DoneOAuthExchangeCode result ->
             let
                 receivedToken =
-                    Maybe.map (\a -> a.getJsonWebToken) <| Result.toMaybe result
+                    Maybe.map (\a -> a.token) <| Result.toMaybe result
 
                 uname =
                     receivedToken

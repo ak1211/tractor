@@ -46,7 +46,7 @@ module NetService.ApiTypes
     , fromApiOhlcv
     , OAuthAccessResponse(..)
     , AuthenticatedUser(..)
-    , JsonWebToken(..)
+    , ApiAccessToken(..)
     , VerRev(..)
     )
     where
@@ -164,17 +164,17 @@ instance Servant.Docs.ToSample AuthenticatedUser where
 
 -- |
 --
-newtype JsonWebToken = JsonWebToken
-    { getJsonWebToken :: T.Text
+newtype ApiAccessToken = ApiAccessToken
+    { token :: T.Text
     } deriving (Eq, Show, Generic)
-instance Aeson.FromJSON JsonWebToken
-instance Aeson.ToJSON JsonWebToken
-instance FromJWT JsonWebToken
-instance ToJWT JsonWebToken
-instance Servant.Elm.ElmType JsonWebToken
-instance Servant.Docs.ToSample JsonWebToken where
+instance Aeson.FromJSON ApiAccessToken
+instance Aeson.ToJSON ApiAccessToken
+instance FromJWT ApiAccessToken
+instance ToJWT ApiAccessToken
+instance Servant.Elm.ElmType ApiAccessToken
+instance Servant.Docs.ToSample ApiAccessToken where
     toSamples _ =
-        Servant.Docs.singleSample $ JsonWebToken "API Access Token"
+        Servant.Docs.singleSample $ ApiAccessToken "API Access Token"
 
 
 -- |

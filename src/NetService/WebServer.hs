@@ -88,9 +88,9 @@ import qualified BrokerBackend                as BB
 import qualified Conf
 import           Model                        (TimeFrame (..))
 import qualified Model
-import           NetService.ApiTypes          (ApiOhlcv, ApiPortfolio,
+import           NetService.ApiTypes          (ApiAccessToken (..), ApiOhlcv,
+                                               ApiPortfolio,
                                                AuthenticatedUser (..),
-                                               JsonWebToken (..),
                                                OAuthAccessResponse (..), SVG,
                                                SvgBinary (..))
 import qualified NetService.ApiTypes          as ApiTypes
@@ -218,7 +218,7 @@ type ApiForFrontend
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
  :<|> Summary "Delete prices"
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
- :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] JsonWebToken
+ :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] ApiAccessToken
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
 
@@ -242,7 +242,7 @@ type Protected
 type Unprotected
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
- :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] JsonWebToken
+ :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] ApiAccessToken
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
  :<|> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
@@ -346,7 +346,7 @@ err500InternalServerError = Servant.throwError Servant.err500
 
 -- |
 -- 仮コードをアクセストークンに交換する
-postAuthTempCodeHandler :: Config -> AuthTempCode -> Servant.Handler JsonWebToken
+postAuthTempCodeHandler :: Config -> AuthTempCode -> Servant.Handler ApiAccessToken
 postAuthTempCodeHandler cnf tempCode = do
     uri <- maybe err500InternalServerError pure methodURI
     json <- Aeson.decode <$> M.liftIO (doExchange uri)
@@ -360,7 +360,7 @@ postAuthTempCodeHandler cnf tempCode = do
     then do
         jwt <- makeJWT user
         M.liftIO $ print jwt
-        pure $ JsonWebToken (T.pack $ BL8.unpack jwt)
+        pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
     else
         err403Forbidden
     where

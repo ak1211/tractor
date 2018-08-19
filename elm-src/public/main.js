@@ -6733,14 +6733,14 @@ var _ak1211$tractor$Generated_WebApi$encodeApiPortfolio = function (x) {
 			}
 		});
 };
-var _ak1211$tractor$Generated_WebApi$encodeJsonWebToken = function (x) {
+var _ak1211$tractor$Generated_WebApi$encodeApiAccessToken = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
 			ctor: '::',
 			_0: {
 				ctor: '_Tuple2',
-				_0: 'getJsonWebToken',
-				_1: _elm_lang$core$Json_Encode$string(x.getJsonWebToken)
+				_0: 'token',
+				_1: _elm_lang$core$Json_Encode$string(x.token)
 			},
 			_1: {ctor: '[]'}
 		});
@@ -6927,14 +6927,14 @@ var _ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser = A3(
 			'scope',
 			_elm_lang$core$Json_Decode$string,
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))));
-var _ak1211$tractor$Generated_WebApi$JsonWebToken = function (a) {
-	return {getJsonWebToken: a};
+var _ak1211$tractor$Generated_WebApi$ApiAccessToken = function (a) {
+	return {token: a};
 };
-var _ak1211$tractor$Generated_WebApi$decodeJsonWebToken = A3(
+var _ak1211$tractor$Generated_WebApi$decodeApiAccessToken = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-	'getJsonWebToken',
+	'token',
 	_elm_lang$core$Json_Decode$string,
-	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$JsonWebToken));
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$ApiAccessToken));
 var _ak1211$tractor$Generated_WebApi$postApiV1Auth = function (query_code) {
 	var params = A2(
 		_elm_lang$core$List$filter,
@@ -6991,7 +6991,7 @@ var _ak1211$tractor$Generated_WebApi$postApiV1Auth = function (query_code) {
 					'?',
 					A2(_elm_lang$core$String$join, '&', params))),
 			body: _elm_lang$http$Http$emptyBody,
-			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeJsonWebToken),
+			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeApiAccessToken),
 			timeout: _elm_lang$core$Maybe$Nothing,
 			withCredentials: false
 		});
@@ -20475,7 +20475,7 @@ var _ak1211$tractor$Update$update = F2(
 				var receivedToken = A2(
 					_elm_lang$core$Maybe$map,
 					function (a) {
-						return a.getJsonWebToken;
+						return a.token;
 					},
 					_elm_lang$core$Result$toMaybe(_p6._0));
 				var uname = A2(
