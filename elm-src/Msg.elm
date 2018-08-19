@@ -40,7 +40,7 @@ import AnalyticsPage.Msg as AnalyticsPage
 
 
 type Msg
-    = DoneOAuthExchangeCode (Result Http.Error WebApi.BearerToken)
+    = DoneOAuthExchangeCode (Result Http.Error WebApi.JsonWebToken)
     | NewUrl String
     | Nop
     | ScrollToTop

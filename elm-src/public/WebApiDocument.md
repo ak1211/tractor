@@ -1,8 +1,11 @@
-## GET /api/v1/exchange/temporary/code/:tempCode
+## POST /api/v1/auth
 
-### Captures:
+### POST Parameters:
 
-- *OAuth temporary code*: Exchanging a temporary code for an access token
+- code
+     - **Values**: *Temporary code with in OAuth flow*
+     - **Description**: Exchanging a temporary code for an access token
+
 
 ### Response:
 
@@ -17,7 +20,7 @@
 - Example (`application/json;charset=utf-8`, `application/json`):
 
     ```javascript
-{"getBearerToken":"Json Web Token Binary"}
+{"getJsonWebToken":"API Access Token"}
     ```
 
 ## GET /api/v1/portfolios

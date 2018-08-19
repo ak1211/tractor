@@ -6733,14 +6733,14 @@ var _ak1211$tractor$Generated_WebApi$encodeApiPortfolio = function (x) {
 			}
 		});
 };
-var _ak1211$tractor$Generated_WebApi$encodeBearerToken = function (x) {
+var _ak1211$tractor$Generated_WebApi$encodeJsonWebToken = function (x) {
 	return _elm_lang$core$Json_Encode$object(
 		{
 			ctor: '::',
 			_0: {
 				ctor: '_Tuple2',
-				_0: 'getBearerToken',
-				_1: _elm_lang$core$Json_Encode$string(x.getBearerToken)
+				_0: 'getJsonWebToken',
+				_1: _elm_lang$core$Json_Encode$string(x.getJsonWebToken)
 			},
 			_1: {ctor: '[]'}
 		});
@@ -6927,53 +6927,71 @@ var _ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser = A3(
 			'scope',
 			_elm_lang$core$Json_Decode$string,
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))));
-var _ak1211$tractor$Generated_WebApi$BearerToken = function (a) {
-	return {getBearerToken: a};
+var _ak1211$tractor$Generated_WebApi$JsonWebToken = function (a) {
+	return {getJsonWebToken: a};
 };
-var _ak1211$tractor$Generated_WebApi$decodeBearerToken = A3(
+var _ak1211$tractor$Generated_WebApi$decodeJsonWebToken = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-	'getBearerToken',
+	'getJsonWebToken',
 	_elm_lang$core$Json_Decode$string,
-	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$BearerToken));
-var _ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode = function (capture_tempCode) {
+	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$JsonWebToken));
+var _ak1211$tractor$Generated_WebApi$postApiV1Auth = function (query_code) {
+	var params = A2(
+		_elm_lang$core$List$filter,
+		function (_p7) {
+			return !_elm_lang$core$String$isEmpty(_p7);
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$core$Maybe$withDefault,
+				'',
+				A2(
+					_elm_lang$core$Maybe$map,
+					function (_p8) {
+						return A2(
+							F2(
+								function (x, y) {
+									return A2(_elm_lang$core$Basics_ops['++'], x, y);
+								}),
+							'code=',
+							_elm_lang$http$Http$encodeUri(_p8));
+					},
+					_elm_lang$core$Maybe$Just(query_code))),
+			_1: {ctor: '[]'}
+		});
 	return _elm_lang$http$Http$request(
 		{
-			method: 'GET',
+			method: 'POST',
 			headers: {ctor: '[]'},
 			url: A2(
-				_elm_lang$core$String$join,
-				'/',
-				{
-					ctor: '::',
-					_0: 'https://tractor.ak1211.com',
-					_1: {
+				_elm_lang$core$Basics_ops['++'],
+				A2(
+					_elm_lang$core$String$join,
+					'/',
+					{
 						ctor: '::',
-						_0: 'api',
+						_0: 'https://tractor.ak1211.com',
 						_1: {
 							ctor: '::',
-							_0: 'v1',
+							_0: 'api',
 							_1: {
 								ctor: '::',
-								_0: 'exchange',
+								_0: 'v1',
 								_1: {
 									ctor: '::',
-									_0: 'temporary',
-									_1: {
-										ctor: '::',
-										_0: 'code',
-										_1: {
-											ctor: '::',
-											_0: _elm_lang$http$Http$encodeUri(capture_tempCode),
-											_1: {ctor: '[]'}
-										}
-									}
+									_0: 'auth',
+									_1: {ctor: '[]'}
 								}
 							}
 						}
-					}
-				}),
+					}),
+				_elm_lang$core$List$isEmpty(params) ? '' : A2(
+					_elm_lang$core$Basics_ops['++'],
+					'?',
+					A2(_elm_lang$core$String$join, '&', params))),
 			body: _elm_lang$http$Http$emptyBody,
-			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeBearerToken),
+			expect: _elm_lang$http$Http$expectJson(_ak1211$tractor$Generated_WebApi$decodeJsonWebToken),
 			timeout: _elm_lang$core$Maybe$Nothing,
 			withCredentials: false
 		});
@@ -7062,8 +7080,8 @@ var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
 	function (header_Authorization, capture_marketCode, query_tf) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p7) {
-				return !_elm_lang$core$String$isEmpty(_p7);
+			function (_p9) {
+				return !_elm_lang$core$String$isEmpty(_p9);
 			},
 			{
 				ctor: '::',
@@ -7072,7 +7090,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p8) {
+						function (_p10) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7080,7 +7098,7 @@ var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p8)));
+									_elm_lang$core$Basics$toString(_p10)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7144,8 +7162,8 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 	function (header_Authorization, capture_marketCode, query_tf, body) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p9) {
-				return !_elm_lang$core$String$isEmpty(_p9);
+			function (_p11) {
+				return !_elm_lang$core$String$isEmpty(_p11);
 			},
 			{
 				ctor: '::',
@@ -7154,7 +7172,7 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p10) {
+						function (_p12) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7162,7 +7180,7 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p10)));
+									_elm_lang$core$Basics$toString(_p12)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7216,9 +7234,9 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 						'?',
 						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$jsonBody(
-					function (_p11) {
+					function (_p13) {
 						return _elm_lang$core$Json_Encode$list(
-							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p11));
+							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p13));
 					}(body)),
 				expect: _elm_lang$http$Http$expectJson(
 					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
@@ -7230,8 +7248,8 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 	function (header_Authorization, capture_marketCode, query_tf, body) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p12) {
-				return !_elm_lang$core$String$isEmpty(_p12);
+			function (_p14) {
+				return !_elm_lang$core$String$isEmpty(_p14);
 			},
 			{
 				ctor: '::',
@@ -7240,7 +7258,7 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p13) {
+						function (_p15) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7248,7 +7266,7 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p13)));
+									_elm_lang$core$Basics$toString(_p15)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7302,9 +7320,9 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 						'?',
 						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$jsonBody(
-					function (_p14) {
+					function (_p16) {
 						return _elm_lang$core$Json_Encode$list(
-							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p14));
+							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p16));
 					}(body)),
 				expect: _elm_lang$http$Http$expectJson(
 					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
@@ -7316,8 +7334,8 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 	function (header_Authorization, capture_marketCode, query_tf, body) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p15) {
-				return !_elm_lang$core$String$isEmpty(_p15);
+			function (_p17) {
+				return !_elm_lang$core$String$isEmpty(_p17);
 			},
 			{
 				ctor: '::',
@@ -7326,7 +7344,7 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p16) {
+						function (_p18) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7334,7 +7352,7 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p16)));
+									_elm_lang$core$Basics$toString(_p18)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7388,9 +7406,9 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 						'?',
 						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$jsonBody(
-					function (_p17) {
+					function (_p19) {
 						return _elm_lang$core$Json_Encode$list(
-							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p17));
+							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p19));
 					}(body)),
 				expect: _elm_lang$http$Http$expectJson(
 					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
@@ -7445,9 +7463,9 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByMarketCode = F2(
 					}),
 				body: _elm_lang$http$Http$emptyBody,
 				expect: _elm_lang$http$Http$expectStringResponse(
-					function (_p18) {
-						var _p19 = _p18;
-						return _elm_lang$core$String$isEmpty(_p19.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+					function (_p20) {
+						var _p21 = _p20;
+						return _elm_lang$core$String$isEmpty(_p21.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 					}),
 				timeout: _elm_lang$core$Maybe$Nothing,
 				withCredentials: false
@@ -7487,9 +7505,9 @@ var _ak1211$tractor$Generated_WebApi$postApiV1StocksHistoryAll = _elm_lang$http$
 			}),
 		body: _elm_lang$http$Http$emptyBody,
 		expect: _elm_lang$http$Http$expectStringResponse(
-			function (_p20) {
-				var _p21 = _p20;
-				return _elm_lang$core$String$isEmpty(_p21.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+			function (_p22) {
+				var _p23 = _p22;
+				return _elm_lang$core$String$isEmpty(_p23.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 			}),
 		timeout: _elm_lang$core$Maybe$Nothing,
 		withCredentials: false
@@ -20457,7 +20475,7 @@ var _ak1211$tractor$Update$update = F2(
 				var receivedToken = A2(
 					_elm_lang$core$Maybe$map,
 					function (a) {
-						return a.getBearerToken;
+						return a.getJsonWebToken;
 					},
 					_elm_lang$core$Result$toMaybe(_p6._0));
 				var uname = A2(
@@ -23585,7 +23603,7 @@ var _ak1211$tractor$Main$exchangeOAuthCodeForToken = function (code) {
 	return A2(
 		_elm_lang$http$Http$send,
 		_ak1211$tractor$Msg$DoneOAuthExchangeCode,
-		_ak1211$tractor$Generated_WebApi$getApiV1ExchangeTemporaryCodeByTempCode(code));
+		_ak1211$tractor$Generated_WebApi$postApiV1Auth(code));
 };
 var _ak1211$tractor$Main$init = F2(
 	function (flags, location) {

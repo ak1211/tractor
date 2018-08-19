@@ -50,7 +50,7 @@ import View
 
 exchangeOAuthCodeForToken : String -> Cmd Msg
 exchangeOAuthCodeForToken code =
-    Http.send Msg.DoneOAuthExchangeCode (WebApi.getApiV1ExchangeTemporaryCodeByTempCode code)
+    Http.send Msg.DoneOAuthExchangeCode (WebApi.postApiV1Auth code)
 
 
 getWebApiDocument : Cmd Msg

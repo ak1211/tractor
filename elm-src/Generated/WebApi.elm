@@ -76,19 +76,19 @@ encodeAuthenticatedUser x =
         , ( "userName", Json.Encode.string x.userName )
         ]
 
-type alias BearerToken =
-    { getBearerToken : String
+type alias JsonWebToken =
+    { getJsonWebToken : String
     }
 
-decodeBearerToken : Decoder BearerToken
-decodeBearerToken =
-    decode BearerToken
-        |> required "getBearerToken" string
+decodeJsonWebToken : Decoder JsonWebToken
+decodeJsonWebToken =
+    decode JsonWebToken
+        |> required "getJsonWebToken" string
 
-encodeBearerToken : BearerToken -> Json.Encode.Value
-encodeBearerToken x =
+encodeJsonWebToken : JsonWebToken -> Json.Encode.Value
+encodeJsonWebToken x =
     Json.Encode.object
-        [ ( "getBearerToken", Json.Encode.string x.getBearerToken )
+        [ ( "getJsonWebToken", Json.Encode.string x.getJsonWebToken )
         ]
 
 type alias ApiPortfolio =
@@ -373,32 +373,41 @@ deleteApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode que
                 False
             }
 
-getApiV1ExchangeTemporaryCodeByTempCode : String -> Http.Request (BearerToken)
-getApiV1ExchangeTemporaryCodeByTempCode capture_tempCode =
-    Http.request
-        { method =
-            "GET"
-        , headers =
-            []
-        , url =
-            String.join "/"
-                [ "https://tractor.ak1211.com"
-                , "api"
-                , "v1"
-                , "exchange"
-                , "temporary"
-                , "code"
-                , capture_tempCode |> Http.encodeUri
+postApiV1Auth : String -> Http.Request (JsonWebToken)
+postApiV1Auth query_code =
+    let
+        params =
+            List.filter (not << String.isEmpty)
+                [ Just query_code
+                    |> Maybe.map (Http.encodeUri >> (++) "code=")
+                    |> Maybe.withDefault ""
                 ]
-        , body =
-            Http.emptyBody
-        , expect =
-            Http.expectJson decodeBearerToken
-        , timeout =
-            Nothing
-        , withCredentials =
-            False
-        }
+    in
+        Http.request
+            { method =
+                "POST"
+            , headers =
+                []
+            , url =
+                String.join "/"
+                    [ "https://tractor.ak1211.com"
+                    , "api"
+                    , "v1"
+                    , "auth"
+                    ]
+                ++ if List.isEmpty params then
+                       ""
+                   else
+                       "?" ++ String.join "&" params
+            , body =
+                Http.emptyBody
+            , expect =
+                Http.expectJson decodeJsonWebToken
+            , timeout =
+                Nothing
+            , withCredentials =
+                False
+            }
 
 getApiV1Version : Http.Request (VerRev)
 getApiV1Version =

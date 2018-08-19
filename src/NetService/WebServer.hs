@@ -70,10 +70,10 @@ import qualified Network.Wai.Handler.Warp     as Warp
 import           Servant                      ((:<|>) (..), (:>), Capture,
                                                Context (..), Delete, Get,
                                                Header, Header', Headers, JSON,
-                                               NoContent, Patch, PostAccepted,
-                                               Put, QueryParam, QueryParam',
-                                               Raw, ReqBody, Required, Strict,
-                                               Summary)
+                                               NoContent, Patch, Post,
+                                               PostAccepted, Put, QueryParam,
+                                               QueryParam', Raw, ReqBody,
+                                               Required, Strict, Summary)
 import qualified Servant
 import           Servant.Auth.Server          (Auth)
 import qualified Servant.Auth.Server          as Auth
@@ -89,9 +89,9 @@ import qualified Conf
 import           Model                        (TimeFrame (..))
 import qualified Model
 import           NetService.ApiTypes          (ApiOhlcv, ApiPortfolio,
-                                               BearerToken (..),
-                                               OAuthAccessResponse (..),
-                                               AuthenticatedUser (..), SVG,
+                                               AuthenticatedUser (..),
+                                               JsonWebToken (..),
+                                               OAuthAccessResponse (..), SVG,
                                                SvgBinary (..))
 import qualified NetService.ApiTypes          as ApiTypes
 import           NetService.HomePage          (HomePage (..))
@@ -121,13 +121,15 @@ instance Servant.MimeRender SVG Chart where
 
 -- |
 --
-type TempCode   = String
-type CTempCode  = Capture "tempCode" TempCode
-instance Servant.Docs.ToCapture CTempCode where
-    toCapture _ =
-        Servant.Docs.DocCapture
-        "OAuth temporary code"
+type AuthTempCode = String
+type QAuthTempCode = QueryParam' '[Required, Strict] "code" AuthTempCode
+instance Servant.Docs.ToParam QAuthTempCode where
+    toParam _ =
+        Servant.Docs.DocQueryParam
+        "code"
+        ["Temporary code with in OAuth flow"]
         "Exchanging a temporary code for an access token"
+        Servant.Docs.Normal
 
 -- |
 --
@@ -216,7 +218,7 @@ type ApiForFrontend
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
  :<|> Summary "Delete prices"
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
- :<|> "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> CTempCode :> Get '[JSON] BearerToken
+ :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] JsonWebToken
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
 
@@ -240,7 +242,7 @@ type Protected
 type Unprotected
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
- :<|> "api" :> "v1" :> "exchange" :> "temporary" :> "code" :> CTempCode :> Get '[JSON] BearerToken
+ :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] JsonWebToken
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
  :<|> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
@@ -265,11 +267,11 @@ protected cnf result =
         Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", indefinite)] }
     where
     badPassword =
-        "Bearer realm=\"Protected API\",\r\nerror=\"invalid_token\",\r\nerror_description=\"bad password\""
+        "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"bad password\""
     noSuchUser =
-        "Bearer realm=\"Protected API\",\r\nerror=\"invalid_token\",\r\nerror_description=\"no such user\""
+        "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"no such user\""
     indefinite =
-        "Bearer realm=\"Protected API\",\r\nerror=\"invalid_token\",\r\nerror_description=\"indefinite\""
+        "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"indefinite\""
 
 -- |
 --
@@ -277,7 +279,7 @@ unprotected :: Config -> Servant.Server Unprotected
 unprotected cnf
     = return (HomePage clientID)
     :<|> Servant.serveDirectoryFileServer "elm-src/public"
-    :<|> exchangeTempCodeHandler cnf
+    :<|> postAuthTempCodeHandler cnf
     :<|> return (cVerRev cnf)
     :<|> getPortfolioHandler cnf
     :<|> getChartHandler cnf
@@ -344,8 +346,8 @@ err500InternalServerError = Servant.throwError Servant.err500
 
 -- |
 -- 仮コードをアクセストークンに交換する
-exchangeTempCodeHandler :: Config -> TempCode -> Servant.Handler BearerToken
-exchangeTempCodeHandler cnf tempCode = do
+postAuthTempCodeHandler :: Config -> AuthTempCode -> Servant.Handler JsonWebToken
+postAuthTempCodeHandler cnf tempCode = do
     uri <- maybe err500InternalServerError pure methodURI
     json <- Aeson.decode <$> M.liftIO (doExchange uri)
     oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
@@ -358,7 +360,7 @@ exchangeTempCodeHandler cnf tempCode = do
     then do
         jwt <- makeJWT user
         M.liftIO $ print jwt
-        pure . BearerToken . T.pack . BL8.unpack $ jwt
+        pure $ JsonWebToken (T.pack $ BL8.unpack jwt)
     else
         err403Forbidden
     where

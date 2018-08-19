@@ -46,7 +46,7 @@ module NetService.ApiTypes
     , fromApiOhlcv
     , OAuthAccessResponse(..)
     , AuthenticatedUser(..)
-    , BearerToken(..)
+    , JsonWebToken(..)
     , VerRev(..)
     )
     where
@@ -148,9 +148,9 @@ instance Aeson.FromJSON OAuthAccessResponse where
 -- |
 -- AuthenticatedUser
 data AuthenticatedUser = AuthenticatedUser
-    { scope       :: T.Text
-    , userId      :: T.Text
-    , userName    :: T.Text
+    { scope    :: T.Text
+    , userId   :: T.Text
+    , userName :: T.Text
     } deriving (Eq, Show, Generic)
 
 instance Aeson.FromJSON AuthenticatedUser
@@ -164,17 +164,17 @@ instance Servant.Docs.ToSample AuthenticatedUser where
 
 -- |
 --
-newtype BearerToken = BearerToken
-    { getBearerToken :: T.Text
+newtype JsonWebToken = JsonWebToken
+    { getJsonWebToken :: T.Text
     } deriving (Eq, Show, Generic)
-instance Aeson.FromJSON BearerToken
-instance Aeson.ToJSON BearerToken
-instance FromJWT BearerToken
-instance ToJWT BearerToken
-instance Servant.Elm.ElmType BearerToken
-instance Servant.Docs.ToSample BearerToken where
+instance Aeson.FromJSON JsonWebToken
+instance Aeson.ToJSON JsonWebToken
+instance FromJWT JsonWebToken
+instance ToJWT JsonWebToken
+instance Servant.Elm.ElmType JsonWebToken
+instance Servant.Docs.ToSample JsonWebToken where
     toSamples _ =
-        Servant.Docs.singleSample $ BearerToken "Json Web Token Binary"
+        Servant.Docs.singleSample $ JsonWebToken "API Access Token"
 
 
 -- |
