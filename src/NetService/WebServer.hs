@@ -495,7 +495,7 @@ getHistoriesHandler cnf codeStr timeFrame limit =
             DB.selectList   [ Model.OhlcvTf     ==. timeFrame
                             , Model.OhlcvTicker ==. ticker
                             ]
-                            [ DB.Asc Model.OhlcvAt
+                            [ DB.Desc Model.OhlcvAt
                             , DB.LimitTo limit'
                             ]
 
