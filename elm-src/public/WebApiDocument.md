@@ -209,6 +209,10 @@
      - **Values**: *1h, 1d*
      - **Description**: prices of a time frame.
 
+- limit
+     - **Values**: *100, 1000, ...*
+     - **Description**: limit of records
+
 
 ### Response:
 

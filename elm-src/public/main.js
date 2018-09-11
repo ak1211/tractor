@@ -7076,8 +7076,8 @@ var _ak1211$tractor$Generated_WebApi$decodeApiOhlcv = A3(
 							'at',
 							_elm_lang$core$Json_Decode$string,
 							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$ApiOhlcv))))))));
-var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
-	function (header_Authorization, capture_marketCode, query_tf) {
+var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F4(
+	function (header_Authorization, capture_marketCode, query_tf, query_limit) {
 		var params = A2(
 			_elm_lang$core$List$filter,
 			function (_p9) {
@@ -7101,7 +7101,26 @@ var _ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode = F3(
 									_elm_lang$core$Basics$toString(_p10)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
-				_1: {ctor: '[]'}
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$core$Maybe$withDefault,
+						'',
+						A2(
+							_elm_lang$core$Maybe$map,
+							function (_p11) {
+								return A2(
+									F2(
+										function (x, y) {
+											return A2(_elm_lang$core$Basics_ops['++'], x, y);
+										}),
+									'limit=',
+									_elm_lang$http$Http$encodeUri(
+										_elm_lang$core$Basics$toString(_p11)));
+							},
+							query_limit)),
+					_1: {ctor: '[]'}
+				}
 			});
 		return _elm_lang$http$Http$request(
 			{
@@ -7162,8 +7181,8 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 	function (header_Authorization, capture_marketCode, query_tf, body) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p11) {
-				return !_elm_lang$core$String$isEmpty(_p11);
+			function (_p12) {
+				return !_elm_lang$core$String$isEmpty(_p12);
 			},
 			{
 				ctor: '::',
@@ -7172,7 +7191,7 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p12) {
+						function (_p13) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7180,7 +7199,7 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p12)));
+									_elm_lang$core$Basics$toString(_p13)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7234,9 +7253,9 @@ var _ak1211$tractor$Generated_WebApi$putApiV1StocksHistoryByMarketCode = F4(
 						'?',
 						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$jsonBody(
-					function (_p13) {
+					function (_p14) {
 						return _elm_lang$core$Json_Encode$list(
-							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p13));
+							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p14));
 					}(body)),
 				expect: _elm_lang$http$Http$expectJson(
 					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
@@ -7248,8 +7267,8 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 	function (header_Authorization, capture_marketCode, query_tf, body) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p14) {
-				return !_elm_lang$core$String$isEmpty(_p14);
+			function (_p15) {
+				return !_elm_lang$core$String$isEmpty(_p15);
 			},
 			{
 				ctor: '::',
@@ -7258,7 +7277,7 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p15) {
+						function (_p16) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7266,7 +7285,7 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p15)));
+									_elm_lang$core$Basics$toString(_p16)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7320,9 +7339,9 @@ var _ak1211$tractor$Generated_WebApi$patchApiV1StocksHistoryByMarketCode = F4(
 						'?',
 						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$jsonBody(
-					function (_p16) {
+					function (_p17) {
 						return _elm_lang$core$Json_Encode$list(
-							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p16));
+							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p17));
 					}(body)),
 				expect: _elm_lang$http$Http$expectJson(
 					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
@@ -7334,8 +7353,8 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 	function (header_Authorization, capture_marketCode, query_tf, body) {
 		var params = A2(
 			_elm_lang$core$List$filter,
-			function (_p17) {
-				return !_elm_lang$core$String$isEmpty(_p17);
+			function (_p18) {
+				return !_elm_lang$core$String$isEmpty(_p18);
 			},
 			{
 				ctor: '::',
@@ -7344,7 +7363,7 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 					'',
 					A2(
 						_elm_lang$core$Maybe$map,
-						function (_p18) {
+						function (_p19) {
 							return A2(
 								F2(
 									function (x, y) {
@@ -7352,7 +7371,7 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 									}),
 								'tf=',
 								_elm_lang$http$Http$encodeUri(
-									_elm_lang$core$Basics$toString(_p18)));
+									_elm_lang$core$Basics$toString(_p19)));
 						},
 						_elm_lang$core$Maybe$Just(query_tf))),
 				_1: {ctor: '[]'}
@@ -7406,9 +7425,9 @@ var _ak1211$tractor$Generated_WebApi$deleteApiV1StocksHistoryByMarketCode = F4(
 						'?',
 						A2(_elm_lang$core$String$join, '&', params))),
 				body: _elm_lang$http$Http$jsonBody(
-					function (_p19) {
+					function (_p20) {
 						return _elm_lang$core$Json_Encode$list(
-							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p19));
+							A2(_elm_lang$core$List$map, _ak1211$tractor$Generated_WebApi$encodeApiOhlcv, _p20));
 					}(body)),
 				expect: _elm_lang$http$Http$expectJson(
 					_elm_lang$core$Json_Decode$list(_ak1211$tractor$Generated_WebApi$decodeApiOhlcv)),
@@ -7463,9 +7482,9 @@ var _ak1211$tractor$Generated_WebApi$putApiV1PublishZmqByMarketCode = F2(
 					}),
 				body: _elm_lang$http$Http$emptyBody,
 				expect: _elm_lang$http$Http$expectStringResponse(
-					function (_p20) {
-						var _p21 = _p20;
-						return _elm_lang$core$String$isEmpty(_p21.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+					function (_p21) {
+						var _p22 = _p21;
+						return _elm_lang$core$String$isEmpty(_p22.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 					}),
 				timeout: _elm_lang$core$Maybe$Nothing,
 				withCredentials: false
@@ -7505,9 +7524,9 @@ var _ak1211$tractor$Generated_WebApi$postApiV1StocksHistoryAll = _elm_lang$http$
 			}),
 		body: _elm_lang$http$Http$emptyBody,
 		expect: _elm_lang$http$Http$expectStringResponse(
-			function (_p22) {
-				var _p23 = _p22;
-				return _elm_lang$core$String$isEmpty(_p23.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
+			function (_p23) {
+				var _p24 = _p23;
+				return _elm_lang$core$String$isEmpty(_p24.body) ? _elm_lang$core$Result$Ok(_ak1211$tractor$Generated_WebApi$NoContent) : _elm_lang$core$Result$Err('Expected the response body to be empty');
 			}),
 		timeout: _elm_lang$core$Maybe$Nothing,
 		withCredentials: false
@@ -17075,7 +17094,7 @@ var _ak1211$tractor$AnalyticsPage_Update$getHistories = F2(
 		return A2(
 			_elm_lang$http$Http$send,
 			_ak1211$tractor$AnalyticsPage_Msg$UpdateHistories(marketCode),
-			A3(_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode, authzHeader, marketCode, '1d'));
+			A4(_ak1211$tractor$Generated_WebApi$getApiV1StocksHistoryByMarketCode, authzHeader, marketCode, '1d', _elm_lang$core$Maybe$Nothing));
 	});
 var _ak1211$tractor$AnalyticsPage_Update$update = F2(
 	function (msg, model) {

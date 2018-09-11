@@ -88,11 +88,12 @@ import qualified BrokerBackend                as BB
 import qualified Conf
 import           Model                        (TimeFrame (..))
 import qualified Model
-import           NetService.ApiTypes          (ApiAccessToken (..), ApiOhlcv,
+import           NetService.ApiTypes          (ApiAccessToken (..),
+                                               ApiLimit (..), ApiOhlcv,
                                                ApiPortfolio,
                                                AuthenticatedUser (..),
                                                OAuthAccessResponse (..), SVG,
-                                               SvgBinary (..))
+                                               SvgBinary (..), makeApiLimit)
 import qualified NetService.ApiTypes          as ApiTypes
 import           NetService.HomePage          (HomePage (..))
 import qualified NetService.PlotChart         as PlotChart
@@ -140,6 +141,30 @@ instance Servant.Docs.ToCapture CMarketCode where
         Servant.Docs.DocCapture
         "market code"
         "NI225, TOPIX, TYO8306 etc..."
+
+-- |
+--
+instance Servant.FromHttpApiData ApiLimit where
+    parseQueryParam x =
+        case makeApiLimit =<< parse x of
+            Nothing -> Left "ApiLimit"
+            Just a -> Right a
+        where
+        parse :: T.Text -> Maybe Int
+        parse =
+            either (const Nothing) Just . Servant.parseQueryParam
+
+instance Servant.Elm.ElmType ApiLimit
+
+type QLimit = QueryParam "limit" ApiLimit
+
+instance Servant.Docs.ToParam QLimit where
+    toParam _ =
+        Servant.Docs.DocQueryParam
+            "limit"
+            ["100", "1000", "..."]
+            "limit of records"
+            Servant.Docs.Normal
 
 -- |
 --
@@ -211,7 +236,7 @@ type ApiForFrontend
  :<|> Summary "This endpoint runs the crawler."
         :> "api" :> "v1" :> "stocks" :> "history" :> "all" :> PostAccepted '[JSON] NoContent
  :<|> Summary "Select prices"
-        :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
+        :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> QLimit :> HAuthorization :> Get '[JSON, CSV] [ApiOhlcv]
  :<|> Summary "Insert prices"
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
  :<|> Summary "Update / Insert prices"
@@ -232,7 +257,7 @@ type ApiForDocument
 type Protected
     = "api" :> "v1" :> "publish" :> "zmq" :> CMarketCode :> Put '[JSON] NoContent
  :<|> "api" :> "v1" :> "stocks" :> "history" :> "all" :> PostAccepted '[JSON] NoContent
- :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> Get '[JSON, CSV] [ApiOhlcv]
+ :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> QLimit :> Get '[JSON, CSV] [ApiOhlcv]
  :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> ReqBody '[JSON, CSV] [ApiOhlcv] :> Put '[JSON] [ApiOhlcv]
  :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
  :<|> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
@@ -449,8 +474,8 @@ getPortfolioHandler cnf =
 
 -- |
 --
-getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> Servant.Handler [ApiOhlcv]
-getHistoriesHandler cnf codeStr timeFrame =
+getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> Maybe ApiLimit -> Servant.Handler [ApiOhlcv]
+getHistoriesHandler cnf codeStr timeFrame limit =
     go $ Model.toTickerSymbol codeStr
     where
     --
@@ -464,11 +489,15 @@ getHistoriesHandler cnf codeStr timeFrame =
     --
     --
     selectList ticker =
+        let limit' = Maybe.fromMaybe 1000 (getApiLimit <$> limit)
+        in
         flip DB.runSqlPersistMPool (cPool cnf) $
             DB.selectList   [ Model.OhlcvTf     ==. timeFrame
                             , Model.OhlcvTicker ==. ticker
                             ]
-                            [DB.Asc Model.OhlcvAt]
+                            [ DB.Asc Model.OhlcvAt
+                            , DB.LimitTo limit'
+                            ]
 
 -- |
 -- 新規挿入(INSERT)
@@ -677,6 +706,7 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
             DB.selectList   [ Model.OhlcvTf     ==. timeFrame
                             , Model.OhlcvTicker ==. ticker
                             ]
-                            [DB.Desc Model.OhlcvAt
-                            ,DB.LimitTo 100]
+                            [ DB.Desc Model.OhlcvAt
+                            , DB.LimitTo 100
+                            ]
 

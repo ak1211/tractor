@@ -55,6 +55,7 @@ spec =
         ( Servant.Elm.defElmImports
         : "type alias AccessToken = String"
         : "type alias TimeFrame = String"
+        : "type alias ApiLimit = Int"
         : "type alias MarketCode = String"
         : "type alias AuthzValue = String"
         : "makeAuthorizationHeader : AccessToken -> AuthzValue"

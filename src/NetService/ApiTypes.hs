@@ -39,6 +39,8 @@ module NetService.ApiTypes
     ( SVG
     , SvgBinary(..)
     , ServerTChan
+    , ApiLimit(getApiLimit)
+    , makeApiLimit
     , ApiPortfolio
     , toApiPortfolio
     , ApiOhlcv
@@ -80,6 +82,17 @@ instance Accept SVG where
 
 instance MimeRender SVG SvgBinary where
     mimeRender _ = getSvgBinary
+
+-- |
+--
+newtype ApiLimit = ApiLimit
+    { getApiLimit :: Int
+    } deriving (Generic)
+
+makeApiLimit :: Int -> Maybe ApiLimit
+makeApiLimit x
+    | x > 0     = Just (ApiLimit x)
+    | otherwise = Nothing
 
 --
 --
@@ -175,7 +188,6 @@ instance Servant.Elm.ElmType ApiAccessToken
 instance Servant.Docs.ToSample ApiAccessToken where
     toSamples _ =
         Servant.Docs.singleSample $ ApiAccessToken "API Access Token"
-
 
 -- |
 -- ポートフォリオ

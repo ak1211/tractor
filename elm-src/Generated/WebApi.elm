@@ -11,6 +11,8 @@ type alias AccessToken = String
 
 type alias TimeFrame = String
 
+type alias ApiLimit = Int
+
 type alias MarketCode = String
 
 type alias AuthzValue = String
@@ -213,13 +215,16 @@ postApiV1StocksHistoryAll =
             False
         }
 
-getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Http.Request (List (ApiOhlcv))
-getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf =
+getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Maybe (ApiLimit) -> Http.Request (List (ApiOhlcv))
+getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf query_limit =
     let
         params =
             List.filter (not << String.isEmpty)
                 [ Just query_tf
                     |> Maybe.map (toString >> Http.encodeUri >> (++) "tf=")
+                    |> Maybe.withDefault ""
+                , query_limit
+                    |> Maybe.map (toString >> Http.encodeUri >> (++) "limit=")
                     |> Maybe.withDefault ""
                 ]
     in
