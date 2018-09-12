@@ -67,6 +67,7 @@ import qualified Network.HTTP.Types.Header    as Header
 import qualified Network.URI                  as URI
 import qualified Network.URI.Encode           as URI
 import qualified Network.Wai.Handler.Warp     as Warp
+import           Network.Wai.Logger           (ApacheLogger, withStdoutLogger)
 import           Servant                      ((:<|>) (..), (:>), Capture,
                                                Context (..), Delete, Get,
                                                Header, Header', Headers, JSON,
@@ -148,7 +149,7 @@ instance Servant.FromHttpApiData ApiLimit where
     parseQueryParam x =
         case makeApiLimit =<< parse x of
             Nothing -> Left "ApiLimit"
-            Just a -> Right a
+            Just a  -> Right a
         where
         parse :: T.Text -> Maybe Int
         parse =
@@ -324,20 +325,26 @@ webApiServer cfg = protected cfg :<|> unprotected cfg
 -- Web API サーバーを起動する
 runWebServer :: ApiTypes.VerRev -> Conf.Info -> ApiTypes.ServerTChan -> IO ()
 runWebServer versionRevision conf chan = do
-    pool <- Logger.runStdoutLoggingT . runResourceT $ createPool
+    pool <- Logger.runNoLoggingT . runResourceT $ createPool
     myKey <- Auth.generateKey
     let api = Proxy :: Proxy WebApi
         jwtCfg = Auth.defaultJWTSettings myKey
         context = jwtCfg :. Auth.defaultCookieSettings :. Servant.EmptyContext
-        server = webApiServer (Config versionRevision jwtCfg conf pool chan)
-    Warp.runSettings settings (Servant.serveWithContext api context server)
+        apiServer = webApiServer (Config versionRevision jwtCfg conf pool chan)
+        servantServer = Servant.serveWithContext api context apiServer
+    withStdoutLogger $ \aplogger -> do
+        Warp.runSettings (settings aplogger) servantServer
     where
     --
     --
     createPool = MySQL.createMySQLPool connInfo poolSize
     connInfo = Conf.connInfoDB $ Conf.mariaDB conf
     poolSize = 8
-    settings = Warp.setPort 8739 Warp.defaultSettings
+    --
+    --
+    settings :: ApacheLogger -> Warp.Settings
+    settings aplogger =
+        Warp.setPort 8739 $ Warp.setLogger aplogger Warp.defaultSettings
 
 --
 --

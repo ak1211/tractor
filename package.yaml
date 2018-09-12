@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.24
+version:            0.4.25
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -79,6 +79,7 @@ library:
   - transformers-either
   - vector
   - wai
+  - wai-logger
   - warp
   - xml-conduit
   - zeromq4-haskell
