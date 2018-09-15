@@ -39,8 +39,8 @@ module NetService.ApiTypes
     ( SVG
     , SvgBinary(..)
     , ServerTChan
-    , ApiLimit(getApiLimit)
-    , makeApiLimit
+    , SqlLimit(getSqlLimit)
+    , makeSqlLimit
     , ApiPortfolio
     , toApiPortfolio
     , ApiOhlcv
@@ -51,26 +51,36 @@ module NetService.ApiTypes
     , ApiAccessToken(..)
     , VerRev(..)
     )
-    where
-import qualified Control.Concurrent.STM     as STM
-import           Data.Aeson                 ((.:), (.:?))
-import qualified Data.Aeson                 as Aeson
-import qualified Data.ByteString.Lazy.Char8 as BL8
-import           Data.Csv                   ((.=))
-import qualified Data.Csv                   as Csv
-import           Data.Int                   (Int64)
-import qualified Data.Text                  as T
-import qualified Data.Time                  as Time
-import           GHC.Generics               (Generic)
-import           Network.HTTP.Media         ((//))
-import           Servant.API                (Accept, MimeRender, contentType,
-                                             mimeRender)
-import           Servant.Auth.Server        (FromJWT, ToJWT)
+where
+import qualified Control.Concurrent.STM        as STM
+import           Data.Aeson                               ( (.:)
+                                                          , (.:?)
+                                                          )
+import qualified Data.Aeson                    as Aeson
+import qualified Data.ByteString.Lazy.Char8    as BL8
+import           Data.Csv                                 ( (.=) )
+import qualified Data.Csv                      as Csv
+import           Data.Int                                 ( Int64 )
+import qualified Data.Text                     as T
+import qualified Data.Time                     as Time
+import           GHC.Generics                             ( Generic )
+import           Network.HTTP.Media                       ( (//) )
+import           Servant.API                              ( Accept
+                                                          , MimeRender
+                                                          , contentType
+                                                          , mimeRender
+                                                          )
+import qualified Servant
+import           Servant.Auth.Server                      ( FromJWT
+                                                          , ToJWT
+                                                          )
 import qualified Servant.Docs
-import qualified Servant.Elm
+import           Servant.Elm                              ( ElmType )
 import qualified Web.FormUrlEncoded
 
-import           Lib                        (toISO8601DateTime, tzAsiaTokyo)
+import           Lib                                      ( toISO8601DateTime
+                                                          , tzAsiaTokyo
+                                                          )
 import qualified Model
 
 newtype SvgBinary = SvgBinary { getSvgBinary :: BL8.ByteString }
@@ -85,14 +95,27 @@ instance MimeRender SVG SvgBinary where
 
 -- |
 --
-newtype ApiLimit = ApiLimit
-    { getApiLimit :: Int
-    } deriving (Generic)
+newtype SqlLimit = SqlLimit
+    { getSqlLimit :: Int
+    } deriving Generic
 
-makeApiLimit :: Int -> Maybe ApiLimit
-makeApiLimit x
-    | x > 0     = Just (ApiLimit x)
-    | otherwise = Nothing
+instance ElmType SqlLimit
+
+instance Servant.FromHttpApiData SqlLimit where
+    parseQueryParam x =
+        case makeSqlLimit =<< parse x of
+            Nothing -> Left "SqlLimit"
+            Just a  -> Right a
+        where
+        parse :: T.Text -> Maybe Int
+        parse =
+            either (const Nothing) Just . Servant.parseQueryParam
+
+-- |
+-- スマートコンストラクタ
+makeSqlLimit :: Int -> Maybe SqlLimit
+makeSqlLimit x | x > 0     = Just (SqlLimit x)
+               | otherwise = Nothing
 
 --
 --
@@ -216,8 +239,8 @@ toApiPortfolio o = ApiPortfolio
     { code     = Model.fromTickerSymbol $ Model.portfolioTicker o
     , caption  = Model.portfolioCaption o
     , updateAt = toISO8601DateTime
-                . Time.utcToZonedTime tzAsiaTokyo
-                <$> Model.portfolioUpdateAt o
+        .   Time.utcToZonedTime tzAsiaTokyo
+        <$> Model.portfolioUpdateAt o
     }
 
 -- |
@@ -295,7 +318,7 @@ instance Csv.DefaultOrdered ApiOhlcv where
 -- ApiOhlcv {at = "1858-11-17T09:00:00+0900", open = Just 23250.0, high = Just 23340.0, low = Just 23230.0, close = Just 23330.0, volume = 31384, source = Nothing}
 --
 toApiOhlcv :: Model.Ohlcv -> ApiOhlcv
-toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
+toApiOhlcv Model.Ohlcv {..} = ApiOhlcv
     { at     = toISO8601DateTime . Time.utcToZonedTime tzAsiaTokyo $ ohlcvAt
     , open   = ohlcvOpen
     , high   = ohlcvHigh
@@ -332,10 +355,11 @@ toApiOhlcv Model.Ohlcv{..} = ApiOhlcv
 -- >>> :}
 -- Right (Ohlcv {ohlcvTicker = TSTYO 1320, ohlcvTf = TF1d, ohlcvAt = 2018-06-22 06:00:00 UTC, ohlcvOpen = Just 23250.0, ohlcvHigh = Just 23340.0, ohlcvLow = Just 23230.0, ohlcvClose = Just 23330.0, ohlcvVolume = 31384, ohlcvSource = Nothing})
 --
-fromApiOhlcv    :: Model.TickerSymbol
-                -> Model.TimeFrame
-                -> ApiOhlcv
-                -> Either String Model.Ohlcv
+fromApiOhlcv
+    :: Model.TickerSymbol
+    -> Model.TimeFrame
+    -> ApiOhlcv
+    -> Either String Model.Ohlcv
 fromApiOhlcv ticker timeFrame o = do
     time <- validation =<< toUTCTime (at o)
     Right Model.Ohlcv
@@ -349,44 +373,34 @@ fromApiOhlcv ticker timeFrame o = do
         , ohlcvVolume = volume o
         , ohlcvSource = T.pack <$> source o
         }
-    where
+  where
     --
     --
-    tokyoTime =
-        Time.localTimeOfDay . Time.utcToLocalTime tzAsiaTokyo
+    tokyoTime = Time.localTimeOfDay . Time.utcToLocalTime tzAsiaTokyo
     --
     --
     validation :: Time.UTCTime -> Either String Time.UTCTime
-    validation utc =
-        inTradingHours utc >> inTimeFrame utc
+    validation utc = inTradingHours utc >> inTimeFrame utc
     --
     --
     inTradingHours utc =
         let t = tokyoTime utc
-        in
-        if Time.TimeOfDay 9 0 0 <= t && t <= Time.TimeOfDay 15 0 0
-        then
-            Right utc
-        else
-            Left "out of trading hours"
+        in  if Time.TimeOfDay 9 0 0 <= t && t <= Time.TimeOfDay 15 0 0
+                then Right utc
+                else Left "out of trading hours"
     --
     --
     inTimeFrame utc =
         let t@(Time.TimeOfDay _ m s) = tokyoTime utc
-        in
-        case timeFrame of
-            Model.TF1h | m == 0 && s == 0 ->
-                Right utc
-            Model.TF1d | Time.TimeOfDay 15 0 0 == t ->
-                Right utc
-            _ ->
-                Left "out of time frame"
+        in  case timeFrame of
+                Model.TF1h | m == 0 && s == 0 -> Right utc
+                Model.TF1d | Time.TimeOfDay 15 0 0 == t -> Right utc
+                _                             -> Left "out of time frame"
     --
     --
     toUTCTime timeStr =
         let parser = Time.parseTimeM True Time.defaultTimeLocale
             format = Time.iso8601DateFormat (Just "%H:%M:%S%z")
-        in
-        parser format timeStr
+        in  parser format timeStr
 
 

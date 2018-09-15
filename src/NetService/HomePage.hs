@@ -29,10 +29,13 @@ Portability :  POSIX
 {-# LANGUAGE OverloadedStrings #-}
 module NetService.HomePage
     ( HomePage(..)
-    ) where
-import           Data.Monoid            ((<>),mempty)
-import qualified Data.Text              as T
-import qualified Data.Text.Lazy.Builder as TLB
+    )
+where
+import           Data.Monoid                              ( (<>)
+                                                          , mempty
+                                                          )
+import qualified Data.Text                     as T
+import qualified Data.Text.Lazy.Builder        as TLB
 import           Lucid
 import qualified Servant.Docs
 

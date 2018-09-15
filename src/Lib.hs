@@ -33,16 +33,18 @@ module Lib
     , httpRequestHeader
     , parseJSTDayTimeToUTCTime
     , toISO8601DateTime
-    , NthOfTotal
-    , packNthOfTotal
+    , Progress(..)
+    , showProgress
+    , attachProgress
     , every
-    ) where
-import qualified Data.ByteString.Lazy.Char8 as BL8
-import qualified Data.Maybe                 as Maybe
-import qualified Data.Text.Lazy             as TL
-import qualified Data.Time                  as Tm
-import           Network.HTTP.Types.Header  (Header)
-import qualified Network.HTTP.Types.Header  as Header
+    )
+where
+import qualified Data.ByteString.Lazy.Char8    as BL8
+import qualified Data.Maybe                    as Maybe
+import qualified Data.Text.Lazy                as TL
+import qualified Data.Time                     as Tm
+import           Network.HTTP.Types.Header                ( Header )
+import qualified Network.HTTP.Types.Header     as Header
 
 -- |
 -- 起動時の挨拶文
@@ -60,52 +62,61 @@ greetingsMessage versionString = TL.unlines
 -- |
 -- 日本時間(JST) = UTC+9
 tzAsiaTokyo :: Tm.TimeZone
-tzAsiaTokyo =
-    let z = Tm.hoursToTimeZone 9 in
-    z {Tm.timeZoneName = "JST"}
+tzAsiaTokyo = (Tm.hoursToTimeZone 9) { Tm.timeZoneName = "JST" }
 
 -- |
 -- HTTPリクエストヘッダ
 httpRequestHeader :: String -> [Header]
 httpRequestHeader ua =
-    [ (Header.hAccept, "text/html, text/plain, text/css")
-    , (Header.hAcceptCharset, "UTF-8")
+    [ (Header.hAccept        , "text/html, text/plain, text/css")
+    , (Header.hAcceptCharset , "UTF-8")
     , (Header.hAcceptLanguage, "ja, en;q=0.5")
-    , (Header.hUserAgent, BL8.toStrict $ BL8.pack ua)
+    , (Header.hUserAgent     , BL8.toStrict $ BL8.pack ua)
     ]
 
 -- |
 -- 日本時間の日付時間をパースする
 parseJSTDayTimeToUTCTime :: String -> Maybe String -> Tm.UTCTime
-parseJSTDayTimeToUTCTime date mTime =
-    let
-        t = Maybe.fromMaybe "00:00" mTime
-        dtm = date ++ "T" ++ t ++ ":00+0900"
-        format = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
-    in
-    Tm.parseTimeOrError True Tm.defaultTimeLocale format dtm
+parseJSTDayTimeToUTCTime date time = parse format dateTime
+  where
+    parse    = Tm.parseTimeOrError True Tm.defaultTimeLocale
+    format   = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
+    dateTime = concat [date, "T", Maybe.fromMaybe "00:00" time, ":00+0900"]
 
 -- |
 -- 日本時間の日付時間へ
 toISO8601DateTime :: Tm.ZonedTime -> String
-toISO8601DateTime zt =
-    let format = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
-    in
-    Tm.formatTime Tm.defaultTimeLocale format zt
+toISO8601DateTime = formatTime format
+  where
+    formatTime = Tm.formatTime Tm.defaultTimeLocale
+    format     = Tm.iso8601DateFormat (Just "%H:%M:%S%z")
 
--- | (nth, total)
-type NthOfTotal = (Int,Int)
+-- |
+-- 進捗
+-- prBounded 個のうち prCurrent 個 まで進んだ
+data Progress = Progress
+    { prCurrent :: Int
+    , prBounded :: Int
+    } deriving Eq
+
+instance Show Progress where
+    show = showProgress
+
+-- |
+--
+showProgress :: Progress -> String
+showProgress (Progress a b) = show a ++ "/" ++ show b
 
 -- |
 -- リスト中のn番目情報を追加する関数
 --
--- >>> packNthOfTotal "abcdefg"
--- [('a',(1,7)),('b',(2,7)),('c',(3,7)),('d',(4,7)),('e',(5,7)),('f',(6,7)),('g',(7,7))]
-packNthOfTotal :: [a] -> [(a, NthOfTotal)]
-packNthOfTotal vs =
-    zip vs nth
-    where
-    nth = [(n, length vs) | n<-[1..]]
+-- >>> attachProgress "abcdefg"
+-- [('a',1/7),('b',2/7),('c',3/7),('d',4/7),('e',5/7),('f',6/7),('g',7/7)]
+attachProgress :: [a] -> [(a, Progress)]
+attachProgress xs = zip xs ps
+  where
+    total = length xs
+    ps    = [ Progress n total | n <- [1 ..] ]
 
 -- |
 -- リストからn個毎に取り出す
@@ -131,9 +142,7 @@ packNthOfTotal vs =
 -- >>> every 5 [1..50]
 -- [1,6,11,16,21,26,31,36,41,46]
 every :: Int -> [a] -> [a]
-every n =
-    map snd . (filter fst . zip bs)
-    where
-    bs = cycle $ take n (True : repeat False)
+every n = map snd . (filter fst . zip bs)
+    where bs = cycle $ take n (True : repeat False)
 
 

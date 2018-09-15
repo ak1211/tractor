@@ -61,8 +61,8 @@ import qualified BrokerBackend                as BB
 import qualified Conf
 import qualified GenBroker                    as GB
 import qualified KabuCom.Scraper              as S
-import           Lib                          (NthOfTotal, packNthOfTotal,
-                                               tzAsiaTokyo)
+import           Lib                          (Progress, attachProgress,
+                                               showProgress, tzAsiaTokyo)
 import           Model
 import           Scheduling                   (AsiaTokyoDay (..))
 import qualified SinkSlack                    as Slack
@@ -145,7 +145,7 @@ runWebCrawlingPortfolios conf =
         let msg = "更新対象は全部で" <> TLB.decimal (length items)  <> "個有ります。"
             -- アクセス毎の停止アクションをリストに挟み込んで
             -- アクション毎に停止しながら更新する
-            acts d = List.intersperse d . map (update sess) . packNthOfTotal $ items
+            acts d = List.intersperse d . map (update sess) . attachProgress $ items
         in do
         delay <- randomDelay <$> M.liftIO Random.createSystemRandom
         C.runConduit $ C.yield (TLB.toLazyText msg) C..| slack
@@ -171,7 +171,7 @@ runWebCrawlingPortfolios conf =
     --
     update  :: M.MonadIO m
             => BB.HTTPSession
-            -> (DB.Entity Portfolio, NthOfTotal)
+            -> (DB.Entity Portfolio, Progress)
             -> C.ConduitT () TL.Text m ()
     update sess (pf,nth) = do
         putDescription (DB.entityVal pf) nth    -- 更新処理対象銘柄を説明する
@@ -237,17 +237,15 @@ takeUpdateItems connInfo = do
 -- 更新銘柄の説明を送る関数
 putDescription  :: M.MonadIO m
                 => Portfolio
-                -> NthOfTotal
+                -> Progress
                 -> C.ConduitT () TL.Text m ()
-putDescription pf (current,total) =
+putDescription pf progress =
     C.yield $ TLB.toLazyText msg
     where
     defaultCaption = T.pack . showTickerSymbol $ portfolioTicker pf
     textCaption = Mb.fromMaybe defaultCaption $ portfolioCaption pf
     caption = TLB.fromText textCaption
-    bracketL = TLB.singleton '['
-    bracketR = TLB.singleton ']'
-    nOfm n m = TLB.decimal n <> TLB.singleton '/' <> TLB.decimal m
-    trailer = bracketL <> nOfm current total <> bracketR
+    prgrs = TLB.fromString $ showProgress progress
+    trailer = TLB.singleton '[' <> prgrs <> TLB.singleton ']'
     msg = caption <> "を更新中。" <> trailer
 

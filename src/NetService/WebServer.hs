@@ -90,11 +90,11 @@ import qualified Conf
 import           Model                        (TimeFrame (..))
 import qualified Model
 import           NetService.ApiTypes          (ApiAccessToken (..),
-                                               ApiLimit (..), ApiOhlcv,
+                                               SqlLimit (..), ApiOhlcv,
                                                ApiPortfolio,
                                                AuthenticatedUser (..),
                                                OAuthAccessResponse (..), SVG,
-                                               SvgBinary (..), makeApiLimit)
+                                               SvgBinary (..))
 import qualified NetService.ApiTypes          as ApiTypes
 import           NetService.HomePage          (HomePage (..))
 import qualified NetService.PlotChart         as PlotChart
@@ -145,19 +145,7 @@ instance Servant.Docs.ToCapture CMarketCode where
 
 -- |
 --
-instance Servant.FromHttpApiData ApiLimit where
-    parseQueryParam x =
-        case makeApiLimit =<< parse x of
-            Nothing -> Left "ApiLimit"
-            Just a  -> Right a
-        where
-        parse :: T.Text -> Maybe Int
-        parse =
-            either (const Nothing) Just . Servant.parseQueryParam
-
-instance Servant.Elm.ElmType ApiLimit
-
-type QLimit = QueryParam "limit" ApiLimit
+type QLimit = QueryParam "limit" SqlLimit
 
 instance Servant.Docs.ToParam QLimit where
     toParam _ =
@@ -481,7 +469,7 @@ getPortfolioHandler cnf =
 
 -- |
 --
-getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> Maybe ApiLimit -> Servant.Handler [ApiOhlcv]
+getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> Maybe SqlLimit -> Servant.Handler [ApiOhlcv]
 getHistoriesHandler cnf codeStr timeFrame limit =
     go $ Model.toTickerSymbol codeStr
     where
@@ -495,15 +483,16 @@ getHistoriesHandler cnf codeStr timeFrame limit =
         map (ApiTypes.toApiOhlcv . DB.entityVal) <$> M.liftIO (selectList ticker)
     --
     --
+    clipedLimits = maybe 1000 getSqlLimit limit
+    --
+    --
     selectList ticker =
-        let limit' = Maybe.fromMaybe 1000 (getApiLimit <$> limit)
-        in
         flip DB.runSqlPersistMPool (cPool cnf) $
             DB.selectList   [ Model.OhlcvTf     ==. timeFrame
                             , Model.OhlcvTicker ==. ticker
                             ]
                             [ DB.Desc Model.OhlcvAt
-                            , DB.LimitTo limit'
+                            , DB.LimitTo clipedLimits
                             ]
 
 -- |
