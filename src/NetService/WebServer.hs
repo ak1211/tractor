@@ -38,66 +38,71 @@ module NetService.WebServer
     ( runWebServer
     , ApiForFrontend
     , ApiForDocument
-    ) where
-import qualified Control.Concurrent.STM       as STM
-import qualified Control.Monad                as M
-import qualified Control.Monad.IO.Class       as M
-import qualified Control.Monad.Logger         as Logger
-import qualified Control.Monad.Trans          as MonadTrans
-import           Control.Monad.Trans.Either   (EitherT, newEitherT, runEitherT)
-import           Control.Monad.Trans.Maybe    (MaybeT (..))
-import           Control.Monad.Trans.Resource (runResourceT)
-import qualified Data.Aeson                   as Aeson
-import qualified Data.ByteString.Lazy.Char8   as BL8
-import qualified Data.CaseInsensitive         as CI
-import qualified Data.Either                  as Either
-import qualified Data.Maybe                   as Maybe
-import           Data.Monoid                  ((<>))
-import           Data.Proxy                   (Proxy (..))
-import qualified Data.Text                    as T
-import qualified Data.Text.Lazy               as TL
-import qualified Data.Text.Lazy.Builder       as TLB
-import qualified Data.Time                    as Time
-import           Database.Persist             ((=.), (==.))
-import qualified Database.Persist             as DB
-import qualified Database.Persist.MySQL       as MySQL
-import qualified Database.Persist.Sql         as DB
-import qualified Network.HTTP.Conduit         as N
-import qualified Network.HTTP.Types.Header    as Header
-import qualified Network.URI                  as URI
-import qualified Network.URI.Encode           as URI
-import qualified Network.Wai.Handler.Warp     as Warp
-import           Network.Wai.Logger           (ApacheLogger, withStdoutLogger)
-import           Servant                      ((:<|>) (..), (:>), Capture,
-                                               Context (..), Delete, Get,
-                                               Header, Header', Headers, JSON,
-                                               NoContent, Patch, Post,
-                                               PostAccepted, Put, QueryParam,
-                                               QueryParam', Raw, ReqBody,
-                                               Required, Strict, Summary)
-import qualified Servant
-import           Servant.Auth.Server          (Auth)
-import qualified Servant.Auth.Server          as Auth
-import           Servant.CSV.Cassava          (CSV)
+    )
+where
+import qualified Control.Concurrent.STM        as STM
+import qualified Control.Monad                 as M
+import qualified Control.Monad.IO.Class        as M
+import qualified Control.Monad.Logger          as Logger
+import qualified Control.Monad.Trans           as MonadTrans
+import           Control.Monad.Trans.Either               ( EitherT
+                                                          , newEitherT
+                                                          , runEitherT
+                                                          )
+import           Control.Monad.Trans.Maybe                ( MaybeT(..) )
+import           Control.Monad.Trans.Resource             ( runResourceT )
+import qualified Data.Aeson                    as Aeson
+import qualified Data.ByteString.Lazy.Char8    as BL8
+import qualified Data.CaseInsensitive          as CI
+import qualified Data.Either                   as Either
+import qualified Data.Maybe                    as Maybe
+import           Data.Monoid                              ( (<>) )
+import           Data.Proxy                               ( Proxy(..) )
+import qualified Data.Text                     as T
+import qualified Data.Text.Lazy                as TL
+import qualified Data.Text.Lazy.Builder        as TLB
+import qualified Data.Time                     as Time
+import           Database.Persist                         ( (=.)
+                                                          , (==.)
+                                                          )
+import qualified Database.Persist              as DB
+import qualified Database.Persist.MySQL        as MySQL
+import qualified Database.Persist.Sql          as DB
+import qualified Network.HTTP.Conduit          as N
+import qualified Network.HTTP.Types.Header     as Header
+import qualified Network.URI                   as URI
+import qualified Network.URI.Encode            as URI
+import qualified Network.Wai.Handler.Warp      as Warp
+import           Network.Wai.Logger                       ( ApacheLogger
+                                                          , withStdoutLogger
+                                                          )
+import           Servant
+import           Servant.Auth.Server                      ( Auth )
+import qualified Servant.Auth.Server           as Auth
+import           Servant.CSV.Cassava                      ( CSV )
 import qualified Servant.Docs
-import qualified Servant.Elm
-import           Servant.HTML.Lucid           (HTML)
-import           System.IO.Temp               (withSystemTempDirectory)
+import           Servant.Elm                              ( ElmType )
+import           Servant.HTML.Lucid                       ( HTML )
+import           System.IO.Temp                           ( withSystemTempDirectory
+                                                          )
 
-import qualified BackOffice.Agency            as Agency
-import qualified BrokerBackend                as BB
+import qualified BackOffice.Agency             as Agency
+import qualified BrokerBackend                 as BB
 import qualified Conf
-import           Model                        (TimeFrame (..))
+import           Model                                    ( TimeFrame(..) )
 import qualified Model
-import           NetService.ApiTypes          (ApiAccessToken (..),
-                                               SqlLimit (..), ApiOhlcv,
-                                               ApiPortfolio,
-                                               AuthenticatedUser (..),
-                                               OAuthAccessResponse (..), SVG,
-                                               SvgBinary (..))
-import qualified NetService.ApiTypes          as ApiTypes
-import           NetService.HomePage          (HomePage (..))
-import qualified NetService.PlotChart         as PlotChart
+import           NetService.ApiTypes                      ( ApiAccessToken(..)
+                                                          , SqlLimit(..)
+                                                          , ApiOhlcv
+                                                          , ApiPortfolio
+                                                          , AuthenticatedUser(..)
+                                                          , OAuthAccessResponse(..)
+                                                          , SVG
+                                                          , SvgBinary(..)
+                                                          )
+import qualified NetService.ApiTypes           as ApiTypes
+import           NetService.HomePage                      ( HomePage(..) )
+import qualified NetService.PlotChart          as PlotChart
 
 -- |
 -- このサーバーで使う設定情報
@@ -159,7 +164,7 @@ instance Servant.Docs.ToParam QLimit where
 --
 type QTimeFrame = QueryParam' '[Required, Strict] "tf" TimeFrame
 
-instance Servant.Elm.ElmType TimeFrame
+instance ElmType TimeFrame
 
 instance Servant.Docs.ToParam QTimeFrame where
     toParam _ =
@@ -263,42 +268,44 @@ type Unprotected
 
 -- |
 --
-protected :: Config -> Auth.AuthResult AuthenticatedUser -> Servant.Server Protected
-protected cnf result =
-    case result of
+protected
+    :: Config -> Auth.AuthResult AuthenticatedUser -> Servant.Server Protected
+protected cnf result = case result of
     Auth.Authenticated _ ->
         publishZmqHandler cnf
-        :<|> updateHistoriesHandler cnf
-        :<|> getHistoriesHandler cnf
-        :<|> putHistoriesHandler cnf
-        :<|> patchHistoriesHandler cnf
-        :<|> deleteHistoriesHandler cnf
-    Auth.BadPassword ->
-        Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", badPassword)] }
-    Auth.NoSuchUser ->
-        Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", noSuchUser)] }
-    Auth.Indefinite ->
-        Auth.throwAll Servant.err401 { Servant.errHeaders = [("WWW-Authenticate", indefinite)] }
-    where
-    badPassword =
-        "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"bad password\""
-    noSuchUser =
-        "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"no such user\""
-    indefinite =
-        "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"indefinite\""
+            :<|> updateHistoriesHandler cnf
+            :<|> getHistoriesHandler cnf
+            :<|> putHistoriesHandler cnf
+            :<|> patchHistoriesHandler cnf
+            :<|> deleteHistoriesHandler cnf
+    Auth.BadPassword -> Auth.throwAll Servant.err401
+        { Servant.errHeaders = [("WWW-Authenticate", badPassword)]
+        }
+    Auth.NoSuchUser -> Auth.throwAll Servant.err401
+        { Servant.errHeaders = [("WWW-Authenticate", noSuchUser)]
+        }
+    Auth.Indefinite -> Auth.throwAll Servant.err401
+        { Servant.errHeaders = [("WWW-Authenticate", indefinite)]
+        }
+  where
+    badPassword
+        = "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"bad password\""
+    noSuchUser
+        = "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"no such user\""
+    indefinite
+        = "Bearer realm=\"Protected API\", error=\"invalid_token\", error_description=\"indefinite\""
 
 -- |
 --
 unprotected :: Config -> Servant.Server Unprotected
-unprotected cnf
-    = return (HomePage clientID)
-    :<|> Servant.serveDirectoryFileServer "elm-src/public"
-    :<|> postAuthTempCodeHandler cnf
-    :<|> return (cVerRev cnf)
-    :<|> getPortfolioHandler cnf
-    :<|> getChartHandler cnf
-    where
-    clientID = Conf.clientID . Conf.slack . cConf $ cnf
+unprotected cnf =
+    return (HomePage clientID)
+        :<|> Servant.serveDirectoryFileServer "elm-src/public"
+        :<|> postAuthTempCodeHandler cnf
+        :<|> return (cVerRev cnf)
+        :<|> getPortfolioHandler cnf
+        :<|> getChartHandler cnf
+    where clientID = Conf.clientID . Conf.slack . cConf $ cnf
 
 -- |
 --
@@ -313,21 +320,21 @@ webApiServer cfg = protected cfg :<|> unprotected cfg
 -- Web API サーバーを起動する
 runWebServer :: ApiTypes.VerRev -> Conf.Info -> ApiTypes.ServerTChan -> IO ()
 runWebServer versionRevision conf chan = do
-    pool <- Logger.runNoLoggingT . runResourceT $ createPool
+    pool  <- Logger.runNoLoggingT . runResourceT $ createPool
     myKey <- Auth.generateKey
     let api = Proxy :: Proxy WebApi
         jwtCfg = Auth.defaultJWTSettings myKey
         context = jwtCfg :. Auth.defaultCookieSettings :. Servant.EmptyContext
         apiServer = webApiServer (Config versionRevision jwtCfg conf pool chan)
         servantServer = Servant.serveWithContext api context apiServer
-    withStdoutLogger $ \aplogger -> do
-        Warp.runSettings (settings aplogger) servantServer
-    where
+    withStdoutLogger
+        $ \aplogger -> Warp.runSettings (settings aplogger) servantServer
+  where
     --
     --
     createPool = MySQL.createMySQLPool connInfo poolSize
-    connInfo = Conf.connInfoDB $ Conf.mariaDB conf
-    poolSize = 8
+    connInfo   = Conf.connInfoDB $ Conf.mariaDB conf
+    poolSize   = 8
     --
     --
     settings :: ApacheLogger -> Warp.Settings
@@ -366,64 +373,77 @@ err500InternalServerError = Servant.throwError Servant.err500
 
 -- |
 -- 仮コードをアクセストークンに交換する
-postAuthTempCodeHandler :: Config -> AuthTempCode -> Servant.Handler ApiAccessToken
+postAuthTempCodeHandler
+    :: Config -> AuthTempCode -> Servant.Handler ApiAccessToken
 postAuthTempCodeHandler cnf tempCode = do
-    uri <- maybe err500InternalServerError pure methodURI
-    json <- Aeson.decode <$> M.liftIO (doExchange uri)
+    uri       <- maybe err500InternalServerError pure methodURI
+    json      <- Aeson.decode <$> M.liftIO (doExchange uri)
     oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
-    user <- maybe err401Unauthorized pure $ takeAuthenticatedUser oauthResp
+    user      <- maybe err401Unauthorized pure $ takeAuthenticatedUser oauthResp
     --
     -- 自分のSlackトークンとの一致を確認する
     let testToken = respAccessToken oauthResp
         myToken   = Conf.oauthAccessToken . Conf.slack $ cConf cnf
     if testToken == Just myToken
-    then do
-        jwt <- makeJWT user
-        M.liftIO $ print jwt
-        pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
-    else
-        err403Forbidden
-    where
+        then do
+            jwt <- makeJWT user
+            M.liftIO $ print jwt
+            pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
+        else err403Forbidden
+  where
     --
     --
     doExchange :: URI.URI -> IO BL8.ByteString
     doExchange uri = do
         -- HTTPS接続ですよ
-        manager <- N.newManager N.tlsManagerSettings
+        manager   <- N.newManager N.tlsManagerSettings
         -- Slack APIへアクセスする
-        httpsResp <- BB.fetchHTTP manager [contentType] Nothing [] uri
+        httpsResp <- BB.fetchHTTP manager [thisContentType] Nothing [] uri
         -- レスポンスボディにはJSON応答が入っている
         return $ N.responseBody httpsResp
     --
     --
-    takeAuthenticatedUser :: ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.AuthenticatedUser
+    takeAuthenticatedUser
+        :: ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.AuthenticatedUser
     takeAuthenticatedUser x = do
         M.guard (respOk x)
-        scope <- respScope x
-        userId <- respUserId x
+        scope    <- respScope x
+        userId   <- respUserId x
         userName <- respUserName x
-        Just ApiTypes.AuthenticatedUser{..}
+        Just ApiTypes.AuthenticatedUser {..}
     --
     --
     makeJWT :: ApiTypes.AuthenticatedUser -> Servant.Handler BL8.ByteString
     makeJWT oauthrep = do
-        tomorrow <- Time.addUTCTime Time.nominalDay <$> M.liftIO Time.getCurrentTime
+        tomorrow <- Time.addUTCTime Time.nominalDay
+            <$> M.liftIO Time.getCurrentTime
         jwt <- M.liftIO (Auth.makeJWT oauthrep settings $ Just tomorrow)
         either err ok jwt
-        where
+      where
         settings = cJWTS cnf
         err _ = err401Unauthorized
         ok = pure
     --
     --
-    methodURI   = URI.parseURI . TL.unpack . TLB.toLazyText $ "https://"
-                <> "slack.com/api/oauth.access"
-                <> "?" <> "client_id="      <> cID
-                <> "&" <> "client_secret="  <> cSecret
-                <> "&" <> "code="           <> TLB.fromString tempCode
-    cID         = TLB.fromText . Conf.clientID . Conf.slack $ cConf cnf
-    cSecret     = TLB.fromText . Conf.clientSecret . Conf.slack $ cConf cnf
-    contentType = (Header.hContentType, "application/x-www-form-urlencoded")
+    methodURI =
+        URI.parseURI
+            .  TL.unpack
+            .  TLB.toLazyText
+            $  "https://"
+            <> "slack.com/api/oauth.access"
+            <> "?"
+            <> "client_id="
+            <> cID
+            <> "&"
+            <> "client_secret="
+            <> cSecret
+            <> "&"
+            <> "code="
+            <> TLB.fromString tempCode
+    cID     = TLB.fromText . Conf.clientID . Conf.slack $ cConf cnf
+    cSecret = TLB.fromText . Conf.clientSecret . Conf.slack $ cConf cnf
+    thisContentType =
+        (Header.hContentType, "application/x-www-form-urlencoded")
 
 -- |
 --
@@ -435,140 +455,136 @@ updateHistoriesHandler cnf = do
 -- |
 --
 publishZmqHandler :: Config -> MarketCode -> Servant.Handler Servant.NoContent
-publishZmqHandler cnf codeStr =
-    case Model.toTickerSymbol codeStr of
-        Nothing ->
-            err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-        Just ts -> do
-            M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
-            return Servant.NoContent
-    where
+publishZmqHandler cnf codeStr = case Model.toTickerSymbol codeStr of
+    Nothing -> err400BadRequest . BL8.pack $ unwords
+        ["market code", codeStr, "is unknown"]
+    Just ts -> do
+        M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
+        return Servant.NoContent
+  where
     --
     --
     prices :: Model.TickerSymbol -> IO [ApiOhlcv]
-    prices ts =
-        map (ApiTypes.toApiOhlcv . DB.entityVal) <$> selectList ts
+    prices ts = map (ApiTypes.toApiOhlcv . DB.entityVal) <$> selectList ts
     --
     --
-    selectList ticker =
-        flip DB.runSqlPersistMPool (cPool cnf) $
-            DB.selectList   [Model.OhlcvTicker ==. ticker]
-                            [DB.Asc Model.OhlcvAt]
+    selectList ticker = DB.runSqlPersistMPool
+        (DB.selectList [Model.OhlcvTicker ==. ticker] [DB.Asc Model.OhlcvAt])
+        (cPool cnf)
 
 -- |
 --
 getPortfolioHandler :: Config -> Servant.Handler [ApiPortfolio]
-getPortfolioHandler cnf =
-    map (ApiTypes.toApiPortfolio . DB.entityVal) <$> M.liftIO selectList
-    where
+getPortfolioHandler cnf = map (ApiTypes.toApiPortfolio . DB.entityVal)
+    <$> M.liftIO selectList
+  where
     --
     --
-    selectList =
-        flip DB.runSqlPersistMPool (cPool cnf) $
-            DB.selectList [] [DB.Asc Model.PortfolioTicker]
+    selectList = DB.runSqlPersistMPool
+        (DB.selectList [] [DB.Asc Model.PortfolioTicker])
+        (cPool cnf)
 
 -- |
 --
-getHistoriesHandler :: Config -> MarketCode -> TimeFrame -> Maybe SqlLimit -> Servant.Handler [ApiOhlcv]
+getHistoriesHandler
+    :: Config
+    -> MarketCode
+    -> TimeFrame
+    -> Maybe SqlLimit
+    -> Servant.Handler [ApiOhlcv]
 getHistoriesHandler cnf codeStr timeFrame limit =
-    go $ Model.toTickerSymbol codeStr
-    where
-    --
-    --
-    go Nothing =
-        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-    --
-    --
-    go (Just ticker) =
-        map (ApiTypes.toApiOhlcv . DB.entityVal) <$> M.liftIO (selectList ticker)
+    case Model.toTickerSymbol codeStr of
+        Nothing -> err400BadRequest . BL8.pack $ unwords
+            ["market code", codeStr, "is unknown"]
+        Just ticker -> map (ApiTypes.toApiOhlcv . DB.entityVal)
+            <$> M.liftIO (selectList ticker)
+  where
     --
     --
     clipedLimits = maybe 1000 getSqlLimit limit
     --
     --
-    selectList ticker =
-        flip DB.runSqlPersistMPool (cPool cnf) $
-            DB.selectList   [ Model.OhlcvTf     ==. timeFrame
-                            , Model.OhlcvTicker ==. ticker
-                            ]
-                            [ DB.Desc Model.OhlcvAt
-                            , DB.LimitTo clipedLimits
-                            ]
+    selectList ticker = DB.runSqlPersistMPool
+        (DB.selectList
+            [Model.OhlcvTf ==. timeFrame, Model.OhlcvTicker ==. ticker]
+            [DB.Desc Model.OhlcvAt, DB.LimitTo clipedLimits]
+        )
+        (cPool cnf)
 
 -- |
 -- 新規挿入(INSERT)
-putHistoriesHandler :: Config -> MarketCode -> TimeFrame -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+putHistoriesHandler
+    :: Config
+    -> MarketCode
+    -> TimeFrame
+    -> [ApiOhlcv]
+    -> Servant.Handler [ApiOhlcv]
 putHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
-    go $ Model.toTickerSymbol codeStr
-    where
-    --
-    --
-    go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
-    go Nothing =
-        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-    go (Just ticker) = do
-        responce <- M.mapM (M.liftIO . runEitherT . insert ticker) apiOhlcvs
-        case (Either.lefts responce, Either.rights responce) of
-            ([], rights) ->
-                -- 成功
-                return rights
-            (lefts, _) ->
-                -- 部分的成功または失敗
-                err409Conflict (Aeson.encode lefts)
+    case Model.toTickerSymbol codeStr of
+        Nothing -> err400BadRequest . BL8.pack $ unwords
+            ["market code", codeStr, "is unknown"]
+        Just ticker -> do
+            responce <- M.mapM (M.liftIO . runEitherT . insert ticker) apiOhlcvs
+            case (Either.lefts responce, Either.rights responce) of
+                ([], rights) ->
+                    -- 成功
+                    return rights
+                (lefts, _) ->
+                    -- 部分的成功または失敗
+                    err409Conflict (Aeson.encode lefts)
+  where
     --
     --
     insert :: Model.TickerSymbol -> ApiOhlcv -> EitherT ApiOhlcv IO ApiOhlcv
     insert ticker apiOhlcv =
         let err _ = newEitherT . return $ Left apiOhlcv
-            ok _  = newEitherT . return $ Right apiOhlcv
-        in
-        case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Left x ->
-                err x
-            Right ohlcv -> do
-                responce <- MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
-                either err ok responce
+            ok _ = newEitherT . return $ Right apiOhlcv
+        in  case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
+                Left  x     -> err x
+                Right ohlcv -> do
+                    responce <- MonadTrans.lift $ insertOhlcv (cPool cnf) ohlcv
+                    either err ok responce
 
 -- |
 -- データを入れる(INSERT)
 insertOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
-insertOhlcv pool ohlcv@Model.Ohlcv{..} =
-    flip DB.runSqlPersistMPool pool $ do
+insertOhlcv pool ohlcv@Model.Ohlcv {..} = DB.runSqlPersistMPool go pool
+  where
+    go = do
         -- 同じ時間の物があるか探してみる
-        exists <- Maybe.isJust <$> DB.selectFirst
-                [ Model.OhlcvTicker ==. ohlcvTicker
-                , Model.OhlcvTf ==. ohlcvTf
-                , Model.OhlcvAt ==. ohlcvAt
-                ]
-                []
-        -- 無かった場合は新規挿入, 有った場合は何もしない
-        if exists
-        then
-            return $ Left ()
-        else do
-            M.void $ DB.insert ohlcv
-            return $ Right ()
+        entity <- DB.selectFirst
+            [ Model.OhlcvTicker ==. ohlcvTicker
+            , Model.OhlcvTf ==. ohlcvTf
+            , Model.OhlcvAt ==. ohlcvAt
+            ]
+            []
+        -- 同じ時間の物が有った場合は何もしない, 無かった場合は新規挿入
+        case entity of
+            Just _  -> return (Left ())
+            Nothing -> DB.insert ohlcv >> return (Right ())
 
---- |
+-- |
 -- 既存のデータを入れ替える(UPDATE / INSERT)
-patchHistoriesHandler :: Config -> MarketCode -> TimeFrame -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+patchHistoriesHandler
+    :: Config
+    -> MarketCode
+    -> TimeFrame
+    -> [ApiOhlcv]
+    -> Servant.Handler [ApiOhlcv]
 patchHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
-    go $ Model.toTickerSymbol codeStr
-    where
-    --
-    --
-    go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
-    go Nothing =
-        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-    go (Just ticker) =
-        Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . store ticker) apiOhlcvs
+    case Model.toTickerSymbol codeStr of
+        Nothing -> err400BadRequest . BL8.pack $ unwords
+            ["market code", codeStr, "is unknown"]
+        Just ticker ->
+            Maybe.catMaybes
+                <$> M.mapM (M.liftIO . runMaybeT . store ticker) apiOhlcvs
+  where
     --
     --
     store :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
     store ticker apiOhlcv =
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Left _ ->
-                MaybeT (return Nothing)
+            Left  _   -> MaybeT (return Nothing)
             Right val -> do
                 MonadTrans.lift (insertOrUpdateOhlcv (cPool cnf) val)
                 MaybeT (return $ Just apiOhlcv)
@@ -578,105 +594,108 @@ patchHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
 -- もしくは
 -- 既存のデータを入れ替える(UPDATE / INSERT)
 insertOrUpdateOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO ()
-insertOrUpdateOhlcv pool ohlcv@Model.Ohlcv{..} =
-    flip DB.runSqlPersistMPool pool $ do
+insertOrUpdateOhlcv pool ohlcv@Model.Ohlcv {..} = DB.runSqlPersistMPool go pool
+  where
+    go = do
         -- 同じ時間の物があるか探してみる
         entity <- DB.selectFirst
-                    [ Model.OhlcvTicker ==. ohlcvTicker
-                    , Model.OhlcvTf ==. ohlcvTf
-                    , Model.OhlcvAt ==. ohlcvAt
-                    ]
-                    []
+            [ Model.OhlcvTicker ==. ohlcvTicker
+            , Model.OhlcvTf ==. ohlcvTf
+            , Model.OhlcvAt ==. ohlcvAt
+            ]
+            []
         case DB.entityKey <$> entity of
             -- レコードが無かった場合は新規挿入する
-            Nothing ->
-                M.void $ DB.insert ohlcv
+            Nothing  -> M.void $ DB.insert ohlcv
             -- レコードが有った場合は更新する
-            Just key ->
-                DB.update key
-                    [ Model.OhlcvOpen     =. ohlcvOpen
-                    , Model.OhlcvHigh     =. ohlcvHigh
-                    , Model.OhlcvLow      =. ohlcvLow
-                    , Model.OhlcvClose    =. ohlcvClose
-                    , Model.OhlcvVolume   =. ohlcvVolume
-                    , Model.OhlcvSource   =. ohlcvSource
-                    ]
+            Just key -> DB.update
+                key
+                [ Model.OhlcvOpen =. ohlcvOpen
+                , Model.OhlcvHigh =. ohlcvHigh
+                , Model.OhlcvLow =. ohlcvLow
+                , Model.OhlcvClose =. ohlcvClose
+                , Model.OhlcvVolume =. ohlcvVolume
+                , Model.OhlcvSource =. ohlcvSource
+                ]
 
 -- |
 -- 既存のデータを削除する(DELETE)
-deleteHistoriesHandler :: Config -> MarketCode -> TimeFrame -> [ApiOhlcv] -> Servant.Handler [ApiOhlcv]
+deleteHistoriesHandler
+    :: Config
+    -> MarketCode
+    -> TimeFrame
+    -> [ApiOhlcv]
+    -> Servant.Handler [ApiOhlcv]
 deleteHistoriesHandler cnf codeStr timeFrame apiOhlcvs =
-    go $ Model.toTickerSymbol codeStr
-    where
-    --
-    --
-    go :: Maybe Model.TickerSymbol -> Servant.Handler [ApiOhlcv]
-    go Nothing =
-        err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-    go (Just ticker) =
-        Maybe.catMaybes <$> M.mapM (M.liftIO . runMaybeT . delete ticker) apiOhlcvs
+    case Model.toTickerSymbol codeStr of
+        Nothing -> err400BadRequest . BL8.pack $ unwords
+            ["market code", codeStr, "is unknown"]
+        Just ticker ->
+            Maybe.catMaybes
+                <$> M.mapM (M.liftIO . runMaybeT . delete ticker) apiOhlcvs
+  where
     --
     --
     delete :: Model.TickerSymbol -> ApiOhlcv -> MaybeT IO ApiOhlcv
     delete ticker apiOhlcv =
         case ApiTypes.fromApiOhlcv ticker timeFrame apiOhlcv of
-            Left _ ->
-                MaybeT (return Nothing)
+            Left  _     -> MaybeT (return Nothing)
             Right ohlcv -> do
                 let err _ = MaybeT $ return Nothing
-                let ok _  = MaybeT $ return (Just apiOhlcv)
+                let ok _ = MaybeT $ return (Just apiOhlcv)
                 result <- MonadTrans.lift $ deleteOhlcv (cPool cnf) ohlcv
                 either err ok result
 
 -- |
 -- データを削除する(DELETE)
 deleteOhlcv :: MySQL.ConnectionPool -> Model.Ohlcv -> IO (Either () ())
-deleteOhlcv pool Model.Ohlcv{..} =
-    flip DB.runSqlPersistMPool pool $ do
+deleteOhlcv pool Model.Ohlcv {..} = DB.runSqlPersistMPool go pool
+  where
+    go = do
         -- 同じ物があるか探してみる
         entity <- DB.selectFirst
-                    [ Model.OhlcvTicker ==. ohlcvTicker
-                    , Model.OhlcvTf     ==. ohlcvTf
-                    , Model.OhlcvAt     ==. ohlcvAt
-                    , Model.OhlcvOpen   ==. ohlcvOpen
-                    , Model.OhlcvHigh   ==. ohlcvHigh
-                    , Model.OhlcvLow    ==. ohlcvLow
-                    , Model.OhlcvClose  ==. ohlcvClose
-                    , Model.OhlcvVolume ==. ohlcvVolume
-                    , Model.OhlcvSource ==. ohlcvSource
-                    ]
-                    []
+            [ Model.OhlcvTicker ==. ohlcvTicker
+            , Model.OhlcvTf ==. ohlcvTf
+            , Model.OhlcvAt ==. ohlcvAt
+            , Model.OhlcvOpen ==. ohlcvOpen
+            , Model.OhlcvHigh ==. ohlcvHigh
+            , Model.OhlcvLow ==. ohlcvLow
+            , Model.OhlcvClose ==. ohlcvClose
+            , Model.OhlcvVolume ==. ohlcvVolume
+            , Model.OhlcvSource ==. ohlcvSource
+            ]
+            []
         case DB.entityKey <$> entity of
             -- 無かった場合は何もしない
-            Nothing ->
-                return $ Left ()
-            -- 有った場合は削除
+            Nothing  -> return $ Left ()
+            -- 有った場合は削除する
             Just key -> do
-                DB.deleteWhere [ Model.OhlcvId ==. key ]
+                DB.deleteWhere [Model.OhlcvId ==. key]
                 return $ Right ()
 
 -- |
 --
-getChartHandler :: Config -> MarketCode -> TimeFrame -> Maybe Int -> Maybe Int -> Servant.Handler ChartWithCacheControl
+getChartHandler
+    :: Config
+    -> MarketCode
+    -> TimeFrame
+    -> Maybe Int
+    -> Maybe Int
+    -> Servant.Handler ChartWithCacheControl
 getChartHandler cnf codeStr timeFrame qWidth qHeight =
     case Model.toTickerSymbol codeBody of
-        Nothing ->
-            err400BadRequest . BL8.pack $ unwords ["market code", codeStr, "is unknown"]
-        Just ticker
-            | CI.mk codeSuffix == ".svg" ->
-                go ticker
-            | otherwise ->
-                err404NotFound
-    where
+        Nothing -> err400BadRequest . BL8.pack $ unwords
+            ["market code", codeStr, "is unknown"]
+        Just ticker | CI.mk codeSuffix == ".svg" -> go ticker
+                    | otherwise                  -> err404NotFound
+  where
     --
     --
     (codeBody, codeSuffix) = span (/= '.') codeStr
     --
     --
     chartSize =
-        ( Maybe.fromMaybe defQWidth qWidth
-        , Maybe.fromMaybe defQHeight qHeight
-        )
+        (Maybe.fromMaybe defQWidth qWidth, Maybe.fromMaybe defQHeight qHeight)
     --
     --
     chartSVG :: PlotChart.ChartData -> Servant.Handler SvgBinary
@@ -690,19 +709,16 @@ getChartHandler cnf codeStr timeFrame qWidth qHeight =
     go ticker = do
         ohlcvs <- reverse . map DB.entityVal <$> M.liftIO (selectList ticker)
         let chartData = PlotChart.ChartData
-                            { cSize = chartSize
-                            , cTitle = "stock prices"
-                            , cOhlcvs = ohlcvs
-                            }
-        Servant.addHeader "private, no-store, no-cache, must-revalidate" . Chart <$> chartSVG chartData
+                { cSize   = chartSize
+                , cTitle  = "stock prices"
+                , cOhlcvs = ohlcvs
+                }
+        Servant.addHeader "private, no-store, no-cache, must-revalidate"
+            .   Chart
+            <$> chartSVG chartData
     --
     --
-    selectList ticker =
-        flip DB.runSqlPersistMPool (cPool cnf) $
-            DB.selectList   [ Model.OhlcvTf     ==. timeFrame
-                            , Model.OhlcvTicker ==. ticker
-                            ]
-                            [ DB.Desc Model.OhlcvAt
-                            , DB.LimitTo 100
-                            ]
+    selectList ticker = flip DB.runSqlPersistMPool (cPool cnf) $ DB.selectList
+        [Model.OhlcvTf ==. timeFrame, Model.OhlcvTicker ==. ticker]
+        [DB.Desc Model.OhlcvAt, DB.LimitTo 100]
 
