@@ -114,7 +114,10 @@ data Config = Config
     , cChan   :: ApiTypes.ServerTChan
     }
 
+-- |
+--
 newtype Chart = Chart SvgBinary
+
 instance Servant.Docs.ToSample Chart where
     toSamples _ =
         Servant.Docs.noSamples
