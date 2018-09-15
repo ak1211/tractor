@@ -211,7 +211,7 @@
 
 - limit
      - **Values**: *100, 1000, ...*
-     - **Description**: limit of records
+     - **Description**: limit of records, default is 1000
 
 
 ### Response:

@@ -45,6 +45,7 @@ library:
   - Chart
   - Chart-cairo
   - colour
+  - data-default
   - data-default-class
   - lens
   - temporary

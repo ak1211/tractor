@@ -39,8 +39,8 @@ module NetService.ApiTypes
     ( SVG
     , SvgBinary(..)
     , ServerTChan
-    , SqlLimit(getSqlLimit)
-    , makeSqlLimit
+    , QueryLimit(getQueryLimit)
+    , makeQueryLimit
     , ApiPortfolio
     , toApiPortfolio
     , ApiOhlcv
@@ -58,6 +58,7 @@ import           Data.Aeson                               ( (.:)
                                                           )
 import qualified Data.Aeson                    as Aeson
 import qualified Data.ByteString.Lazy.Char8    as BL8
+import           Data.Default                             ( Default(..) )
 import           Data.Csv                                 ( (.=) )
 import qualified Data.Csv                      as Csv
 import           Data.Int                                 ( Int64 )
@@ -95,16 +96,19 @@ instance MimeRender SVG SvgBinary where
 
 -- |
 --
-newtype SqlLimit = SqlLimit
-    { getSqlLimit :: Int
+newtype QueryLimit = MkQueryLimit
+    { getQueryLimit :: Int
     } deriving Generic
 
-instance ElmType SqlLimit
+instance ElmType QueryLimit
 
-instance Servant.FromHttpApiData SqlLimit where
+instance Default QueryLimit where
+    def = MkQueryLimit 1000
+
+instance Servant.FromHttpApiData QueryLimit where
     parseQueryParam x =
-        case makeSqlLimit =<< parse x of
-            Nothing -> Left "SqlLimit"
+        case makeQueryLimit =<< parse x of
+            Nothing -> Left "QueryLimit"
             Just a  -> Right a
         where
         parse :: T.Text -> Maybe Int
@@ -113,9 +117,9 @@ instance Servant.FromHttpApiData SqlLimit where
 
 -- |
 -- スマートコンストラクタ
-makeSqlLimit :: Int -> Maybe SqlLimit
-makeSqlLimit x | x > 0     = Just (SqlLimit x)
-               | otherwise = Nothing
+makeQueryLimit :: Int -> Maybe QueryLimit
+makeQueryLimit x | x > 0     = Just (MkQueryLimit x)
+                 | otherwise = Nothing
 
 --
 --

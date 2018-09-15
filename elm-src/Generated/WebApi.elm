@@ -11,7 +11,7 @@ type alias AccessToken = String
 
 type alias TimeFrame = String
 
-type alias SqlLimit = Int
+type alias QueryLimit = Int
 
 type alias MarketCode = String
 
@@ -215,7 +215,7 @@ postApiV1StocksHistoryAll =
             False
         }
 
-getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Maybe (SqlLimit) -> Http.Request (List (ApiOhlcv))
+getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Maybe (QueryLimit) -> Http.Request (List (ApiOhlcv))
 getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf query_limit =
     let
         params =

@@ -45,6 +45,7 @@ import qualified Control.Monad                 as M
 import qualified Control.Monad.IO.Class        as M
 import qualified Control.Monad.Logger          as Logger
 import qualified Control.Monad.Trans           as MonadTrans
+import           Data.Default                             ( Default(..) )
 import           Control.Monad.Trans.Either               ( EitherT
                                                           , newEitherT
                                                           , runEitherT
@@ -92,7 +93,7 @@ import qualified Conf
 import           Model                                    ( TimeFrame(..) )
 import qualified Model
 import           NetService.ApiTypes                      ( ApiAccessToken(..)
-                                                          , SqlLimit(..)
+                                                          , QueryLimit(..)
                                                           , ApiOhlcv
                                                           , ApiPortfolio
                                                           , AuthenticatedUser(..)
@@ -153,14 +154,14 @@ instance Servant.Docs.ToCapture CMarketCode where
 
 -- |
 --
-type QLimit = QueryParam "limit" SqlLimit
+type QLimit = QueryParam "limit" QueryLimit
 
 instance Servant.Docs.ToParam QLimit where
     toParam _ =
         Servant.Docs.DocQueryParam
             "limit"
             ["100", "1000", "..."]
-            "limit of records"
+            ("limit of records, default is " ++ show (getQueryLimit (def :: QueryLimit)))
             Servant.Docs.Normal
 
 -- |
@@ -493,9 +494,9 @@ getHistoriesHandler
     :: Config
     -> MarketCode
     -> TimeFrame
-    -> Maybe SqlLimit
+    -> Maybe QueryLimit
     -> Servant.Handler [ApiOhlcv]
-getHistoriesHandler cnf codeStr timeFrame limit =
+getHistoriesHandler cnf codeStr timeFrame qryLimit =
     case Model.toTickerSymbol codeStr of
         Nothing -> err400BadRequest . BL8.pack $ unwords
             ["market code", codeStr, "is unknown"]
@@ -504,13 +505,13 @@ getHistoriesHandler cnf codeStr timeFrame limit =
   where
     --
     --
-    clipedLimits = maybe 1000 getSqlLimit limit
+    limit = Maybe.fromMaybe (def :: QueryLimit) qryLimit
     --
     --
     selectList ticker = DB.runSqlPersistMPool
         (DB.selectList
             [Model.OhlcvTf ==. timeFrame, Model.OhlcvTicker ==. ticker]
-            [DB.Desc Model.OhlcvAt, DB.LimitTo clipedLimits]
+            [DB.Desc Model.OhlcvAt, DB.LimitTo (getQueryLimit limit)]
         )
         (cPool cnf)
 
