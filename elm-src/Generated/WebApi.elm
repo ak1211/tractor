@@ -61,6 +61,10 @@ type alias AuthenticatedUser =
     { scope : String
     , userId : String
     , userName : String
+    , userRealName : String
+    , userTz : String
+    , userTzLabel : String
+    , userTzOffset : Int
     }
 
 decodeAuthenticatedUser : Decoder AuthenticatedUser
@@ -69,6 +73,10 @@ decodeAuthenticatedUser =
         |> required "scope" string
         |> required "userId" string
         |> required "userName" string
+        |> required "userRealName" string
+        |> required "userTz" string
+        |> required "userTzLabel" string
+        |> required "userTzOffset" int
 
 encodeAuthenticatedUser : AuthenticatedUser -> Json.Encode.Value
 encodeAuthenticatedUser x =
@@ -76,6 +84,10 @@ encodeAuthenticatedUser x =
         [ ( "scope", Json.Encode.string x.scope )
         , ( "userId", Json.Encode.string x.userId )
         , ( "userName", Json.Encode.string x.userName )
+        , ( "userRealName", Json.Encode.string x.userRealName )
+        , ( "userTz", Json.Encode.string x.userTz )
+        , ( "userTzLabel", Json.Encode.string x.userTzLabel )
+        , ( "userTzOffset", Json.Encode.int x.userTzOffset )
         ]
 
 type alias ApiAccessToken =

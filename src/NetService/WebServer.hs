@@ -27,6 +27,7 @@ Portability :  POSIX
 Web API サーバーモジュールです
 -}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -98,6 +99,7 @@ import           NetService.ApiTypes                      ( ApiAccessToken(..)
                                                           , ApiPortfolio
                                                           , AuthenticatedUser(..)
                                                           , OAuthAccessResponse(..)
+                                                          , UsersInfoResponse(..)
                                                           , SVG
                                                           , SvgBinary(..)
                                                           )
@@ -216,6 +218,7 @@ instance Servant.Docs.ToParam QWidth where
 instance Servant.Docs.ToParam QHeight where
     toParam _ =
         Servant.Docs.DocQueryParam "h" ["int"] ("compose chart height. default is " ++ show defQHeight) Servant.Docs.Normal
+
 -- |
 --
 type ChartWithCacheControl = Headers '[Header "Cache-Conrol" T.Text] Chart
@@ -380,48 +383,46 @@ err500InternalServerError = Servant.throwError Servant.err500
 postAuthTempCodeHandler
     :: Config -> AuthTempCode -> Servant.Handler ApiAccessToken
 postAuthTempCodeHandler cnf tempCode = do
-    uri       <- maybe err500InternalServerError pure methodURI
-    json      <- Aeson.decode <$> M.liftIO (doExchange uri)
-    oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
-    user      <- maybe err401Unauthorized pure $ takeAuthenticatedUser oauthResp
+    oauthResp <- sendRequestToOAuthAccess cnf tempCode
+    let pair = (,) <$> respAccessToken oauthResp <*> respUserId
+            (oauthResp :: OAuthAccessResponse)
+    tokenAndUserId <- maybe err401Unauthorized pure pair
+    uInfoResp      <- uncurry sendRequestToUsersInfo tokenAndUserId
+    M.liftIO $ print uInfoResp
+    aUser          <- maybe err401Unauthorized pure
+        $ takeAuthenticatedUser oauthResp uInfoResp
     --
     -- 自分のSlackトークンとの一致を確認する
     let testToken = respAccessToken oauthResp
         myToken   = Conf.oauthAccessToken . Conf.slack $ cConf cnf
     if testToken == Just myToken
         then do
-            jwt <- makeJWT user
+            jwt <- makeJWT aUser
             M.liftIO $ print jwt
             pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
         else err403Forbidden
   where
     --
     --
-    doExchange :: URI.URI -> IO BL8.ByteString
-    doExchange uri = do
-        -- HTTPS接続ですよ
-        manager   <- N.newManager N.tlsManagerSettings
-        -- Slack APIへアクセスする
-        httpsResp <- BB.fetchHTTP manager [thisContentType] Nothing [] uri
-        -- レスポンスボディにはJSON応答が入っている
-        return $ N.responseBody httpsResp
-    --
-    --
     takeAuthenticatedUser
-        :: ApiTypes.OAuthAccessResponse -> Maybe ApiTypes.AuthenticatedUser
-    takeAuthenticatedUser x = do
-        M.guard (respOk x)
-        scope    <- respScope x
-        userId   <- respUserId x
-        userName <- respUserName x
+        :: OAuthAccessResponse
+        -> UsersInfoResponse
+        -> Maybe ApiTypes.AuthenticatedUser
+    takeAuthenticatedUser x y = do
+        scope        <- respScope x
+        userId       <- respUserId (x :: OAuthAccessResponse)
+        userName     <- respUserName (y :: UsersInfoResponse)
+        userRealName <- respUserRealName y
+        userTz       <- respUserTz y
+        userTzLabel  <- respUserTzLabel y
+        userTzOffset <- respUserTzOffset y
         Just ApiTypes.AuthenticatedUser {..}
     --
     --
     makeJWT :: ApiTypes.AuthenticatedUser -> Servant.Handler BL8.ByteString
     makeJWT oauthrep = do
-        tomorrow <- Time.addUTCTime Time.nominalDay
-            <$> M.liftIO Time.getCurrentTime
-        jwt <- M.liftIO (Auth.makeJWT oauthrep settings $ Just tomorrow)
+        expiration <- tomorrow
+        jwt <- M.liftIO (Auth.makeJWT oauthrep settings $ Just expiration)
         either err ok jwt
       where
         settings = cJWTS cnf
@@ -429,6 +430,21 @@ postAuthTempCodeHandler cnf tempCode = do
         ok = pure
     --
     --
+    tomorrow = Time.addUTCTime Time.nominalDay <$> M.liftIO Time.getCurrentTime
+
+-- |
+-- send request to https://slack.com/api/oauth.access
+-- https://api.slack.com/docs/sign-in-with-slack#obtain_an_access_token
+--
+sendRequestToOAuthAccess
+    :: Config -> AuthTempCode -> Servant.Handler OAuthAccessResponse
+sendRequestToOAuthAccess cnf tempCode = do
+    uri       <- maybe err500InternalServerError pure methodURI
+    json      <- Aeson.decode <$> M.liftIO (sendApiRequest uri)
+    oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
+    M.liftIO $ print oauthResp
+    return oauthResp
+  where
     methodURI =
         URI.parseURI
             .  TL.unpack
@@ -446,6 +462,46 @@ postAuthTempCodeHandler cnf tempCode = do
             <> TLB.fromString tempCode
     cID     = TLB.fromText . Conf.clientID . Conf.slack $ cConf cnf
     cSecret = TLB.fromText . Conf.clientSecret . Conf.slack $ cConf cnf
+
+-- |
+-- send request to https://slack.com/api/users.info
+-- https://api.slack.com/methods/users.info
+--
+sendRequestToUsersInfo :: T.Text -> T.Text -> Servant.Handler UsersInfoResponse
+sendRequestToUsersInfo accessToken userId = do
+    uri       <- maybe err500InternalServerError pure methodURI
+    M.liftIO $ print uri
+    json      <- Aeson.decode <$> M.liftIO (sendApiRequest uri)
+    uInfoResp <- maybe (err400BadRequest "Slack API request failed") pure json
+    M.liftIO $ print uInfoResp
+    return uInfoResp
+  where
+    --
+    --
+    methodURI =
+        URI.parseURI
+            .  TL.unpack
+            .  TLB.toLazyText
+            $  "https://"
+            <> "slack.com/api/users.info"
+            <> "?"
+            <> "token="
+            <> TLB.fromText accessToken
+            <> "&"
+            <> "user="
+            <> TLB.fromText userId
+
+--
+--
+sendApiRequest :: URI.URI -> IO BL8.ByteString
+sendApiRequest uri = do
+    -- HTTPS接続ですよ
+    manager   <- N.newManager N.tlsManagerSettings
+    -- Slack APIへアクセスする
+    httpsResp <- BB.fetchHTTP manager [thisContentType] Nothing [] uri
+    -- レスポンスボディにはJSON応答が入っている
+    return $ N.responseBody httpsResp
+  where
     thisContentType =
         (Header.hContentType, "application/x-www-form-urlencoded")
 
@@ -463,30 +519,32 @@ publishZmqHandler cnf codeStr = case Model.toTickerSymbol codeStr of
     Nothing -> err400BadRequest . BL8.pack $ unwords
         ["market code", codeStr, "is unknown"]
     Just ts -> do
-        M.liftIO (STM.atomically . STM.writeTChan (cChan cnf) =<< prices ts)
+        M.liftIO $ publish ts
         return Servant.NoContent
   where
     --
     --
-    prices :: Model.TickerSymbol -> IO [ApiOhlcv]
-    prices ts = map (ApiTypes.toApiOhlcv . DB.entityVal) <$> selectList ts
+    publish :: Model.TickerSymbol -> IO ()
+    publish = STM.atomically . STM.writeTChan (cChan cnf) M.<=< selectList
     --
     --
-    selectList ticker = DB.runSqlPersistMPool
-        (DB.selectList [Model.OhlcvTicker ==. ticker] [DB.Asc Model.OhlcvAt])
-        (cPool cnf)
+    selectList ticker = do
+        xs <- DB.runSqlPersistMPool
+            (DB.selectList [Model.OhlcvTicker ==. ticker] [DB.Asc Model.OhlcvAt]
+            )
+            (cPool cnf)
+        pure [ ApiTypes.toApiOhlcv $ DB.entityVal x | x <- xs ]
 
 -- |
 --
 getPortfolioHandler :: Config -> Servant.Handler [ApiPortfolio]
-getPortfolioHandler cnf = map (ApiTypes.toApiPortfolio . DB.entityVal)
-    <$> M.liftIO selectList
+getPortfolioHandler cnf = M.liftIO selectList
   where
-    --
-    --
-    selectList = DB.runSqlPersistMPool
-        (DB.selectList [] [DB.Asc Model.PortfolioTicker])
-        (cPool cnf)
+    selectList = do
+        xs <- DB.runSqlPersistMPool
+            (DB.selectList [] [DB.Asc Model.PortfolioTicker])
+            (cPool cnf)
+        pure [ ApiTypes.toApiPortfolio $ DB.entityVal x | x <- xs ]
 
 -- |
 --

@@ -46,6 +46,7 @@ module NetService.ApiTypes
     , ApiOhlcv
     , toApiOhlcv
     , fromApiOhlcv
+    , UsersInfoResponse(..)
     , OAuthAccessResponse(..)
     , AuthenticatedUser(..)
     , ApiAccessToken(..)
@@ -58,20 +59,20 @@ import           Data.Aeson                               ( (.:)
                                                           )
 import qualified Data.Aeson                    as Aeson
 import qualified Data.ByteString.Lazy.Char8    as BL8
-import           Data.Default                             ( Default(..) )
 import           Data.Csv                                 ( (.=) )
 import qualified Data.Csv                      as Csv
+import           Data.Default                             ( Default(..) )
 import           Data.Int                                 ( Int64 )
 import qualified Data.Text                     as T
 import qualified Data.Time                     as Time
 import           GHC.Generics                             ( Generic )
 import           Network.HTTP.Media                       ( (//) )
+import qualified Servant
 import           Servant.API                              ( Accept
                                                           , MimeRender
                                                           , contentType
                                                           , mimeRender
                                                           )
-import qualified Servant
 import           Servant.Auth.Server                      ( FromJWT
                                                           , ToJWT
                                                           )
@@ -157,6 +158,62 @@ instance Servant.Docs.ToSample VerRev where
 type ServerTChan = STM.TChan [ApiOhlcv]
 
 -- |
+-- slack api users.infoからのJSON返答
+data UsersInfoResponse = UsersInfoResponse
+    { respOk                :: Bool
+    , respError             :: Maybe T.Text
+    , respUserId            :: Maybe T.Text
+    , respTeamId            :: Maybe T.Text
+    , respUserName          :: Maybe T.Text
+    , respUserDeleted       :: Maybe Bool
+    , respUserColor         :: Maybe T.Text
+    , respUserRealName      :: Maybe T.Text
+    , respUserTz            :: Maybe T.Text
+    , respUserTzLabel       :: Maybe T.Text
+    , respUserTzOffset      :: Maybe Int
+    --
+    -- profileは省略する
+    , respIsAdmin           :: Maybe Bool
+    , respIsOwner           :: Maybe Bool
+    , respIsPrimaryOwner    :: Maybe Bool
+    , respIsRestricted      :: Maybe Bool
+    , respIsUltraRestricted :: Maybe Bool
+    , respIsBot             :: Maybe Bool
+    , respUpdated           :: Maybe Bool
+    , respIsAppUser         :: Maybe Bool
+    , respHas2FA            :: Maybe Bool
+    } deriving Show
+
+instance Aeson.FromJSON UsersInfoResponse where
+    parseJSON = Aeson.withObject "users.info response" $ \o -> do
+        respOk                <- o .: "ok"
+        respError             <- o .:? "error"
+        --
+        -- userの中身を取り出す
+        oUser                 <- o .:? "user"
+        respUserId            <- maybe (pure Nothing) (.:? "id") oUser
+        respTeamId            <- maybe (pure Nothing) (.:? "team_id") oUser
+        respUserName          <- maybe (pure Nothing) (.:? "name") oUser
+        respUserDeleted       <- maybe (pure Nothing) (.:? "deleted") oUser
+        respUserColor         <- maybe (pure Nothing) (.:? "color") oUser
+        respUserRealName      <- maybe (pure Nothing) (.:? "real_name") oUser
+        respUserTz            <- maybe (pure Nothing) (.:? "tz") oUser
+        respUserTzLabel       <- maybe (pure Nothing) (.:? "tz_label") oUser
+        respUserTzOffset      <- maybe (pure Nothing) (.:? "tz_offset") oUser
+        --
+        --
+        respIsAdmin           <- o .:? "is_admin"
+        respIsOwner           <- o .:? "is_owner"
+        respIsPrimaryOwner    <- o .:? "is_primary_owner"
+        respIsRestricted      <- o .:? "is_restricted"
+        respIsUltraRestricted <- o .:? "is_ultra_restricted"
+        respIsBot             <- o .:? "is_bot"
+        respUpdated           <- o .:? "updated"
+        respIsAppUser         <- o .:? "is_app_user"
+        respHas2FA            <- o .:? "has_2fa"
+        return UsersInfoResponse{..}
+
+-- |
 -- slack api oauth.accessからのJSON返答
 data OAuthAccessResponse = OAuthAccessResponse
     { respOk          :: Bool
@@ -188,9 +245,13 @@ instance Aeson.FromJSON OAuthAccessResponse where
 -- |
 -- AuthenticatedUser
 data AuthenticatedUser = AuthenticatedUser
-    { scope    :: T.Text
-    , userId   :: T.Text
-    , userName :: T.Text
+    { scope        :: T.Text
+    , userId       :: T.Text
+    , userName     :: T.Text
+    , userRealName :: T.Text
+    , userTz       :: T.Text
+    , userTzLabel  :: T.Text
+    , userTzOffset :: Int
     } deriving (Eq, Show, Generic)
 
 instance Aeson.FromJSON AuthenticatedUser
@@ -200,7 +261,16 @@ instance ToJWT AuthenticatedUser
 instance Servant.Elm.ElmType AuthenticatedUser
 instance Servant.Docs.ToSample AuthenticatedUser where
     toSamples _ =
-        Servant.Docs.singleSample $ AuthenticatedUser "identify.basic" "xxxx" "John Doe"
+        Servant.Docs.singleSample v
+        where
+            v = AuthenticatedUser
+                "identify.basic"
+                "xxxx"
+                "John Doe"
+                "Real John Doe"
+                "America/Los_Angeles"
+                "Pacific Daylight Time"
+                (-25200)
 
 -- |
 --

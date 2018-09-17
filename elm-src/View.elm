@@ -354,7 +354,8 @@ viewDashboard model =
                 [ Typo.display1
                 , Typo.center
                 ]
-                [ model.userName
+                [ model.authenticatedUser
+                    |> Maybe.map (\x -> x.userRealName)
                     |> Maybe.withDefault "Unauthenticated user"
                     |> Html.text
                 ]

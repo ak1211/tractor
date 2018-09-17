@@ -49,7 +49,7 @@ type alias DocMarkDown =
 type alias Model =
     { clientID : String
     , accessToken : Maybe WebApi.AccessToken
-    , userName : Maybe String
+    , authenticatedUser : Maybe WebApi.AuthenticatedUser
     , pageHistory : List Route
     , serverVersion : Maybe WebApi.VerRev
     , webApiDocument : Maybe DocMarkDown

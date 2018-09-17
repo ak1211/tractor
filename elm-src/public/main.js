@@ -6768,7 +6768,39 @@ var _ak1211$tractor$Generated_WebApi$encodeAuthenticatedUser = function (x) {
 						_0: 'userName',
 						_1: _elm_lang$core$Json_Encode$string(x.userName)
 					},
-					_1: {ctor: '[]'}
+					_1: {
+						ctor: '::',
+						_0: {
+							ctor: '_Tuple2',
+							_0: 'userRealName',
+							_1: _elm_lang$core$Json_Encode$string(x.userRealName)
+						},
+						_1: {
+							ctor: '::',
+							_0: {
+								ctor: '_Tuple2',
+								_0: 'userTz',
+								_1: _elm_lang$core$Json_Encode$string(x.userTz)
+							},
+							_1: {
+								ctor: '::',
+								_0: {
+									ctor: '_Tuple2',
+									_0: 'userTzLabel',
+									_1: _elm_lang$core$Json_Encode$string(x.userTzLabel)
+								},
+								_1: {
+									ctor: '::',
+									_0: {
+										ctor: '_Tuple2',
+										_0: 'userTzOffset',
+										_1: _elm_lang$core$Json_Encode$int(x.userTzOffset)
+									},
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					}
 				}
 			}
 		});
@@ -6910,23 +6942,39 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Version = _elm_lang$http$Http$reque
 		timeout: _elm_lang$core$Maybe$Nothing,
 		withCredentials: false
 	});
-var _ak1211$tractor$Generated_WebApi$AuthenticatedUser = F3(
-	function (a, b, c) {
-		return {scope: a, userId: b, userName: c};
+var _ak1211$tractor$Generated_WebApi$AuthenticatedUser = F7(
+	function (a, b, c, d, e, f, g) {
+		return {scope: a, userId: b, userName: c, userRealName: d, userTz: e, userTzLabel: f, userTzOffset: g};
 	});
 var _ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-	'userName',
-	_elm_lang$core$Json_Decode$string,
+	'userTzOffset',
+	_elm_lang$core$Json_Decode$int,
 	A3(
 		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-		'userId',
+		'userTzLabel',
 		_elm_lang$core$Json_Decode$string,
 		A3(
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-			'scope',
+			'userTz',
 			_elm_lang$core$Json_Decode$string,
-			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))));
+			A3(
+				_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+				'userRealName',
+				_elm_lang$core$Json_Decode$string,
+				A3(
+					_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+					'userName',
+					_elm_lang$core$Json_Decode$string,
+					A3(
+						_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+						'userId',
+						_elm_lang$core$Json_Decode$string,
+						A3(
+							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+							'scope',
+							_elm_lang$core$Json_Decode$string,
+							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))))))));
 var _ak1211$tractor$Generated_WebApi$ApiAccessToken = function (a) {
 	return {token: a};
 };
@@ -18852,7 +18900,7 @@ var _ak1211$tractor$Model$Model = function (a) {
 							return function (h) {
 								return function (i) {
 									return function (j) {
-										return {clientID: a, accessToken: b, userName: c, pageHistory: d, serverVersion: e, webApiDocument: f, uploadPageModel: g, portfolioPageModel: h, analyticsPageModel: i, mdl: j};
+										return {clientID: a, accessToken: b, authenticatedUser: c, pageHistory: d, serverVersion: e, webApiDocument: f, uploadPageModel: g, portfolioPageModel: h, analyticsPageModel: i, mdl: j};
 									};
 								};
 							};
@@ -20497,15 +20545,10 @@ var _ak1211$tractor$Update$update = F2(
 						return a.token;
 					},
 					_elm_lang$core$Result$toMaybe(_p6._0));
-				var uname = A2(
-					_elm_lang$core$Maybe$map,
-					function (a) {
-						return a.userName;
-					},
-					A2(_elm_lang$core$Maybe$andThen, _ak1211$tractor$Update$auserFromReceivedJWT, receivedToken));
+				var aUser = A2(_elm_lang$core$Maybe$andThen, _ak1211$tractor$Update$auserFromReceivedJWT, receivedToken);
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
-					{accessToken: receivedToken, userName: uname});
+					{accessToken: receivedToken, authenticatedUser: aUser});
 				var msgs = {
 					ctor: '::',
 					_0: _ak1211$tractor$Msg$UploadPageMsg(
@@ -22801,7 +22844,15 @@ var _ak1211$tractor$View$viewDashboard = function (model) {
 					{
 						ctor: '::',
 						_0: _elm_lang$html$Html$text(
-							A2(_elm_lang$core$Maybe$withDefault, 'Unauthenticated user', model.userName)),
+							A2(
+								_elm_lang$core$Maybe$withDefault,
+								'Unauthenticated user',
+								A2(
+									_elm_lang$core$Maybe$map,
+									function (x) {
+										return x.userRealName;
+									},
+									model.authenticatedUser))),
 						_1: {ctor: '[]'}
 					}),
 				_1: {
@@ -23646,7 +23697,7 @@ var _ak1211$tractor$Main$init = F2(
 		var initialModel = {
 			clientID: flags.client_id,
 			accessToken: _elm_lang$core$Maybe$Nothing,
-			userName: _elm_lang$core$Maybe$Nothing,
+			authenticatedUser: _elm_lang$core$Maybe$Nothing,
 			pageHistory: {ctor: '[]'},
 			serverVersion: _elm_lang$core$Maybe$Nothing,
 			webApiDocument: _elm_lang$core$Maybe$Nothing,

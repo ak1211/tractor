@@ -86,13 +86,12 @@ update msg model =
                 receivedToken =
                     Maybe.map (\a -> a.token) <| Result.toMaybe result
 
-                uname =
+                aUser =
                     receivedToken
                         |> Maybe.andThen auserFromReceivedJWT
-                        |> Maybe.map (\a -> a.userName)
 
                 newModel =
-                    { model | accessToken = receivedToken, userName = uname }
+                    { model | accessToken = receivedToken, authenticatedUser = aUser }
 
                 msgs =
                     [ Msg.UploadPageMsg (UploadPage.ChangeAccessToken receivedToken)
