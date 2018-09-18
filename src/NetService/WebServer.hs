@@ -244,9 +244,12 @@ type ApiForFrontend
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
  :<|> Summary "Delete prices"
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
- :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] ApiAccessToken
- :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
- :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
+ :<|> Summary "get token (JWT)"
+        :> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] ApiAccessToken
+ :<|> Summary "get server version"
+        :> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
+ :<|> Summary "get portfolios"
+        :> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
 
 type ApiForDocument
     = ApiForFrontend
@@ -384,31 +387,30 @@ postAuthTempCodeHandler
     :: Config -> AuthTempCode -> Servant.Handler ApiAccessToken
 postAuthTempCodeHandler cnf tempCode = do
     oauthResp <- sendRequestToOAuthAccess cnf tempCode
-    let pair = (,) <$> respAccessToken oauthResp <*> respUserId
-            (oauthResp :: OAuthAccessResponse)
-    tokenAndUserId <- maybe err401Unauthorized pure pair
-    uInfoResp      <- uncurry sendRequestToUsersInfo tokenAndUserId
+    let uid  = respUserId (oauthResp :: OAuthAccessResponse)
+        pair = (,) <$> respAccessToken oauthResp <*> uid
+    uInfoResp <- maybe err401Unauthorized (uncurry sendRequestToUsersInfo) pair
     M.liftIO $ print uInfoResp
-    aUser          <- maybe err401Unauthorized pure
-        $ takeAuthenticatedUser oauthResp uInfoResp
     --
-    -- 自分のSlackトークンとの一致を確認する
-    let testToken = respAccessToken oauthResp
-        myToken   = Conf.oauthAccessToken . Conf.slack $ cConf cnf
-    if testToken == Just myToken
-        then do
-            jwt <- makeJWT aUser
-            M.liftIO $ print jwt
-            pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
-        else err403Forbidden
+    let myToken   = Conf.oauthAccessToken . Conf.slack $ cConf cnf
+        testToken = respAccessToken oauthResp
+    case authenticatedUser oauthResp uInfoResp of
+        Just aUser
+            | testToken == Just myToken -> do
+                -- 自分のSlackトークンと一致
+                jwt <- makeJWT aUser
+                M.liftIO $ print jwt
+                pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
+            | otherwise -> err403Forbidden
+        Nothing -> err401Unauthorized
   where
     --
     --
-    takeAuthenticatedUser
+    authenticatedUser
         :: OAuthAccessResponse
         -> UsersInfoResponse
         -> Maybe ApiTypes.AuthenticatedUser
-    takeAuthenticatedUser x y = do
+    authenticatedUser x y = do
         scope        <- respScope x
         userId       <- respUserId (x :: OAuthAccessResponse)
         userName     <- respUserName (y :: UsersInfoResponse)
@@ -441,10 +443,23 @@ sendRequestToOAuthAccess
 sendRequestToOAuthAccess cnf tempCode = do
     uri       <- maybe err500InternalServerError pure methodURI
     json      <- Aeson.decode <$> M.liftIO (sendApiRequest uri)
-    oauthResp <- maybe (err400BadRequest "OAuth flow failed") pure json
-    M.liftIO $ print oauthResp
-    return oauthResp
+    oauthResp <- maybe
+        (err400BadRequest "\"oauth.access\" json parse error.")
+        pure
+        json
+    if respOk (oauthResp :: OAuthAccessResponse)
+        then do
+            M.liftIO $ print oauthResp
+            return oauthResp
+        else err400BadRequest (errMsg oauthResp)
   where
+    --
+    --
+    errMsg :: OAuthAccessResponse -> BL8.ByteString
+    errMsg x = maybe "oauth.access error" (BL8.pack . T.unpack)
+        $ respError (x :: OAuthAccessResponse)
+    --
+    --
     methodURI =
         URI.parseURI
             .  TL.unpack
@@ -469,13 +484,23 @@ sendRequestToOAuthAccess cnf tempCode = do
 --
 sendRequestToUsersInfo :: T.Text -> T.Text -> Servant.Handler UsersInfoResponse
 sendRequestToUsersInfo accessToken userId = do
-    uri       <- maybe err500InternalServerError pure methodURI
+    uri <- maybe err500InternalServerError pure methodURI
     M.liftIO $ print uri
     json      <- Aeson.decode <$> M.liftIO (sendApiRequest uri)
-    uInfoResp <- maybe (err400BadRequest "Slack API request failed") pure json
-    M.liftIO $ print uInfoResp
-    return uInfoResp
+    uInfoResp <- maybe (err400BadRequest "\"users.info\" json parse error")
+                       pure
+                       json
+    if respOk (uInfoResp :: UsersInfoResponse)
+        then do
+            M.liftIO $ print uInfoResp
+            return uInfoResp
+        else err400BadRequest (errMsg uInfoResp)
   where
+    --
+    --
+    errMsg :: UsersInfoResponse -> BL8.ByteString
+    errMsg x = maybe "users.info error" (BL8.pack . T.unpack)
+        $ respError (x :: UsersInfoResponse)
     --
     --
     methodURI =

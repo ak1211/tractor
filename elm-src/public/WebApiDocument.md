@@ -1,5 +1,8 @@
 ## POST /api/v1/auth
 
+### get token (JWT)
+
+
 ### POST Parameters:
 
 - code
@@ -24,6 +27,9 @@
     ```
 
 ## GET /api/v1/portfolios
+
+### get portfolios
+
 
 ### Response:
 
@@ -414,6 +420,9 @@ at,open,high,low,close,volume,source
     ```
 
 ## GET /api/v1/version
+
+### get server version
+
 
 ### Response:
 
