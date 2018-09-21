@@ -39,11 +39,12 @@ Portability :  POSIX
 module Model
     ( module Model
     , module ModelDef
-    ) where
-import           Data.ByteString.Char8 (ByteString)
-import           Data.Int              (Int64)
-import           Data.Text             (Text)
-import           Data.Time             (UTCTime)
+    )
+where
+import           Data.ByteString.Char8                    ( ByteString )
+import           Data.Int                                 ( Int64 )
+import           Data.Text                                ( Text )
+import           Data.Time                                ( UTCTime )
 import           Database.Persist.TH
 
 import           ModelDef
@@ -75,7 +76,7 @@ Ohlcv
 -- |
 -- テクニカル指標テーブル
 TechInds
-    ohlcv       OhlcvId          -- ^ 紐付け
+    ohlcv       OhlcvId         -- ^ 紐付け
     ind         TechnicalInds   -- ^ テクニカル指標
     val         Double          -- ^ 値
     deriving Show Eq

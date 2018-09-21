@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.29
+version:            0.4.30
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -44,26 +44,25 @@ library:
   dependencies:
   - Chart
   - Chart-cairo
-  - colour
-  - data-default
-  - data-default-class
-  - lens
-  - temporary
   - aeson
   - attoparsec
   - case-insensitive
   - cassava
+  - colour
   - conduit-extra
   - connection
   - containers
+  - data-default
+  - data-default-class
   - html-conduit
   - http-api-data
   - http-media
   - iconv
+  - jose
+  - lens
   - lucid
   - mwc-random
   - network-uri
-  - uri-encode
   - persistent
   - persistent-mysql
   - persistent-template
@@ -76,8 +75,10 @@ library:
   - servant-server
   - tagsoup
   - template-haskell
+  - temporary
   - transformers
   - transformers-either
+  - uri-encode
   - vector
   - wai
   - wai-logger

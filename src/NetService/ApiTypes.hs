@@ -54,6 +54,10 @@ module NetService.ApiTypes
     )
 where
 import qualified Control.Concurrent.STM        as STM
+import           Control.Lens                             ( (&)
+                                                          , (.~)
+                                                          )
+import qualified Crypto.JWT                    as Jose
 import           Data.Aeson                               ( (.:)
                                                           , (.:?)
                                                           )
@@ -73,9 +77,7 @@ import           Servant.API                              ( Accept
                                                           , contentType
                                                           , mimeRender
                                                           )
-import           Servant.Auth.Server                      ( FromJWT
-                                                          , ToJWT
-                                                          )
+import qualified Servant.Auth.Server           as Auth
 import qualified Servant.Docs
 import           Servant.Elm                              ( ElmType )
 import qualified Web.FormUrlEncoded
@@ -245,31 +247,36 @@ instance Aeson.FromJSON OAuthAccessResponse where
 -- |
 -- AuthenticatedUser
 data AuthenticatedUser = AuthenticatedUser
-    { scope        :: T.Text
-    , userId       :: T.Text
+    { userId       :: T.Text
     , userName     :: T.Text
     , userRealName :: T.Text
     , userTz       :: T.Text
-    , userTzLabel  :: T.Text
     , userTzOffset :: Int
     } deriving (Eq, Show, Generic)
 
 instance Aeson.FromJSON AuthenticatedUser
 instance Aeson.ToJSON AuthenticatedUser
-instance FromJWT AuthenticatedUser
-instance ToJWT AuthenticatedUser
+
+instance Auth.FromJWT AuthenticatedUser
+instance Auth.ToJWT AuthenticatedUser where
+    encodeJWT a =
+        --
+        -- ToDo: 
+        let claims = Jose.emptyClaimsSet
+                    & Jose.claimIss .~ Just "issuer"
+        in
+        Jose.addClaim "dat" (Aeson.toJSON a) claims
+
 instance Servant.Elm.ElmType AuthenticatedUser
 instance Servant.Docs.ToSample AuthenticatedUser where
     toSamples _ =
         Servant.Docs.singleSample v
         where
             v = AuthenticatedUser
-                "identify.basic"
                 "xxxx"
                 "John Doe"
                 "Real John Doe"
                 "America/Los_Angeles"
-                "Pacific Daylight Time"
                 (-25200)
 
 -- |
@@ -279,8 +286,8 @@ newtype ApiAccessToken = ApiAccessToken
     } deriving (Eq, Show, Generic)
 instance Aeson.FromJSON ApiAccessToken
 instance Aeson.ToJSON ApiAccessToken
-instance FromJWT ApiAccessToken
-instance ToJWT ApiAccessToken
+instance Auth.FromJWT ApiAccessToken
+instance Auth.ToJWT ApiAccessToken
 instance Servant.Elm.ElmType ApiAccessToken
 instance Servant.Docs.ToSample ApiAccessToken where
     toSamples _ =

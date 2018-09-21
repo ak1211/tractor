@@ -47,6 +47,7 @@ import qualified Control.Monad.IO.Class        as M
 import qualified Control.Monad.Logger          as Logger
 import qualified Control.Monad.Trans           as MonadTrans
 import           Data.Default                             ( Default(..) )
+import qualified Crypto.JOSE.JWA.JWS           as Jose
 import           Control.Monad.Trans.Either               ( EitherT
                                                           , newEitherT
                                                           , runEitherT
@@ -333,7 +334,7 @@ runWebServer versionRevision conf chan = do
     pool  <- Logger.runNoLoggingT . runResourceT $ createPool
     myKey <- Auth.generateKey
     let api = Proxy :: Proxy WebApi
-        jwtCfg = Auth.defaultJWTSettings myKey
+        jwtCfg = (Auth.defaultJWTSettings myKey) { Auth.jwtAlg = Just Jose.HS512 }
         context = jwtCfg :. Auth.defaultCookieSettings :. Servant.EmptyContext
         apiServer = webApiServer (Config versionRevision jwtCfg conf pool chan)
         servantServer = Servant.serveWithContext api context apiServer
@@ -411,12 +412,10 @@ postAuthTempCodeHandler cnf tempCode = do
         -> UsersInfoResponse
         -> Maybe ApiTypes.AuthenticatedUser
     authenticatedUser x y = do
-        scope        <- respScope x
         userId       <- respUserId (x :: OAuthAccessResponse)
         userName     <- respUserName (y :: UsersInfoResponse)
         userRealName <- respUserRealName y
         userTz       <- respUserTz y
-        userTzLabel  <- respUserTzLabel y
         userTzOffset <- respUserTzOffset y
         Just ApiTypes.AuthenticatedUser {..}
     --

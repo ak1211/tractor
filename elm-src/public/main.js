@@ -6751,54 +6751,38 @@ var _ak1211$tractor$Generated_WebApi$encodeAuthenticatedUser = function (x) {
 			ctor: '::',
 			_0: {
 				ctor: '_Tuple2',
-				_0: 'scope',
-				_1: _elm_lang$core$Json_Encode$string(x.scope)
+				_0: 'userId',
+				_1: _elm_lang$core$Json_Encode$string(x.userId)
 			},
 			_1: {
 				ctor: '::',
 				_0: {
 					ctor: '_Tuple2',
-					_0: 'userId',
-					_1: _elm_lang$core$Json_Encode$string(x.userId)
+					_0: 'userName',
+					_1: _elm_lang$core$Json_Encode$string(x.userName)
 				},
 				_1: {
 					ctor: '::',
 					_0: {
 						ctor: '_Tuple2',
-						_0: 'userName',
-						_1: _elm_lang$core$Json_Encode$string(x.userName)
+						_0: 'userRealName',
+						_1: _elm_lang$core$Json_Encode$string(x.userRealName)
 					},
 					_1: {
 						ctor: '::',
 						_0: {
 							ctor: '_Tuple2',
-							_0: 'userRealName',
-							_1: _elm_lang$core$Json_Encode$string(x.userRealName)
+							_0: 'userTz',
+							_1: _elm_lang$core$Json_Encode$string(x.userTz)
 						},
 						_1: {
 							ctor: '::',
 							_0: {
 								ctor: '_Tuple2',
-								_0: 'userTz',
-								_1: _elm_lang$core$Json_Encode$string(x.userTz)
+								_0: 'userTzOffset',
+								_1: _elm_lang$core$Json_Encode$int(x.userTzOffset)
 							},
-							_1: {
-								ctor: '::',
-								_0: {
-									ctor: '_Tuple2',
-									_0: 'userTzLabel',
-									_1: _elm_lang$core$Json_Encode$string(x.userTzLabel)
-								},
-								_1: {
-									ctor: '::',
-									_0: {
-										ctor: '_Tuple2',
-										_0: 'userTzOffset',
-										_1: _elm_lang$core$Json_Encode$int(x.userTzOffset)
-									},
-									_1: {ctor: '[]'}
-								}
-							}
+							_1: {ctor: '[]'}
 						}
 					}
 				}
@@ -6942,9 +6926,9 @@ var _ak1211$tractor$Generated_WebApi$getApiV1Version = _elm_lang$http$Http$reque
 		timeout: _elm_lang$core$Maybe$Nothing,
 		withCredentials: false
 	});
-var _ak1211$tractor$Generated_WebApi$AuthenticatedUser = F7(
-	function (a, b, c, d, e, f, g) {
-		return {scope: a, userId: b, userName: c, userRealName: d, userTz: e, userTzLabel: f, userTzOffset: g};
+var _ak1211$tractor$Generated_WebApi$AuthenticatedUser = F5(
+	function (a, b, c, d, e) {
+		return {userId: a, userName: b, userRealName: c, userTz: d, userTzOffset: e};
 	});
 var _ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
@@ -6952,29 +6936,21 @@ var _ak1211$tractor$Generated_WebApi$decodeAuthenticatedUser = A3(
 	_elm_lang$core$Json_Decode$int,
 	A3(
 		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-		'userTzLabel',
+		'userTz',
 		_elm_lang$core$Json_Decode$string,
 		A3(
 			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-			'userTz',
+			'userRealName',
 			_elm_lang$core$Json_Decode$string,
 			A3(
 				_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-				'userRealName',
+				'userName',
 				_elm_lang$core$Json_Decode$string,
 				A3(
 					_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-					'userName',
+					'userId',
 					_elm_lang$core$Json_Decode$string,
-					A3(
-						_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-						'userId',
-						_elm_lang$core$Json_Decode$string,
-						A3(
-							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-							'scope',
-							_elm_lang$core$Json_Decode$string,
-							_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))))))));
+					_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_ak1211$tractor$Generated_WebApi$AuthenticatedUser))))));
 var _ak1211$tractor$Generated_WebApi$ApiAccessToken = function (a) {
 	return {token: a};
 };

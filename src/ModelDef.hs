@@ -25,17 +25,40 @@ Stability   :  unstable
 Portability :  POSIX
 
 -}
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE StrictData      #-}
-{-# LANGUAGE TemplateHaskell #-}
-module ModelDef
-    where
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StrictData                 #-}
+{-# LANGUAGE TemplateHaskell            #-}
+module ModelDef where
 import           Control.Exception.Safe
-import           Data.Char              (toLower, toUpper)
-import           Data.Word              (Word32)
-import           Database.Persist.TH    (derivePersistField)
-import           GHC.Generics           (Generic)
-import           Text.Read              (readMaybe)
+import           Data.Char                                ( toLower
+                                                          , toUpper
+                                                          )
+import           Data.Fixed                               ( Centi )
+import           Data.Word                                ( Word32 )
+import           Database.Persist
+import           Database.Persist.Sql
+import           Database.Persist.TH                      ( derivePersistField )
+import           GHC.Generics                             ( Generic )
+import qualified Data.Text                     as T
+import           Text.Read                                ( readMaybe )
+
+--
+--
+newtype Currency = Currency
+    { getCurrency :: Centi
+    } deriving (Show, Eq, Num)
+
+instance PersistField Currency where
+    toPersistValue =
+        PersistInt64 . fromIntegral . fromEnum . getCurrency
+    fromPersistValue (PersistInt64 c) =
+        Right . Currency . toEnum . fromIntegral $ c
+    fromPersistValue x =
+        Left . T.pack $ "Expected Int64 counting cents, got: " ++ show x
+
+instance PersistFieldSql Currency where
+    sqlType _ = SqlInt64
 
 --
 --
@@ -67,16 +90,16 @@ showTickerSymbol TSTOPIX   = "東証株価指数"
 -- Nothing
 --
 toTickerSymbol :: MonadThrow m => String -> m TickerSymbol
-toTickerSymbol codeStr =
-    case go $ map toUpper codeStr of
-        Just a  -> pure a
-        Nothing-> throwString $ "toTickerSymbol: no parse of \"" ++ codeStr ++ "\""
-    where
+toTickerSymbol codeStr = case go $ map toUpper codeStr of
+    Just a -> pure a
+    Nothing ->
+        throwString $ "toTickerSymbol: no parse of \"" ++ codeStr ++ "\""
+  where
     --
     --
     go "NI225" = Just TSNI225
     go "TOPIX" = Just TSTOPIX
-    go cs = do
+    go cs      = do
         (market, code) <- parse cs
         case market of
             "TYO" -> Just $ TSTYO code
@@ -84,10 +107,7 @@ toTickerSymbol codeStr =
     --
     --
     parse :: String -> Maybe (String, Word32)
-    parse cs =
-        let (m, c) = splitAt 3 cs
-        in
-        (,) <$> pure m <*> readMaybe c
+    parse cs = let (m, c) = splitAt 3 cs in (,) <$> pure m <*> readMaybe c
 
 -- |
 --
@@ -120,17 +140,15 @@ showTimeFrame TF1d = "日足"
 -- |
 --
 validTimeFrames :: [String]
-validTimeFrames =
-    map fromTimeFrame [TF1h, TF1d]
+validTimeFrames = map fromTimeFrame [TF1h, TF1d]
 
 -- |
 --
-toTimeFrame:: MonadThrow m => String -> m TimeFrame
-toTimeFrame str =
-    case go $ map toLower str of
-        Just a  -> pure a
-        Nothing-> throwString $ "toTimeFrame: no parse of \"" ++ str ++ "\""
-    where
+toTimeFrame :: MonadThrow m => String -> m TimeFrame
+toTimeFrame str = case go $ map toLower str of
+    Just a  -> pure a
+    Nothing -> throwString $ "toTimeFrame: no parse of \"" ++ str ++ "\""
+  where
     go "1h" = Just TF1h
     go "1d" = Just TF1d
     go _    = Nothing
