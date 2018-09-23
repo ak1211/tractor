@@ -39,7 +39,7 @@ module NetService.ApiTypes
     ( SVG
     , SvgBinary(..)
     , ServerTChan
-    , QueryLimit(getQueryLimit)
+    , QueryLimit(unQueryLimit)
     , makeQueryLimit
     , ApiPortfolio
     , toApiPortfolio
@@ -87,7 +87,7 @@ import           Lib                                      ( toISO8601DateTime
                                                           )
 import qualified Model
 
-newtype SvgBinary = SvgBinary { getSvgBinary :: BL8.ByteString }
+newtype SvgBinary = SvgBinary { unSvgBinary :: BL8.ByteString }
 
 data SVG
 
@@ -95,12 +95,12 @@ instance Accept SVG where
     contentType _ = "image" // "svg+xml"
 
 instance MimeRender SVG SvgBinary where
-    mimeRender _ = getSvgBinary
+    mimeRender _ = unSvgBinary
 
 -- |
 --
 newtype QueryLimit = MkQueryLimit
-    { getQueryLimit :: Int
+    { unQueryLimit :: Int
     } deriving Generic
 
 instance ElmType QueryLimit

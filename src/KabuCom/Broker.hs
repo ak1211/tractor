@@ -240,9 +240,9 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
             -> (S.StockPositionItem, S.StockDetailPage)
             -> Maybe KabucomStock
     stock key (sp, sdp) = do
-        (pr, (h,m)) <- A.second S.getHourMinute <$> S.sdpPrice sdp
+        (pr, (h,m)) <- A.second S.unHourMinute <$> S.sdpPrice sdp
         t <- Time.makeTimeOfDayValid h m 0
-        let lt = Time.LocalTime   { Time.localDay = getAsiaTokyoDay (S.sdpDay sdp)
+        let lt = Time.LocalTime   { Time.localDay = unAsiaTokyoDay (S.sdpDay sdp)
                                 , Time.localTimeOfDay = t }
         Just KabucomStock
             { kabucomStockAsset      = key
@@ -278,7 +278,7 @@ lookupLinkOnTopPage BB.HTTPSession{..} linktext =
     --
     --
     topPage =
-        S.getTopPage $ S.topPage sTopPageHTML
+        S.unTopPage $ S.topPage sTopPageHTML
     --
     --
     failure =
@@ -310,8 +310,8 @@ login conf userAgent loginPageURL = do
     -- IDとパスワードを入力する
     let postMsg = BB.mkCustomPostReq
                     (map GS.toPairNV $ GS.formInputTag loginForm)
-                    [ ("SsLogonUser", Conf.loginID $ Conf.getInfoKabuCom conf)
-                    , ("SsLogonPassword", Conf.loginPassword $ Conf.getInfoKabuCom conf)
+                    [ ("SsLogonUser", Conf.loginID $ Conf.unInfoKabuCom conf)
+                    , ("SsLogonPassword", Conf.loginPassword $ Conf.unInfoKabuCom conf)
                     ]
     -- フォームのaction属性ページ
     let formAction = T.unpack $ GS.formAction loginForm
@@ -345,7 +345,7 @@ login conf userAgent loginPageURL = do
 logout :: BB.HTTPSession -> IO ()
 logout sess@BB.HTTPSession{..} =
     let topPageLinks = S.topPage sTopPageHTML
-        logoutLink = lookup "LOG OUT" [(GS.aText a, GS.aHref a) | a<-S.getTopPage topPageLinks]
+        logoutLink = lookup "LOG OUT" [(GS.aText a, GS.aHref a) | a<-S.unTopPage topPageLinks]
         toLogoutURI = BB.toAbsoluteURI sLoginPageURI . T.unpack
     in
     case toLogoutURI =<< logoutLink of

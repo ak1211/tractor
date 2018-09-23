@@ -87,7 +87,7 @@ fetchStockPrices sess ticker = do
     pack _ pr =
         let closingTime = Time.TimeOfDay 15 00 00
             lt = Time.LocalTime
-                    { Time.localDay = getAsiaTokyoDay $ S.dspDay pr
+                    { Time.localDay = unAsiaTokyoDay $ S.dspDay pr
                     , Time.localTimeOfDay = closingTime
                     }
         in

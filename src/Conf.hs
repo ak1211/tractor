@@ -45,21 +45,28 @@ module Conf
     , InfoBroker(..)
     , InfoSlack(..)
     , InfoMariaDB(..)
-    ) where
-import           Data.Aeson                 ((.:), (.=))
-import qualified Data.Aeson                 as Aeson
-import qualified Data.Aeson.TH              as Aeson
-import qualified Data.ByteString.Char8      as B8
-import qualified Data.ByteString.Lazy       as BL
-import           Data.Monoid                (mempty, (<>))
-import qualified Data.Text                  as T
-import qualified Data.Text.Lazy             as TL
-import qualified Data.Text.Lazy.Builder     as TLB
-import qualified Data.Text.Lazy.Builder.Int as TLB
-import           Data.Word                  (Word16)
-import qualified Database.Persist.MySQL     as MySQL
-import           GHC.Exts                   (fromList)
-import           System.IO                  (Newline (..), nativeNewline)
+    )
+where
+import           Data.Aeson                               ( (.:)
+                                                          , (.=)
+                                                          )
+import qualified Data.Aeson                    as Aeson
+import qualified Data.Aeson.TH                 as Aeson
+import qualified Data.ByteString.Char8         as B8
+import qualified Data.ByteString.Lazy          as BL
+import           Data.Monoid                              ( mempty
+                                                          , (<>)
+                                                          )
+import qualified Data.Text                     as T
+import qualified Data.Text.Lazy                as TL
+import qualified Data.Text.Lazy.Builder        as TLB
+import qualified Data.Text.Lazy.Builder.Int    as TLB
+import           Data.Word                                ( Word16 )
+import qualified Database.Persist.MySQL        as MySQL
+import           GHC.Exts                                 ( fromList )
+import           System.IO                                ( Newline(..)
+                                                          , nativeNewline
+                                                          )
 
 type UserAgent = String
 
@@ -106,19 +113,19 @@ data InfoAccount = InfoAccount
 -- |
 -- 松井証券
 newtype InfoMatsuiCoJp = InfoMatsuiCoJp
-    { getInfoMatsuiCoJp :: InfoAccount
+    { unInfoMatsuiCoJp :: InfoAccount
     } deriving Eq
 
 -- |
 -- SBI証券
 newtype InfoSBIsecCoJp = InfoSBIsecCoJp
-    { getInfoSBIsecCoJp :: InfoAccount
+    { unInfoSBIsecCoJp :: InfoAccount
     } deriving Eq
 
 -- |
 -- KabuCom証券
 newtype InfoKabuCom = InfoKabuCom
-    { getInfoKabuCom :: InfoAccount
+    { unInfoKabuCom :: InfoAccount
     } deriving Eq
 
 -- |
@@ -137,11 +144,9 @@ hiding = map (const '*')
 -- |
 -- 改行文字
 newline :: TLB.Builder
-newline =
-    TLB.fromString $
-    case nativeNewline of
-        LF   -> "\n"
-        CRLF -> "\r\n"
+newline = TLB.fromString $ case nativeNewline of
+    LF   -> "\n"
+    CRLF -> "\r\n"
 
 -- |
 -- Infoのshow
@@ -244,15 +249,15 @@ instance Aeson.FromJSON InfoBroker where
 instance Aeson.ToJSON InfoBroker where
     toJSON = \case
         (MatsuiCoJp o) -> Aeson.Object $
-            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject (getInfoMatsuiCoJp o)
+            fromList [ ("name", Aeson.String "matsui.co.jp") ] <> toObject (unInfoMatsuiCoJp o)
         (SBIsecCoJp o) -> Aeson.Object $
-            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject (getInfoSBIsecCoJp o)
+            fromList [ ("name", Aeson.String "sbisec.co.jp") ] <> toObject (unInfoSBIsecCoJp o)
         (KabuCom o) -> Aeson.Object $
-            fromList [ ("name", Aeson.String "kabu.com") ] <> toObject (getInfoKabuCom o)
+            fromList [ ("name", Aeson.String "kabu.com") ] <> toObject (unInfoKabuCom o)
 
 --
 --
-toObject:: Aeson.ToJSON a => a -> Aeson.Object
+toObject :: Aeson.ToJSON a => a -> Aeson.Object
 toObject a = case Aeson.toJSON a of
     Aeson.Object o -> o
     _              -> error "toObject: value isn't an Object"
@@ -266,28 +271,25 @@ $(Aeson.deriveJSON Aeson.defaultOptions ''InfoMariaDB)
 -- |
 -- 設定ファイル(json)を読み込む
 readJSONFile :: String -> IO (Either String Info)
-readJSONFile filePath =
-    Aeson.eitherDecode <$> BL.readFile filePath
+readJSONFile filePath = Aeson.eitherDecode <$> BL.readFile filePath
 
 -- |
 -- MySQLの接続情報
 connInfoDB :: InfoMariaDB -> MySQL.ConnectInfo
-connInfoDB mdb =
-    MySQL.defaultConnectInfo
-        { MySQL.connectHost = Conf.host mdb
-        , MySQL.connectPort = Conf.port mdb
-        , MySQL.connectUser = Conf.user mdb
-        , MySQL.connectPassword = Conf.password mdb
-        , MySQL.connectDatabase = Conf.database mdb
-        }
+connInfoDB mdb = MySQL.defaultConnectInfo
+    { MySQL.connectHost     = Conf.host mdb
+    , MySQL.connectPort     = Conf.port mdb
+    , MySQL.connectUser     = Conf.user mdb
+    , MySQL.connectPassword = Conf.password mdb
+    , MySQL.connectDatabase = Conf.database mdb
+    }
 
 -- |
 -- ログデーターベース情報
 loggingConnInfo :: MySQL.ConnectInfo
-loggingConnInfo =
-    MySQL.defaultConnectInfo
-        { MySQL.connectUser = "logginguser"
-        , MySQL.connectPassword = "loggingpassword"
-        , MySQL.connectDatabase = "stockdb"
-        }
+loggingConnInfo = MySQL.defaultConnectInfo
+    { MySQL.connectUser     = "logginguser"
+    , MySQL.connectPassword = "loggingpassword"
+    , MySQL.connectDatabase = "stockdb"
+    }
 

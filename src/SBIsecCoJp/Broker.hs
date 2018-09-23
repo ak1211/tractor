@@ -255,7 +255,7 @@ fetchUpdatedPriceAndStore connInfo sess@BB.HTTPSession{..} = do
         -- 詳細ページをスクレイピングする
         MaybeT . return . M.mapM S.holdStockDetailPage
         -- 詳細ページへアクセスする
-        =<< M.mapM (slowlyFetch sess) . mapAbsUri . S.getHoldStockDetailLink . S.hslLinks
+        =<< M.mapM (slowlyFetch sess) . mapAbsUri . S.unHoldStockDetailLink . S.hslLinks
         =<< pure page
     -- |
     -- トップ -> 買付余力を見に行く関数
@@ -291,7 +291,7 @@ fetchLinkPage fetcher sess t =
 lookupLinkOnTopPage :: BB.HTTPSession -> T.Text -> Maybe URI
 lookupLinkOnTopPage BB.HTTPSession{..} linktext =
     BB.toAbsoluteURI sLoginPageURI . T.unpack
-    =<< lookup linktext [(GS.aText a, GS.aHref a) | a<-S.getTopPage $ S.topPage sTopPageHTML]
+    =<< lookup linktext [(GS.aText a, GS.aHref a) | a<-S.unTopPage $ S.topPage sTopPageHTML]
 
 -- |
 -- 通常のfetch
@@ -319,8 +319,8 @@ login conf userAgent loginPageURL = do
     -- IDとパスワードを入力する
     let postMsg = BB.mkCustomPostReq
                     (map GS.toPairNV $ GS.formInputTag loginForm)
-                    [ ("username", Conf.loginID $ Conf.getInfoSBIsecCoJp conf)
-                    , ("password", Conf.loginPassword $ Conf.getInfoSBIsecCoJp conf)
+                    [ ("username", Conf.loginID $ Conf.unInfoSBIsecCoJp conf)
+                    , ("password", Conf.loginPassword $ Conf.unInfoSBIsecCoJp conf)
                     ]
     -- フォームのaction属性ページ
     let formAction = T.unpack $ GS.formAction loginForm
@@ -353,7 +353,7 @@ login conf userAgent loginPageURL = do
 logout :: BB.HTTPSession -> IO ()
 logout sess@BB.HTTPSession{..} =
     let topPageLinks = S.topPage sTopPageHTML
-        logoutLink = lookup "ログアウト" [(GS.aText a, GS.aHref a) | a<-S.getTopPage topPageLinks]
+        logoutLink = lookup "ログアウト" [(GS.aText a, GS.aHref a) | a<-S.unTopPage topPageLinks]
         toLogoutURI = BB.toAbsoluteURI sLoginPageURI . T.unpack
     in
     case toLogoutURI =<< logoutLink of

@@ -142,19 +142,19 @@ newline =
 -- |
 -- トップページの内容
 newtype TopPage = TopPage
-    { getTopPage :: [GS.AnchorTag]
+    { unTopPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
 -- 口座管理ページの内容
 newtype AccMenuPage = AccMenuPage
-    { getAccMenuPage :: [GS.AnchorTag]
+    { unAccMenuPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
 -- 買付余力ページの内容
 newtype PurchaseMarginListPage = PurchaseMarginListPage
-    { getPurchaseMarginListPage :: [GS.AnchorTag]
+    { unPurchaseMarginListPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
@@ -182,7 +182,7 @@ data HoldStockDetailPage = HoldStockDetailPage
 -- |
 -- 保有証券詳細ページへのリンク
 newtype HoldStockDetailLink = HoldStockDetailLink
-    { getHoldStockDetailLink :: [GS.AnchorTag]
+    { unHoldStockDetailLink :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |

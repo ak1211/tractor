@@ -46,12 +46,12 @@ import           Text.Read                                ( readMaybe )
 --
 --
 newtype Currency = Currency
-    { getCurrency :: Centi
+    { unCurrency :: Centi
     } deriving (Show, Eq, Num)
 
 instance PersistField Currency where
     toPersistValue =
-        PersistInt64 . fromIntegral . fromEnum . getCurrency
+        PersistInt64 . fromIntegral . fromEnum . unCurrency
     fromPersistValue (PersistInt64 c) =
         Right . Currency . toEnum . fromIntegral $ c
     fromPersistValue x =

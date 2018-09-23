@@ -72,7 +72,7 @@ import           Scheduling             (AsiaTokyoDay (..))
 -- |
 -- トップページの内容
 newtype TopPage = TopPage
-    { getTopPage :: [GS.AnchorTag]
+    { unTopPage :: [GS.AnchorTag]
     } deriving (Eq, Show)
 
 -- |
@@ -86,13 +86,13 @@ topPage html =
 -- |
 -- 日時分
 newtype DayHourMinute = DayHourMinute
-    { getDayHourMinute :: (AsiaTokyoDay, HourMinute)
+    { unDayHourMinute :: (AsiaTokyoDay, HourMinute)
     } deriving (Eq, Show)
 
 -- |
 -- 時分
 newtype HourMinute = HourMinute
-    { getHourMinute :: (Int, Int)
+    { unHourMinute :: (Int, Int)
     } deriving (Eq, Show)
 
 -- |

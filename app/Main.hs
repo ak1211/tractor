@@ -154,7 +154,7 @@ announceHolidaySchedule conf day =
     where
     act = C.runConduit $ C.yield (TL.pack msg) C..| slack
     msg = "本日 " ++ today ++ " は市場の休日です。"
-    today = Time.showGregorian $ Scd.getAsiaTokyoDay day
+    today = Time.showGregorian $ Scd.unAsiaTokyoDay day
     slack = simpleTextMsg conf C..| sinkSlack conf
 
 -- |
@@ -293,7 +293,7 @@ applicationBody cmdLineOpts conf = do
 -- 今日の実行スレッドに割り当てるリスト
 toAssignThreads :: Conf.Info -> Scd.AsiaTokyoDay -> [Scd.ZonedTimeJobs]
 toAssignThreads conf day =
-    case Time.toWeekDate $ Scd.getAsiaTokyoDay day of
+    case Time.toWeekDate $ Scd.unAsiaTokyoDay day of
      (_,_,w)
         | w == 1 -> weekday     -- Monday
         | w == 2 -> weekday     -- Tuesday

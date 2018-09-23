@@ -386,8 +386,8 @@ login conf userAgent loginUri = do
     -- |
     -- ログインID&パスワード
     customPostReq =
-        [ ("clientCD", Conf.loginID $ Conf.getInfoMatsuiCoJp conf)
-        , ("passwd", Conf.loginPassword $ Conf.getInfoMatsuiCoJp conf)
+        [ ("clientCD", Conf.loginID $ Conf.unInfoMatsuiCoJp conf)
+        , ("passwd", Conf.loginPassword $ Conf.unInfoMatsuiCoJp conf)
         ]
     -- |
     -- 返値組み立て

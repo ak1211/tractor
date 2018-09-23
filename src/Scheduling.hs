@@ -60,7 +60,7 @@ import qualified Data.Time.Clock.System as Tm
 import           Lib                    (tzAsiaTokyo)
 
 newtype AsiaTokyoDay = AsiaTokyoDay
-    { getAsiaTokyoDay :: Tm.Day
+    { unAsiaTokyoDay :: Tm.Day
     } deriving (Eq, Ord, Show)
 
 type JobFunc = IO ()
@@ -140,7 +140,7 @@ tomorrowMidnight =
     flip Tm.ZonedTime tzAsiaTokyo   -- JST ZonedTime
     . flip Tm.LocalTime Tm.midnight     -- JST Tomorrow 00:00:00
     . succ                              -- JST Today + 1 (a.k.a Tomorrow)
-    . getAsiaTokyoDay
+    . unAsiaTokyoDay
 
 -- |
 -- UTC時間の加減算
@@ -176,7 +176,7 @@ secondsSequence =
 --
 toZonedTime :: AsiaTokyoDay -> Tm.TimeOfDay -> Tm.ZonedTime
 toZonedTime day =
-    flip Tm.ZonedTime tzAsiaTokyo . Tm.LocalTime (getAsiaTokyoDay day)
+    flip Tm.ZonedTime tzAsiaTokyo . Tm.LocalTime (unAsiaTokyoDay day)
 
 -- |
 -- 現物株式の立会時間(東京証券取引所,日本時間)

@@ -164,7 +164,7 @@ instance Servant.Docs.ToParam QLimit where
         Servant.Docs.DocQueryParam
             "limit"
             ["100", "1000", "..."]
-            ("limit of records, default is " ++ show (getQueryLimit (def :: QueryLimit)))
+            ("limit of records, default is " ++ show (unQueryLimit (def :: QueryLimit)))
             Servant.Docs.Normal
 
 -- |
@@ -593,7 +593,7 @@ getHistoriesHandler cnf codeStr timeFrame qryLimit =
     selectList ticker = DB.runSqlPersistMPool
         (DB.selectList
             [Model.OhlcvTf ==. timeFrame, Model.OhlcvTicker ==. ticker]
-            [DB.Desc Model.OhlcvAt, DB.LimitTo (getQueryLimit limit)]
+            [DB.Desc Model.OhlcvAt, DB.LimitTo (unQueryLimit limit)]
         )
         (cPool cnf)
 
