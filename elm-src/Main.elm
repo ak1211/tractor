@@ -32,7 +32,7 @@ module Main exposing (main)
 
 import AnalyticsPage.Model as AnalyticsPage
 import Generated.WebApi as WebApi
-import Generated.WebApi exposing (ApiOhlcv)
+import Generated.WebApi exposing (ApiOhlcv,AuthTempCode)
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
@@ -48,7 +48,7 @@ import Update
 import View
 
 
-exchangeOAuthCodeForToken : String -> Cmd Msg
+exchangeOAuthCodeForToken : AuthTempCode -> Cmd Msg
 exchangeOAuthCodeForToken code =
     Http.send Msg.DoneOAuthExchangeCode (WebApi.postApiV1Auth code)
 
@@ -115,7 +115,7 @@ init flags location =
         exchangeCode =
             case Route.fromLocation location of
                 Just (Route.Home Nothing (Just code) _) ->
-                    exchangeOAuthCodeForToken code
+                    exchangeOAuthCodeForToken (AuthTempCode code)
 
                 _ ->
                     Cmd.none

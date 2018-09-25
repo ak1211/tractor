@@ -32,66 +32,75 @@ Portability :  POSIX
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StrictData         #-}
 module Main where
-import           Data.Proxy           (Proxy (..))
+import           Data.Proxy                               ( Proxy(..) )
 import qualified Elm
 import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Shelly
 
-import           NetService.ApiTypes  (ApiAccessToken, ApiOhlcv, ApiPortfolio,
-                                       AuthenticatedUser, VerRev)
-import           NetService.WebServer (ApiForDocument, ApiForFrontend)
+import           NetService.ApiTypes                      ( AuthTempCode
+                                                          , ApiAccessToken
+                                                          , ApiOhlcv
+                                                          , ApiPortfolio
+                                                          , AuthenticatedUser
+                                                          , VerRev
+                                                          )
+import           NetService.WebServer                     ( ApiForDocument
+                                                          , ApiForFrontend
+                                                          )
 
 
 elmOpts :: Servant.Elm.ElmOptions
-elmOpts =
-    Servant.Elm.defElmOptions
+elmOpts = Servant.Elm.defElmOptions
     { Servant.Elm.urlPrefix = Servant.Elm.Static "https://tractor.ak1211.com"
     }
 
 spec :: Servant.Elm.Spec
-spec =
-    Servant.Elm.Spec ["Generated", "WebApi"]
-        ( Servant.Elm.defElmImports
-        : "type alias AccessToken = String"
-        : "type alias TimeFrame = String"
-        : "type alias QueryLimit = Int"
-        : "type alias MarketCode = String"
-        : "type alias AuthzValue = String"
-        : "makeAuthorizationHeader : AccessToken -> AuthzValue"
-        : "makeAuthorizationHeader token = \"Bearer \" ++ token"
-        --
-        : Elm.toElmTypeSource    (Proxy :: Proxy VerRev)
-        : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)
-        : Elm.toElmEncoderSource (Proxy :: Proxy VerRev)
-        --
-        : Elm.toElmTypeSource    (Proxy :: Proxy AuthenticatedUser)
-        : Elm.toElmDecoderSource (Proxy :: Proxy AuthenticatedUser)
-        : Elm.toElmEncoderSource (Proxy :: Proxy AuthenticatedUser)
-        --
-        : Elm.toElmTypeSource    (Proxy :: Proxy ApiAccessToken)
-        : Elm.toElmDecoderSource (Proxy :: Proxy ApiAccessToken)
-        : Elm.toElmEncoderSource (Proxy :: Proxy ApiAccessToken)
-        --
-        : Elm.toElmTypeSource    (Proxy :: Proxy ApiPortfolio)
-        : Elm.toElmDecoderSource (Proxy :: Proxy ApiPortfolio)
-        : Elm.toElmEncoderSource (Proxy :: Proxy ApiPortfolio)
-        --
-        : Elm.toElmTypeSource    (Proxy :: Proxy ApiOhlcv)
-        : Elm.toElmDecoderSource (Proxy :: Proxy ApiOhlcv)
-        : Elm.toElmEncoderSource (Proxy :: Proxy ApiOhlcv)
-        --
-        : "type alias NoContent = {}"
-        : Servant.Elm.generateElmForAPIWith elmOpts (Proxy :: Proxy ApiForFrontend)
-        )
+spec = Servant.Elm.Spec
+    ["Generated", "WebApi"]
+    ( Servant.Elm.defElmImports
+    : "type alias AccessToken = String"
+    : "type alias TimeFrame = String"
+    : "type alias QueryLimit = Int"
+    : "type alias MarketCode = String"
+    : "type alias AuthzValue = String"
+    : "makeAuthorizationHeader : AccessToken -> AuthzValue"
+    : "makeAuthorizationHeader token = \"Bearer \" ++ token"
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy VerRev)
+    : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)
+    : Elm.toElmEncoderSource (Proxy :: Proxy VerRev)
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy AuthenticatedUser)
+    : Elm.toElmDecoderSource (Proxy :: Proxy AuthenticatedUser)
+    : Elm.toElmEncoderSource (Proxy :: Proxy AuthenticatedUser)
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy ApiAccessToken)
+    : Elm.toElmDecoderSource (Proxy :: Proxy ApiAccessToken)
+    : Elm.toElmEncoderSource (Proxy :: Proxy ApiAccessToken)
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy ApiPortfolio)
+    : Elm.toElmDecoderSource (Proxy :: Proxy ApiPortfolio)
+    : Elm.toElmEncoderSource (Proxy :: Proxy ApiPortfolio)
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy ApiOhlcv)
+    : Elm.toElmDecoderSource (Proxy :: Proxy ApiOhlcv)
+    : Elm.toElmEncoderSource (Proxy :: Proxy ApiOhlcv)
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy AuthTempCode)
+    : Elm.toElmDecoderSource (Proxy :: Proxy AuthTempCode)
+    : Elm.toElmEncoderSource (Proxy :: Proxy AuthTempCode)
+    --
+    : "type alias NoContent = {}"
+    : Servant.Elm.generateElmForAPIWith elmOpts
+                                        (Proxy :: Proxy ApiForFrontend)
+    )
 
 webApiDocs :: Servant.Docs.API
-webApiDocs =
-    Servant.Docs.docs (Proxy :: Proxy ApiForDocument)
+webApiDocs = Servant.Docs.docs (Proxy :: Proxy ApiForDocument)
 
 webApiDocMarkdown :: String
-webApiDocMarkdown =
-    Servant.Docs.markdown webApiDocs
+webApiDocMarkdown = Servant.Docs.markdown webApiDocs
 
 main :: IO ()
 main = do

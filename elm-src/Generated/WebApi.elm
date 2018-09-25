@@ -153,6 +153,21 @@ encodeApiOhlcv x =
         , ( "source", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) x.source )
         ]
 
+type alias AuthTempCode =
+    { code : String
+    }
+
+decodeAuthTempCode : Decoder AuthTempCode
+decodeAuthTempCode =
+    decode AuthTempCode
+        |> required "code" string
+
+encodeAuthTempCode : AuthTempCode -> Json.Encode.Value
+encodeAuthTempCode x =
+    Json.Encode.object
+        [ ( "code", Json.Encode.string x.code )
+        ]
+
 type alias NoContent = {}
 
 putApiV1PublishZmqByMarketCode : String -> String -> Http.Request (NoContent)
@@ -384,41 +399,29 @@ deleteApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode que
                 False
             }
 
-postApiV1Auth : String -> Http.Request (ApiAccessToken)
-postApiV1Auth query_code =
-    let
-        params =
-            List.filter (not << String.isEmpty)
-                [ Just query_code
-                    |> Maybe.map (Http.encodeUri >> (++) "code=")
-                    |> Maybe.withDefault ""
+postApiV1Auth : AuthTempCode -> Http.Request (ApiAccessToken)
+postApiV1Auth body =
+    Http.request
+        { method =
+            "POST"
+        , headers =
+            []
+        , url =
+            String.join "/"
+                [ "https://tractor.ak1211.com"
+                , "api"
+                , "v1"
+                , "auth"
                 ]
-    in
-        Http.request
-            { method =
-                "POST"
-            , headers =
-                []
-            , url =
-                String.join "/"
-                    [ "https://tractor.ak1211.com"
-                    , "api"
-                    , "v1"
-                    , "auth"
-                    ]
-                ++ if List.isEmpty params then
-                       ""
-                   else
-                       "?" ++ String.join "&" params
-            , body =
-                Http.emptyBody
-            , expect =
-                Http.expectJson decodeApiAccessToken
-            , timeout =
-                Nothing
-            , withCredentials =
-                False
-            }
+        , body =
+            Http.jsonBody (encodeAuthTempCode body)
+        , expect =
+            Http.expectJson decodeApiAccessToken
+        , timeout =
+            Nothing
+        , withCredentials =
+            False
+        }
 
 getApiV1Version : Http.Request (VerRev)
 getApiV1Version =

@@ -1,14 +1,20 @@
 ## POST /api/v1/auth
 
-### get token (JWT)
+### get access token (JWT)
 
 
-### POST Parameters:
+### Request:
 
-- code
-     - **Values**: *Temporary code with in OAuth flow*
-     - **Description**: Exchanging a temporary code for an access token
+- Supported content types are:
 
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+{"code":"code in OAuth flow"}
+    ```
 
 ### Response:
 

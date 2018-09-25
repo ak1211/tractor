@@ -96,6 +96,7 @@ import           Model                                    ( TimeFrame(..) )
 import qualified Model
 import           NetService.ApiTypes                      ( ApiAccessToken(..)
                                                           , QueryLimit(..)
+                                                          , AuthTempCode(..)
                                                           , ApiOhlcv
                                                           , ApiPortfolio
                                                           , AuthenticatedUser(..)
@@ -132,18 +133,6 @@ instance Servant.MimeRender SVG Chart where
         where
         render :: SvgBinary -> BL8.ByteString
         render = Servant.mimeRender ctype
-
--- |
---
-type AuthTempCode = String
-type QAuthTempCode = QueryParam' '[Required, Strict] "code" AuthTempCode
-instance Servant.Docs.ToParam QAuthTempCode where
-    toParam _ =
-        Servant.Docs.DocQueryParam
-        "code"
-        ["Temporary code with in OAuth flow"]
-        "Exchanging a temporary code for an access token"
-        Servant.Docs.Normal
 
 -- |
 --
@@ -245,8 +234,8 @@ type ApiForFrontend
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Patch '[JSON] [ApiOhlcv]
  :<|> Summary "Delete prices"
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
- :<|> Summary "get token (JWT)"
-        :> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] ApiAccessToken
+ :<|> Summary "get access token (JWT)"
+        :> "api" :> "v1" :> "auth" :> ReqBody '[JSON] AuthTempCode :> Post '[JSON] ApiAccessToken
  :<|> Summary "get server version"
         :> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> Summary "get portfolios"
@@ -272,7 +261,7 @@ type Protected
 type Unprotected
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
- :<|> "api" :> "v1" :> "auth" :> QAuthTempCode :> Post '[JSON] ApiAccessToken
+ :<|> "api" :> "v1" :> "auth" :> ReqBody '[JSON] AuthTempCode :> Post '[JSON] ApiAccessToken
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
  :<|> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
@@ -334,7 +323,8 @@ runWebServer versionRevision conf chan = do
     pool  <- Logger.runNoLoggingT . runResourceT $ createPool
     myKey <- Auth.generateKey
     let api = Proxy :: Proxy WebApi
-        jwtCfg = (Auth.defaultJWTSettings myKey) { Auth.jwtAlg = Just Jose.HS512 }
+        jwtCfg =
+            (Auth.defaultJWTSettings myKey) { Auth.jwtAlg = Just Jose.HS512 }
         context = jwtCfg :. Auth.defaultCookieSettings :. Servant.EmptyContext
         apiServer = webApiServer (Config versionRevision jwtCfg conf pool chan)
         servantServer = Servant.serveWithContext api context apiServer
@@ -439,7 +429,7 @@ postAuthTempCodeHandler cnf tempCode = do
 --
 sendRequestToOAuthAccess
     :: Config -> AuthTempCode -> Servant.Handler OAuthAccessResponse
-sendRequestToOAuthAccess cnf tempCode = do
+sendRequestToOAuthAccess cnf (AuthTempCode tempCode) = do
     uri       <- maybe err500InternalServerError pure methodURI
     json      <- Aeson.decode <$> M.liftIO (sendApiRequest uri)
     oauthResp <- maybe

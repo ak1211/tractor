@@ -37,6 +37,7 @@ Portability :  POSIX
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NetService.ApiTypes
     ( SVG
+    , AuthTempCode(..)
     , SvgBinary(..)
     , ServerTChan
     , QueryLimit(unQueryLimit)
@@ -96,6 +97,21 @@ instance Accept SVG where
 
 instance MimeRender SVG SvgBinary where
     mimeRender _ = unSvgBinary
+
+-- |
+--
+newtype AuthTempCode = AuthTempCode
+    { code :: String
+    } deriving (Show, Generic)
+
+instance Aeson.FromJSON AuthTempCode
+instance Aeson.ToJSON AuthTempCode
+
+instance ElmType AuthTempCode
+instance Servant.Docs.ToSample AuthTempCode where
+    toSamples _ =
+        Servant.Docs.singleSample (AuthTempCode "code in OAuth flow")
+
 
 -- |
 --
