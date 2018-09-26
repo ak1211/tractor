@@ -56,7 +56,7 @@ module NetService.ApiTypes
 where
 import qualified Control.Concurrent.STM        as STM
 import           Control.Lens                             ( (&)
-                                                          , (.~)
+                                                          , (?~)
                                                           )
 import qualified Crypto.JWT                    as Jose
 import           Data.Aeson                               ( (.:)
@@ -88,6 +88,9 @@ import           Lib                                      ( toISO8601DateTime
                                                           )
 import qualified Model
 
+
+-- |
+--
 newtype SvgBinary = SvgBinary { unSvgBinary :: BL8.ByteString }
 
 data SVG
@@ -111,7 +114,6 @@ instance ElmType AuthTempCode
 instance Servant.Docs.ToSample AuthTempCode where
     toSamples _ =
         Servant.Docs.singleSample (AuthTempCode "code in OAuth flow")
-
 
 -- |
 --
@@ -140,7 +142,7 @@ makeQueryLimit :: Int -> Maybe QueryLimit
 makeQueryLimit x | x > 0     = Just (MkQueryLimit x)
                  | otherwise = Nothing
 
---
+-- |
 --
 data VerRev = VerRev
     { version        :: String
@@ -171,7 +173,7 @@ instance Servant.Docs.ToSample VerRev where
         in
         Servant.Docs.singleSample v
 
---
+-- |
 --
 type ServerTChan = STM.TChan [ApiOhlcv]
 
@@ -276,12 +278,12 @@ instance Aeson.ToJSON AuthenticatedUser
 instance Auth.FromJWT AuthenticatedUser
 instance Auth.ToJWT AuthenticatedUser where
     encodeJWT a =
+        Jose.addClaim "dat" (Aeson.toJSON a) claims
+        where
         --
         -- ToDo: 
-        let claims = Jose.emptyClaimsSet
-                    & Jose.claimIss .~ Just "issuer"
-        in
-        Jose.addClaim "dat" (Aeson.toJSON a) claims
+        claims = Jose.emptyClaimsSet
+                    & Jose.claimIss ?~ "issuer"
 
 instance Servant.Elm.ElmType AuthenticatedUser
 instance Servant.Docs.ToSample AuthenticatedUser where
