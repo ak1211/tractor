@@ -42,6 +42,9 @@ module NetService.ApiTypes
     , ServerTChan
     , QueryLimit(unQueryLimit)
     , makeQueryLimit
+    , SystemSignal(..)
+    , SystemHealth(..)
+    , AuthClientId(..)
     , ApiPortfolio
     , toApiPortfolio
     , ApiOhlcv
@@ -50,7 +53,7 @@ module NetService.ApiTypes
     , UsersInfoResponse(..)
     , OAuthAccessResponse(..)
     , AuthenticatedUser(..)
-    , ApiAccessToken(..)
+    , RespAuth(..)
     , VerRev(..)
     )
 where
@@ -117,6 +120,20 @@ instance Servant.Docs.ToSample AuthTempCode where
 
 -- |
 --
+newtype AuthClientId = AuthClientId
+    { clientid :: T.Text
+    } deriving (Show, Generic)
+
+instance Aeson.FromJSON AuthClientId
+instance Aeson.ToJSON AuthClientId
+
+instance ElmType AuthClientId
+instance Servant.Docs.ToSample AuthClientId where
+    toSamples _ =
+        Servant.Docs.singleSample (AuthClientId "oauth client identifier")
+
+-- |
+--
 newtype QueryLimit = MkQueryLimit
     { unQueryLimit :: Int
     } deriving Generic
@@ -141,6 +158,38 @@ instance Servant.FromHttpApiData QueryLimit where
 makeQueryLimit :: Int -> Maybe QueryLimit
 makeQueryLimit x | x > 0     = Just (MkQueryLimit x)
                  | otherwise = Nothing
+
+-- |
+--
+data SystemSignal
+    = Green
+    | Yellow
+    | Red
+    deriving Generic
+
+instance Aeson.FromJSON SystemSignal
+instance Aeson.ToJSON SystemSignal
+
+instance ElmType SystemSignal
+instance Servant.Docs.ToSample SystemSignal where
+    toSamples _ =
+        Servant.Docs.noSamples
+
+data SystemHealth = SystemHealth
+    { system :: SystemSignal
+    } deriving Generic
+
+instance Aeson.FromJSON SystemHealth
+instance Aeson.ToJSON SystemHealth
+
+instance ElmType SystemHealth
+instance Servant.Docs.ToSample SystemHealth where
+    toSamples _ =
+        Servant.Docs.samples
+        [ SystemHealth Green
+        , SystemHealth Yellow
+        , SystemHealth Red
+        ]
 
 -- |
 --
@@ -281,7 +330,7 @@ instance Auth.ToJWT AuthenticatedUser where
         Jose.addClaim "dat" (Aeson.toJSON a) claims
         where
         --
-        -- ToDo: 
+        -- ToDo:
         claims = Jose.emptyClaimsSet
                     & Jose.claimIss ?~ "issuer"
 
@@ -299,17 +348,20 @@ instance Servant.Docs.ToSample AuthenticatedUser where
 
 -- |
 --
-newtype ApiAccessToken = ApiAccessToken
-    { token :: T.Text
+data RespAuth = RespAuth
+    { accessToken :: T.Text
+    , expiresIn   :: Int
+    , tokenType   :: T.Text
     } deriving (Eq, Show, Generic)
-instance Aeson.FromJSON ApiAccessToken
-instance Aeson.ToJSON ApiAccessToken
-instance Auth.FromJWT ApiAccessToken
-instance Auth.ToJWT ApiAccessToken
-instance Servant.Elm.ElmType ApiAccessToken
-instance Servant.Docs.ToSample ApiAccessToken where
+instance Aeson.FromJSON RespAuth
+instance Aeson.ToJSON RespAuth
+instance Auth.FromJWT RespAuth
+instance Auth.ToJWT RespAuth
+instance Servant.Elm.ElmType RespAuth
+instance Servant.Docs.ToSample RespAuth where
     toSamples _ =
-        Servant.Docs.singleSample $ ApiAccessToken "API Access Token"
+        Servant.Docs.singleSample $
+        RespAuth "API Access Token" 3920 "Bearer"
 
 -- |
 -- ポートフォリオ

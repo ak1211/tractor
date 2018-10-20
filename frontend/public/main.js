@@ -77,14 +77,14 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
   return fun.a === 9 ? fun.f(a, b, c, d, e, f, g, h, i) : fun(a)(b)(c)(d)(e)(f)(g)(h)(i);
 }
 
-console.warn('Compiled in DEV mode. Follow the advice at https://elm-lang.org/0.19.0/optimize for better performance and smaller assets.');
 
 
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
 
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+var _List_Nil = { $: 0 };
+var _List_Nil_UNUSED = { $: '[]' };
+
+function _List_Cons(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons_UNUSED(hd, tl) { return { $: '::', a: hd, b: tl }; }
 
 
 var _List_cons = F2(_List_Cons);
@@ -194,7 +194,7 @@ function _Utils_eqHelp(x, y, depth, stack)
 		return false;
 	}
 
-	/**/
+	/**_UNUSED/
 	if (x.$ === 'Set_elm_builtin')
 	{
 		x = elm$core$Set$toList(x);
@@ -207,7 +207,7 @@ function _Utils_eqHelp(x, y, depth, stack)
 	}
 	//*/
 
-	/**_UNUSED/
+	/**/
 	if (x.$ < 0)
 	{
 		x = elm$core$Dict$toList(x);
@@ -242,7 +242,7 @@ function _Utils_cmp(x, y, ord)
 		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
 	}
 
-	/**/
+	/**_UNUSED/
 	if (x instanceof String)
 	{
 		var a = x.valueOf();
@@ -251,10 +251,10 @@ function _Utils_cmp(x, y, ord)
 	}
 	//*/
 
-	/**_UNUSED/
+	/**/
 	if (!x.$)
 	//*/
-	/**/
+	/**_UNUSED/
 	if (x.$[0] === '#')
 	//*/
 	{
@@ -284,17 +284,17 @@ var _Utils_compare = F2(function(x, y)
 
 // COMMON VALUES
 
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
+var _Utils_Tuple0 = 0;
+var _Utils_Tuple0_UNUSED = { $: '#0' };
 
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2_UNUSED(a, b) { return { $: '#2', a: a, b: b }; }
 
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3_UNUSED(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
 
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
+function _Utils_chr(c) { return c; }
+function _Utils_chr_UNUSED(c) { return new String(c); }
 
 
 // RECORDS
@@ -499,12 +499,12 @@ var _JsArray_appendN = F3(function(n, dest, source)
 
 // LOG
 
-var _Debug_log_UNUSED = F2(function(tag, value)
+var _Debug_log = F2(function(tag, value)
 {
 	return value;
 });
 
-var _Debug_log = F2(function(tag, value)
+var _Debug_log_UNUSED = F2(function(tag, value)
 {
 	console.log(tag + ': ' + _Debug_toString(value));
 	return value;
@@ -530,12 +530,12 @@ function _Debug_todoCase(moduleName, region, value)
 
 // TO STRING
 
-function _Debug_toString_UNUSED(value)
+function _Debug_toString(value)
 {
 	return '<internals>';
 }
 
-function _Debug_toString(value)
+function _Debug_toString_UNUSED(value)
 {
 	return _Debug_toAnsiString(false, value);
 }
@@ -706,13 +706,13 @@ function _Debug_internalColor(ansi, string)
 // CRASH
 
 
-function _Debug_crash_UNUSED(identifier)
+function _Debug_crash(identifier)
 {
 	throw new Error('https://github.com/elm/core/blob/1.0.0/hints/' + identifier + '.md');
 }
 
 
-function _Debug_crash(identifier, fact1, fact2, fact3, fact4)
+function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 {
 	switch(identifier)
 	{
@@ -770,11 +770,11 @@ function _Debug_crash(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.start.line === region.end.line)
+	if (region.aH.N === region.a0.N)
 	{
-		return 'on line ' + region.start.line;
+		return 'on line ' + region.aH.N;
 	}
-	return 'on lines ' + region.start.line + ' through ' + region.end.line;
+	return 'on lines ' + region.aH.N + ' through ' + region.a0.N;
 }
 
 
@@ -1200,7 +1200,7 @@ function _String_fromList(chars)
 
 
 
-/**/
+/**_UNUSED/
 function _Json_errorToString(error)
 {
 	return elm$json$Json$Decode$errorToString(error);
@@ -1600,11 +1600,11 @@ var _Json_encode = F2(function(indentLevel, value)
 	return JSON.stringify(_Json_unwrap(value), null, indentLevel) + '';
 });
 
-function _Json_wrap(value) { return { $: 0, a: value }; }
-function _Json_unwrap(value) { return value.a; }
+function _Json_wrap_UNUSED(value) { return { $: 0, a: value }; }
+function _Json_unwrap_UNUSED(value) { return value.a; }
 
-function _Json_wrap_UNUSED(value) { return value; }
-function _Json_unwrap_UNUSED(value) { return value; }
+function _Json_wrap(value) { return value; }
+function _Json_unwrap(value) { return value; }
 
 function _Json_emptyArray() { return []; }
 function _Json_emptyObject() { return {}; }
@@ -1841,9 +1841,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.init,
-		impl.update,
-		impl.subscriptions,
+		impl.be,
+		impl.bI,
+		impl.bE,
 		function() { return function() {} }
 	);
 });
@@ -1856,7 +1856,7 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
 {
 	var result = A2(_Json_run, flagDecoder, _Json_wrap(args ? args['flags'] : undefined));
-	elm$core$Result$isOk(result) || _Debug_crash(2 /**/, _Json_errorToString(result.a) /**/);
+	elm$core$Result$isOk(result) || _Debug_crash(2 /**_UNUSED/, _Json_errorToString(result.a) /**/);
 	var managers = {};
 	result = init(result.a);
 	var model = result.a;
@@ -2255,7 +2255,7 @@ function _Platform_setupIncomingPort(name, sendToApp)
 //
 
 
-function _Platform_export_UNUSED(exports)
+function _Platform_export(exports)
 {
 	scope['Elm']
 		? _Platform_mergeExportsProd(scope['Elm'], exports)
@@ -2276,7 +2276,7 @@ function _Platform_mergeExportsProd(obj, exports)
 }
 
 
-function _Platform_export(exports)
+function _Platform_export_UNUSED(exports)
 {
 	scope['Elm']
 		? _Platform_mergeExportsDebug('Elm', scope['Elm'], exports)
@@ -2316,10 +2316,10 @@ var _VirtualDom_init = F4(function(virtualNode, flagDecoder, debugMetadata, args
 {
 	// NOTE: this function needs _Platform_export available to work
 
-	/**_UNUSED/
+	/**/
 	var node = args['node'];
 	//*/
-	/**/
+	/**_UNUSED/
 	var node = args && args['node'] ? args['node'] : _Debug_crash(0);
 	//*/
 
@@ -2574,24 +2574,24 @@ function _VirtualDom_noInnerHtmlOrFormAction(key)
 	return key == 'innerHTML' || key == 'formAction' ? 'data-' + key : key;
 }
 
-function _VirtualDom_noJavaScriptUri_UNUSED(value)
+function _VirtualDom_noJavaScriptUri(value)
 {
 	return /^javascript:/i.test(value.replace(/\s/g,'')) ? '' : value;
 }
 
-function _VirtualDom_noJavaScriptUri(value)
+function _VirtualDom_noJavaScriptUri_UNUSED(value)
 {
 	return /^javascript:/i.test(value.replace(/\s/g,''))
 		? 'javascript:alert("This is an XSS vector. Please use ports or web components instead.")'
 		: value;
 }
 
-function _VirtualDom_noJavaScriptOrHtmlUri_UNUSED(value)
+function _VirtualDom_noJavaScriptOrHtmlUri(value)
 {
 	return /^\s*(javascript:|data:text\/html)/i.test(value) ? '' : value;
 }
 
-function _VirtualDom_noJavaScriptOrHtmlUri(value)
+function _VirtualDom_noJavaScriptOrHtmlUri_UNUSED(value)
 {
 	return /^\s*(javascript:|data:text\/html)/i.test(value)
 		? 'javascript:alert("This is an XSS vector. Please use ports or web components instead.")'
@@ -2643,9 +2643,9 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		message: func(record.message),
-		stopPropagation: record.stopPropagation,
-		preventDefault: record.preventDefault
+		cg: func(record.cg),
+		aJ: record.aJ,
+		aE: record.aE
 	}
 });
 
@@ -2913,11 +2913,11 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.message;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.stopPropagation;
+		var message = !tag ? value : tag < 3 ? value.a : value.cg;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.aJ;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.preventDefault) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.aE) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3867,15 +3867,15 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.init,
-		impl.update,
-		impl.subscriptions,
+		impl.be,
+		impl.bI,
+		impl.bE,
 		function(sendToApp, initialModel) {
-			var view = impl.view;
-			/**_UNUSED/
+			var view = impl.bP;
+			/**/
 			var domNode = args['node'];
 			//*/
-			/**/
+			/**_UNUSED/
 			var domNode = args && args['node'] ? args['node'] : _Debug_crash(0);
 			//*/
 			var currNode = _VirtualDom_virtualize(domNode);
@@ -3903,12 +3903,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.init,
-		impl.update,
-		impl.subscriptions,
+		impl.be,
+		impl.bI,
+		impl.bE,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.setup && impl.setup(sendToApp)
-			var view = impl.view;
+			var divertHrefToApp = impl.O && impl.O(sendToApp)
+			var view = impl.bP;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3916,12 +3916,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.body);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.f);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.title) && (_VirtualDom_doc.title = title = doc.title);
+				(title !== doc.bG) && (_VirtualDom_doc.title = title = doc.bG);
 			});
 		}
 	);
@@ -3972,12 +3972,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.onUrlChange;
-	var onUrlRequest = impl.onUrlRequest;
+	var onUrlChange = impl.bl;
+	var onUrlRequest = impl.bm;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		setup: function(sendToApp)
+		O: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -3993,9 +3993,9 @@ function _Browser_application(impl)
 					var next = elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.protocol === next.protocol
-							&& curr.host === next.host
-							&& curr.port_.a === next.port_.a
+							&& curr.bt === next.bt
+							&& curr.bc === next.bc
+							&& curr.bp.a === next.bp.a
 						)
 							? elm$browser$Browser$Internal(next)
 							: elm$browser$Browser$External(href)
@@ -4003,13 +4003,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		init: function(flags)
+		be: function(flags)
 		{
-			return A3(impl.init, flags, _Browser_getUrl(), key);
+			return A3(impl.be, flags, _Browser_getUrl(), key);
 		},
-		view: impl.view,
-		update: impl.update,
-		subscriptions: impl.subscriptions
+		bP: impl.bP,
+		bI: impl.bI,
+		bE: impl.bE
 	});
 }
 
@@ -4075,17 +4075,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { hidden: 'hidden', change: 'visibilitychange' }
+		? { cb: 'hidden', M: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { hidden: 'mozHidden', change: 'mozvisibilitychange' }
+		? { cb: 'mozHidden', M: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { hidden: 'msHidden', change: 'msvisibilitychange' }
+		? { cb: 'msHidden', M: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { hidden: 'webkitHidden', change: 'webkitvisibilitychange' }
-		: { hidden: 'hidden', change: 'visibilitychange' };
+		? { cb: 'webkitHidden', M: 'webkitvisibilitychange' }
+		: { cb: 'hidden', M: 'visibilitychange' };
 }
 
 
@@ -4166,12 +4166,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		scene: _Browser_getScene(),
-		viewport: {
-			x: _Browser_window.pageXOffset,
-			y: _Browser_window.pageYOffset,
-			width: _Browser_doc.documentElement.clientWidth,
-			height: _Browser_doc.documentElement.clientHeight
+		by: _Browser_getScene(),
+		bQ: {
+			d: _Browser_window.pageXOffset,
+			e: _Browser_window.pageYOffset,
+			K: _Browser_doc.documentElement.clientWidth,
+			A: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4181,8 +4181,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		width: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		height: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		K: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		A: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4205,15 +4205,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			scene: {
-				width: node.scrollWidth,
-				height: node.scrollHeight
+			by: {
+				K: node.scrollWidth,
+				A: node.scrollHeight
 			},
-			viewport: {
-				x: node.scrollLeft,
-				y: node.scrollTop,
-				width: node.clientWidth,
-				height: node.clientHeight
+			bQ: {
+				d: node.scrollLeft,
+				e: node.scrollTop,
+				K: node.clientWidth,
+				A: node.clientHeight
 			}
 		};
 	});
@@ -4243,18 +4243,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			scene: _Browser_getScene(),
-			viewport: {
-				x: x,
-				y: y,
-				width: _Browser_doc.documentElement.clientWidth,
-				height: _Browser_doc.documentElement.clientHeight
+			by: _Browser_getScene(),
+			bQ: {
+				d: x,
+				e: y,
+				K: _Browser_doc.documentElement.clientWidth,
+				A: _Browser_doc.documentElement.clientHeight
 			},
-			element: {
-				x: x + rect.left,
-				y: y + rect.top,
-				width: rect.width,
-				height: rect.height
+			b1: {
+				d: x + rect.left,
+				e: y + rect.top,
+				K: rect.width,
+				A: rect.height
 			}
 		};
 	});
@@ -4309,21 +4309,21 @@ var _Http_toTask = F2(function(request, maybeProgress)
 			callback(_Scheduler_fail(elm$http$Http$Timeout));
 		});
 		xhr.addEventListener('load', function() {
-			callback(_Http_handleResponse(xhr, request.expect.a));
+			callback(_Http_handleResponse(xhr, request.j.a));
 		});
 
 		try
 		{
-			xhr.open(request.method, request.url, true);
+			xhr.open(request.l, request.n, true);
 		}
 		catch (e)
 		{
-			return callback(_Scheduler_fail(elm$http$Http$BadUrl(request.url)));
+			return callback(_Scheduler_fail(elm$http$Http$BadUrl(request.n)));
 		}
 
 		_Http_configureRequest(xhr, request);
 
-		var body = request.body;
+		var body = request.f;
 		xhr.send(elm$http$Http$Internal$isStringBody(body)
 			? (xhr.setRequestHeader('Content-Type', body.a), body.b)
 			: body.a
@@ -4346,23 +4346,23 @@ function _Http_configureProgress(xhr, maybeProgress)
 			return;
 		}
 		_Scheduler_rawSpawn(maybeProgress.a({
-			bytes: event.loaded,
-			bytesExpected: event.total
+			bX: event.loaded,
+			bY: event.total
 		}));
 	});
 }
 
 function _Http_configureRequest(xhr, request)
 {
-	for (var headers = request.headers; headers.b; headers = headers.b) // WHILE_CONS
+	for (var headers = request.k; headers.b; headers = headers.b) // WHILE_CONS
 	{
 		xhr.setRequestHeader(headers.a.a, headers.a.b);
 	}
 
-	xhr.responseType = request.expect.b;
-	xhr.withCredentials = request.withCredentials;
+	xhr.responseType = request.j.b;
+	xhr.withCredentials = request.o;
 
-	elm$core$Maybe$isJust(request.timeout) && (xhr.timeout = request.timeout.a);
+	elm$core$Maybe$isJust(request.m) && (xhr.timeout = request.m.a);
 }
 
 
@@ -4394,10 +4394,10 @@ function _Http_handleResponse(xhr, responseToResult)
 function _Http_toResponse(xhr)
 {
 	return {
-		url: xhr.responseURL,
-		status: { code: xhr.status, message: xhr.statusText },
-		headers: _Http_parseHeaders(xhr.getAllResponseHeaders()),
-		body: xhr.response
+		n: xhr.responseURL,
+		cm: { Y: xhr.status, cg: xhr.statusText },
+		k: _Http_parseHeaders(xhr.getAllResponseHeaders()),
+		f: xhr.response
 	};
 }
 
@@ -4534,8 +4534,8 @@ var _Regex_never = /.^/;
 var _Regex_fromStringWith = F2(function(options, string)
 {
 	var flags = 'g';
-	if (options.multiline) { flags += 'm'; }
-	if (options.caseInsensitive) { flags += 'i'; }
+	if (options.bj) { flags += 'm'; }
+	if (options.aU) { flags += 'i'; }
 
 	try
 	{
@@ -4701,9 +4701,9 @@ function _Markdown_formatOptions(options)
 {
 	function toHighlight(code, lang)
 	{
-		if (!lang && elm$core$Maybe$isJust(options.defaultHighlighting))
+		if (!lang && elm$core$Maybe$isJust(options.a$))
 		{
-			lang = options.defaultHighlighting.a;
+			lang = options.a$.a;
 		}
 
 		if (typeof hljs !== 'undefined' && lang && hljs.listLanguages().indexOf(lang) >= 0)
@@ -4714,15 +4714,15 @@ function _Markdown_formatOptions(options)
 		return code;
 	}
 
-	var gfm = options.githubFlavored.a;
+	var gfm = options.a9.a;
 
 	return {
 		highlight: toHighlight,
 		gfm: gfm,
-		tables: gfm && gfm.tables,
-		breaks: gfm && gfm.breaks,
-		sanitize: options.sanitize,
-		smartypants: options.smartypants
+		tables: gfm && gfm.cq,
+		breaks: gfm && gfm.bW,
+		sanitize: options.bx,
+		smartypants: options.bA
 	};
 }
 var elm$core$Basics$apR = F2(
@@ -4732,16 +4732,16 @@ var elm$core$Basics$apR = F2(
 var elm$core$Array$branchFactor = 32;
 var elm$core$Array$Array_elm_builtin = F4(
 	function (a, b, c, d) {
-		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+		return {$: 0, a: a, b: b, c: c, d: d};
 	});
-var elm$core$Basics$EQ = {$: 'EQ'};
-var elm$core$Basics$GT = {$: 'GT'};
-var elm$core$Basics$LT = {$: 'LT'};
+var elm$core$Basics$EQ = 1;
+var elm$core$Basics$GT = 2;
+var elm$core$Basics$LT = 0;
 var elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
 		while (true) {
-			if (t.$ === 'RBEmpty_elm_builtin') {
+			if (t.$ === -2) {
 				return acc;
 			} else {
 				var key = t.b;
@@ -4787,7 +4787,7 @@ var elm$core$Dict$keys = function (dict) {
 		dict);
 };
 var elm$core$Set$toList = function (_n0) {
-	var dict = _n0.a;
+	var dict = _n0;
 	return elm$core$Dict$keys(dict);
 };
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -4797,7 +4797,7 @@ var elm$core$Array$foldr = F3(
 		var tail = _n0.d;
 		var helper = F2(
 			function (node, acc) {
-				if (node.$ === 'SubTree') {
+				if (!node.$) {
 					var subTree = node.a;
 					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
 				} else {
@@ -4826,10 +4826,10 @@ var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
 var elm$core$Elm$JsArray$empty = _JsArray_empty;
 var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
 var elm$core$Array$Leaf = function (a) {
-	return {$: 'Leaf', a: a};
+	return {$: 1, a: a};
 };
 var elm$core$Array$SubTree = function (a) {
-	return {$: 'SubTree', a: a};
+	return {$: 0, a: a};
 };
 var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
 var elm$core$List$foldl = F3(
@@ -4913,28 +4913,28 @@ var elm$core$Basics$sub = _Basics_sub;
 var elm$core$Elm$JsArray$length = _JsArray_length;
 var elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
-		if (!builder.nodeListSize) {
+		if (!builder.a) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.tail),
+				elm$core$Elm$JsArray$length(builder.b),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.tail);
+				builder.b);
 		} else {
-			var treeLen = builder.nodeListSize * elm$core$Array$branchFactor;
+			var treeLen = builder.a * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.nodeList) : builder.nodeList;
-			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.nodeListSize);
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.c) : builder.c;
+			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.a);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.tail) + treeLen,
+				elm$core$Elm$JsArray$length(builder.b) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.tail);
+				builder.b);
 		}
 	});
-var elm$core$Basics$False = {$: 'False'};
+var elm$core$Basics$False = 1;
 var elm$core$Basics$idiv = _Basics_idiv;
 var elm$core$Basics$lt = _Utils_lt;
 var elm$core$Elm$JsArray$initialize = _JsArray_initialize;
@@ -4946,7 +4946,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{nodeList: nodeList, nodeListSize: (len / elm$core$Array$branchFactor) | 0, tail: tail});
+					{c: nodeList, a: (len / elm$core$Array$branchFactor) | 0, b: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -4978,18 +4978,18 @@ var elm$core$Array$initialize = F2(
 		}
 	});
 var elm$core$Maybe$Just = function (a) {
-	return {$: 'Just', a: a};
+	return {$: 0, a: a};
 };
-var elm$core$Maybe$Nothing = {$: 'Nothing'};
+var elm$core$Maybe$Nothing = {$: 1};
 var elm$core$Result$Err = function (a) {
-	return {$: 'Err', a: a};
+	return {$: 1, a: a};
 };
 var elm$core$Result$Ok = function (a) {
-	return {$: 'Ok', a: a};
+	return {$: 0, a: a};
 };
-var elm$core$Basics$True = {$: 'True'};
+var elm$core$Basics$True = 0;
 var elm$core$Result$isOk = function (result) {
-	if (result.$ === 'Ok') {
+	if (!result.$) {
 		return true;
 	} else {
 		return false;
@@ -4997,18 +4997,18 @@ var elm$core$Result$isOk = function (result) {
 };
 var elm$json$Json$Decode$Failure = F2(
 	function (a, b) {
-		return {$: 'Failure', a: a, b: b};
+		return {$: 3, a: a, b: b};
 	});
 var elm$json$Json$Decode$Field = F2(
 	function (a, b) {
-		return {$: 'Field', a: a, b: b};
+		return {$: 0, a: a, b: b};
 	});
 var elm$json$Json$Decode$Index = F2(
 	function (a, b) {
-		return {$: 'Index', a: a, b: b};
+		return {$: 1, a: a, b: b};
 	});
 var elm$json$Json$Decode$OneOf = function (a) {
-	return {$: 'OneOf', a: a};
+	return {$: 2, a: a};
 };
 var elm$core$Basics$and = _Basics_and;
 var elm$core$Basics$append = _Utils_append;
@@ -5110,12 +5110,12 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 		errorToStringHelp:
 		while (true) {
 			switch (error.$) {
-				case 'Field':
+				case 0:
 					var f = error.a;
 					var err = error.b;
 					var isSimple = function () {
 						var _n1 = elm$core$String$uncons(f);
-						if (_n1.$ === 'Nothing') {
+						if (_n1.$ === 1) {
 							return false;
 						} else {
 							var _n2 = _n1.a;
@@ -5130,7 +5130,7 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 					error = $temp$error;
 					context = $temp$context;
 					continue errorToStringHelp;
-				case 'Index':
+				case 1:
 					var i = error.a;
 					var err = error.b;
 					var indexName = '[' + (elm$core$String$fromInt(i) + ']');
@@ -5139,7 +5139,7 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 					error = $temp$error;
 					context = $temp$context;
 					continue errorToStringHelp;
-				case 'OneOf':
+				case 2:
 					var errors = error.a;
 					if (!errors.b) {
 						return 'Ran into a Json.Decode.oneOf with no possibilities' + function () {
@@ -5212,17 +5212,15 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 	});
 var author$project$Api$Cred = F2(
 	function (a, b) {
-		return {$: 'Cred', a: a, b: b};
+		return {$: 0, a: a, b: b};
 	});
-var author$project$Username$Username = function (a) {
-	return {$: 'Username', a: a};
-};
+var author$project$Username$Username = elm$core$Basics$identity;
 var elm$core$Basics$identity = function (x) {
 	return x;
 };
 var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$string = _Json_decodeString;
-var author$project$Username$decoder = A2(elm$json$Json$Decode$map, author$project$Username$Username, elm$json$Json$Decode$string);
+var author$project$Username$decoder = A2(elm$json$Json$Decode$map, elm$core$Basics$identity, elm$json$Json$Decode$string);
 var elm$json$Json$Decode$succeed = _Json_succeed;
 var author$project$Api$credDecoder = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
@@ -5243,28 +5241,24 @@ var author$project$Api$storageDecoder = function (viewerDecoder) {
 		author$project$Api$decoderFromCred(viewerDecoder));
 };
 var elm$browser$Browser$External = function (a) {
-	return {$: 'External', a: a};
+	return {$: 1, a: a};
 };
 var elm$browser$Browser$Internal = function (a) {
-	return {$: 'Internal', a: a};
+	return {$: 0, a: a};
 };
-var elm$browser$Browser$Dom$NotFound = function (a) {
-	return {$: 'NotFound', a: a};
-};
+var elm$browser$Browser$Dom$NotFound = elm$core$Basics$identity;
 var elm$core$Basics$never = function (_n0) {
 	never:
 	while (true) {
-		var nvr = _n0.a;
+		var nvr = _n0;
 		var $temp$_n0 = nvr;
 		_n0 = $temp$_n0;
 		continue never;
 	}
 };
-var elm$core$Task$Perform = function (a) {
-	return {$: 'Perform', a: a};
-};
+var elm$core$Task$Perform = elm$core$Basics$identity;
 var elm$core$Task$succeed = _Scheduler_succeed;
-var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
+var elm$core$Task$init = elm$core$Task$succeed(0);
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
 		if (!ls.b) {
@@ -5370,7 +5364,7 @@ var elm$core$Task$sequence = function (tasks) {
 var elm$core$Platform$sendToApp = _Platform_sendToApp;
 var elm$core$Task$spawnCmd = F2(
 	function (router, _n0) {
-		var task = _n0.a;
+		var task = _n0;
 		return _Scheduler_spawn(
 			A2(
 				elm$core$Task$andThen,
@@ -5382,7 +5376,7 @@ var elm$core$Task$onEffects = F3(
 		return A2(
 			elm$core$Task$map,
 			function (_n0) {
-				return _Utils_Tuple0;
+				return 0;
 			},
 			elm$core$Task$sequence(
 				A2(
@@ -5392,29 +5386,27 @@ var elm$core$Task$onEffects = F3(
 	});
 var elm$core$Task$onSelfMsg = F3(
 	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(_Utils_Tuple0);
+		return elm$core$Task$succeed(0);
 	});
 var elm$core$Task$cmdMap = F2(
 	function (tagger, _n0) {
-		var task = _n0.a;
-		return elm$core$Task$Perform(
-			A2(elm$core$Task$map, tagger, task));
+		var task = _n0;
+		return A2(elm$core$Task$map, tagger, task);
 	});
 _Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
 var elm$core$Task$command = _Platform_leaf('Task');
 var elm$core$Task$perform = F2(
 	function (toMessage, task) {
 		return elm$core$Task$command(
-			elm$core$Task$Perform(
-				A2(elm$core$Task$map, toMessage, task)));
+			A2(elm$core$Task$map, toMessage, task));
 	});
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
-		case 'Normal':
+		case 0:
 			return 0;
-		case 'MayStopPropagation':
+		case 1:
 			return 1;
-		case 'MayPreventDefault':
+		case 2:
 			return 2;
 		default:
 			return 3;
@@ -5431,8 +5423,8 @@ var elm$core$String$dropLeft = F2(
 			string);
 	});
 var elm$core$String$startsWith = _String_startsWith;
-var elm$url$Url$Http = {$: 'Http'};
-var elm$url$Url$Https = {$: 'Https'};
+var elm$url$Url$Http = 0;
+var elm$url$Url$Https = 1;
 var elm$core$String$indexes = _String_indexes;
 var elm$core$String$isEmpty = function (string) {
 	return string === '';
@@ -5445,7 +5437,7 @@ var elm$core$String$contains = _String_contains;
 var elm$core$String$toInt = _String_toInt;
 var elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {fragment: fragment, host: host, path: path, port_: port_, protocol: protocol, query: query};
+		return {b8: fragment, bc: host, ck: path, bp: port_, bt: protocol, bu: query};
 	});
 var elm$url$Url$chompBeforePath = F5(
 	function (protocol, path, params, frag, str) {
@@ -5461,7 +5453,7 @@ var elm$url$Url$chompBeforePath = F5(
 					var i = _n0.a;
 					var _n1 = elm$core$String$toInt(
 						A2(elm$core$String$dropLeft, i + 1, str));
-					if (_n1.$ === 'Nothing') {
+					if (_n1.$ === 1) {
 						return elm$core$Maybe$Nothing;
 					} else {
 						var port_ = _n1;
@@ -5543,16 +5535,16 @@ var elm$url$Url$chompAfterProtocol = F2(
 var elm$url$Url$fromString = function (str) {
 	return A2(elm$core$String$startsWith, 'http://', str) ? A2(
 		elm$url$Url$chompAfterProtocol,
-		elm$url$Url$Http,
+		0,
 		A2(elm$core$String$dropLeft, 7, str)) : (A2(elm$core$String$startsWith, 'https://', str) ? A2(
 		elm$url$Url$chompAfterProtocol,
-		elm$url$Url$Https,
+		1,
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
 var elm$browser$Browser$application = _Browser_application;
 var elm$core$Result$andThen = F2(
 	function (callback, result) {
-		if (result.$ === 'Ok') {
+		if (!result.$) {
 			var value = result.a;
 			return callback(value);
 		} else {
@@ -5561,7 +5553,7 @@ var elm$core$Result$andThen = F2(
 		}
 	});
 var elm$core$Result$toMaybe = function (result) {
-	if (result.$ === 'Ok') {
+	if (!result.$) {
 		var v = result.a;
 		return elm$core$Maybe$Just(v);
 	} else {
@@ -5580,23 +5572,23 @@ var author$project$Api$application = F2(
 						elm$json$Json$Decode$decodeString(
 							author$project$Api$storageDecoder(viewerDecoder)),
 						A2(elm$json$Json$Decode$decodeValue, elm$json$Json$Decode$string, flags)));
-				return A3(config.init, maybeViewer, url, navKey);
+				return A3(config.be, maybeViewer, url, navKey);
 			});
 		return elm$browser$Browser$application(
-			{init: init, onUrlChange: config.onUrlChange, onUrlRequest: config.onUrlRequest, subscriptions: config.subscriptions, update: config.update, view: config.view});
+			{be: init, bl: config.bl, bm: config.bm, bE: config.bE, bI: config.bI, bP: config.bP});
 	});
 var author$project$Main$ChangedUrl = function (a) {
-	return {$: 'ChangedUrl', a: a};
+	return {$: 2, a: a};
 };
 var author$project$Main$ClickedLink = function (a) {
-	return {$: 'ClickedLink', a: a};
+	return {$: 3, a: a};
 };
 var author$project$Main$Redirect = function (a) {
-	return {$: 'Redirect', a: a};
+	return {$: 0, a: a};
 };
 var elm$core$Maybe$destruct = F3(
 	function (_default, func, maybe) {
-		if (maybe.$ === 'Just') {
+		if (!maybe.$) {
 			var a = maybe.a;
 			return func(a);
 		} else {
@@ -5611,59 +5603,59 @@ var author$project$Api$storeCache = _Platform_outgoingPort(
 	});
 var author$project$Api$logout = author$project$Api$storeCache(elm$core$Maybe$Nothing);
 var author$project$Main$ApiDocument = function (a) {
-	return {$: 'ApiDocument', a: a};
+	return {$: 5, a: a};
 };
 var author$project$Main$Dashboard = function (a) {
-	return {$: 'Dashboard', a: a};
+	return {$: 2, a: a};
 };
 var author$project$Main$GotApiDocumentMsg = function (a) {
-	return {$: 'GotApiDocumentMsg', a: a};
+	return {$: 7, a: a};
 };
 var author$project$Main$GotDashboardMsg = function (a) {
-	return {$: 'GotDashboardMsg', a: a};
+	return {$: 4, a: a};
 };
 var author$project$Main$GotLoginMsg = function (a) {
-	return {$: 'GotLoginMsg', a: a};
+	return {$: 6, a: a};
 };
 var author$project$Main$GotUploadMsg = function (a) {
-	return {$: 'GotUploadMsg', a: a};
+	return {$: 5, a: a};
 };
 var author$project$Main$Login = function (a) {
-	return {$: 'Login', a: a};
+	return {$: 4, a: a};
 };
 var author$project$Main$NotFound = function (a) {
-	return {$: 'NotFound', a: a};
+	return {$: 1, a: a};
 };
 var author$project$Main$Upload = function (a) {
-	return {$: 'Upload', a: a};
+	return {$: 3, a: a};
 };
 var author$project$Page$ApiDocument$toSession = function (model) {
-	return model.session;
+	return model.ac;
 };
 var author$project$Page$Dashboard$toSession = function (model) {
-	return model.session;
+	return model.ac;
 };
 var author$project$Page$Login$toSession = function (model) {
-	return model.session;
+	return model.ac;
 };
 var author$project$Page$Upload$toSession = function (model) {
-	return model.session;
+	return model.ac;
 };
 var author$project$Main$toSession = function (page) {
 	switch (page.$) {
-		case 'Redirect':
+		case 0:
 			var session = page.a;
 			return session;
-		case 'NotFound':
+		case 1:
 			var session = page.a;
 			return session;
-		case 'Dashboard':
+		case 2:
 			var dashboard = page.a;
 			return author$project$Page$Dashboard$toSession(dashboard);
-		case 'Upload':
+		case 3:
 			var upload = page.a;
 			return author$project$Page$Upload$toSession(upload);
-		case 'Login':
+		case 4:
 			var login = page.a;
 			return author$project$Page$Login$toSession(login);
 		default:
@@ -5681,18 +5673,18 @@ var author$project$Main$updateWith = F4(
 			A2(elm$core$Platform$Cmd$map, toMsg, subCmd));
 	});
 var author$project$Page$ApiDocument$UpdateWebApiDocument = function (a) {
-	return {$: 'UpdateWebApiDocument', a: a};
+	return {$: 3, a: a};
 };
-var elm$http$Http$Internal$EmptyBody = {$: 'EmptyBody'};
+var elm$http$Http$Internal$EmptyBody = {$: 0};
 var elm$http$Http$emptyBody = elm$http$Http$Internal$EmptyBody;
-var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Basics$compare = _Utils_compare;
 var elm$core$Dict$get = F2(
 	function (targetKey, dict) {
 		get:
 		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
+			if (dict.$ === -2) {
 				return elm$core$Maybe$Nothing;
 			} else {
 				var key = dict.b;
@@ -5700,14 +5692,14 @@ var elm$core$Dict$get = F2(
 				var left = dict.d;
 				var right = dict.e;
 				var _n1 = A2(elm$core$Basics$compare, targetKey, key);
-				switch (_n1.$) {
-					case 'LT':
+				switch (_n1) {
+					case 0:
 						var $temp$targetKey = targetKey,
 							$temp$dict = left;
 						targetKey = $temp$targetKey;
 						dict = $temp$dict;
 						continue get;
-					case 'EQ':
+					case 1:
 						return elm$core$Maybe$Just(value);
 					default:
 						var $temp$targetKey = targetKey,
@@ -5719,21 +5711,21 @@ var elm$core$Dict$get = F2(
 			}
 		}
 	});
-var elm$core$Dict$Black = {$: 'Black'};
+var elm$core$Dict$Black = 1;
 var elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
-		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
+		return {$: -1, a: a, b: b, c: c, d: d, e: e};
 	});
-var elm$core$Dict$Red = {$: 'Red'};
+var elm$core$Dict$Red = 0;
 var elm$core$Dict$balance = F5(
 	function (color, key, value, left, right) {
-		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
+		if ((right.$ === -1) && (!right.a)) {
 			var _n1 = right.a;
 			var rK = right.b;
 			var rV = right.c;
 			var rLeft = right.d;
 			var rRight = right.e;
-			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+			if ((left.$ === -1) && (!left.a)) {
 				var _n3 = left.a;
 				var lK = left.b;
 				var lV = left.c;
@@ -5741,22 +5733,22 @@ var elm$core$Dict$balance = F5(
 				var lRight = left.e;
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Red,
+					0,
 					key,
 					value,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, rK, rV, rLeft, rRight));
+					A5(elm$core$Dict$RBNode_elm_builtin, 1, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rLeft, rRight));
 			} else {
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
 					color,
 					rK,
 					rV,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, left, rLeft),
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, key, value, left, rLeft),
 					rRight);
 			}
 		} else {
-			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
+			if ((((left.$ === -1) && (!left.a)) && (left.d.$ === -1)) && (!left.d.a)) {
 				var _n5 = left.a;
 				var lK = left.b;
 				var lV = left.c;
@@ -5769,11 +5761,11 @@ var elm$core$Dict$balance = F5(
 				var lRight = left.e;
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Red,
+					0,
 					lK,
 					lV,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, llK, llV, llLeft, llRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, key, value, lRight, right));
+					A5(elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 1, key, value, lRight, right));
 			} else {
 				return A5(elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
 			}
@@ -5781,8 +5773,8 @@ var elm$core$Dict$balance = F5(
 	});
 var elm$core$Dict$insertHelp = F3(
 	function (key, value, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
+		if (dict.$ === -2) {
+			return A5(elm$core$Dict$RBNode_elm_builtin, 0, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
 		} else {
 			var nColor = dict.a;
 			var nKey = dict.b;
@@ -5790,8 +5782,8 @@ var elm$core$Dict$insertHelp = F3(
 			var nLeft = dict.d;
 			var nRight = dict.e;
 			var _n1 = A2(elm$core$Basics$compare, key, nKey);
-			switch (_n1.$) {
-				case 'LT':
+			switch (_n1) {
+				case 0:
 					return A5(
 						elm$core$Dict$balance,
 						nColor,
@@ -5799,7 +5791,7 @@ var elm$core$Dict$insertHelp = F3(
 						nValue,
 						A3(elm$core$Dict$insertHelp, key, value, nLeft),
 						nRight);
-				case 'EQ':
+				case 1:
 					return A5(elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
 				default:
 					return A5(
@@ -5815,13 +5807,13 @@ var elm$core$Dict$insertHelp = F3(
 var elm$core$Dict$insert = F3(
 	function (key, value, dict) {
 		var _n0 = A3(elm$core$Dict$insertHelp, key, value, dict);
-		if ((_n0.$ === 'RBNode_elm_builtin') && (_n0.a.$ === 'Red')) {
+		if ((_n0.$ === -1) && (!_n0.a)) {
 			var _n1 = _n0.a;
 			var k = _n0.b;
 			var v = _n0.c;
 			var l = _n0.d;
 			var r = _n0.e;
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, k, v, l, r);
+			return A5(elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
 		} else {
 			var x = _n0;
 			return x;
@@ -5830,7 +5822,7 @@ var elm$core$Dict$insert = F3(
 var elm$core$Dict$getMin = function (dict) {
 	getMin:
 	while (true) {
-		if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
+		if ((dict.$ === -1) && (dict.d.$ === -1)) {
 			var left = dict.d;
 			var $temp$dict = left;
 			dict = $temp$dict;
@@ -5841,8 +5833,8 @@ var elm$core$Dict$getMin = function (dict) {
 	}
 };
 var elm$core$Dict$moveRedLeft = function (dict) {
-	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
-		if ((dict.e.d.$ === 'RBNode_elm_builtin') && (dict.e.d.a.$ === 'Red')) {
+	if (((dict.$ === -1) && (dict.d.$ === -1)) && (dict.e.$ === -1)) {
+		if ((dict.e.d.$ === -1) && (!dict.e.d.a)) {
 			var clr = dict.a;
 			var k = dict.b;
 			var v = dict.c;
@@ -5865,17 +5857,17 @@ var elm$core$Dict$moveRedLeft = function (dict) {
 			var rRight = _n2.e;
 			return A5(
 				elm$core$Dict$RBNode_elm_builtin,
-				elm$core$Dict$Red,
+				0,
 				rlK,
 				rlV,
 				A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Black,
+					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
 					rlL),
-				A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, rK, rV, rlR, rRight));
+				A5(elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rlR, rRight));
 		} else {
 			var clr = dict.a;
 			var k = dict.b;
@@ -5892,22 +5884,22 @@ var elm$core$Dict$moveRedLeft = function (dict) {
 			var rV = _n5.c;
 			var rLeft = _n5.d;
 			var rRight = _n5.e;
-			if (clr.$ === 'Black') {
+			if (clr === 1) {
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Black,
+					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, rK, rV, rLeft, rRight));
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			} else {
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Black,
+					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, rK, rV, rLeft, rRight));
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			}
 		}
 	} else {
@@ -5915,8 +5907,8 @@ var elm$core$Dict$moveRedLeft = function (dict) {
 	}
 };
 var elm$core$Dict$moveRedRight = function (dict) {
-	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
-		if ((dict.d.d.$ === 'RBNode_elm_builtin') && (dict.d.d.a.$ === 'Red')) {
+	if (((dict.$ === -1) && (dict.d.$ === -1)) && (dict.e.$ === -1)) {
+		if ((dict.d.d.$ === -1) && (!dict.d.d.a)) {
 			var clr = dict.a;
 			var k = dict.b;
 			var v = dict.c;
@@ -5939,17 +5931,17 @@ var elm$core$Dict$moveRedRight = function (dict) {
 			var rRight = _n4.e;
 			return A5(
 				elm$core$Dict$RBNode_elm_builtin,
-				elm$core$Dict$Red,
+				0,
 				lK,
 				lV,
-				A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, llK, llV, llLeft, llRight),
+				A5(elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
 				A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Black,
+					1,
 					k,
 					v,
 					lRight,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, rK, rV, rLeft, rRight)));
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight)));
 		} else {
 			var clr = dict.a;
 			var k = dict.b;
@@ -5966,22 +5958,22 @@ var elm$core$Dict$moveRedRight = function (dict) {
 			var rV = _n6.c;
 			var rLeft = _n6.d;
 			var rRight = _n6.e;
-			if (clr.$ === 'Black') {
+			if (clr === 1) {
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Black,
+					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, rK, rV, rLeft, rRight));
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			} else {
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Black,
+					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, rK, rV, rLeft, rRight));
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			}
 		}
 	} else {
@@ -5990,7 +5982,7 @@ var elm$core$Dict$moveRedRight = function (dict) {
 };
 var elm$core$Dict$removeHelpPrepEQGT = F7(
 	function (targetKey, dict, color, key, value, left, right) {
-		if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+		if ((left.$ === -1) && (!left.a)) {
 			var _n1 = left.a;
 			var lK = left.b;
 			var lV = left.c;
@@ -6002,13 +5994,13 @@ var elm$core$Dict$removeHelpPrepEQGT = F7(
 				lK,
 				lV,
 				lLeft,
-				A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, lRight, right));
+				A5(elm$core$Dict$RBNode_elm_builtin, 0, key, value, lRight, right));
 		} else {
 			_n2$2:
 			while (true) {
-				if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Black')) {
-					if (right.d.$ === 'RBNode_elm_builtin') {
-						if (right.d.a.$ === 'Black') {
+				if ((right.$ === -1) && (right.a === 1)) {
+					if (right.d.$ === -1) {
+						if (right.d.a === 1) {
 							var _n3 = right.a;
 							var _n4 = right.d;
 							var _n5 = _n4.a;
@@ -6029,7 +6021,7 @@ var elm$core$Dict$removeHelpPrepEQGT = F7(
 		}
 	});
 var elm$core$Dict$removeMin = function (dict) {
-	if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
+	if ((dict.$ === -1) && (dict.d.$ === -1)) {
 		var color = dict.a;
 		var key = dict.b;
 		var value = dict.c;
@@ -6037,8 +6029,8 @@ var elm$core$Dict$removeMin = function (dict) {
 		var lColor = left.a;
 		var lLeft = left.d;
 		var right = dict.e;
-		if (lColor.$ === 'Black') {
-			if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
+		if (lColor === 1) {
+			if ((lLeft.$ === -1) && (!lLeft.a)) {
 				var _n3 = lLeft.a;
 				return A5(
 					elm$core$Dict$RBNode_elm_builtin,
@@ -6049,7 +6041,7 @@ var elm$core$Dict$removeMin = function (dict) {
 					right);
 			} else {
 				var _n4 = elm$core$Dict$moveRedLeft(dict);
-				if (_n4.$ === 'RBNode_elm_builtin') {
+				if (_n4.$ === -1) {
 					var nColor = _n4.a;
 					var nKey = _n4.b;
 					var nValue = _n4.c;
@@ -6081,7 +6073,7 @@ var elm$core$Dict$removeMin = function (dict) {
 };
 var elm$core$Dict$removeHelp = F2(
 	function (targetKey, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
+		if (dict.$ === -2) {
 			return elm$core$Dict$RBEmpty_elm_builtin;
 		} else {
 			var color = dict.a;
@@ -6090,10 +6082,10 @@ var elm$core$Dict$removeHelp = F2(
 			var left = dict.d;
 			var right = dict.e;
 			if (_Utils_cmp(targetKey, key) < 0) {
-				if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Black')) {
+				if ((left.$ === -1) && (left.a === 1)) {
 					var _n4 = left.a;
 					var lLeft = left.d;
-					if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
+					if ((lLeft.$ === -1) && (!lLeft.a)) {
 						var _n6 = lLeft.a;
 						return A5(
 							elm$core$Dict$RBNode_elm_builtin,
@@ -6104,7 +6096,7 @@ var elm$core$Dict$removeHelp = F2(
 							right);
 					} else {
 						var _n7 = elm$core$Dict$moveRedLeft(dict);
-						if (_n7.$ === 'RBNode_elm_builtin') {
+						if (_n7.$ === -1) {
 							var nColor = _n7.a;
 							var nKey = _n7.b;
 							var nValue = _n7.c;
@@ -6140,7 +6132,7 @@ var elm$core$Dict$removeHelp = F2(
 	});
 var elm$core$Dict$removeHelpEQGT = F2(
 	function (targetKey, dict) {
-		if (dict.$ === 'RBNode_elm_builtin') {
+		if (dict.$ === -1) {
 			var color = dict.a;
 			var key = dict.b;
 			var value = dict.c;
@@ -6148,7 +6140,7 @@ var elm$core$Dict$removeHelpEQGT = F2(
 			var right = dict.e;
 			if (_Utils_eq(targetKey, key)) {
 				var _n1 = elm$core$Dict$getMin(right);
-				if (_n1.$ === 'RBNode_elm_builtin') {
+				if (_n1.$ === -1) {
 					var minKey = _n1.b;
 					var minValue = _n1.c;
 					return A5(
@@ -6177,13 +6169,13 @@ var elm$core$Dict$removeHelpEQGT = F2(
 var elm$core$Dict$remove = F2(
 	function (key, dict) {
 		var _n0 = A2(elm$core$Dict$removeHelp, key, dict);
-		if ((_n0.$ === 'RBNode_elm_builtin') && (_n0.a.$ === 'Red')) {
+		if ((_n0.$ === -1) && (!_n0.a)) {
 			var _n1 = _n0.a;
 			var k = _n0.b;
 			var v = _n0.c;
 			var l = _n0.d;
 			var r = _n0.e;
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, k, v, l, r);
+			return A5(elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
 		} else {
 			var x = _n0;
 			return x;
@@ -6193,7 +6185,7 @@ var elm$core$Dict$update = F3(
 	function (targetKey, alter, dictionary) {
 		var _n0 = alter(
 			A2(elm$core$Dict$get, targetKey, dictionary));
-		if (_n0.$ === 'Just') {
+		if (!_n0.$) {
 			var value = _n0.a;
 			return A3(elm$core$Dict$insert, targetKey, value, dictionary);
 		} else {
@@ -6201,7 +6193,7 @@ var elm$core$Dict$update = F3(
 		}
 	});
 var elm$core$Maybe$isJust = function (maybe) {
-	if (maybe.$ === 'Just') {
+	if (!maybe.$) {
 		return true;
 	} else {
 		return false;
@@ -6209,7 +6201,7 @@ var elm$core$Maybe$isJust = function (maybe) {
 };
 var elm$core$Result$map = F2(
 	function (func, ra) {
-		if (ra.$ === 'Ok') {
+		if (!ra.$) {
 			var a = ra.a;
 			return elm$core$Result$Ok(
 				func(a));
@@ -6220,21 +6212,21 @@ var elm$core$Result$map = F2(
 	});
 var elm$http$Http$BadPayload = F2(
 	function (a, b) {
-		return {$: 'BadPayload', a: a, b: b};
+		return {$: 4, a: a, b: b};
 	});
 var elm$http$Http$BadStatus = function (a) {
-	return {$: 'BadStatus', a: a};
+	return {$: 3, a: a};
 };
 var elm$http$Http$BadUrl = function (a) {
-	return {$: 'BadUrl', a: a};
+	return {$: 0, a: a};
 };
-var elm$http$Http$NetworkError = {$: 'NetworkError'};
-var elm$http$Http$Timeout = {$: 'Timeout'};
+var elm$http$Http$NetworkError = {$: 2};
+var elm$http$Http$Timeout = {$: 1};
 var elm$http$Http$Internal$FormDataBody = function (a) {
-	return {$: 'FormDataBody', a: a};
+	return {$: 2, a: a};
 };
 var elm$http$Http$Internal$isStringBody = function (body) {
-	if (body.$ === 'StringBody') {
+	if (body.$ === 1) {
 		return true;
 	} else {
 		return false;
@@ -6243,15 +6235,13 @@ var elm$http$Http$Internal$isStringBody = function (body) {
 var elm$http$Http$expectStringResponse = _Http_expectStringResponse;
 var elm$http$Http$expectString = elm$http$Http$expectStringResponse(
 	function (response) {
-		return elm$core$Result$Ok(response.body);
+		return elm$core$Result$Ok(response.f);
 	});
-var elm$http$Http$Internal$Request = function (a) {
-	return {$: 'Request', a: a};
-};
-var elm$http$Http$request = elm$http$Http$Internal$Request;
+var elm$http$Http$Internal$Request = elm$core$Basics$identity;
+var elm$http$Http$request = elm$core$Basics$identity;
 var elm$http$Http$getString = function (url) {
 	return elm$http$Http$request(
-		{body: elm$http$Http$emptyBody, expect: elm$http$Http$expectString, headers: _List_Nil, method: 'GET', timeout: elm$core$Maybe$Nothing, url: url, withCredentials: false});
+		{f: elm$http$Http$emptyBody, j: elm$http$Http$expectString, k: _List_Nil, l: 'GET', m: elm$core$Maybe$Nothing, n: url, o: false});
 };
 var elm$core$Basics$composeL = F3(
 	function (g, f, x) {
@@ -6262,23 +6252,22 @@ var elm$core$Task$onError = _Scheduler_onError;
 var elm$core$Task$attempt = F2(
 	function (resultToMessage, task) {
 		return elm$core$Task$command(
-			elm$core$Task$Perform(
+			A2(
+				elm$core$Task$onError,
 				A2(
-					elm$core$Task$onError,
+					elm$core$Basics$composeL,
+					A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
+					elm$core$Result$Err),
+				A2(
+					elm$core$Task$andThen,
 					A2(
 						elm$core$Basics$composeL,
 						A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
-						elm$core$Result$Err),
-					A2(
-						elm$core$Task$andThen,
-						A2(
-							elm$core$Basics$composeL,
-							A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
-							elm$core$Result$Ok),
-						task))));
+						elm$core$Result$Ok),
+					task)));
 	});
 var elm$http$Http$toTask = function (_n0) {
-	var request_ = _n0.a;
+	var request_ = _n0;
 	return A2(_Http_toTask, request_, elm$core$Maybe$Nothing);
 };
 var elm$http$Http$send = F2(
@@ -6293,11 +6282,11 @@ var author$project$Page$ApiDocument$getWebApiDocument = A2(
 	author$project$Page$ApiDocument$UpdateWebApiDocument,
 	elm$http$Http$getString('public/WebApiDocument.md'));
 var author$project$Page$ApiDocument$init = function (session) {
-	var model = {isMenuOpen: false, session: session, webApiDocument: elm$core$Maybe$Nothing};
+	var model = {aa: false, ac: session, ag: elm$core$Maybe$Nothing};
 	return _Utils_Tuple2(model, author$project$Page$ApiDocument$getWebApiDocument);
 };
 var author$project$Api$Endpoint$SystemHealth = function (system) {
-	return {system: system};
+	return {cp: system};
 };
 var author$project$Api$Endpoint$decodeSystemSignal = elm$json$Json$Decode$string;
 var author$project$Api$Endpoint$decodeSystemHealth = A3(
@@ -6308,8 +6297,8 @@ var author$project$Api$Endpoint$decodeSystemHealth = A3(
 var elm$http$Http$expectJson = function (decoder) {
 	return elm$http$Http$expectStringResponse(
 		function (response) {
-			var _n0 = A2(elm$json$Json$Decode$decodeString, decoder, response.body);
-			if (_n0.$ === 'Err') {
+			var _n0 = A2(elm$json$Json$Decode$decodeString, decoder, response.f);
+			if (_n0.$ === 1) {
 				var decodeError = _n0.a;
 				return elm$core$Result$Err(
 					elm$json$Json$Decode$errorToString(decodeError));
@@ -6321,25 +6310,25 @@ var elm$http$Http$expectJson = function (decoder) {
 };
 var author$project$Api$Endpoint$getApiV1Health = elm$http$Http$request(
 	{
-		body: elm$http$Http$emptyBody,
-		expect: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeSystemHealth),
-		headers: _List_Nil,
-		method: 'GET',
-		timeout: elm$core$Maybe$Nothing,
-		url: A2(
+		f: elm$http$Http$emptyBody,
+		j: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeSystemHealth),
+		k: _List_Nil,
+		l: 'GET',
+		m: elm$core$Maybe$Nothing,
+		n: A2(
 			elm$core$String$join,
 			'/',
 			_List_fromArray(
 				['https://tractor.ak1211.com', 'api', 'v1', 'health'])),
-		withCredentials: false
+		o: false
 	});
 var author$project$Page$Dashboard$GotSystemHealth = function (a) {
-	return {$: 'GotSystemHealth', a: a};
+	return {$: 3, a: a};
 };
 var author$project$Page$Dashboard$getSystemHealth = A2(elm$http$Http$send, author$project$Page$Dashboard$GotSystemHealth, author$project$Api$Endpoint$getApiV1Health);
 var author$project$Api$Endpoint$VerRev = F8(
 	function (version, buildArch, buildOS, gitBranch, gitHash, gitCommitDate, gitCommitCount, gitStatus) {
-		return {buildArch: buildArch, buildOS: buildOS, gitBranch: gitBranch, gitCommitCount: gitCommitCount, gitCommitDate: gitCommitDate, gitHash: gitHash, gitStatus: gitStatus, version: version};
+		return {aR: buildArch, aS: buildOS, a4: gitBranch, a5: gitCommitCount, a6: gitCommitDate, a7: gitHash, a8: gitStatus, bO: version};
 	});
 var author$project$Api$Endpoint$decodeVerRev = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
@@ -6376,25 +6365,25 @@ var author$project$Api$Endpoint$decodeVerRev = A3(
 								elm$json$Json$Decode$succeed(author$project$Api$Endpoint$VerRev)))))))));
 var author$project$Api$Endpoint$getApiV1Version = elm$http$Http$request(
 	{
-		body: elm$http$Http$emptyBody,
-		expect: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeVerRev),
-		headers: _List_Nil,
-		method: 'GET',
-		timeout: elm$core$Maybe$Nothing,
-		url: A2(
+		f: elm$http$Http$emptyBody,
+		j: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeVerRev),
+		k: _List_Nil,
+		l: 'GET',
+		m: elm$core$Maybe$Nothing,
+		n: A2(
 			elm$core$String$join,
 			'/',
 			_List_fromArray(
 				['https://tractor.ak1211.com', 'api', 'v1', 'version'])),
-		withCredentials: false
+		o: false
 	});
 var author$project$Page$Dashboard$GotSystemVersion = function (a) {
-	return {$: 'GotSystemVersion', a: a};
+	return {$: 4, a: a};
 };
 var author$project$Page$Dashboard$getSystemVersion = A2(elm$http$Http$send, author$project$Page$Dashboard$GotSystemVersion, author$project$Api$Endpoint$getApiV1Version);
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var author$project$Page$Dashboard$init = function (session) {
-	var model = {isMenuOpen: false, session: session, systemHealth: elm$core$Maybe$Nothing, systemVersion: elm$core$Maybe$Nothing};
+	var model = {aa: false, ac: session, ad: elm$core$Maybe$Nothing, ae: elm$core$Maybe$Nothing};
 	return _Utils_Tuple2(
 		model,
 		elm$core$Platform$Cmd$batch(
@@ -6402,17 +6391,17 @@ var author$project$Page$Dashboard$init = function (session) {
 				[author$project$Page$Dashboard$getSystemHealth, author$project$Page$Dashboard$getSystemVersion])));
 };
 var author$project$Page$Login$Error = function (a) {
-	return {$: 'Error', a: a};
+	return {$: 2, a: a};
 };
 var author$project$Page$Login$First = function (a) {
-	return {$: 'First', a: a};
+	return {$: 0, a: a};
 };
 var author$project$Page$Login$Redirected = function (a) {
-	return {$: 'Redirected', a: a};
+	return {$: 1, a: a};
 };
 var author$project$Api$Endpoint$RespAuth = F3(
 	function (accessToken, expiresIn, tokenType) {
-		return {accessToken: accessToken, expiresIn: expiresIn, tokenType: tokenType};
+		return {aN: accessToken, a2: expiresIn, bH: tokenType};
 	});
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var author$project$Api$Endpoint$decodeRespAuth = A3(
@@ -6438,7 +6427,7 @@ var elm$json$Json$Encode$object = function (pairs) {
 					var v = _n0.b;
 					return A3(_Json_addField, k, v, obj);
 				}),
-			_Json_emptyObject(_Utils_Tuple0),
+			_Json_emptyObject(0),
 			pairs));
 };
 var elm$json$Json$Encode$string = _Json_wrap;
@@ -6448,12 +6437,12 @@ var author$project$Api$Endpoint$encodeAuthTempCode = function (x) {
 			[
 				_Utils_Tuple2(
 				'code',
-				elm$json$Json$Encode$string(x.code))
+				elm$json$Json$Encode$string(x.Y))
 			]));
 };
 var elm$http$Http$Internal$StringBody = F2(
 	function (a, b) {
-		return {$: 'StringBody', a: a, b: b};
+		return {$: 1, a: a, b: b};
 	});
 var elm$http$Http$jsonBody = function (value) {
 	return A2(
@@ -6464,22 +6453,22 @@ var elm$http$Http$jsonBody = function (value) {
 var author$project$Api$Endpoint$postApiV1Auth = function (body) {
 	return elm$http$Http$request(
 		{
-			body: elm$http$Http$jsonBody(
+			f: elm$http$Http$jsonBody(
 				author$project$Api$Endpoint$encodeAuthTempCode(body)),
-			expect: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeRespAuth),
-			headers: _List_Nil,
-			method: 'POST',
-			timeout: elm$core$Maybe$Nothing,
-			url: A2(
+			j: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeRespAuth),
+			k: _List_Nil,
+			l: 'POST',
+			m: elm$core$Maybe$Nothing,
+			n: A2(
 				elm$core$String$join,
 				'/',
 				_List_fromArray(
 					['https://tractor.ak1211.com', 'api', 'v1', 'auth'])),
-			withCredentials: false
+			o: false
 		});
 };
 var author$project$Page$Login$GotAccessToken = function (a) {
-	return {$: 'GotAccessToken', a: a};
+	return {$: 3, a: a};
 };
 var author$project$Page$Login$getAccessToken = function (code) {
 	return A2(
@@ -6488,7 +6477,7 @@ var author$project$Page$Login$getAccessToken = function (code) {
 		author$project$Api$Endpoint$postApiV1Auth(code));
 };
 var author$project$Api$Endpoint$AuthClientId = function (clientid) {
-	return {clientid: clientid};
+	return {aW: clientid};
 };
 var author$project$Api$Endpoint$decodeAuthClientId = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
@@ -6497,20 +6486,20 @@ var author$project$Api$Endpoint$decodeAuthClientId = A3(
 	elm$json$Json$Decode$succeed(author$project$Api$Endpoint$AuthClientId));
 var author$project$Api$Endpoint$getApiV1AuthClientid = elm$http$Http$request(
 	{
-		body: elm$http$Http$emptyBody,
-		expect: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeAuthClientId),
-		headers: _List_Nil,
-		method: 'GET',
-		timeout: elm$core$Maybe$Nothing,
-		url: A2(
+		f: elm$http$Http$emptyBody,
+		j: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeAuthClientId),
+		k: _List_Nil,
+		l: 'GET',
+		m: elm$core$Maybe$Nothing,
+		n: A2(
 			elm$core$String$join,
 			'/',
 			_List_fromArray(
 				['https://tractor.ak1211.com', 'api', 'v1', 'auth', 'clientid'])),
-		withCredentials: false
+		o: false
 	});
 var author$project$Page$Login$GotAuthClientId = function (a) {
-	return {$: 'GotAuthClientId', a: a};
+	return {$: 2, a: a};
 };
 var author$project$Page$Login$getAuthClientId = A2(elm$http$Http$send, author$project$Page$Login$GotAuthClientId, author$project$Api$Endpoint$getApiV1AuthClientid);
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
@@ -6518,28 +6507,28 @@ var author$project$Page$Login$init = F2(
 	function (result, session) {
 		var initRedirectedStage = function (param) {
 			return author$project$Page$Login$Redirected(
-				{authRedirectParam: param});
+				{bV: param});
 		};
 		var initModel = function (x) {
-			return {isMenuOpen: false, session: session, stage: x};
+			return {aa: false, ac: session, I: x};
 		};
 		var initFirstStage = author$project$Page$Login$First(
-			{authClientId: elm$core$Maybe$Nothing});
+			{ai: elm$core$Maybe$Nothing});
 		var initErrorStage = function (msg) {
 			return author$project$Page$Login$Error(
-				{cause: msg});
+				{al: msg});
 		};
-		if (result.$ === 'Nothing') {
+		if (result.$ === 1) {
 			return _Utils_Tuple2(
 				initModel(initFirstStage),
 				author$project$Page$Login$getAuthClientId);
 		} else {
-			if (result.a.$ === 'Ok') {
+			if (!result.a.$) {
 				var param = result.a.a;
 				return _Utils_Tuple2(
 					initModel(
 						initRedirectedStage(param)),
-					author$project$Page$Login$getAccessToken(param.code));
+					author$project$Page$Login$getAccessToken(param.Y));
 			} else {
 				var e = result.a.a;
 				return _Utils_Tuple2(
@@ -6550,37 +6539,37 @@ var author$project$Page$Login$init = F2(
 		}
 	});
 var author$project$Page$Upload$init = function (session) {
-	var model = {isMenuOpen: false, session: session};
+	var model = {aa: false, ac: session};
 	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 };
-var author$project$Route$Dashboard = {$: 'Dashboard'};
+var author$project$Route$Dashboard = {$: 1};
 var author$project$Route$routeToString = function (page) {
 	var pieces = function () {
 		switch (page.$) {
-			case 'Dashboard':
+			case 1:
 				return _List_fromArray(
 					['dashboard']);
-			case 'Root':
+			case 0:
 				return _List_Nil;
-			case 'Login':
+			case 2:
 				return _List_fromArray(
 					['login']);
-			case 'Logout':
+			case 3:
 				return _List_fromArray(
 					['logout']);
-			case 'Upload':
+			case 4:
 				return _List_fromArray(
 					['upload']);
-			case 'Portfolio':
+			case 5:
 				return _List_fromArray(
 					['portfolio']);
-			case 'Analytics':
+			case 6:
 				return _List_fromArray(
 					['analytics']);
-			case 'Reports':
+			case 7:
 				return _List_fromArray(
 					['reports']);
-			case 'AccountBalance':
+			case 8:
 				return _List_fromArray(
 					['account-balance']);
 			default:
@@ -6599,7 +6588,7 @@ var author$project$Route$replaceUrl = F2(
 			author$project$Route$routeToString(route));
 	});
 var author$project$Session$navKey = function (session) {
-	if (session.$ === 'LoggedIn') {
+	if (!session.$) {
 		var key = session.a;
 		return key;
 	} else {
@@ -6611,13 +6600,13 @@ var elm$browser$Browser$Navigation$reload = _Browser_reload(false);
 var author$project$Main$changeRouteTo = F2(
 	function (maybeRoute, model) {
 		var session = author$project$Main$toSession(model);
-		if (maybeRoute.$ === 'Nothing') {
+		if (maybeRoute.$ === 1) {
 			return _Utils_Tuple2(
 				author$project$Main$NotFound(session),
 				elm$core$Platform$Cmd$none);
 		} else {
 			switch (maybeRoute.a.$) {
-				case 'Root':
+				case 0:
 					var _n1 = maybeRoute.a;
 					return _Utils_Tuple2(
 						author$project$Main$Redirect(session),
@@ -6626,7 +6615,7 @@ var author$project$Main$changeRouteTo = F2(
 							author$project$Session$navKey(
 								author$project$Main$toSession(model)),
 							author$project$Route$Dashboard));
-				case 'Logout':
+				case 3:
 					var _n2 = maybeRoute.a;
 					return _Utils_Tuple2(
 						author$project$Main$Redirect(session),
@@ -6641,7 +6630,7 @@ var author$project$Main$changeRouteTo = F2(
 									author$project$Route$Dashboard),
 									elm$browser$Browser$Navigation$reload
 								])));
-				case 'Dashboard':
+				case 1:
 					var _n3 = maybeRoute.a;
 					return A4(
 						author$project$Main$updateWith,
@@ -6649,7 +6638,7 @@ var author$project$Main$changeRouteTo = F2(
 						author$project$Main$GotDashboardMsg,
 						model,
 						author$project$Page$Dashboard$init(session));
-				case 'Login':
+				case 2:
 					var param = maybeRoute.a.a;
 					return A4(
 						author$project$Main$updateWith,
@@ -6657,7 +6646,7 @@ var author$project$Main$changeRouteTo = F2(
 						author$project$Main$GotLoginMsg,
 						model,
 						A2(author$project$Page$Login$init, param, session));
-				case 'Upload':
+				case 4:
 					var _n4 = maybeRoute.a;
 					return A4(
 						author$project$Main$updateWith,
@@ -6665,22 +6654,22 @@ var author$project$Main$changeRouteTo = F2(
 						author$project$Main$GotUploadMsg,
 						model,
 						author$project$Page$Upload$init(session));
-				case 'Portfolio':
+				case 5:
 					var _n5 = maybeRoute.a;
 					return _Utils_Tuple2(
 						author$project$Main$NotFound(session),
 						elm$core$Platform$Cmd$none);
-				case 'Analytics':
+				case 6:
 					var _n6 = maybeRoute.a;
 					return _Utils_Tuple2(
 						author$project$Main$NotFound(session),
 						elm$core$Platform$Cmd$none);
-				case 'Reports':
+				case 7:
 					var _n7 = maybeRoute.a;
 					return _Utils_Tuple2(
 						author$project$Main$NotFound(session),
 						elm$core$Platform$Cmd$none);
-				case 'AccountBalance':
+				case 8:
 					var _n8 = maybeRoute.a;
 					return _Utils_Tuple2(
 						author$project$Main$NotFound(session),
@@ -6697,33 +6686,31 @@ var author$project$Main$changeRouteTo = F2(
 		}
 	});
 var author$project$Api$Endpoint$AuthTempCode = function (code) {
-	return {code: code};
+	return {Y: code};
 };
-var author$project$Route$AccountBalance = {$: 'AccountBalance'};
-var author$project$Route$Analytics = {$: 'Analytics'};
-var author$project$Route$ApiDocument = {$: 'ApiDocument'};
+var author$project$Route$AccountBalance = {$: 8};
+var author$project$Route$Analytics = {$: 6};
+var author$project$Route$ApiDocument = {$: 9};
 var author$project$Route$Login = function (a) {
-	return {$: 'Login', a: a};
+	return {$: 2, a: a};
 };
-var author$project$Route$Logout = {$: 'Logout'};
-var author$project$Route$Portfolio = {$: 'Portfolio'};
-var author$project$Route$Reports = {$: 'Reports'};
-var author$project$Route$Root = {$: 'Root'};
-var author$project$Route$Upload = {$: 'Upload'};
-var elm$url$Url$Parser$Parser = function (a) {
-	return {$: 'Parser', a: a};
-};
+var author$project$Route$Logout = {$: 3};
+var author$project$Route$Portfolio = {$: 5};
+var author$project$Route$Reports = {$: 7};
+var author$project$Route$Root = {$: 0};
+var author$project$Route$Upload = {$: 4};
+var elm$url$Url$Parser$Parser = elm$core$Basics$identity;
 var elm$url$Url$Parser$State = F5(
 	function (visited, unvisited, params, frag, value) {
-		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
+		return {u: frag, w: params, t: unvisited, r: value, x: visited};
 	});
 var elm$url$Url$Parser$mapState = F2(
 	function (func, _n0) {
-		var visited = _n0.visited;
-		var unvisited = _n0.unvisited;
-		var params = _n0.params;
-		var frag = _n0.frag;
-		var value = _n0.value;
+		var visited = _n0.x;
+		var unvisited = _n0.t;
+		var params = _n0.w;
+		var frag = _n0.u;
+		var value = _n0.r;
 		return A5(
 			elm$url$Url$Parser$State,
 			visited,
@@ -6734,20 +6721,19 @@ var elm$url$Url$Parser$mapState = F2(
 	});
 var elm$url$Url$Parser$map = F2(
 	function (subValue, _n0) {
-		var parseArg = _n0.a;
-		return elm$url$Url$Parser$Parser(
-			function (_n1) {
-				var visited = _n1.visited;
-				var unvisited = _n1.unvisited;
-				var params = _n1.params;
-				var frag = _n1.frag;
-				var value = _n1.value;
-				return A2(
-					elm$core$List$map,
-					elm$url$Url$Parser$mapState(value),
-					parseArg(
-						A5(elm$url$Url$Parser$State, visited, unvisited, params, frag, subValue)));
-			});
+		var parseArg = _n0;
+		return function (_n1) {
+			var visited = _n1.x;
+			var unvisited = _n1.t;
+			var params = _n1.w;
+			var frag = _n1.u;
+			var value = _n1.r;
+			return A2(
+				elm$core$List$map,
+				elm$url$Url$Parser$mapState(value),
+				parseArg(
+					A5(elm$url$Url$Parser$State, visited, unvisited, params, frag, subValue)));
+		};
 	});
 var elm$core$List$append = F2(
 	function (xs, ys) {
@@ -6766,50 +6752,47 @@ var elm$core$List$concatMap = F2(
 			A2(elm$core$List$map, f, list));
 	});
 var elm$url$Url$Parser$oneOf = function (parsers) {
-	return elm$url$Url$Parser$Parser(
-		function (state) {
-			return A2(
-				elm$core$List$concatMap,
-				function (_n0) {
-					var parser = _n0.a;
-					return parser(state);
-				},
-				parsers);
-		});
+	return function (state) {
+		return A2(
+			elm$core$List$concatMap,
+			function (_n0) {
+				var parser = _n0;
+				return parser(state);
+			},
+			parsers);
+	};
 };
 var elm$url$Url$Parser$query = function (_n0) {
-	var queryParser = _n0.a;
-	return elm$url$Url$Parser$Parser(
-		function (_n1) {
-			var visited = _n1.visited;
-			var unvisited = _n1.unvisited;
-			var params = _n1.params;
-			var frag = _n1.frag;
-			var value = _n1.value;
-			return _List_fromArray(
-				[
-					A5(
-					elm$url$Url$Parser$State,
-					visited,
-					unvisited,
-					params,
-					frag,
-					value(
-						queryParser(params)))
-				]);
-		});
+	var queryParser = _n0;
+	return function (_n1) {
+		var visited = _n1.x;
+		var unvisited = _n1.t;
+		var params = _n1.w;
+		var frag = _n1.u;
+		var value = _n1.r;
+		return _List_fromArray(
+			[
+				A5(
+				elm$url$Url$Parser$State,
+				visited,
+				unvisited,
+				params,
+				frag,
+				value(
+					queryParser(params)))
+			]);
+	};
 };
 var elm$url$Url$Parser$slash = F2(
 	function (_n0, _n1) {
-		var parseBefore = _n0.a;
-		var parseAfter = _n1.a;
-		return elm$url$Url$Parser$Parser(
-			function (state) {
-				return A2(
-					elm$core$List$concatMap,
-					parseAfter,
-					parseBefore(state));
-			});
+		var parseBefore = _n0;
+		var parseAfter = _n1;
+		return function (state) {
+			return A2(
+				elm$core$List$concatMap,
+				parseAfter,
+				parseBefore(state));
+		};
 	});
 var elm$url$Url$Parser$questionMark = F2(
 	function (parser, queryParser) {
@@ -6819,58 +6802,53 @@ var elm$url$Url$Parser$questionMark = F2(
 			elm$url$Url$Parser$query(queryParser));
 	});
 var elm$url$Url$Parser$s = function (str) {
-	return elm$url$Url$Parser$Parser(
-		function (_n0) {
-			var visited = _n0.visited;
-			var unvisited = _n0.unvisited;
-			var params = _n0.params;
-			var frag = _n0.frag;
-			var value = _n0.value;
-			if (!unvisited.b) {
-				return _List_Nil;
-			} else {
-				var next = unvisited.a;
-				var rest = unvisited.b;
-				return _Utils_eq(next, str) ? _List_fromArray(
-					[
-						A5(
-						elm$url$Url$Parser$State,
-						A2(elm$core$List$cons, next, visited),
-						rest,
-						params,
-						frag,
-						value)
-					]) : _List_Nil;
-			}
-		});
+	return function (_n0) {
+		var visited = _n0.x;
+		var unvisited = _n0.t;
+		var params = _n0.w;
+		var frag = _n0.u;
+		var value = _n0.r;
+		if (!unvisited.b) {
+			return _List_Nil;
+		} else {
+			var next = unvisited.a;
+			var rest = unvisited.b;
+			return _Utils_eq(next, str) ? _List_fromArray(
+				[
+					A5(
+					elm$url$Url$Parser$State,
+					A2(elm$core$List$cons, next, visited),
+					rest,
+					params,
+					frag,
+					value)
+				]) : _List_Nil;
+		}
+	};
 };
-var elm$url$Url$Parser$top = elm$url$Url$Parser$Parser(
-	function (state) {
-		return _List_fromArray(
-			[state]);
-	});
+var elm$url$Url$Parser$top = function (state) {
+	return _List_fromArray(
+		[state]);
+};
 var elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
+		if (!maybe.$) {
 			var value = maybe.a;
 			return value;
 		} else {
 			return _default;
 		}
 	});
-var elm$url$Url$Parser$Internal$Parser = function (a) {
-	return {$: 'Parser', a: a};
-};
+var elm$url$Url$Parser$Internal$Parser = elm$core$Basics$identity;
 var elm$url$Url$Parser$Query$custom = F2(
 	function (key, func) {
-		return elm$url$Url$Parser$Internal$Parser(
-			function (dict) {
-				return func(
-					A2(
-						elm$core$Maybe$withDefault,
-						_List_Nil,
-						A2(elm$core$Dict$get, key, dict)));
-			});
+		return function (dict) {
+			return func(
+				A2(
+					elm$core$Maybe$withDefault,
+					_List_Nil,
+					A2(elm$core$Dict$get, key, dict)));
+		};
 	});
 var elm$url$Url$Parser$Query$string = function (key) {
 	return A2(
@@ -6889,20 +6867,20 @@ var author$project$Route$parser = function () {
 	var handleRoot = F3(
 		function (err, code, state) {
 			var _n0 = _Utils_Tuple3(err, code, state);
-			if (_n0.a.$ === 'Just') {
+			if (!_n0.a.$) {
 				var e = _n0.a.a;
 				var result = elm$core$Result$Err(e);
 				return author$project$Route$Login(
 					elm$core$Maybe$Just(result));
 			} else {
-				if ((_n0.b.$ === 'Just') && (_n0.c.$ === 'Just')) {
+				if ((!_n0.b.$) && (!_n0.c.$)) {
 					var _n1 = _n0.a;
 					var c = _n0.b.a;
 					var s = _n0.c.a;
 					var result = elm$core$Result$Ok(
 						{
-							code: author$project$Api$Endpoint$AuthTempCode(c),
-							state: s
+							Y: author$project$Api$Endpoint$AuthTempCode(c),
+							bC: s
 						});
 					return author$project$Route$Login(
 						elm$core$Maybe$Just(result));
@@ -6973,12 +6951,12 @@ var elm$url$Url$Parser$getFirstMatch = function (states) {
 		} else {
 			var state = states.a;
 			var rest = states.b;
-			var _n1 = state.unvisited;
+			var _n1 = state.t;
 			if (!_n1.b) {
-				return elm$core$Maybe$Just(state.value);
+				return elm$core$Maybe$Just(state.r);
 			} else {
 				if ((_n1.a === '') && (!_n1.b.b)) {
-					return elm$core$Maybe$Just(state.value);
+					return elm$core$Maybe$Just(state.r);
 				} else {
 					var $temp$states = rest;
 					states = $temp$states;
@@ -7017,7 +6995,7 @@ var elm$url$Url$Parser$preparePath = function (path) {
 var elm$url$Url$percentDecode = _Url_percentDecode;
 var elm$url$Url$Parser$addToParametersHelp = F2(
 	function (value, maybeList) {
-		if (maybeList.$ === 'Nothing') {
+		if (maybeList.$ === 1) {
 			return elm$core$Maybe$Just(
 				_List_fromArray(
 					[value]));
@@ -7035,12 +7013,12 @@ var elm$url$Url$Parser$addParam = F2(
 			var _n1 = _n0.b;
 			var rawValue = _n1.a;
 			var _n2 = elm$url$Url$percentDecode(rawKey);
-			if (_n2.$ === 'Nothing') {
+			if (_n2.$ === 1) {
 				return dict;
 			} else {
 				var key = _n2.a;
 				var _n3 = elm$url$Url$percentDecode(rawValue);
-				if (_n3.$ === 'Nothing') {
+				if (_n3.$ === 1) {
 					return dict;
 				} else {
 					var value = _n3.a;
@@ -7056,7 +7034,7 @@ var elm$url$Url$Parser$addParam = F2(
 		}
 	});
 var elm$url$Url$Parser$prepareQuery = function (maybeQuery) {
-	if (maybeQuery.$ === 'Nothing') {
+	if (maybeQuery.$ === 1) {
 		return elm$core$Dict$empty;
 	} else {
 		var qry = maybeQuery.a;
@@ -7069,15 +7047,15 @@ var elm$url$Url$Parser$prepareQuery = function (maybeQuery) {
 };
 var elm$url$Url$Parser$parse = F2(
 	function (_n0, url) {
-		var parser = _n0.a;
+		var parser = _n0;
 		return elm$url$Url$Parser$getFirstMatch(
 			parser(
 				A5(
 					elm$url$Url$Parser$State,
 					_List_Nil,
-					elm$url$Url$Parser$preparePath(url.path),
-					elm$url$Url$Parser$prepareQuery(url.query),
-					url.fragment,
+					elm$url$Url$Parser$preparePath(url.ck),
+					elm$url$Url$Parser$prepareQuery(url.bu),
+					url.b8,
 					elm$core$Basics$identity)));
 	});
 var author$project$Route$fromUrl = function (url) {
@@ -7087,20 +7065,20 @@ var author$project$Route$fromUrl = function (url) {
 		_Utils_update(
 			url,
 			{
-				fragment: elm$core$Maybe$Nothing,
-				path: A2(elm$core$Maybe$withDefault, '', url.fragment)
+				b8: elm$core$Maybe$Nothing,
+				ck: A2(elm$core$Maybe$withDefault, '', url.b8)
 			}));
 };
 var author$project$Session$Guest = function (a) {
-	return {$: 'Guest', a: a};
+	return {$: 1, a: a};
 };
 var author$project$Session$LoggedIn = F2(
 	function (a, b) {
-		return {$: 'LoggedIn', a: a, b: b};
+		return {$: 0, a: a, b: b};
 	});
 var author$project$Session$fromViewer = F2(
 	function (key, maybeViewer) {
-		if (maybeViewer.$ === 'Just') {
+		if (!maybeViewer.$) {
 			var viewerVal = maybeViewer.a;
 			return A2(author$project$Session$LoggedIn, key, viewerVal);
 		} else {
@@ -7116,7 +7094,7 @@ var author$project$Main$init = F3(
 				A2(author$project$Session$fromViewer, navKey, maybeViewer)));
 	});
 var author$project$Main$GotSession = function (a) {
-	return {$: 'GotSession', a: a};
+	return {$: 8, a: a};
 };
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
@@ -7150,10 +7128,8 @@ var author$project$Api$viewerChanges = F2(
 					A2(author$project$Api$decodeFromChange, decoder, value));
 			});
 	});
-var author$project$Viewer$Viewer = function (a) {
-	return {$: 'Viewer', a: a};
-};
-var author$project$Viewer$decoder = elm$json$Json$Decode$succeed(author$project$Viewer$Viewer);
+var author$project$Viewer$Viewer = elm$core$Basics$identity;
+var author$project$Viewer$decoder = elm$json$Json$Decode$succeed(elm$core$Basics$identity);
 var author$project$Session$changes = F2(
 	function (toMsg, key) {
 		return A2(
@@ -7167,27 +7143,27 @@ var author$project$Session$changes = F2(
 var elm$core$Platform$Sub$map = _Platform_map;
 var author$project$Main$subscriptions = function (model) {
 	switch (model.$) {
-		case 'NotFound':
+		case 1:
 			return elm$core$Platform$Sub$none;
-		case 'Redirect':
+		case 0:
 			return A2(
 				author$project$Session$changes,
 				author$project$Main$GotSession,
 				author$project$Session$navKey(
 					author$project$Main$toSession(model)));
-		case 'Dashboard':
+		case 2:
 			var dashboard = model.a;
 			return A2(
 				elm$core$Platform$Sub$map,
 				author$project$Main$GotDashboardMsg,
 				author$project$Page$Dashboard$subscriptions(dashboard));
-		case 'Login':
+		case 4:
 			var login = model.a;
 			return A2(
 				elm$core$Platform$Sub$map,
 				author$project$Main$GotLoginMsg,
 				author$project$Page$Login$subscriptions(login));
-		case 'Upload':
+		case 3:
 			var upload = model.a;
 			return A2(
 				elm$core$Platform$Sub$map,
@@ -7205,20 +7181,20 @@ var elm$core$Basics$not = _Basics_not;
 var author$project$Page$ApiDocument$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'NoOp':
+			case 0:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'GotSession':
+			case 1:
 				var session = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{session: session}),
+						{ac: session}),
 					elm$core$Platform$Cmd$none);
-			case 'ToggleMenuOpen':
+			case 2:
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{isMenuOpen: !model.isMenuOpen}),
+						{aa: !model.aa}),
 					elm$core$Platform$Cmd$none);
 			default:
 				var result = msg.a;
@@ -7226,7 +7202,7 @@ var author$project$Page$ApiDocument$update = F2(
 					_Utils_update(
 						model,
 						{
-							webApiDocument: elm$core$Result$toMaybe(result)
+							ag: elm$core$Result$toMaybe(result)
 						}),
 					elm$core$Platform$Cmd$none);
 		}
@@ -7234,28 +7210,28 @@ var author$project$Page$ApiDocument$update = F2(
 var author$project$Page$Dashboard$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'NoOp':
+			case 0:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'GotSession':
+			case 1:
 				var session = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{session: session}),
+						{ac: session}),
 					elm$core$Platform$Cmd$none);
-			case 'ToggleMenuOpen':
+			case 2:
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{isMenuOpen: !model.isMenuOpen}),
+						{aa: !model.aa}),
 					elm$core$Platform$Cmd$none);
-			case 'GotSystemHealth':
+			case 3:
 				var result = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							systemHealth: elm$core$Maybe$Just(result)
+							ad: elm$core$Maybe$Just(result)
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
@@ -7264,17 +7240,17 @@ var author$project$Page$Dashboard$update = F2(
 					_Utils_update(
 						model,
 						{
-							systemVersion: elm$core$Result$toMaybe(result)
+							ae: elm$core$Result$toMaybe(result)
 						}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Api$JWTContents = function (dat) {
-	return {dat: dat};
+	return {aZ: dat};
 };
 var author$project$Api$Endpoint$AuthenticatedUser = F5(
 	function (userId, userName, userRealName, userTz, userTzOffset) {
-		return {userId: userId, userName: userName, userRealName: userRealName, userTz: userTz, userTzOffset: userTzOffset};
+		return {bK: userId, bL: userName, cs: userRealName, bM: userTz, bN: userTzOffset};
 	});
 var author$project$Api$Endpoint$decodeAuthenticatedUser = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
@@ -7309,7 +7285,7 @@ var elm$core$Basics$composeR = F3(
 	});
 var elm$core$Result$mapError = F2(
 	function (f, result) {
-		if (result.$ === 'Ok') {
+		if (!result.$) {
 			var v = result.a;
 			return elm$core$Result$Ok(v);
 		} else {
@@ -7319,10 +7295,10 @@ var elm$core$Result$mapError = F2(
 		}
 	});
 var simonh1000$elm_jwt$Jwt$TokenDecodeError = function (a) {
-	return {$: 'TokenDecodeError', a: a};
+	return {$: 4, a: a};
 };
 var simonh1000$elm_jwt$Jwt$TokenProcessingError = function (a) {
-	return {$: 'TokenProcessingError', a: a};
+	return {$: 3, a: a};
 };
 var elm$core$Basics$modBy = _Basics_modBy;
 var elm$core$String$concat = function (strings) {
@@ -7354,11 +7330,11 @@ var simonh1000$elm_jwt$Jwt$fixlength = function (s) {
 var elm$core$String$map = _String_map;
 var simonh1000$elm_jwt$Jwt$unurl = function () {
 	var fix = function (c) {
-		switch (c.valueOf()) {
+		switch (c) {
 			case '-':
-				return _Utils_chr('+');
+				return '+';
 			case '_':
-				return _Utils_chr('/');
+				return '/';
 			default:
 				return c;
 		}
@@ -7377,7 +7353,7 @@ var simonh1000$elm_jwt$Jwt$getTokenBody = function (token) {
 	_n0$2:
 	while (true) {
 		if (_n0.b && _n0.b.b) {
-			if (_n0.b.a.$ === 'Err') {
+			if (_n0.b.a.$ === 1) {
 				if (_n0.b.b.b && (!_n0.b.b.b.b)) {
 					var _n1 = _n0.b;
 					var e = _n1.a.a;
@@ -7418,7 +7394,7 @@ var elm$core$String$foldl = _String_foldl;
 var elm$core$Bitwise$or = _Bitwise_or;
 var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
 var truqu$elm_base64$Base64$Decode$charToInt = function (_char) {
-	switch (_char.valueOf()) {
+	switch (_char) {
 		case 'A':
 			return 0;
 		case 'B':
@@ -7626,14 +7602,14 @@ var truqu$elm_base64$Base64$Decode$stripNulls = F2(
 	});
 var elm$regex$Regex$Match = F4(
 	function (match, index, number, submatches) {
-		return {index: index, match: match, number: number, submatches: submatches};
+		return {ce: index, cf: match, ci: number, co: submatches};
 	});
 var elm$regex$Regex$contains = _Regex_contains;
 var elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
 var elm$regex$Regex$fromString = function (string) {
 	return A2(
 		elm$regex$Regex$fromStringWith,
-		{caseInsensitive: false, multiline: false},
+		{aU: false, bj: false},
 		string);
 };
 var elm$regex$Regex$never = _Regex_never;
@@ -7685,7 +7661,7 @@ var author$project$Api$authenticatedUser = function (jwt) {
 	return A2(
 		elm$core$Result$map,
 		function (a) {
-			return a.dat;
+			return a.aZ;
 		},
 		A2(simonh1000$elm_jwt$Jwt$decodeToken, author$project$Api$decodeJWTContents, jwt));
 };
@@ -7693,15 +7669,12 @@ var author$project$Api$credFromJWT = function (jwt) {
 	return A2(
 		elm$core$Result$map,
 		function (x) {
-			return A2(
-				author$project$Api$Cred,
-				author$project$Username$Username(x.userRealName),
-				jwt);
+			return A2(author$project$Api$Cred, x.cs, jwt);
 		},
 		author$project$Api$authenticatedUser(jwt));
 };
 var author$project$Username$encode = function (_n0) {
-	var username = _n0.a;
+	var username = _n0;
 	return elm$json$Json$Encode$string(username);
 };
 var author$project$Api$storeCredWith = function (_n0) {
@@ -7727,25 +7700,24 @@ var author$project$Api$storeCredWith = function (_n0) {
 		elm$core$Maybe$Just(json));
 };
 var elm$browser$Browser$Navigation$load = _Browser_load;
-var elm$core$Debug$log = _Debug_log;
 var author$project$Page$Login$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'NoOp':
+			case 0:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'ToggleMenuOpen':
+			case 1:
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{isMenuOpen: !model.isMenuOpen}),
+						{aa: !model.aa}),
 					elm$core$Platform$Cmd$none);
-			case 'GotAccessToken':
+			case 3:
 				var result = msg.a;
-				if (result.$ === 'Ok') {
+				if (!result.$) {
 					var ok = result.a;
 					var store = function () {
-						var _n2 = author$project$Api$credFromJWT(ok.accessToken);
-						if (_n2.$ === 'Ok') {
+						var _n2 = author$project$Api$credFromJWT(ok.aN);
+						if (!_n2.$) {
 							var cred = _n2.a;
 							return author$project$Api$storeCredWith(cred);
 						} else {
@@ -7762,26 +7734,40 @@ var author$project$Page$Login$update = F2(
 								])));
 				} else {
 					var err = result.a;
-					return A2(
-						elm$core$Debug$log,
-						'OAuth flow error',
-						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+					var cause = function () {
+						switch (err.$) {
+							case 1:
+								return 'auth timeout';
+							case 3:
+								var resp = err.a;
+								return 'AuthError (bad status) ' + resp.cm.cg;
+							default:
+								return 'Auth Error';
+						}
+					}();
+					var newStage = author$project$Page$Login$Error(
+						{al: cause});
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{I: newStage}),
+						elm$core$Platform$Cmd$none);
 				}
-			case 'GotAuthClientId':
+			case 2:
 				var result = msg.a;
-				var _n3 = model.stage;
-				if (_n3.$ === 'First') {
-					var stage = _n3.a;
+				var _n4 = model.I;
+				if (!_n4.$) {
+					var stage = _n4.a;
 					var newStage = author$project$Page$Login$First(
 						_Utils_update(
 							stage,
 							{
-								authClientId: elm$core$Result$toMaybe(result)
+								ai: elm$core$Result$toMaybe(result)
 							}));
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{stage: newStage}),
+							{I: newStage}),
 						elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
@@ -7791,34 +7777,34 @@ var author$project$Page$Login$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{session: session}),
+						{ac: session}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Page$Upload$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'NoOp':
+			case 0:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'GotSession':
+			case 1:
 				var session = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{session: session}),
+						{ac: session}),
 					elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{isMenuOpen: !model.isMenuOpen}),
+						{aa: !model.aa}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
 var elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
-		if (maybePort.$ === 'Nothing') {
+		if (maybePort.$ === 1) {
 			return starter;
 		} else {
 			var port_ = maybePort.a;
@@ -7827,7 +7813,7 @@ var elm$url$Url$addPort = F2(
 	});
 var elm$url$Url$addPrefixed = F3(
 	function (prefix, maybeSegment, starter) {
-		if (maybeSegment.$ === 'Nothing') {
+		if (maybeSegment.$ === 1) {
 			return starter;
 		} else {
 			var segment = maybeSegment.a;
@@ -7838,8 +7824,8 @@ var elm$url$Url$addPrefixed = F3(
 	});
 var elm$url$Url$toString = function (url) {
 	var http = function () {
-		var _n0 = url.protocol;
-		if (_n0.$ === 'Http') {
+		var _n0 = url.bt;
+		if (!_n0) {
 			return 'http://';
 		} else {
 			return 'https://';
@@ -7848,17 +7834,17 @@ var elm$url$Url$toString = function (url) {
 	return A3(
 		elm$url$Url$addPrefixed,
 		'#',
-		url.fragment,
+		url.b8,
 		A3(
 			elm$url$Url$addPrefixed,
 			'?',
-			url.query,
+			url.bu,
 			_Utils_ap(
 				A2(
 					elm$url$Url$addPort,
-					url.port_,
-					_Utils_ap(http, url.host)),
-				url.path)));
+					url.bp,
+					_Utils_ap(http, url.bc)),
+				url.ck)));
 };
 var author$project$Main$update = F2(
 	function (msg, model) {
@@ -7866,15 +7852,15 @@ var author$project$Main$update = F2(
 		_n0$9:
 		while (true) {
 			switch (_n0.a.$) {
-				case 'Ignored':
+				case 0:
 					var _n1 = _n0.a;
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-				case 'ClickedLink':
+				case 3:
 					var urlRequest = _n0.a.a;
-					if (urlRequest.$ === 'Internal') {
+					if (!urlRequest.$) {
 						var url = urlRequest.a;
-						var _n3 = url.fragment;
-						if (_n3.$ === 'Nothing') {
+						var _n3 = url.b8;
+						if (_n3.$ === 1) {
 							return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 						} else {
 							return _Utils_Tuple2(
@@ -7891,17 +7877,17 @@ var author$project$Main$update = F2(
 							model,
 							elm$browser$Browser$Navigation$load(href));
 					}
-				case 'ChangedUrl':
+				case 2:
 					var url = _n0.a.a;
 					return A2(
 						author$project$Main$changeRouteTo,
 						author$project$Route$fromUrl(url),
 						model);
-				case 'ChangedRoute':
+				case 1:
 					var route = _n0.a.a;
 					return A2(author$project$Main$changeRouteTo, route, model);
-				case 'GotDashboardMsg':
-					if (_n0.b.$ === 'Dashboard') {
+				case 4:
+					if (_n0.b.$ === 2) {
 						var subMsg = _n0.a.a;
 						var dashboard = _n0.b.a;
 						return A4(
@@ -7913,8 +7899,8 @@ var author$project$Main$update = F2(
 					} else {
 						break _n0$9;
 					}
-				case 'GotLoginMsg':
-					if (_n0.b.$ === 'Login') {
+				case 6:
+					if (_n0.b.$ === 4) {
 						var subMsg = _n0.a.a;
 						var login = _n0.b.a;
 						return A4(
@@ -7926,8 +7912,8 @@ var author$project$Main$update = F2(
 					} else {
 						break _n0$9;
 					}
-				case 'GotUploadMsg':
-					if (_n0.b.$ === 'Upload') {
+				case 5:
+					if (_n0.b.$ === 3) {
 						var subMsg = _n0.a.a;
 						var upload = _n0.b.a;
 						return A4(
@@ -7939,8 +7925,8 @@ var author$project$Main$update = F2(
 					} else {
 						break _n0$9;
 					}
-				case 'GotApiDocumentMsg':
-					if (_n0.b.$ === 'ApiDocument') {
+				case 7:
+					if (_n0.b.$ === 5) {
 						var subMsg = _n0.a.a;
 						var apidoc = _n0.b.a;
 						return A4(
@@ -7953,7 +7939,7 @@ var author$project$Main$update = F2(
 						break _n0$9;
 					}
 				default:
-					if (_n0.b.$ === 'Redirect') {
+					if (!_n0.b.$) {
 						var session = _n0.a.a;
 						return _Utils_Tuple2(
 							author$project$Main$Redirect(session),
@@ -7968,7 +7954,7 @@ var author$project$Main$update = F2(
 		}
 		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 	});
-var author$project$Main$Ignored = {$: 'Ignored'};
+var author$project$Main$Ignored = {$: 0};
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$img = _VirtualDom_node('img');
@@ -8037,12 +8023,12 @@ var surprisetalk$elm_bulma$Bulma$Elements$content = function (size) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$content,
 				function () {
-				switch (size.$) {
-					case 'Small':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-					case 'Standard':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Medium':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
@@ -8062,44 +8048,44 @@ var surprisetalk$elm_bulma$Bulma$Layout$footer = A2(
 	'footer',
 	_List_fromArray(
 		[surprisetalk$elm_bulma$Bulma$Classes$footer]));
-var surprisetalk$elm_bulma$Bulma$Modifiers$Standard = {$: 'Standard'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$BlackLight = {$: 'BlackLight'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium = {$: 'Medium'};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Standard = 1;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$BlackLight = 1;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium = 4;
 var surprisetalk$elm_bulma$Bulma$Classes$hasTextCentered = elm$html$Html$Attributes$class('has-text-centered');
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered = surprisetalk$elm_bulma$Bulma$Classes$hasTextCentered;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textColor = function (color) {
 	return elm$html$Html$Attributes$class(
 		function () {
-			switch (color.$) {
-				case 'Black':
+			switch (color) {
+				case 0:
 					return 'has-text-black';
-				case 'BlackLight':
+				case 1:
 					return 'has-text-black-bis';
-				case 'BlackLighter':
+				case 2:
 					return 'has-text-black-ter';
-				case 'GreyDarker':
+				case 3:
 					return 'has-text-grey-darker';
-				case 'GreyDark':
+				case 4:
 					return 'has-text-grey-dark';
-				case 'Grey':
+				case 5:
 					return 'has-text-grey';
-				case 'GreyLight':
+				case 6:
 					return 'has-text-grey-light';
-				case 'GreyLighter':
+				case 7:
 					return 'has-text-grey-lighter';
-				case 'WhiteDarker':
+				case 8:
 					return 'has-text-white-bis';
-				case 'WhiteDark':
+				case 9:
 					return 'has-text-white-ter';
-				case 'White':
+				case 10:
 					return 'has-text-white';
-				case 'Primary':
+				case 11:
 					return 'has-text-primary';
-				case 'Info':
+				case 12:
 					return 'has-text-info';
-				case 'Success':
+				case 13:
 					return 'has-text-success';
-				case 'Warning':
+				case 14:
 					return 'has-text-warning';
 				default:
 					return 'has-text-danger';
@@ -8114,18 +8100,18 @@ var surprisetalk$elm_bulma$Bulma$Classes$isSize5 = elm$html$Html$Attributes$clas
 var surprisetalk$elm_bulma$Bulma$Classes$isSize6 = elm$html$Html$Attributes$class('is-size-6');
 var surprisetalk$elm_bulma$Bulma$Classes$isSize7 = elm$html$Html$Attributes$class('is-size-7');
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize = function (ts) {
-	switch (ts.$) {
-		case 'Largest':
+	switch (ts) {
+		case 0:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize1;
-		case 'EvenLarger':
+		case 1:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize2;
-		case 'Larger':
+		case 2:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize3;
-		case 'Large':
+		case 3:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize4;
-		case 'Medium':
+		case 4:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize5;
-		case 'Standard':
+		case 5:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize6;
 		default:
 			return surprisetalk$elm_bulma$Bulma$Classes$isSize7;
@@ -8182,8 +8168,8 @@ var author$project$Page$viewFooter = function () {
 				elm$html$Html$span,
 				_List_fromArray(
 					[
-						surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium),
-						surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textColor(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$BlackLight),
+						surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(4),
+						surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textColor(1),
 						A2(elm$html$Html$Attributes$style, 'font-family', '\'Gugi\', cursive')
 					]),
 				_List_fromArray(
@@ -8232,7 +8218,7 @@ var author$project$Page$viewFooter = function () {
 					[
 						A3(
 						surprisetalk$elm_bulma$Bulma$Elements$content,
-						surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+						1,
 						_List_fromArray(
 							[surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered]),
 						_List_fromArray(
@@ -8240,7 +8226,7 @@ var author$project$Page$viewFooter = function () {
 					]))
 			]));
 }();
-var surprisetalk$elm_bulma$Bulma$Elements$H1 = {$: 'H1'};
+var surprisetalk$elm_bulma$Bulma$Elements$H1 = 0;
 var surprisetalk$elm_bulma$Bulma$Classes$is1 = elm$html$Html$Attributes$class('is-1');
 var surprisetalk$elm_bulma$Bulma$Classes$is2 = elm$html$Html$Attributes$class('is-2');
 var surprisetalk$elm_bulma$Bulma$Classes$is3 = elm$html$Html$Attributes$class('is-3');
@@ -8252,16 +8238,16 @@ var surprisetalk$elm_bulma$Bulma$Elements$title = function (size) {
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		function () {
-			switch (size.$) {
-				case 'H1':
+			switch (size) {
+				case 0:
 					return 'h1';
-				case 'H2':
+				case 1:
 					return 'h2';
-				case 'H3':
+				case 2:
 					return 'h3';
-				case 'H4':
+				case 3:
 					return 'h4';
-				case 'H5':
+				case 4:
 					return 'h5';
 				default:
 					return 'h6';
@@ -8271,16 +8257,16 @@ var surprisetalk$elm_bulma$Bulma$Elements$title = function (size) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$title,
 				function () {
-				switch (size.$) {
-					case 'H1':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$is1;
-					case 'H2':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$is2;
-					case 'H3':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$is3;
-					case 'H4':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$is4;
-					case 'H5':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$is5;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$is6;
@@ -8302,9 +8288,9 @@ var surprisetalk$elm_bulma$Bulma$Classes$isSuccess = elm$html$Html$Attributes$cl
 var surprisetalk$elm_bulma$Bulma$Classes$isWarning = elm$html$Html$Attributes$class('is-warning');
 var surprisetalk$elm_bulma$Bulma$Classes$isWhite = elm$html$Html$Attributes$class('is-white');
 var surprisetalk$elm_bulma$Bulma$Layout$hero = function (_n0) {
-	var bold = _n0.bold;
-	var size = _n0.size;
-	var color = _n0.color;
+	var bold = _n0.aj;
+	var size = _n0.q;
+	var color = _n0.b_;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		'section',
@@ -8319,38 +8305,38 @@ var surprisetalk$elm_bulma$Bulma$Layout$hero = function (_n0) {
 				}
 			}(),
 				function () {
-				switch (size.$) {
-					case 'Small':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Standard':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
-					case 'Medium':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isFullHeight;
 				}
 			}(),
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-					case 'Danger':
+					case 10:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -8364,9 +8350,9 @@ var surprisetalk$elm_bulma$Bulma$Layout$heroBody = A2(
 	'div',
 	_List_fromArray(
 		[surprisetalk$elm_bulma$Bulma$Classes$heroBody]));
-var surprisetalk$elm_bulma$Bulma$Modifiers$Default = {$: 'Default'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Small = {$: 'Small'};
-var surprisetalk$elm_bulma$Bulma$Layout$heroModifiers = {bold: false, color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, size: surprisetalk$elm_bulma$Bulma$Modifiers$Small};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Default = 0;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Small = 0;
+var surprisetalk$elm_bulma$Bulma$Layout$heroModifiers = {aj: false, b_: 0, q: 0};
 var author$project$Page$viewHero = function (title) {
 	return A3(
 		surprisetalk$elm_bulma$Bulma$Layout$hero,
@@ -8386,7 +8372,7 @@ var author$project$Page$viewHero = function (title) {
 							[
 								A3(
 								surprisetalk$elm_bulma$Bulma$Elements$title,
-								surprisetalk$elm_bulma$Bulma$Elements$H1,
+								0,
 								_List_fromArray(
 									[
 										A2(elm$html$Html$Attributes$style, 'border-left', 'solid 7px burlywood'),
@@ -8404,7 +8390,7 @@ var author$project$Page$alwaysStop = function (msg) {
 	return _Utils_Tuple2(msg, true);
 };
 var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 'MayStopPropagation', a: a};
+	return {$: 1, a: a};
 };
 var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var elm$html$Html$Events$stopPropagationOn = F2(
@@ -8431,8 +8417,8 @@ var elm$html$Html$i = _VirtualDom_node('i');
 var surprisetalk$elm_bulma$Bulma$Classes$isTransparent = elm$html$Html$Attributes$class('is-transparent');
 var surprisetalk$elm_bulma$Bulma$Classes$navbar = elm$html$Html$Attributes$class('navbar');
 var surprisetalk$elm_bulma$Bulma$Components$navbar = function (_n0) {
-	var color = _n0.color;
-	var transparent = _n0.transparent;
+	var color = _n0.b_;
+	var transparent = _n0.aM;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		'nav',
@@ -8447,26 +8433,26 @@ var surprisetalk$elm_bulma$Bulma$Components$navbar = function (_n0) {
 				}
 			}(),
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Link':
+					case 6:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
@@ -8481,7 +8467,7 @@ var surprisetalk$elm_bulma$Bulma$Components$fixedNavbar = F2(
 			surprisetalk$elm_bulma$Bulma$Components$navbar(mods),
 			elm$core$List$cons(
 				function () {
-					if (dir.$ === 'Top') {
+					if (!dir) {
 						return elm$html$Html$Attributes$class('is-fixed-top');
 					} else {
 						return elm$html$Html$Attributes$class('is-fixed-bottom');
@@ -8553,7 +8539,7 @@ var surprisetalk$elm_bulma$Bulma$Components$navbarMenu = F2(
 				]),
 			attrs);
 	});
-var surprisetalk$elm_bulma$Bulma$Components$navbarModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, transparent: false};
+var surprisetalk$elm_bulma$Bulma$Components$navbarModifiers = {b_: 0, aM: false};
 var surprisetalk$elm_bulma$Bulma$Classes$navbarStart = elm$html$Html$Attributes$class('navbar-start');
 var surprisetalk$elm_bulma$Bulma$Components$navbarStart = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -8587,12 +8573,12 @@ var surprisetalk$elm_bulma$Bulma$Elements$icon = function (size) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$icon,
 				function () {
-				switch (size.$) {
-					case 'Small':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-					case 'Standard':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Medium':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
@@ -8602,18 +8588,18 @@ var surprisetalk$elm_bulma$Bulma$Elements$icon = function (size) {
 };
 var surprisetalk$elm_bulma$Bulma$Elements$button = F3(
 	function (_n0, attrs, htmls) {
-		var disabled = _n0.disabled;
-		var outlined = _n0.outlined;
-		var inverted = _n0.inverted;
-		var rounded = _n0.rounded;
-		var size = _n0.size;
-		var state = _n0.state;
-		var color = _n0.color;
-		var _static = _n0._static;
-		var iconLeft = _n0.iconLeft;
-		var iconRight = _n0.iconRight;
+		var disabled = _n0.ao;
+		var outlined = _n0.aD;
+		var inverted = _n0.aw;
+		var rounded = _n0.aF;
+		var size = _n0.q;
+		var state = _n0.bC;
+		var color = _n0.b_;
+		var _static = _n0.aI;
+		var iconLeft = _n0.au;
+		var iconRight = _n0.av;
 		var iconRight_ = function () {
-			if (iconRight.$ === 'Just') {
+			if (!iconRight.$) {
 				var _n13 = iconRight.a;
 				var size_ = _n13.a;
 				var attrs_ = _n13.b;
@@ -8632,7 +8618,7 @@ var surprisetalk$elm_bulma$Bulma$Elements$button = F3(
 			}
 		}();
 		var iconLeft_ = function () {
-			if (iconLeft.$ === 'Just') {
+			if (!iconLeft.$) {
 				var _n11 = iconLeft.a;
 				var size_ = _n11.a;
 				var attrs_ = _n11.b;
@@ -8701,59 +8687,59 @@ var surprisetalk$elm_bulma$Bulma$Elements$button = F3(
 					}
 				}(),
 					function () {
-					if (color.$ === 'Default') {
+					if (!color) {
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
 					} else {
 						return surprisetalk$elm_bulma$Bulma$Classes$isSelected;
 					}
 				}(),
 					function () {
-					switch (color.$) {
-						case 'Default':
+					switch (color) {
+						case 0:
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'White':
+						case 1:
 							return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-						case 'Light':
+						case 2:
 							return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-						case 'Dark':
+						case 3:
 							return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-						case 'Black':
+						case 4:
 							return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-						case 'Primary':
+						case 5:
 							return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-						case 'Link':
+						case 6:
 							return surprisetalk$elm_bulma$Bulma$Classes$isLink;
-						case 'Info':
+						case 7:
 							return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-						case 'Success':
+						case 8:
 							return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-						case 'Warning':
+						case 9:
 							return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
 						default:
 							return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 					}
 				}(),
 					function () {
-					switch (size.$) {
-						case 'Small':
+					switch (size) {
+						case 0:
 							return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-						case 'Standard':
+						case 1:
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Medium':
+						case 2:
 							return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 						default:
 							return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 					}
 				}(),
 					function () {
-					switch (state.$) {
-						case 'Blur':
+					switch (state) {
+						case 0:
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Hover':
+						case 1:
 							return surprisetalk$elm_bulma$Bulma$Classes$isHovered;
-						case 'Focus':
+						case 2:
 							return surprisetalk$elm_bulma$Bulma$Classes$isFocused;
-						case 'Active':
+						case 3:
 							return surprisetalk$elm_bulma$Bulma$Classes$isActive;
 						default:
 							return surprisetalk$elm_bulma$Bulma$Classes$isLoading;
@@ -8763,8 +8749,8 @@ var surprisetalk$elm_bulma$Bulma$Elements$button = F3(
 			attrs,
 			htmls_);
 	});
-var surprisetalk$elm_bulma$Bulma$Modifiers$Blur = {$: 'Blur'};
-var surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, disabled: false, iconLeft: elm$core$Maybe$Nothing, iconRight: elm$core$Maybe$Nothing, inverted: false, outlined: false, rounded: false, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard, state: surprisetalk$elm_bulma$Bulma$Modifiers$Blur, _static: false};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Blur = 0;
+var surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers = {b_: 0, ao: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, aw: false, aD: false, aF: false, q: 1, bC: 0, aI: false};
 var surprisetalk$elm_bulma$Bulma$Classes$field = elm$html$Html$Attributes$class('field');
 var surprisetalk$elm_bulma$Bulma$Classes$isGrouped = elm$html$Html$Attributes$class('is-grouped');
 var surprisetalk$elm_bulma$Bulma$Classes$isGroupedCentered = elm$html$Html$Attributes$class('is-grouped-centered');
@@ -8778,10 +8764,10 @@ var surprisetalk$elm_bulma$Bulma$Form$fields = function (alignment) {
 				surprisetalk$elm_bulma$Bulma$Classes$field,
 				surprisetalk$elm_bulma$Bulma$Classes$isGrouped,
 				function () {
-				switch (alignment.$) {
-					case 'Left':
+				switch (alignment) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Centered':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isGroupedCentered;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isGroupedRight;
@@ -8789,20 +8775,20 @@ var surprisetalk$elm_bulma$Bulma$Form$fields = function (alignment) {
 			}()
 			]));
 };
-var surprisetalk$elm_bulma$Bulma$Modifiers$Dark = {$: 'Dark'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Left = {$: 'Left'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Top = {$: 'Top'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Warning = {$: 'Warning'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Bold = {$: 'Bold'};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Dark = 3;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Left = 0;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Top = 0;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Warning = 9;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Bold = 3;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textWeight = function (weight) {
 	return elm$html$Html$Attributes$class(
 		function () {
-			switch (weight.$) {
-				case 'Light':
+			switch (weight) {
+				case 0:
 					return 'has-text-weight-light';
-				case 'Normal':
+				case 1:
 					return 'has-text-weight-normal';
-				case 'Semibold':
+				case 2:
 					return 'has-text-weight-semibold';
 				default:
 					return 'has-text-weight-bold';
@@ -8917,8 +8903,8 @@ var author$project$Page$viewNavbar = F3(
 					_List_fromArray(
 						[
 							author$project$Route$href(author$project$Route$Dashboard),
-							surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium),
-							surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textColor(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$BlackLight),
+							surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(4),
+							surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textColor(1),
 							A2(elm$html$Html$Attributes$style, 'font-family', '\'Gugi\', cursive')
 						]),
 					_List_fromArray(
@@ -8931,7 +8917,7 @@ var author$project$Page$viewNavbar = F3(
 			function (iconName, color, caption) {
 				var icon = A3(
 					surprisetalk$elm_bulma$Bulma$Elements$icon,
-					surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+					1,
 					_List_Nil,
 					_List_fromArray(
 						[
@@ -8947,13 +8933,13 @@ var author$project$Page$viewNavbar = F3(
 					function (x) {
 						return _Utils_update(
 							x,
-							{color: color});
+							{b_: color});
 					}(surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers));
 				return A2(
 					button,
 					_List_fromArray(
 						[
-							surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textWeight(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Bold)
+							surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textWeight(3)
 						]),
 					_List_fromArray(
 						[
@@ -8969,14 +8955,14 @@ var author$project$Page$viewNavbar = F3(
 			});
 		var alternateButton = function () {
 			var _n0 = function () {
-				if (maybeViewer.$ === 'Nothing') {
+				if (maybeViewer.$ === 1) {
 					return _Utils_Tuple2(
 						author$project$Route$Login(elm$core$Maybe$Nothing),
-						A3(iconButton, 'fas fa-sign-in-alt', surprisetalk$elm_bulma$Bulma$Modifiers$Warning, 'Log in'));
+						A3(iconButton, 'fas fa-sign-in-alt', 9, 'Log in'));
 				} else {
 					return _Utils_Tuple2(
 						author$project$Route$Logout,
-						A3(iconButton, 'fas fa-sign-out-alt', surprisetalk$elm_bulma$Bulma$Modifiers$Dark, 'Log out'));
+						A3(iconButton, 'fas fa-sign-out-alt', 3, 'Log out'));
 				}
 			}();
 			var route = _n0.a;
@@ -9004,7 +8990,7 @@ var author$project$Page$viewNavbar = F3(
 						[
 							A3(
 							surprisetalk$elm_bulma$Bulma$Form$fields,
-							surprisetalk$elm_bulma$Bulma$Modifiers$Left,
+							0,
 							_List_Nil,
 							_List_fromArray(
 								[alternateButton]))
@@ -9018,7 +9004,7 @@ var author$project$Page$viewNavbar = F3(
 				[navbarStart, navbarEnd]));
 		return A4(
 			surprisetalk$elm_bulma$Bulma$Components$fixedNavbar,
-			surprisetalk$elm_bulma$Bulma$Modifiers$Top,
+			0,
 			modi,
 			_List_fromArray(
 				[
@@ -9029,30 +9015,30 @@ var author$project$Page$viewNavbar = F3(
 	});
 var author$project$Page$view = F4(
 	function (isMenuOpen, toggle, maybeViewer, _n0) {
-		var title = _n0.title;
-		var content = _n0.content;
+		var title = _n0.bG;
+		var content = _n0.b$;
 		return {
-			body: _List_fromArray(
+			f: _List_fromArray(
 				[
 					A3(author$project$Page$viewNavbar, isMenuOpen, toggle, maybeViewer),
 					author$project$Page$viewHero(title),
 					content,
 					author$project$Page$viewFooter
 				]),
-			title: title + ' - TRACTOR'
+			bG: title + ' - TRACTOR'
 		};
 	});
-var author$project$Page$ApiDocument$ToggleMenuOpen = {$: 'ToggleMenuOpen'};
+var author$project$Page$ApiDocument$ToggleMenuOpen = {$: 2};
 var elm_explorations$markdown$Markdown$defaultOptions = {
-	defaultHighlighting: elm$core$Maybe$Nothing,
-	githubFlavored: elm$core$Maybe$Just(
-		{breaks: false, tables: false}),
-	sanitize: true,
-	smartypants: false
+	a$: elm$core$Maybe$Nothing,
+	a9: elm$core$Maybe$Just(
+		{bW: false, cq: false}),
+	bx: true,
+	bA: false
 };
 var elm_explorations$markdown$Markdown$toHtmlWith = _Markdown_toHtml;
 var elm_explorations$markdown$Markdown$toHtml = elm_explorations$markdown$Markdown$toHtmlWith(elm_explorations$markdown$Markdown$defaultOptions);
-var surprisetalk$elm_bulma$Bulma$Layout$NotSpaced = {$: 'NotSpaced'};
+var surprisetalk$elm_bulma$Bulma$Layout$NotSpaced = 0;
 var surprisetalk$elm_bulma$Bulma$Classes$section = elm$html$Html$Attributes$class('section');
 var surprisetalk$elm_bulma$Bulma$Layout$section = function (spacing) {
 	return A2(
@@ -9062,10 +9048,10 @@ var surprisetalk$elm_bulma$Bulma$Layout$section = function (spacing) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$section,
 				function () {
-				switch (spacing.$) {
-					case 'NotSpaced':
+				switch (spacing) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Spaced':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
@@ -9075,15 +9061,15 @@ var surprisetalk$elm_bulma$Bulma$Layout$section = function (spacing) {
 };
 var author$project$Page$ApiDocument$view = function (model) {
 	return {
-		content: function () {
-			var _n0 = model.webApiDocument;
-			if (_n0.$ === 'Nothing') {
+		b$: function () {
+			var _n0 = model.ag;
+			if (_n0.$ === 1) {
 				return A2(elm$html$Html$p, _List_Nil, _List_Nil);
 			} else {
 				var doc = _n0.a;
 				return A3(
 					surprisetalk$elm_bulma$Bulma$Layout$section,
-					surprisetalk$elm_bulma$Bulma$Layout$NotSpaced,
+					0,
 					_List_Nil,
 					_List_fromArray(
 						[
@@ -9103,16 +9089,16 @@ var author$project$Page$ApiDocument$view = function (model) {
 						]));
 			}
 		}(),
-		title: 'API document'
+		bG: 'API document'
 	};
 };
 var author$project$Page$Blank$view = {
-	content: elm$html$Html$text(''),
-	title: ''
+	b$: elm$html$Html$text(''),
+	bG: ''
 };
-var author$project$Page$Dashboard$ToggleMenuOpen = {$: 'ToggleMenuOpen'};
+var author$project$Page$Dashboard$ToggleMenuOpen = {$: 2};
 var author$project$Session$viewer = function (session) {
-	if (session.$ === 'LoggedIn') {
+	if (!session.$) {
 		var val = session.b;
 		return elm$core$Maybe$Just(val);
 	} else {
@@ -9120,7 +9106,7 @@ var author$project$Session$viewer = function (session) {
 	}
 };
 var author$project$Username$toString = function (_n0) {
-	var username = _n0.a;
+	var username = _n0;
 	return username;
 };
 var author$project$Api$username = function (_n0) {
@@ -9128,12 +9114,12 @@ var author$project$Api$username = function (_n0) {
 	return val;
 };
 var author$project$Viewer$username = function (_n0) {
-	var val = _n0.a;
+	var val = _n0;
 	return author$project$Api$username(val);
 };
 var elm$core$Maybe$map = F2(
 	function (f, maybe) {
-		if (maybe.$ === 'Just') {
+		if (!maybe.$) {
 			var value = maybe.a;
 			return elm$core$Maybe$Just(
 				f(value));
@@ -9150,26 +9136,26 @@ var surprisetalk$elm_bulma$Bulma$Elements$notification = function (color) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$notification,
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-					case 'Danger':
+					case 10:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -9187,12 +9173,12 @@ var author$project$Page$Dashboard$viewGreetings = function (model) {
 			A2(
 				elm$core$Maybe$map,
 				author$project$Viewer$username,
-				author$project$Session$viewer(model.session))));
+				author$project$Session$viewer(model.ac))));
 	var message = A2(
 		elm$html$Html$p,
 		_List_fromArray(
 			[
-				surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium)
+				surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(4)
 			]),
 		_List_fromArray(
 			[
@@ -9211,7 +9197,7 @@ var author$project$Page$Dashboard$viewGreetings = function (model) {
 			]));
 	return A3(
 		surprisetalk$elm_bulma$Bulma$Elements$notification,
-		surprisetalk$elm_bulma$Bulma$Modifiers$Dark,
+		3,
 		_List_fromArray(
 			[surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered]),
 		_List_fromArray(
@@ -9230,9 +9216,9 @@ var surprisetalk$elm_bulma$Bulma$Elements$multitag = A2(
 		[surprisetalk$elm_bulma$Bulma$Classes$tags, surprisetalk$elm_bulma$Bulma$Classes$hasAddons]));
 var surprisetalk$elm_bulma$Bulma$Classes$tag = elm$html$Html$Attributes$class('tag');
 var surprisetalk$elm_bulma$Bulma$Elements$tag = function (_n0) {
-	var size = _n0.size;
-	var color = _n0.color;
-	var isLink = _n0.isLink;
+	var size = _n0.q;
+	var color = _n0.b_;
+	var isLink = _n0.ax;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		isLink ? 'a' : 'span',
@@ -9240,38 +9226,38 @@ var surprisetalk$elm_bulma$Bulma$Elements$tag = function (_n0) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$tag,
 				function () {
-				switch (size.$) {
-					case 'Small':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Standard':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Medium':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 				}
 			}(),
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-					case 'Danger':
+					case 10:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -9279,7 +9265,7 @@ var surprisetalk$elm_bulma$Bulma$Elements$tag = function (_n0) {
 			}()
 			]));
 };
-var surprisetalk$elm_bulma$Bulma$Elements$tagModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, isLink: false, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard};
+var surprisetalk$elm_bulma$Bulma$Elements$tagModifiers = {b_: 0, ax: false, q: 1};
 var author$project$Page$Dashboard$badge = F2(
 	function (colors, texts) {
 		var tag = F2(
@@ -9288,7 +9274,7 @@ var author$project$Page$Dashboard$badge = F2(
 					surprisetalk$elm_bulma$Bulma$Elements$tag,
 					_Utils_update(
 						surprisetalk$elm_bulma$Bulma$Elements$tagModifiers,
-						{color: col}),
+						{b_: col}),
 					_List_Nil,
 					_List_fromArray(
 						[
@@ -9306,7 +9292,7 @@ var author$project$Page$Dashboard$badge = F2(
 	});
 var elm$core$Result$withDefault = F2(
 	function (def, result) {
-		if (result.$ === 'Ok') {
+		if (!result.$) {
 			var a = result.a;
 			return a;
 		} else {
@@ -9319,10 +9305,10 @@ var surprisetalk$elm_bulma$Bulma$Classes$hasIconsRight = elm$html$Html$Attribute
 var surprisetalk$elm_bulma$Bulma$Classes$isExpanded = elm$html$Html$Attributes$class('is-expanded');
 var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 	function (_n0, attrs, htmls) {
-		var loading = _n0.loading;
-		var expanded = _n0.expanded;
-		var iconLeft = _n0.iconLeft;
-		var iconRight = _n0.iconRight;
+		var loading = _n0.B;
+		var expanded = _n0.h;
+		var iconLeft = _n0.au;
+		var iconRight = _n0.av;
 		return A4(
 			surprisetalk$elm_bulma$Helpers$node,
 			'p',
@@ -9330,7 +9316,7 @@ var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 				[
 					surprisetalk$elm_bulma$Bulma$Classes$control,
 					function () {
-					if (loading.$ === 'Just') {
+					if (!loading.$) {
 						return surprisetalk$elm_bulma$Bulma$Classes$isLoading;
 					} else {
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
@@ -9339,15 +9325,15 @@ var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 					function () {
 					_n2$3:
 					while (true) {
-						if (loading.$ === 'Just') {
-							switch (loading.a.$) {
-								case 'Small':
+						if (!loading.$) {
+							switch (loading.a) {
+								case 0:
 									var _n3 = loading.a;
 									return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-								case 'Medium':
+								case 2:
 									var _n4 = loading.a;
 									return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
-								case 'Large':
+								case 3:
 									var _n5 = loading.a;
 									return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 								default:
@@ -9367,14 +9353,14 @@ var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 					}
 				}(),
 					function () {
-					if (iconLeft.$ === 'Just') {
+					if (!iconLeft.$) {
 						return surprisetalk$elm_bulma$Bulma$Classes$hasIconsLeft;
 					} else {
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
 					}
 				}(),
 					function () {
-					if (iconRight.$ === 'Just') {
+					if (!iconRight.$) {
 						return surprisetalk$elm_bulma$Bulma$Classes$hasIconsRight;
 					} else {
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
@@ -9434,19 +9420,19 @@ var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 								iconRight)),
 						_List_Nil))));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlModifiers = {expanded: false, iconLeft: elm$core$Maybe$Nothing, iconRight: elm$core$Maybe$Nothing, loading: elm$core$Maybe$Nothing};
+var surprisetalk$elm_bulma$Bulma$Form$controlModifiers = {h: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, B: elm$core$Maybe$Nothing};
 var surprisetalk$elm_bulma$Bulma$Classes$isGroupedMultiline = elm$html$Html$Attributes$class('is-grouped-multiline');
 var surprisetalk$elm_bulma$Bulma$Form$multilineFields = A2(
 	surprisetalk$elm_bulma$Helpers$node,
 	'div',
 	_List_fromArray(
 		[surprisetalk$elm_bulma$Bulma$Classes$field, surprisetalk$elm_bulma$Bulma$Classes$isGrouped, surprisetalk$elm_bulma$Bulma$Classes$isGroupedMultiline]));
-var surprisetalk$elm_bulma$Bulma$Modifiers$Danger = {$: 'Danger'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Info = {$: 'Info'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Success = {$: 'Success'};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Danger = 10;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Info = 7;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Success = 8;
 var author$project$Page$Dashboard$viewStatusLine = function (model) {
 	var maybeToList = function (m) {
-		if (m.$ === 'Nothing') {
+		if (m.$ === 1) {
 			return _List_Nil;
 		} else {
 			var x = m.a;
@@ -9455,22 +9441,22 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 		}
 	};
 	var infoBadge = author$project$Page$Dashboard$badge(
-		_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, surprisetalk$elm_bulma$Bulma$Modifiers$Info));
+		_Utils_Tuple2(3, 7));
 	var osBadge = function (v) {
 		return infoBadge(
-			_Utils_Tuple2('OS', v.buildOS));
+			_Utils_Tuple2('OS', v.aS));
 	};
 	var versionBadge = function (v) {
 		return infoBadge(
-			_Utils_Tuple2('Version', v.version));
+			_Utils_Tuple2('Version', v.bO));
 	};
 	var gitReposBadge = function (v) {
 		return infoBadge(
-			_Utils_Tuple2('Repos', v.gitStatus));
+			_Utils_Tuple2('Repos', v.a8));
 	};
 	var gitCommitsBadge = function (v) {
 		return infoBadge(
-			_Utils_Tuple2('Commits', v.gitCommitCount));
+			_Utils_Tuple2('Commits', v.a5));
 	};
 	var control = A2(surprisetalk$elm_bulma$Bulma$Form$control, surprisetalk$elm_bulma$Bulma$Form$controlModifiers, _List_Nil);
 	var failureBadge = control(
@@ -9478,7 +9464,7 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 			[
 				A2(
 				author$project$Page$Dashboard$badge,
-				_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, surprisetalk$elm_bulma$Bulma$Modifiers$Danger),
+				_Utils_Tuple2(3, 10),
 				_Utils_Tuple2('System', 'failure'))
 			]));
 	var greenBadge = control(
@@ -9486,7 +9472,7 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 			[
 				A2(
 				author$project$Page$Dashboard$badge,
-				_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, surprisetalk$elm_bulma$Bulma$Modifiers$Success),
+				_Utils_Tuple2(3, 8),
 				_Utils_Tuple2('System', 'green'))
 			]));
 	var haltedBadge = control(
@@ -9494,7 +9480,7 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 			[
 				A2(
 				author$project$Page$Dashboard$badge,
-				_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, surprisetalk$elm_bulma$Bulma$Modifiers$Danger),
+				_Utils_Tuple2(3, 10),
 				_Utils_Tuple2('System', 'halted'))
 			]));
 	var warningBadge = control(
@@ -9502,7 +9488,7 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 			[
 				A2(
 				author$project$Page$Dashboard$badge,
-				_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, surprisetalk$elm_bulma$Bulma$Modifiers$Warning),
+				_Utils_Tuple2(3, 9),
 				_Utils_Tuple2('System', 'warning'))
 			]));
 	var healthBadge = A2(
@@ -9510,7 +9496,7 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 		elm$core$Result$withDefault(haltedBadge),
 		elm$core$Result$map(
 			function (x) {
-				var _n1 = x.system;
+				var _n1 = x.cp;
 				switch (_n1) {
 					case 'Green':
 						return greenBadge;
@@ -9522,10 +9508,10 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 			}));
 	var archBadge = function (v) {
 		return infoBadge(
-			_Utils_Tuple2('Arch', v.buildArch));
+			_Utils_Tuple2('Arch', v.aR));
 	};
 	var vtags = function (maybeSV) {
-		if (maybeSV.$ === 'Nothing') {
+		if (maybeSV.$ === 1) {
 			return _List_Nil;
 		} else {
 			var sv = maybeSV.a;
@@ -9568,8 +9554,8 @@ var author$project$Page$Dashboard$viewStatusLine = function (model) {
 					A2(
 					elm$core$List$map,
 					healthBadge,
-					maybeToList(model.systemHealth)),
-					vtags(model.systemVersion)
+					maybeToList(model.ad)),
+					vtags(model.ae)
 				])));
 };
 var author$project$Page$Dashboard$viewDashboard = function (model) {
@@ -9581,9 +9567,9 @@ var author$project$Page$Dashboard$viewDashboard = function (model) {
 };
 var author$project$Page$Dashboard$view = function (model) {
 	return {
-		content: A3(
+		b$: A3(
 			surprisetalk$elm_bulma$Bulma$Layout$section,
-			surprisetalk$elm_bulma$Bulma$Layout$NotSpaced,
+			0,
 			_List_Nil,
 			_List_fromArray(
 				[
@@ -9592,75 +9578,133 @@ var author$project$Page$Dashboard$view = function (model) {
 					_List_Nil,
 					author$project$Page$Dashboard$viewDashboard(model))
 				])),
-		title: 'Dashboard'
+		bG: 'Dashboard'
 	};
 };
-var author$project$Page$Login$ToggleMenuOpen = {$: 'ToggleMenuOpen'};
-var elm$core$List$isEmpty = function (xs) {
-	if (!xs.b) {
-		return true;
-	} else {
-		return false;
-	}
-};
-var elm$html$Html$button = _VirtualDom_node('button');
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var elm$html$Html$Events$onClick = function (msg) {
+var author$project$Page$Login$ToggleMenuOpen = {$: 1};
+var surprisetalk$elm_bulma$Bulma$Classes$is10 = elm$html$Html$Attributes$class('is-10');
+var surprisetalk$elm_bulma$Bulma$Classes$is11 = elm$html$Html$Attributes$class('is-11');
+var surprisetalk$elm_bulma$Bulma$Classes$is7 = elm$html$Html$Attributes$class('is-7');
+var surprisetalk$elm_bulma$Bulma$Classes$is8 = elm$html$Html$Attributes$class('is-8');
+var surprisetalk$elm_bulma$Bulma$Classes$is9 = elm$html$Html$Attributes$class('is-9');
+var surprisetalk$elm_bulma$Bulma$Classes$isAncestor = elm$html$Html$Attributes$class('is-ancestor');
+var surprisetalk$elm_bulma$Bulma$Classes$tile = elm$html$Html$Attributes$class('tile');
+var surprisetalk$elm_bulma$Bulma$Layout$tileAncestor = function (width) {
 	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
+		surprisetalk$elm_bulma$Helpers$node,
+		'div',
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Classes$tile,
+				surprisetalk$elm_bulma$Bulma$Classes$isAncestor,
+				function () {
+				switch (width) {
+					case 0:
+						return surprisetalk$elm_bulma$Bulma$Classes$none;
+					case 1:
+						return surprisetalk$elm_bulma$Bulma$Classes$is1;
+					case 2:
+						return surprisetalk$elm_bulma$Bulma$Classes$is2;
+					case 3:
+						return surprisetalk$elm_bulma$Bulma$Classes$is3;
+					case 4:
+						return surprisetalk$elm_bulma$Bulma$Classes$is4;
+					case 5:
+						return surprisetalk$elm_bulma$Bulma$Classes$is5;
+					case 6:
+						return surprisetalk$elm_bulma$Bulma$Classes$is6;
+					case 7:
+						return surprisetalk$elm_bulma$Bulma$Classes$is7;
+					case 8:
+						return surprisetalk$elm_bulma$Bulma$Classes$is8;
+					case 9:
+						return surprisetalk$elm_bulma$Bulma$Classes$is9;
+					case 10:
+						return surprisetalk$elm_bulma$Bulma$Classes$is10;
+					default:
+						return surprisetalk$elm_bulma$Bulma$Classes$is11;
+				}
+			}()
+			]));
 };
-var author$project$Page$viewErrors = F2(
-	function (dismissErrors, errors) {
-		return elm$core$List$isEmpty(errors) ? elm$html$Html$text('') : A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					elm$html$Html$Attributes$class('error-messages'),
-					A2(elm$html$Html$Attributes$style, 'position', 'fixed'),
-					A2(elm$html$Html$Attributes$style, 'top', '0'),
-					A2(elm$html$Html$Attributes$style, 'background', 'rgb(250, 250, 250)'),
-					A2(elm$html$Html$Attributes$style, 'padding', '20px'),
-					A2(elm$html$Html$Attributes$style, 'border', '1px solid')
-				]),
-			_Utils_ap(
-				A2(
-					elm$core$List$map,
-					function (error) {
-						return A2(
-							elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									elm$html$Html$text(error)
-								]));
-					},
-					errors),
+var surprisetalk$elm_bulma$Bulma$Classes$isVertical = elm$html$Html$Attributes$class('is-vertical');
+var surprisetalk$elm_bulma$Bulma$Layout$verticalTile = function (width) {
+	return A2(
+		surprisetalk$elm_bulma$Helpers$node,
+		'div',
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Classes$tile,
+				surprisetalk$elm_bulma$Bulma$Classes$isVertical,
+				function () {
+				switch (width) {
+					case 0:
+						return surprisetalk$elm_bulma$Bulma$Classes$none;
+					case 1:
+						return surprisetalk$elm_bulma$Bulma$Classes$is1;
+					case 2:
+						return surprisetalk$elm_bulma$Bulma$Classes$is2;
+					case 3:
+						return surprisetalk$elm_bulma$Bulma$Classes$is3;
+					case 4:
+						return surprisetalk$elm_bulma$Bulma$Classes$is4;
+					case 5:
+						return surprisetalk$elm_bulma$Bulma$Classes$is5;
+					case 6:
+						return surprisetalk$elm_bulma$Bulma$Classes$is6;
+					case 7:
+						return surprisetalk$elm_bulma$Bulma$Classes$is7;
+					case 8:
+						return surprisetalk$elm_bulma$Bulma$Classes$is8;
+					case 9:
+						return surprisetalk$elm_bulma$Bulma$Classes$is9;
+					case 10:
+						return surprisetalk$elm_bulma$Bulma$Classes$is10;
+					default:
+						return surprisetalk$elm_bulma$Bulma$Classes$is11;
+				}
+			}()
+			]));
+};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Auto = 0;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Width4 = 4;
+var author$project$Page$viewErrors = function (errors) {
+	var notification = A3(
+		surprisetalk$elm_bulma$Bulma$Elements$notification,
+		10,
+		_List_Nil,
+		A2(
+			elm$core$List$map,
+			function (x) {
+				return A2(
+					elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(x)
+						]));
+			},
+			errors));
+	return A3(
+		surprisetalk$elm_bulma$Bulma$Layout$tileAncestor,
+		0,
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(4),
+				surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered
+			]),
+		_List_fromArray(
+			[
+				A3(surprisetalk$elm_bulma$Bulma$Layout$verticalTile, 0, _List_Nil, _List_Nil),
+				A3(
+				surprisetalk$elm_bulma$Bulma$Layout$verticalTile,
+				4,
+				_List_Nil,
 				_List_fromArray(
-					[
-						A2(
-						elm$html$Html$button,
-						_List_fromArray(
-							[
-								elm$html$Html$Events$onClick(dismissErrors)
-							]),
-						_List_fromArray(
-							[
-								elm$html$Html$text('Ok')
-							]))
-					])));
-	});
-var author$project$Page$Login$NoOp = {$: 'NoOp'};
+					[notification])),
+				A3(surprisetalk$elm_bulma$Bulma$Layout$verticalTile, 0, _List_Nil, _List_Nil)
+			]));
+};
 var elm$url$Url$Builder$toQueryPair = function (_n0) {
 	var key = _n0.a;
 	var value = _n0.b;
@@ -9683,7 +9727,7 @@ var elm$url$Url$Builder$crossOrigin = F3(
 var elm$url$Url$percentEncode = _Url_percentEncode;
 var elm$url$Url$Builder$QueryParameter = F2(
 	function (a, b) {
-		return {$: 'QueryParameter', a: a, b: b};
+		return {$: 0, a: a, b: b};
 	});
 var elm$url$Url$Builder$string = F2(
 	function (key, value) {
@@ -9706,11 +9750,11 @@ var author$project$Page$Login$signInWithSlackButton = function (authClientId) {
 	var modi = function (x) {
 		return _Utils_update(
 			x,
-			{color: surprisetalk$elm_bulma$Bulma$Modifiers$Dark});
+			{b_: 3});
 	}(surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers);
 	var icon = A3(
 		surprisetalk$elm_bulma$Bulma$Elements$icon,
-		surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+		1,
 		_List_Nil,
 		_List_fromArray(
 			[
@@ -9730,7 +9774,7 @@ var author$project$Page$Login$signInWithSlackButton = function (authClientId) {
 		_List_fromArray(
 			[
 				A2(elm$url$Url$Builder$string, 'scope', 'identity.basic'),
-				A2(elm$url$Url$Builder$string, 'client_id', authClientId.clientid),
+				A2(elm$url$Url$Builder$string, 'client_id', authClientId.aW),
 				A2(elm$url$Url$Builder$string, 'state', 'abcdefg')
 			]));
 	return A2(
@@ -9752,7 +9796,7 @@ var author$project$Page$Login$signInWithSlackButton = function (authClientId) {
 						modi,
 						_List_fromArray(
 							[
-								surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium)
+								surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(4)
 							]),
 						_List_fromArray(
 							[
@@ -9786,22 +9830,20 @@ var author$project$Page$Login$viewContents = function (authClientId) {
 };
 var author$project$Page$Login$view = function (model) {
 	var concreteView = function () {
-		var _n0 = model.stage;
+		var _n0 = model.I;
 		switch (_n0.$) {
-			case 'First':
+			case 0:
 				var stage = _n0.a;
 				return A2(
 					elm$core$Maybe$withDefault,
 					_List_fromArray(
 						[
-							A2(
-							author$project$Page$viewErrors,
-							author$project$Page$Login$NoOp,
+							author$project$Page$viewErrors(
 							_List_fromArray(
 								['OAuth Flow ERROR']))
 						]),
-					A2(elm$core$Maybe$map, author$project$Page$Login$viewContents, stage.authClientId));
-			case 'Redirected':
+					A2(elm$core$Maybe$map, author$project$Page$Login$viewContents, stage.ai));
+			case 1:
 				var stage = _n0.a;
 				return _List_fromArray(
 					[
@@ -9811,24 +9853,22 @@ var author$project$Page$Login$view = function (model) {
 				var stage = _n0.a;
 				return _List_fromArray(
 					[
-						A2(
-						author$project$Page$viewErrors,
-						author$project$Page$Login$NoOp,
+						author$project$Page$viewErrors(
 						_List_fromArray(
-							['Auth error', stage.cause]))
+							['Auth error', stage.al]))
 					]);
 		}
 	}();
 	return {
-		content: A3(
+		b$: A3(
 			surprisetalk$elm_bulma$Bulma$Layout$section,
-			surprisetalk$elm_bulma$Bulma$Layout$NotSpaced,
+			0,
 			_List_Nil,
 			_List_fromArray(
 				[
 					A2(surprisetalk$elm_bulma$Bulma$Layout$container, _List_Nil, concreteView)
 				])),
-		title: 'Log in'
+		bG: 'Log in'
 	};
 };
 var elm$html$Html$h1 = _VirtualDom_node('h1');
@@ -9841,7 +9881,7 @@ var elm$html$Html$Attributes$tabindex = function (n) {
 		elm$core$String$fromInt(n));
 };
 var author$project$Page$NotFound$view = {
-	content: A2(
+	b$: A2(
 		elm$html$Html$main_,
 		_List_fromArray(
 			[
@@ -9859,31 +9899,30 @@ var author$project$Page$NotFound$view = {
 						elm$html$Html$text('Not Found')
 					]))
 			])),
-	title: 'Page Not Found'
+	bG: 'Page Not Found'
 };
-var author$project$Page$Upload$ToggleMenuOpen = {$: 'ToggleMenuOpen'};
-var author$project$Page$Upload$NoOp = {$: 'NoOp'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Auto = {$: 'Auto'};
+var author$project$Page$Upload$ToggleMenuOpen = {$: 2};
+var author$project$Page$Upload$NoOp = {$: 0};
 var surprisetalk$elm_bulma$Bulma$Columns$columnModifiers = {
-	offset: surprisetalk$elm_bulma$Bulma$Modifiers$Auto,
-	widths: {
-		desktop: elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto),
-		fullHD: elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto),
-		mobile: elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto),
-		tablet: elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto),
-		widescreen: elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto)
+	cj: 0,
+	bS: {
+		b0: elm$core$Maybe$Just(0),
+		b9: elm$core$Maybe$Just(0),
+		aA: elm$core$Maybe$Just(0),
+		cr: elm$core$Maybe$Just(0),
+		cu: elm$core$Maybe$Just(0)
 	}
 };
 var author$project$Page$Upload$myColumnModifiers = F2(
 	function (offset, width) {
-		var widths = surprisetalk$elm_bulma$Bulma$Columns$columnModifiers.widths;
+		var widths = surprisetalk$elm_bulma$Bulma$Columns$columnModifiers.bS;
 		return _Utils_update(
 			surprisetalk$elm_bulma$Bulma$Columns$columnModifiers,
 			{
-				offset: offset,
-				widths: _Utils_update(
+				cj: offset,
+				bS: _Utils_update(
 					widths,
-					{desktop: width, fullHD: width, tablet: width, widescreen: width})
+					{b0: width, b9: width, cr: width, cu: width})
 			});
 	});
 var surprisetalk$elm_bulma$Bulma$Classes$column = elm$html$Html$Attributes$class('column');
@@ -9959,8 +9998,8 @@ var surprisetalk$elm_bulma$Bulma$Classes$isOffset09 = elm$html$Html$Attributes$c
 var surprisetalk$elm_bulma$Bulma$Classes$isOffset10 = elm$html$Html$Attributes$class('is-offset-10');
 var surprisetalk$elm_bulma$Bulma$Classes$isOffset11 = elm$html$Html$Attributes$class('is-offset-11');
 var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
-	var widths = _n0.widths;
-	var offset = _n0.offset;
+	var widths = _n0.bS;
+	var offset = _n0.cj;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		'div',
@@ -9968,40 +10007,40 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$column,
 				function () {
-				var _n1 = widths.mobile;
-				if (_n1.$ === 'Just') {
-					switch (_n1.a.$) {
-						case 'Auto':
+				var _n1 = widths.aA;
+				if (!_n1.$) {
+					switch (_n1.a) {
+						case 0:
 							var _n2 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Width1':
+						case 1:
 							var _n3 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is01Mobile;
-						case 'Width2':
+						case 2:
 							var _n4 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is02Mobile;
-						case 'Width3':
+						case 3:
 							var _n5 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is03Mobile;
-						case 'Width4':
+						case 4:
 							var _n6 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is04Mobile;
-						case 'Width5':
+						case 5:
 							var _n7 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is05Mobile;
-						case 'Width6':
+						case 6:
 							var _n8 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is06Mobile;
-						case 'Width7':
+						case 7:
 							var _n9 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is07Mobile;
-						case 'Width8':
+						case 8:
 							var _n10 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is08Mobile;
-						case 'Width9':
+						case 9:
 							var _n11 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is09Mobile;
-						case 'Width10':
+						case 10:
 							var _n12 = _n1.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is10Mobile;
 						default:
@@ -10013,40 +10052,40 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 				}
 			}(),
 				function () {
-				var _n14 = widths.tablet;
-				if (_n14.$ === 'Just') {
-					switch (_n14.a.$) {
-						case 'Auto':
+				var _n14 = widths.cr;
+				if (!_n14.$) {
+					switch (_n14.a) {
+						case 0:
 							var _n15 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Width1':
+						case 1:
 							var _n16 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is01Tablet;
-						case 'Width2':
+						case 2:
 							var _n17 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is02Tablet;
-						case 'Width3':
+						case 3:
 							var _n18 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is03Tablet;
-						case 'Width4':
+						case 4:
 							var _n19 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is04Tablet;
-						case 'Width5':
+						case 5:
 							var _n20 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is05Tablet;
-						case 'Width6':
+						case 6:
 							var _n21 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is06Tablet;
-						case 'Width7':
+						case 7:
 							var _n22 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is07Tablet;
-						case 'Width8':
+						case 8:
 							var _n23 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is08Tablet;
-						case 'Width9':
+						case 9:
 							var _n24 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is09Tablet;
-						case 'Width10':
+						case 10:
 							var _n25 = _n14.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is10Tablet;
 						default:
@@ -10058,40 +10097,40 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 				}
 			}(),
 				function () {
-				var _n27 = widths.desktop;
-				if (_n27.$ === 'Just') {
-					switch (_n27.a.$) {
-						case 'Auto':
+				var _n27 = widths.b0;
+				if (!_n27.$) {
+					switch (_n27.a) {
+						case 0:
 							var _n28 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Width1':
+						case 1:
 							var _n29 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is01Desktop;
-						case 'Width2':
+						case 2:
 							var _n30 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is02Desktop;
-						case 'Width3':
+						case 3:
 							var _n31 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is03Desktop;
-						case 'Width4':
+						case 4:
 							var _n32 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is04Desktop;
-						case 'Width5':
+						case 5:
 							var _n33 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is05Desktop;
-						case 'Width6':
+						case 6:
 							var _n34 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is06Desktop;
-						case 'Width7':
+						case 7:
 							var _n35 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is07Desktop;
-						case 'Width8':
+						case 8:
 							var _n36 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is08Desktop;
-						case 'Width9':
+						case 9:
 							var _n37 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is09Desktop;
-						case 'Width10':
+						case 10:
 							var _n38 = _n27.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is10Desktop;
 						default:
@@ -10103,40 +10142,40 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 				}
 			}(),
 				function () {
-				var _n40 = widths.widescreen;
-				if (_n40.$ === 'Just') {
-					switch (_n40.a.$) {
-						case 'Auto':
+				var _n40 = widths.cu;
+				if (!_n40.$) {
+					switch (_n40.a) {
+						case 0:
 							var _n41 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Width1':
+						case 1:
 							var _n42 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is01Widescreen;
-						case 'Width2':
+						case 2:
 							var _n43 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is02Widescreen;
-						case 'Width3':
+						case 3:
 							var _n44 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is03Widescreen;
-						case 'Width4':
+						case 4:
 							var _n45 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is04Widescreen;
-						case 'Width5':
+						case 5:
 							var _n46 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is05Widescreen;
-						case 'Width6':
+						case 6:
 							var _n47 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is06Widescreen;
-						case 'Width7':
+						case 7:
 							var _n48 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is07Widescreen;
-						case 'Width8':
+						case 8:
 							var _n49 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is08Widescreen;
-						case 'Width9':
+						case 9:
 							var _n50 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is09Widescreen;
-						case 'Width10':
+						case 10:
 							var _n51 = _n40.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is10Widescreen;
 						default:
@@ -10148,40 +10187,40 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 				}
 			}(),
 				function () {
-				var _n53 = widths.fullHD;
-				if (_n53.$ === 'Just') {
-					switch (_n53.a.$) {
-						case 'Auto':
+				var _n53 = widths.b9;
+				if (!_n53.$) {
+					switch (_n53.a) {
+						case 0:
 							var _n54 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$none;
-						case 'Width1':
+						case 1:
 							var _n55 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is01FullHD;
-						case 'Width2':
+						case 2:
 							var _n56 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is02FullHD;
-						case 'Width3':
+						case 3:
 							var _n57 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is03FullHD;
-						case 'Width4':
+						case 4:
 							var _n58 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is04FullHD;
-						case 'Width5':
+						case 5:
 							var _n59 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is05FullHD;
-						case 'Width6':
+						case 6:
 							var _n60 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is06FullHD;
-						case 'Width7':
+						case 7:
 							var _n61 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is07FullHD;
-						case 'Width8':
+						case 8:
 							var _n62 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is08FullHD;
-						case 'Width9':
+						case 9:
 							var _n63 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is09FullHD;
-						case 'Width10':
+						case 10:
 							var _n64 = _n53.a;
 							return surprisetalk$elm_bulma$Bulma$Classes$is10FullHD;
 						default:
@@ -10193,28 +10232,28 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 				}
 			}(),
 				function () {
-				switch (offset.$) {
-					case 'Auto':
+				switch (offset) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Width1':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset01;
-					case 'Width2':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset02;
-					case 'Width3':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset03;
-					case 'Width4':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset04;
-					case 'Width5':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset05;
-					case 'Width6':
+					case 6:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset06;
-					case 'Width7':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset07;
-					case 'Width8':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset08;
-					case 'Width9':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset09;
-					case 'Width10':
+					case 10:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset10;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isOffset11;
@@ -10224,18 +10263,16 @@ var surprisetalk$elm_bulma$Bulma$Columns$column = function (_n0) {
 };
 var surprisetalk$elm_bulma$Bulma$Classes$columns = elm$html$Html$Attributes$class('columns');
 var surprisetalk$elm_bulma$Bulma$Classes$is0 = elm$html$Html$Attributes$class('is-0');
-var surprisetalk$elm_bulma$Bulma$Classes$is7 = elm$html$Html$Attributes$class('is-7');
-var surprisetalk$elm_bulma$Bulma$Classes$is8 = elm$html$Html$Attributes$class('is-8');
 var surprisetalk$elm_bulma$Bulma$Classes$isCentered = elm$html$Html$Attributes$class('is-centered');
 var surprisetalk$elm_bulma$Bulma$Classes$isDesktop = elm$html$Html$Attributes$class('is-desktop');
 var surprisetalk$elm_bulma$Bulma$Classes$isGapless = elm$html$Html$Attributes$class('is-gapless');
 var surprisetalk$elm_bulma$Bulma$Classes$isMobile = elm$html$Html$Attributes$class('is-mobile');
 var surprisetalk$elm_bulma$Bulma$Classes$isMultiline = elm$html$Html$Attributes$class('is-multiline');
 var surprisetalk$elm_bulma$Bulma$Columns$columns = function (_n0) {
-	var centered = _n0.centered;
-	var multiline = _n0.multiline;
-	var gap = _n0.gap;
-	var display = _n0.display;
+	var centered = _n0.am;
+	var multiline = _n0.bj;
+	var gap = _n0.as;
+	var display = _n0.ap;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		'div',
@@ -10257,39 +10294,39 @@ var surprisetalk$elm_bulma$Bulma$Columns$columns = function (_n0) {
 				}
 			}(),
 				function () {
-				if (gap.$ === 'Gap0') {
+				if (!gap) {
 					return surprisetalk$elm_bulma$Bulma$Classes$isGapless;
 				} else {
 					return surprisetalk$elm_bulma$Bulma$Classes$none;
 				}
 			}(),
 				function () {
-				switch (gap.$) {
-					case 'Gap0':
+				switch (gap) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$is0;
-					case 'Gap1':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$is1;
-					case 'Gap2':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$is2;
-					case 'Gap3':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Gap4':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$is4;
-					case 'Gap5':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$is5;
-					case 'Gap6':
+					case 6:
 						return surprisetalk$elm_bulma$Bulma$Classes$is6;
-					case 'Gap7':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$is7;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$is8;
 				}
 			}(),
 				function () {
-				switch (display.$) {
-					case 'MobileAndBeyond':
+				switch (display) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMobile;
-					case 'TabletAndBeyond':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDesktop;
@@ -10297,11 +10334,11 @@ var surprisetalk$elm_bulma$Bulma$Columns$columns = function (_n0) {
 			}()
 			]));
 };
-var surprisetalk$elm_bulma$Bulma$Columns$Gap3 = {$: 'Gap3'};
-var surprisetalk$elm_bulma$Bulma$Columns$TabletAndBeyond = {$: 'TabletAndBeyond'};
-var surprisetalk$elm_bulma$Bulma$Columns$columnsModifiers = {centered: false, display: surprisetalk$elm_bulma$Bulma$Columns$TabletAndBeyond, gap: surprisetalk$elm_bulma$Bulma$Columns$Gap3, multiline: false};
-var surprisetalk$elm_bulma$Bulma$Elements$H4 = {$: 'H4'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Width2 = {$: 'Width2'};
+var surprisetalk$elm_bulma$Bulma$Columns$Gap3 = 3;
+var surprisetalk$elm_bulma$Bulma$Columns$TabletAndBeyond = 1;
+var surprisetalk$elm_bulma$Bulma$Columns$columnsModifiers = {am: false, ap: 1, as: 3, bj: false};
+var surprisetalk$elm_bulma$Bulma$Elements$H4 = 3;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Width2 = 2;
 var author$project$Page$Upload$demoArticle = F2(
 	function (aTitle, someHtmls) {
 		return A3(
@@ -10314,14 +10351,14 @@ var author$project$Page$Upload$demoArticle = F2(
 					surprisetalk$elm_bulma$Bulma$Columns$column,
 					A2(
 						author$project$Page$Upload$myColumnModifiers,
-						surprisetalk$elm_bulma$Bulma$Modifiers$Auto,
-						elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Width2)),
+						0,
+						elm$core$Maybe$Just(2)),
 					_List_Nil,
 					_List_fromArray(
 						[
 							A3(
 							surprisetalk$elm_bulma$Bulma$Elements$title,
-							surprisetalk$elm_bulma$Bulma$Elements$H4,
+							3,
 							_List_Nil,
 							_List_fromArray(
 								[
@@ -10338,8 +10375,8 @@ var author$project$Page$Upload$demoArticle = F2(
 					surprisetalk$elm_bulma$Bulma$Columns$column,
 					A2(
 						author$project$Page$Upload$myColumnModifiers,
-						surprisetalk$elm_bulma$Bulma$Modifiers$Auto,
-						elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto)),
+						0,
+						elm$core$Maybe$Just(0)),
 					_List_Nil,
 					someHtmls)
 				]));
@@ -10349,16 +10386,16 @@ var surprisetalk$elm_bulma$Bulma$Elements$subtitle = function (size) {
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		function () {
-			switch (size.$) {
-				case 'H1':
+			switch (size) {
+				case 0:
 					return 'h1';
-				case 'H2':
+				case 1:
 					return 'h2';
-				case 'H3':
+				case 2:
 					return 'h3';
-				case 'H4':
+				case 3:
 					return 'h4';
-				case 'H5':
+				case 4:
 					return 'h5';
 				default:
 					return 'h6';
@@ -10368,16 +10405,16 @@ var surprisetalk$elm_bulma$Bulma$Elements$subtitle = function (size) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$subtitle,
 				function () {
-				switch (size.$) {
-					case 'H1':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$is1;
-					case 'H2':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$is2;
-					case 'H3':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$is3;
-					case 'H4':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$is4;
-					case 'H5':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$is5;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$is6;
@@ -10385,7 +10422,7 @@ var surprisetalk$elm_bulma$Bulma$Elements$subtitle = function (size) {
 			}()
 			]));
 };
-var surprisetalk$elm_bulma$Bulma$Modifiers$Width3 = {$: 'Width3'};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Width3 = 3;
 var author$project$Page$Upload$demoSection = F3(
 	function (aSubtitle, someAttrs, someHtmls) {
 		return A3(
@@ -10398,14 +10435,14 @@ var author$project$Page$Upload$demoSection = F3(
 					surprisetalk$elm_bulma$Bulma$Columns$column,
 					A2(
 						author$project$Page$Upload$myColumnModifiers,
-						surprisetalk$elm_bulma$Bulma$Modifiers$Auto,
-						elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Width3)),
+						0,
+						elm$core$Maybe$Just(3)),
 					_List_Nil,
 					_List_fromArray(
 						[
 							A3(
 							surprisetalk$elm_bulma$Bulma$Elements$subtitle,
-							surprisetalk$elm_bulma$Bulma$Elements$H4,
+							3,
 							_List_Nil,
 							_List_fromArray(
 								[
@@ -10416,8 +10453,8 @@ var author$project$Page$Upload$demoSection = F3(
 					surprisetalk$elm_bulma$Bulma$Columns$column,
 					A2(
 						author$project$Page$Upload$myColumnModifiers,
-						surprisetalk$elm_bulma$Bulma$Modifiers$Auto,
-						elm$core$Maybe$Just(surprisetalk$elm_bulma$Bulma$Modifiers$Auto)),
+						0,
+						elm$core$Maybe$Just(0)),
 					_List_Nil,
 					someHtmls)
 				]));
@@ -10425,9 +10462,9 @@ var author$project$Page$Upload$demoSection = F3(
 var elm$html$Html$br = _VirtualDom_node('br');
 var elm$html$Html$small = _VirtualDom_node('small');
 var surprisetalk$elm_bulma$Bulma$Elements$OneByOne = function (a) {
-	return {$: 'OneByOne', a: a};
+	return {$: 1, a: a};
 };
-var surprisetalk$elm_bulma$Bulma$Elements$X64 = {$: 'X64'};
+var surprisetalk$elm_bulma$Bulma$Elements$X64 = 4;
 var surprisetalk$elm_bulma$Bulma$Classes$image = elm$html$Html$Attributes$class('image');
 var surprisetalk$elm_bulma$Bulma$Classes$is128x128 = elm$html$Html$Attributes$class('is-128x128');
 var surprisetalk$elm_bulma$Bulma$Classes$is16by9 = elm$html$Html$Attributes$class('is-16by9');
@@ -10450,40 +10487,40 @@ var surprisetalk$elm_bulma$Bulma$Elements$image = function (shape) {
 				surprisetalk$elm_bulma$Bulma$Classes$image,
 				function () {
 				switch (shape.$) {
-					case 'OneByOne':
-						switch (shape.a.$) {
-							case 'Unbounded':
+					case 1:
+						switch (shape.a) {
+							case 7:
 								var _n1 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is1by1;
-							case 'X16':
+							case 0:
 								var _n2 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is16x16;
-							case 'X24':
+							case 1:
 								var _n3 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is24x24;
-							case 'X32':
+							case 2:
 								var _n4 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is32x32;
-							case 'X48':
+							case 3:
 								var _n5 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is48x48;
-							case 'X64':
+							case 4:
 								var _n6 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is64x64;
-							case 'X96':
+							case 5:
 								var _n7 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is96x96;
 							default:
 								var _n8 = shape.a;
 								return surprisetalk$elm_bulma$Bulma$Classes$is128x128;
 						}
-					case 'FourByThree':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$is4by3;
-					case 'ThreeByTwo':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$is3by2;
-					case 'SixteenByNine':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$is16by9;
-					case 'TwoByOne':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$is2by1;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
@@ -10540,7 +10577,7 @@ var author$project$Page$Upload$exampleMediaObject = A2(
 				[
 					A3(
 					surprisetalk$elm_bulma$Bulma$Elements$image,
-					surprisetalk$elm_bulma$Bulma$Elements$OneByOne(surprisetalk$elm_bulma$Bulma$Elements$X64),
+					surprisetalk$elm_bulma$Bulma$Elements$OneByOne(4),
 					_List_Nil,
 					_List_fromArray(
 						[
@@ -10560,7 +10597,7 @@ var author$project$Page$Upload$exampleMediaObject = A2(
 				[
 					A3(
 					surprisetalk$elm_bulma$Bulma$Elements$content,
-					surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+					1,
 					_List_Nil,
 					_List_fromArray(
 						[
@@ -10613,7 +10650,7 @@ var author$project$Page$Upload$exampleMediaObject = A2(
 										[
 											A3(
 											surprisetalk$elm_bulma$Bulma$Elements$icon,
-											surprisetalk$elm_bulma$Bulma$Modifiers$Small,
+											0,
 											_List_Nil,
 											_List_fromArray(
 												[
@@ -10633,7 +10670,7 @@ var author$project$Page$Upload$exampleMediaObject = A2(
 										[
 											A3(
 											surprisetalk$elm_bulma$Bulma$Elements$icon,
-											surprisetalk$elm_bulma$Bulma$Modifiers$Small,
+											0,
 											_List_Nil,
 											_List_fromArray(
 												[
@@ -10653,7 +10690,7 @@ var author$project$Page$Upload$exampleMediaObject = A2(
 										[
 											A3(
 											surprisetalk$elm_bulma$Bulma$Elements$icon,
-											surprisetalk$elm_bulma$Bulma$Modifiers$Small,
+											0,
 											_List_Nil,
 											_List_fromArray(
 												[
@@ -10680,7 +10717,7 @@ var elm$virtual_dom$VirtualDom$attribute = F2(
 	});
 var elm$html$Html$Attributes$attribute = elm$virtual_dom$VirtualDom$attribute;
 var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
-var surprisetalk$elm_bulma$Bulma$Components$Boxed = {$: 'Boxed'};
+var surprisetalk$elm_bulma$Bulma$Components$Boxed = 1;
 var surprisetalk$elm_bulma$Bulma$Classes$card = elm$html$Html$Attributes$class('card');
 var surprisetalk$elm_bulma$Bulma$Components$card = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -10716,8 +10753,8 @@ var surprisetalk$elm_bulma$Bulma$Classes$isRight = elm$html$Html$Attributes$clas
 var surprisetalk$elm_bulma$Bulma$Classes$isUp = elm$html$Html$Attributes$class('is-up');
 var surprisetalk$elm_bulma$Bulma$Components$dropdown = F2(
 	function (isActive, _n0) {
-		var horizontalAlignment = _n0.horizontalAlignment;
-		var verticalDirection = _n0.verticalDirection;
+		var horizontalAlignment = _n0._;
+		var verticalDirection = _n0.af;
 		return A2(
 			surprisetalk$elm_bulma$Helpers$node,
 			'div',
@@ -10732,14 +10769,14 @@ var surprisetalk$elm_bulma$Bulma$Components$dropdown = F2(
 					}
 				}(),
 					function () {
-					if (horizontalAlignment.$ === 'Right') {
+					if (horizontalAlignment === 2) {
 						return surprisetalk$elm_bulma$Bulma$Classes$isRight;
 					} else {
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
 					}
 				}(),
 					function () {
-					if (verticalDirection.$ === 'Up') {
+					if (!verticalDirection) {
 						return surprisetalk$elm_bulma$Bulma$Classes$isUp;
 					} else {
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
@@ -10796,8 +10833,8 @@ var surprisetalk$elm_bulma$Bulma$Components$dropdownMenu = F3(
 					items)
 				]));
 	});
-var surprisetalk$elm_bulma$Bulma$Modifiers$Down = {$: 'Down'};
-var surprisetalk$elm_bulma$Bulma$Components$dropdownModifiers = {horizontalAlignment: surprisetalk$elm_bulma$Bulma$Modifiers$Left, verticalDirection: surprisetalk$elm_bulma$Bulma$Modifiers$Down};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Down = 1;
+var surprisetalk$elm_bulma$Bulma$Components$dropdownModifiers = {_: 0, af: 1};
 var surprisetalk$elm_bulma$Bulma$Classes$dropdownTrigger = elm$html$Html$Attributes$class('dropdown-trigger');
 var surprisetalk$elm_bulma$Bulma$Components$dropdownTrigger = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -10834,8 +10871,8 @@ var surprisetalk$elm_bulma$Bulma$Components$menuListItemLink = function (active)
 };
 var surprisetalk$elm_bulma$Bulma$Classes$message = elm$html$Html$Attributes$class('message');
 var surprisetalk$elm_bulma$Bulma$Components$message = function (_n0) {
-	var color = _n0.color;
-	var size = _n0.size;
+	var color = _n0.b_;
+	var size = _n0.q;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		'article',
@@ -10843,38 +10880,38 @@ var surprisetalk$elm_bulma$Bulma$Components$message = function (_n0) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$message,
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Link':
+					case 6:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 				}
 			}(),
 				function () {
-				switch (size.$) {
-					case 'Small':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-					case 'Standard':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Medium':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
@@ -10889,6 +10926,22 @@ var surprisetalk$elm_bulma$Bulma$Components$messageBody = A2(
 	_List_fromArray(
 		[surprisetalk$elm_bulma$Bulma$Classes$messageBody]));
 var surprisetalk$elm_bulma$Bulma$Classes$messageHeader = elm$html$Html$Attributes$class('message-header');
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 0, a: a};
+};
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
 var surprisetalk$elm_bulma$Bulma$Classes$delete = elm$html$Html$Attributes$class('delete');
 var surprisetalk$elm_bulma$Bulma$Elements$delete = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -10927,7 +10980,7 @@ var surprisetalk$elm_bulma$Bulma$Components$messageHeaderWithDelete = F2(
 						A2(surprisetalk$elm_bulma$Bulma$Elements$easyDelete, _List_Nil, msg)
 					])));
 	});
-var surprisetalk$elm_bulma$Bulma$Components$messageModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard};
+var surprisetalk$elm_bulma$Bulma$Components$messageModifiers = {b_: 0, q: 1};
 var surprisetalk$elm_bulma$Bulma$Classes$pagination = elm$html$Html$Attributes$class('pagination');
 var surprisetalk$elm_bulma$Bulma$Components$pagination = function (alignment) {
 	return A2(
@@ -10937,10 +10990,10 @@ var surprisetalk$elm_bulma$Bulma$Components$pagination = function (alignment) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$pagination,
 				function () {
-				switch (alignment.$) {
-					case 'Left':
+				switch (alignment) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Centered':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isCentered;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isRight;
@@ -11132,9 +11185,9 @@ var surprisetalk$elm_bulma$Bulma$Classes$isToggleRounded = elm$html$Html$Attribu
 var surprisetalk$elm_bulma$Bulma$Classes$tabs = elm$html$Html$Attributes$class('tabs');
 var surprisetalk$elm_bulma$Bulma$Components$tabs = F3(
 	function (_n0, attrs, attrs_) {
-		var style = _n0.style;
-		var alignment = _n0.alignment;
-		var size = _n0.size;
+		var style = _n0.cn;
+		var alignment = _n0.y;
+		var size = _n0.q;
 		return A2(
 			elm$core$Basics$composeL,
 			A2(
@@ -11146,46 +11199,46 @@ var surprisetalk$elm_bulma$Bulma$Components$tabs = F3(
 						[
 							surprisetalk$elm_bulma$Bulma$Classes$tabs,
 							function () {
-							switch (style.$) {
-								case 'Toggle':
+							switch (style) {
+								case 2:
 									return surprisetalk$elm_bulma$Bulma$Classes$isToggle;
-								case 'Round':
+								case 3:
 									return surprisetalk$elm_bulma$Bulma$Classes$isToggle;
 								default:
 									return surprisetalk$elm_bulma$Bulma$Classes$none;
 							}
 						}(),
 							function () {
-							if (style.$ === 'Boxed') {
+							if (style === 1) {
 								return surprisetalk$elm_bulma$Bulma$Classes$isBoxed;
 							} else {
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
 							}
 						}(),
 							function () {
-							if (style.$ === 'Round') {
+							if (style === 3) {
 								return surprisetalk$elm_bulma$Bulma$Classes$isToggleRounded;
 							} else {
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
 							}
 						}(),
 							function () {
-							switch (alignment.$) {
-								case 'Left':
+							switch (alignment) {
+								case 0:
 									return surprisetalk$elm_bulma$Bulma$Classes$none;
-								case 'Centered':
+								case 1:
 									return surprisetalk$elm_bulma$Bulma$Classes$isCentered;
 								default:
 									return surprisetalk$elm_bulma$Bulma$Classes$isRight;
 							}
 						}(),
 							function () {
-							switch (size.$) {
-								case 'Small':
+							switch (size) {
+								case 0:
 									return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-								case 'Standard':
+								case 1:
 									return surprisetalk$elm_bulma$Bulma$Classes$none;
-								case 'Medium':
+								case 2:
 									return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 								default:
 									return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
@@ -11196,11 +11249,11 @@ var surprisetalk$elm_bulma$Bulma$Components$tabs = F3(
 				surprisetalk$elm_bulma$Helpers$ls),
 			elm$html$Html$ul(attrs_));
 	});
-var surprisetalk$elm_bulma$Bulma$Components$Minimal = {$: 'Minimal'};
-var surprisetalk$elm_bulma$Bulma$Components$tabsModifiers = {alignment: surprisetalk$elm_bulma$Bulma$Modifiers$Left, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard, style: surprisetalk$elm_bulma$Bulma$Components$Minimal};
-var surprisetalk$elm_bulma$Bulma$Elements$FourByThree = {$: 'FourByThree'};
-var surprisetalk$elm_bulma$Bulma$Elements$H3 = {$: 'H3'};
-var surprisetalk$elm_bulma$Bulma$Elements$X48 = {$: 'X48'};
+var surprisetalk$elm_bulma$Bulma$Components$Minimal = 0;
+var surprisetalk$elm_bulma$Bulma$Components$tabsModifiers = {y: 0, q: 1, cn: 0};
+var surprisetalk$elm_bulma$Bulma$Elements$FourByThree = {$: 2};
+var surprisetalk$elm_bulma$Bulma$Elements$H3 = 2;
+var surprisetalk$elm_bulma$Bulma$Elements$X48 = 3;
 var surprisetalk$elm_bulma$Bulma$Classes$box = elm$html$Html$Attributes$class('box');
 var surprisetalk$elm_bulma$Bulma$Elements$box = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -11216,10 +11269,10 @@ var surprisetalk$elm_bulma$Bulma$Elements$buttons = function (alignment) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$buttons,
 				function () {
-				switch (alignment.$) {
-					case 'Left':
+				switch (alignment) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Centered':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isCentered;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isRight;
@@ -11232,8 +11285,8 @@ var elm$html$Html$Attributes$max = elm$html$Html$Attributes$stringProperty('max'
 var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
 var surprisetalk$elm_bulma$Bulma$Classes$progress = elm$html$Html$Attributes$class('progress');
 var surprisetalk$elm_bulma$Bulma$Elements$progress = function (_n0) {
-	var size = _n0.size;
-	var color = _n0.color;
+	var size = _n0.q;
+	var color = _n0.b_;
 	return A2(
 		surprisetalk$elm_bulma$Helpers$node,
 		'progress',
@@ -11241,38 +11294,38 @@ var surprisetalk$elm_bulma$Bulma$Elements$progress = function (_n0) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$progress,
 				function () {
-				switch (size.$) {
-					case 'Small':
+				switch (size) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-					case 'Standard':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'Medium':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 				}
 			}(),
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-					case 'Danger':
+					case 10:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -11315,16 +11368,16 @@ var surprisetalk$elm_bulma$Bulma$Elements$easyTitleWithSubtitle = F4(
 						}
 					}(),
 						function () {
-						switch (size.$) {
-							case 'H1':
+						switch (size) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$is1;
-							case 'H2':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$is2;
-							case 'H3':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$is3;
-							case 'H4':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$is4;
-							case 'H5':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$is5;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$is6;
@@ -11340,12 +11393,12 @@ var surprisetalk$elm_bulma$Bulma$Elements$easyTitleWithSubtitle = F4(
 					[
 						surprisetalk$elm_bulma$Bulma$Classes$subtitle,
 						function () {
-						switch (size.$) {
-							case 'H1':
+						switch (size) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$is3;
-							case 'H2':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$is4;
-							case 'H3':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$is5;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$is6;
@@ -11364,7 +11417,7 @@ var surprisetalk$elm_bulma$Bulma$Elements$notificationWithDelete = F3(
 			elm$core$List$cons(
 				A2(surprisetalk$elm_bulma$Bulma$Elements$easyDelete, _List_Nil, msg)));
 	});
-var surprisetalk$elm_bulma$Bulma$Elements$progressModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard};
+var surprisetalk$elm_bulma$Bulma$Elements$progressModifiers = {b_: 0, q: 1};
 var surprisetalk$elm_bulma$Bulma$Elements$tags = A2(
 	surprisetalk$elm_bulma$Helpers$node,
 	'div',
@@ -11423,26 +11476,26 @@ var surprisetalk$elm_bulma$Bulma$Form$help = function (color) {
 			[
 				surprisetalk$elm_bulma$Bulma$Classes$help,
 				function () {
-				switch (color.$) {
-					case 'Default':
+				switch (color) {
+					case 0:
 						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 'White':
+					case 1:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-					case 'Light':
+					case 2:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-					case 'Dark':
+					case 3:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-					case 'Black':
+					case 4:
 						return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-					case 'Primary':
+					case 5:
 						return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-					case 'Link':
+					case 6:
 						return surprisetalk$elm_bulma$Bulma$Classes$isLink;
-					case 'Info':
+					case 7:
 						return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-					case 'Success':
+					case 8:
 						return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-					case 'Warning':
+					case 9:
 						return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
 					default:
 						return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
@@ -11455,21 +11508,21 @@ var elm$html$Html$Attributes$readonly = elm$html$Html$Attributes$boolProperty('r
 var surprisetalk$elm_bulma$Bulma$Classes$input = elm$html$Html$Attributes$class('input');
 var surprisetalk$elm_bulma$Bulma$Form$controlInput = F3(
 	function (mods, attrs, attrs_) {
-		var size = mods.size;
-		var state = mods.state;
-		var color = mods.color;
-		var expanded = mods.expanded;
-		var rounded = mods.rounded;
-		var readonly = mods.readonly;
-		var disabled = mods.disabled;
-		var iconLeft = mods.iconLeft;
-		var iconRight = mods.iconRight;
+		var size = mods.q;
+		var state = mods.bC;
+		var color = mods.b_;
+		var expanded = mods.h;
+		var rounded = mods.aF;
+		var readonly = mods.E;
+		var disabled = mods.ao;
+		var iconLeft = mods.au;
+		var iconRight = mods.av;
 		var controlMods = {
-			expanded: expanded,
-			iconLeft: iconLeft,
-			iconRight: iconRight,
-			loading: function () {
-				if (state.$ === 'Loading') {
+			h: expanded,
+			au: iconLeft,
+			av: iconRight,
+			B: function () {
+				if (state === 4) {
 					return elm$core$Maybe$Just(size);
 				} else {
 					return elm$core$Maybe$Nothing;
@@ -11497,52 +11550,52 @@ var surprisetalk$elm_bulma$Bulma$Form$controlInput = F3(
 						}
 					}(),
 						function () {
-						switch (size.$) {
-							case 'Small':
+						switch (size) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-							case 'Standard':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
-							case 'Medium':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 						}
 					}(),
 						function () {
-						switch (state.$) {
-							case 'Hover':
+						switch (state) {
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$isHovered;
-							case 'Focus':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isFocused;
-							case 'Active':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$isActive;
-							case 'Loading':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLoading;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
 						}
 					}(),
 						function () {
-						switch (color.$) {
-							case 'Default':
+						switch (color) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
-							case 'White':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-							case 'Light':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-							case 'Dark':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-							case 'Black':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-							case 'Primary':
+							case 5:
 								return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-							case 'Info':
+							case 7:
 								return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-							case 'Success':
+							case 8:
 								return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-							case 'Warning':
+							case 9:
 								return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-							case 'Danger':
+							case 10:
 								return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -11558,7 +11611,7 @@ var surprisetalk$elm_bulma$Bulma$Form$controlInput = F3(
 					]),
 				attrs_));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlInputModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, disabled: false, expanded: false, iconLeft: elm$core$Maybe$Nothing, iconRight: elm$core$Maybe$Nothing, readonly: false, rounded: false, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard, state: surprisetalk$elm_bulma$Bulma$Modifiers$Blur};
+var surprisetalk$elm_bulma$Bulma$Form$controlInputModifiers = {b_: 0, ao: false, h: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, E: false, aF: false, q: 1, bC: 0};
 var surprisetalk$elm_bulma$Bulma$Classes$label = elm$html$Html$Attributes$class('label');
 var surprisetalk$elm_bulma$Bulma$Form$label = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -11601,17 +11654,17 @@ var surprisetalk$elm_bulma$Bulma$Classes$isFullWidth = elm$html$Html$Attributes$
 var surprisetalk$elm_bulma$Bulma$Classes$select = elm$html$Html$Attributes$class('select');
 var surprisetalk$elm_bulma$Bulma$Form$controlSelect = F3(
 	function (mods, attrs, attrs_) {
-		var size = mods.size;
-		var state = mods.state;
-		var color = mods.color;
-		var expanded = mods.expanded;
-		var iconLeft = mods.iconLeft;
+		var size = mods.q;
+		var state = mods.bC;
+		var color = mods.b_;
+		var expanded = mods.h;
+		var iconLeft = mods.au;
 		var controlMods = {
-			expanded: expanded,
-			iconLeft: iconLeft,
-			iconRight: elm$core$Maybe$Nothing,
-			loading: function () {
-				if (state.$ === 'Loading') {
+			h: expanded,
+			au: iconLeft,
+			av: elm$core$Maybe$Nothing,
+			B: function () {
+				if (state === 4) {
 					return elm$core$Maybe$Just(size);
 				} else {
 					return elm$core$Maybe$Nothing;
@@ -11641,52 +11694,52 @@ var surprisetalk$elm_bulma$Bulma$Form$controlSelect = F3(
 				_List_fromArray(
 					[
 						function () {
-						switch (size.$) {
-							case 'Small':
+						switch (size) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-							case 'Standard':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
-							case 'Medium':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 						}
 					}(),
 						function () {
-						switch (state.$) {
-							case 'Hover':
+						switch (state) {
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$isHovered;
-							case 'Focus':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isFocused;
-							case 'Active':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$isActive;
-							case 'Loading':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLoading;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
 						}
 					}(),
 						function () {
-						switch (color.$) {
-							case 'Default':
+						switch (color) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
-							case 'White':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-							case 'Light':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-							case 'Dark':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-							case 'Black':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-							case 'Primary':
+							case 5:
 								return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-							case 'Info':
+							case 7:
 								return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-							case 'Success':
+							case 8:
 								return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-							case 'Warning':
+							case 9:
 								return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-							case 'Danger':
+							case 10:
 								return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -11702,21 +11755,21 @@ var surprisetalk$elm_bulma$Bulma$Form$controlSelect = F3(
 					]),
 				attrs_));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlSelectModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, expanded: false, iconLeft: elm$core$Maybe$Nothing, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard, state: surprisetalk$elm_bulma$Bulma$Modifiers$Blur};
+var surprisetalk$elm_bulma$Bulma$Form$controlSelectModifiers = {b_: 0, h: false, au: elm$core$Maybe$Nothing, q: 1, bC: 0};
 var surprisetalk$elm_bulma$Bulma$Classes$textarea = elm$html$Html$Attributes$class('textarea');
 var surprisetalk$elm_bulma$Bulma$Form$controlTextArea = F3(
 	function (mods, attrs, attrs_) {
-		var size = mods.size;
-		var state = mods.state;
-		var color = mods.color;
-		var readonly = mods.readonly;
-		var disabled = mods.disabled;
+		var size = mods.q;
+		var state = mods.bC;
+		var color = mods.b_;
+		var readonly = mods.E;
+		var disabled = mods.ao;
 		var controlMods = {
-			expanded: false,
-			iconLeft: elm$core$Maybe$Nothing,
-			iconRight: elm$core$Maybe$Nothing,
-			loading: function () {
-				if (state.$ === 'Loading') {
+			h: false,
+			au: elm$core$Maybe$Nothing,
+			av: elm$core$Maybe$Nothing,
+			B: function () {
+				if (state === 4) {
 					return elm$core$Maybe$Just(size);
 				} else {
 					return elm$core$Maybe$Nothing;
@@ -11744,52 +11797,52 @@ var surprisetalk$elm_bulma$Bulma$Form$controlTextArea = F3(
 						}
 					}(),
 						function () {
-						switch (size.$) {
-							case 'Small':
+						switch (size) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$isSmall;
-							case 'Standard':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
-							case 'Medium':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isMedium;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLarge;
 						}
 					}(),
 						function () {
-						switch (state.$) {
-							case 'Hover':
+						switch (state) {
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$isHovered;
-							case 'Focus':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isFocused;
-							case 'Active':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$isActive;
-							case 'Loading':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLoading;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
 						}
 					}(),
 						function () {
-						switch (color.$) {
-							case 'Default':
+						switch (color) {
+							case 0:
 								return surprisetalk$elm_bulma$Bulma$Classes$none;
-							case 'White':
+							case 1:
 								return surprisetalk$elm_bulma$Bulma$Classes$isWhite;
-							case 'Light':
+							case 2:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLight;
-							case 'Dark':
+							case 3:
 								return surprisetalk$elm_bulma$Bulma$Classes$isDark;
-							case 'Black':
+							case 4:
 								return surprisetalk$elm_bulma$Bulma$Classes$isBlack;
-							case 'Primary':
+							case 5:
 								return surprisetalk$elm_bulma$Bulma$Classes$isPrimary;
-							case 'Info':
+							case 7:
 								return surprisetalk$elm_bulma$Bulma$Classes$isInfo;
-							case 'Success':
+							case 8:
 								return surprisetalk$elm_bulma$Bulma$Classes$isSuccess;
-							case 'Warning':
+							case 9:
 								return surprisetalk$elm_bulma$Bulma$Classes$isWarning;
-							case 'Danger':
+							case 10:
 								return surprisetalk$elm_bulma$Bulma$Classes$isDanger;
 							default:
 								return surprisetalk$elm_bulma$Bulma$Classes$isLink;
@@ -11798,21 +11851,21 @@ var surprisetalk$elm_bulma$Bulma$Form$controlTextArea = F3(
 					]),
 				attrs_));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlTextAreaModifiers = {color: surprisetalk$elm_bulma$Bulma$Modifiers$Default, disabled: false, readonly: false, size: surprisetalk$elm_bulma$Bulma$Modifiers$Standard, state: surprisetalk$elm_bulma$Bulma$Modifiers$Blur};
+var surprisetalk$elm_bulma$Bulma$Form$controlTextAreaModifiers = {b_: 0, ao: false, E: false, q: 1, bC: 0};
 var surprisetalk$elm_bulma$Bulma$Form$field = A2(
 	surprisetalk$elm_bulma$Helpers$node,
 	'div',
 	_List_fromArray(
 		[surprisetalk$elm_bulma$Bulma$Classes$field]));
-var surprisetalk$elm_bulma$Bulma$Modifiers$Black = {$: 'Black'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Light = {$: 'Light'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Link = {$: 'Link'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Primary = {$: 'Primary'};
-var surprisetalk$elm_bulma$Bulma$Modifiers$White = {$: 'White'};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Black = 4;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Light = 2;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Link = 6;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Primary = 5;
+var surprisetalk$elm_bulma$Bulma$Modifiers$White = 1;
 var surprisetalk$elm_bulma$Bulma$Modifiers$fullWidth = surprisetalk$elm_bulma$Bulma$Classes$isFullWidth;
 var author$project$Page$Upload$exampleElementsAndComponents = A3(
 	surprisetalk$elm_bulma$Bulma$Layout$section,
-	surprisetalk$elm_bulma$Bulma$Layout$NotSpaced,
+	0,
 	_List_Nil,
 	_List_fromArray(
 		[
@@ -11855,7 +11908,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 											_List_Nil),
 											A3(
 											surprisetalk$elm_bulma$Bulma$Form$controlHelp,
-											surprisetalk$elm_bulma$Bulma$Modifiers$Default,
+											0,
 											_List_Nil,
 											_List_fromArray(
 												[
@@ -11957,7 +12010,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 											surprisetalk$elm_bulma$Bulma$Form$controlButton,
 											_Utils_update(
 												surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers,
-												{color: surprisetalk$elm_bulma$Bulma$Modifiers$Link}),
+												{b_: 6}),
 											_List_Nil,
 											_List_Nil,
 											_List_fromArray(
@@ -11986,7 +12039,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 								[
 									A3(
 									surprisetalk$elm_bulma$Bulma$Elements$buttons,
-									surprisetalk$elm_bulma$Bulma$Modifiers$Left,
+									0,
 									_List_Nil,
 									A2(
 										elm$core$List$map,
@@ -11997,7 +12050,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												surprisetalk$elm_bulma$Bulma$Elements$button,
 												_Utils_update(
 													surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers,
-													{color: color}),
+													{b_: color}),
 												_List_Nil,
 												_List_fromArray(
 													[
@@ -12006,15 +12059,15 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 										},
 										_List_fromArray(
 											[
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Default, 'Default'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$White, 'White'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Light, 'Light'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, 'Dark'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Black, 'Black')
+												_Utils_Tuple2(0, 'Default'),
+												_Utils_Tuple2(1, 'White'),
+												_Utils_Tuple2(2, 'Light'),
+												_Utils_Tuple2(3, 'Dark'),
+												_Utils_Tuple2(4, 'Black')
 											]))),
 									A3(
 									surprisetalk$elm_bulma$Bulma$Elements$buttons,
-									surprisetalk$elm_bulma$Bulma$Modifiers$Left,
+									0,
 									_List_Nil,
 									A2(
 										elm$core$List$map,
@@ -12025,7 +12078,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												surprisetalk$elm_bulma$Bulma$Elements$button,
 												_Utils_update(
 													surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers,
-													{color: color}),
+													{b_: color}),
 												_List_Nil,
 												_List_fromArray(
 													[
@@ -12034,12 +12087,12 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 										},
 										_List_fromArray(
 											[
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Primary, 'Primary'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Link, 'Link'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Info, 'Info'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Success, 'Success'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Warning, 'Warning'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Danger, 'Danger')
+												_Utils_Tuple2(5, 'Primary'),
+												_Utils_Tuple2(6, 'Link'),
+												_Utils_Tuple2(7, 'Info'),
+												_Utils_Tuple2(8, 'Success'),
+												_Utils_Tuple2(9, 'Warning'),
+												_Utils_Tuple2(10, 'Danger')
 											])))
 								])),
 							A3(
@@ -12050,7 +12103,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 								[
 									A4(
 									surprisetalk$elm_bulma$Bulma$Elements$notificationWithDelete,
-									surprisetalk$elm_bulma$Bulma$Modifiers$Primary,
+									5,
 									_List_Nil,
 									author$project$Page$Upload$NoOp,
 									_List_fromArray(
@@ -12068,7 +12121,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 									surprisetalk$elm_bulma$Bulma$Elements$easyProgress,
 									_Utils_update(
 										surprisetalk$elm_bulma$Bulma$Elements$progressModifiers,
-										{color: surprisetalk$elm_bulma$Bulma$Modifiers$Primary}),
+										{b_: 5}),
 									_List_Nil,
 									0.4)
 								])),
@@ -12090,7 +12143,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												surprisetalk$elm_bulma$Bulma$Elements$tag,
 												_Utils_update(
 													surprisetalk$elm_bulma$Bulma$Elements$tagModifiers,
-													{color: color}),
+													{b_: color}),
 												_List_Nil,
 												_List_fromArray(
 													[
@@ -12099,12 +12152,12 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 										},
 										_List_fromArray(
 											[
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Primary, 'Primary'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Link, 'Link'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Info, 'Info'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Success, 'Success'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Warning, 'Warning'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Danger, 'Danger')
+												_Utils_Tuple2(5, 'Primary'),
+												_Utils_Tuple2(6, 'Link'),
+												_Utils_Tuple2(7, 'Info'),
+												_Utils_Tuple2(8, 'Success'),
+												_Utils_Tuple2(9, 'Warning'),
+												_Utils_Tuple2(10, 'Danger')
 											]))),
 									A2(
 									surprisetalk$elm_bulma$Bulma$Elements$tags,
@@ -12118,7 +12171,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												surprisetalk$elm_bulma$Bulma$Elements$tag,
 												_Utils_update(
 													surprisetalk$elm_bulma$Bulma$Elements$tagModifiers,
-													{color: color}),
+													{b_: color}),
 												_List_Nil,
 												_List_fromArray(
 													[
@@ -12127,11 +12180,11 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 										},
 										_List_fromArray(
 											[
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Default, 'Default'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$White, 'White'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Light, 'Light'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Dark, 'Dark'),
-												_Utils_Tuple2(surprisetalk$elm_bulma$Bulma$Modifiers$Black, 'Black')
+												_Utils_Tuple2(0, 'Default'),
+												_Utils_Tuple2(1, 'White'),
+												_Utils_Tuple2(2, 'Light'),
+												_Utils_Tuple2(3, 'Dark'),
+												_Utils_Tuple2(4, 'Black')
 											])))
 								]))
 						])),
@@ -12200,7 +12253,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 																				[
 																					A3(
 																					surprisetalk$elm_bulma$Bulma$Elements$image,
-																					surprisetalk$elm_bulma$Bulma$Elements$OneByOne(surprisetalk$elm_bulma$Bulma$Elements$X48),
+																					surprisetalk$elm_bulma$Bulma$Elements$OneByOne(3),
 																					_List_Nil,
 																					_List_fromArray(
 																						[
@@ -12219,7 +12272,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 																			A4(
 																				surprisetalk$elm_bulma$Bulma$Elements$easyTitleWithSubtitle,
 																				false,
-																				surprisetalk$elm_bulma$Bulma$Elements$H4,
+																				3,
 																				_List_fromArray(
 																					[
 																						elm$html$Html$text('John Smith')
@@ -12231,7 +12284,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 																		])),
 																	A3(
 																	surprisetalk$elm_bulma$Bulma$Elements$content,
-																	surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+																	1,
 																	_List_Nil,
 																	_List_fromArray(
 																		[
@@ -12287,7 +12340,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 															A4(
 																surprisetalk$elm_bulma$Bulma$Elements$easyTitleWithSubtitle,
 																false,
-																surprisetalk$elm_bulma$Bulma$Elements$H3,
+																2,
 																_List_fromArray(
 																	[
 																		elm$html$Html$text('“There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.”')
@@ -12440,7 +12493,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 									surprisetalk$elm_bulma$Bulma$Components$message,
 									_Utils_update(
 										surprisetalk$elm_bulma$Bulma$Components$messageModifiers,
-										{color: surprisetalk$elm_bulma$Bulma$Modifiers$Primary}),
+										{b_: 5}),
 									_List_Nil,
 									_List_fromArray(
 										[
@@ -12469,7 +12522,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 								[
 									A3(
 									surprisetalk$elm_bulma$Bulma$Components$pagination,
-									surprisetalk$elm_bulma$Bulma$Modifiers$Left,
+									0,
 									_List_Nil,
 									_List_fromArray(
 										[
@@ -12559,7 +12612,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 									surprisetalk$elm_bulma$Bulma$Components$tabs,
 									_Utils_update(
 										surprisetalk$elm_bulma$Bulma$Components$tabsModifiers,
-										{style: surprisetalk$elm_bulma$Bulma$Components$Boxed}),
+										{cn: 1}),
 									_List_Nil,
 									_List_Nil,
 									_List_fromArray(
@@ -12573,7 +12626,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												[
 													A3(
 													surprisetalk$elm_bulma$Bulma$Elements$icon,
-													surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+													1,
 													_List_Nil,
 													_List_fromArray(
 														[
@@ -12596,7 +12649,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												[
 													A3(
 													surprisetalk$elm_bulma$Bulma$Elements$icon,
-													surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+													1,
 													_List_Nil,
 													_List_fromArray(
 														[
@@ -12619,7 +12672,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												[
 													A3(
 													surprisetalk$elm_bulma$Bulma$Elements$icon,
-													surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+													1,
 													_List_Nil,
 													_List_fromArray(
 														[
@@ -12642,7 +12695,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 												[
 													A3(
 													surprisetalk$elm_bulma$Bulma$Elements$icon,
-													surprisetalk$elm_bulma$Bulma$Modifiers$Standard,
+													1,
 													_List_Nil,
 													_List_fromArray(
 														[
@@ -13103,7 +13156,7 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 																	surprisetalk$elm_bulma$Bulma$Elements$button,
 																	_Utils_update(
 																		surprisetalk$elm_bulma$Bulma$Elements$buttonModifiers,
-																		{color: surprisetalk$elm_bulma$Bulma$Modifiers$Link}),
+																		{b_: 6}),
 																	_List_fromArray(
 																		[surprisetalk$elm_bulma$Bulma$Modifiers$fullWidth]),
 																	_List_fromArray(
@@ -13120,12 +13173,12 @@ var author$project$Page$Upload$exampleElementsAndComponents = A3(
 		]));
 var author$project$Page$Upload$view = function (model) {
 	return {
-		content: A2(
+		b$: A2(
 			elm$html$Html$main_,
 			_List_Nil,
 			_List_fromArray(
 				[author$project$Page$Upload$exampleElementsAndComponents])),
-		title: 'Upload'
+		bG: 'Upload'
 	};
 };
 var elm$core$Basics$always = F2(
@@ -13144,52 +13197,52 @@ var author$project$Main$view = function (model) {
 				author$project$Session$viewer(
 					author$project$Main$toSession(model)),
 				config);
-			var title = _n1.title;
-			var body = _n1.body;
+			var title = _n1.bG;
+			var body = _n1.f;
 			return {
-				body: A2(
+				f: A2(
 					elm$core$List$map,
 					elm$html$Html$map(toMsg),
 					body),
-				title: title
+				bG: title
 			};
 		});
 	switch (model.$) {
-		case 'Redirect':
+		case 0:
 			return A4(
 				viewPage,
 				false,
 				author$project$Main$Ignored,
 				elm$core$Basics$always(author$project$Main$Ignored),
 				author$project$Page$Blank$view);
-		case 'NotFound':
+		case 1:
 			return A4(
 				viewPage,
 				false,
 				author$project$Main$Ignored,
 				elm$core$Basics$always(author$project$Main$Ignored),
 				author$project$Page$NotFound$view);
-		case 'Dashboard':
+		case 2:
 			var dashboard = model.a;
 			return A4(
 				viewPage,
-				dashboard.isMenuOpen,
+				dashboard.aa,
 				author$project$Page$Dashboard$ToggleMenuOpen,
 				author$project$Main$GotDashboardMsg,
 				author$project$Page$Dashboard$view(dashboard));
-		case 'Upload':
+		case 3:
 			var upload = model.a;
 			return A4(
 				viewPage,
-				upload.isMenuOpen,
+				upload.aa,
 				author$project$Page$Upload$ToggleMenuOpen,
 				author$project$Main$GotUploadMsg,
 				author$project$Page$Upload$view(upload));
-		case 'Login':
+		case 4:
 			var login = model.a;
 			return A4(
 				viewPage,
-				login.isMenuOpen,
+				login.aa,
 				author$project$Page$Login$ToggleMenuOpen,
 				author$project$Main$GotLoginMsg,
 				author$project$Page$Login$view(login));
@@ -13197,7 +13250,7 @@ var author$project$Main$view = function (model) {
 			var apidoc = model.a;
 			return A4(
 				viewPage,
-				apidoc.isMenuOpen,
+				apidoc.aa,
 				author$project$Page$ApiDocument$ToggleMenuOpen,
 				author$project$Main$GotApiDocumentMsg,
 				author$project$Page$ApiDocument$view(apidoc));
@@ -13206,5 +13259,5 @@ var author$project$Main$view = function (model) {
 var author$project$Main$main = A2(
 	author$project$Api$application,
 	author$project$Viewer$decoder,
-	{init: author$project$Main$init, onUrlChange: author$project$Main$ChangedUrl, onUrlRequest: author$project$Main$ClickedLink, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$Main$view});
+	{be: author$project$Main$init, bl: author$project$Main$ChangedUrl, bm: author$project$Main$ClickedLink, bE: author$project$Main$subscriptions, bI: author$project$Main$update, bP: author$project$Main$view});
 _Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)(0)}});}(this));

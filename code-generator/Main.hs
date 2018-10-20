@@ -39,11 +39,13 @@ import qualified Servant.Elm
 import qualified Shelly
 
 import           NetService.ApiTypes                      ( AuthTempCode
-                                                          , ApiAccessToken
+                                                          , AuthClientId
+                                                          , RespAuth
                                                           , ApiOhlcv
                                                           , ApiPortfolio
                                                           , AuthenticatedUser
                                                           , VerRev
+                                                          , SystemHealth
                                                           )
 import           NetService.WebServer                     ( ApiForDocument
                                                           , ApiForFrontend
@@ -57,15 +59,21 @@ elmOpts = Servant.Elm.defElmOptions
 
 spec :: Servant.Elm.Spec
 spec = Servant.Elm.Spec
-    ["Generated", "WebApi"]
+    ["Api", "Endpoint"]
     ( Servant.Elm.defElmImports
-    : "type alias AccessToken = String"
+    : "type alias SystemSignal = String"
+    : "decodeSystemSignal : Decoder SystemSignal"
+    : "decodeSystemSignal = string"
+    : "type alias JWT = String"
     : "type alias TimeFrame = String"
     : "type alias QueryLimit = Int"
     : "type alias MarketCode = String"
     : "type alias AuthzValue = String"
-    : "makeAuthorizationHeader : AccessToken -> AuthzValue"
+    : "makeAuthorizationHeader : JWT -> AuthzValue"
     : "makeAuthorizationHeader token = \"Bearer \" ++ token"
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy SystemHealth)
+    : Elm.toElmDecoderSource (Proxy :: Proxy SystemHealth)
     --
     : Elm.toElmTypeSource (Proxy :: Proxy VerRev)
     : Elm.toElmDecoderSource (Proxy :: Proxy VerRev)
@@ -75,9 +83,9 @@ spec = Servant.Elm.Spec
     : Elm.toElmDecoderSource (Proxy :: Proxy AuthenticatedUser)
     : Elm.toElmEncoderSource (Proxy :: Proxy AuthenticatedUser)
     --
-    : Elm.toElmTypeSource (Proxy :: Proxy ApiAccessToken)
-    : Elm.toElmDecoderSource (Proxy :: Proxy ApiAccessToken)
-    : Elm.toElmEncoderSource (Proxy :: Proxy ApiAccessToken)
+    : Elm.toElmTypeSource (Proxy :: Proxy RespAuth)
+    : Elm.toElmDecoderSource (Proxy :: Proxy RespAuth)
+    : Elm.toElmEncoderSource (Proxy :: Proxy RespAuth)
     --
     : Elm.toElmTypeSource (Proxy :: Proxy ApiPortfolio)
     : Elm.toElmDecoderSource (Proxy :: Proxy ApiPortfolio)
@@ -90,6 +98,10 @@ spec = Servant.Elm.Spec
     : Elm.toElmTypeSource (Proxy :: Proxy AuthTempCode)
     : Elm.toElmDecoderSource (Proxy :: Proxy AuthTempCode)
     : Elm.toElmEncoderSource (Proxy :: Proxy AuthTempCode)
+    --
+    : Elm.toElmTypeSource (Proxy :: Proxy AuthClientId)
+    : Elm.toElmDecoderSource (Proxy :: Proxy AuthClientId)
+    : Elm.toElmEncoderSource (Proxy :: Proxy AuthClientId)
     --
     : "type alias NoContent = {}"
     : Servant.Elm.generateElmForAPIWith elmOpts
@@ -104,7 +116,7 @@ webApiDocMarkdown = Servant.Docs.markdown webApiDocs
 
 main :: IO ()
 main = do
-    Shelly.shelly $ Shelly.mkdir_p "elm-src/Generated"
-    Servant.Elm.specsToDir [spec] "elm-src"
-    writeFile "elm-src/public/WebApiDocument.md" webApiDocMarkdown
+    Shelly.shelly $ Shelly.mkdir_p "frontend/src/Api"
+    Servant.Elm.specsToDir [spec] "frontend/src"
+    writeFile "frontend/public/WebApiDocument.md" webApiDocMarkdown
 

@@ -1,3 +1,14 @@
+{-
+   https://github.com/rtfeldman/elm-spa-example
+
+   Copyright (c) 2017-2018 Richard Feldman and contributors
+   see https://github.com/rtfeldman/elm-spa-example/blob/master/LICENSE
+
+   Changes since Oct. 2018 copyright &copy; by Akihiro Yamamoto
+   see https://github.com/ak1211/tractor/blob/master/LICENSE
+-}
+
+
 module Page exposing (view, viewErrors)
 
 import Api.Endpoint as Endpoint
@@ -196,20 +207,18 @@ viewFooter =
 
 {-| Render dismissable errors. We use this all over the place!
 -}
-viewErrors : msg -> List String -> Html msg
-viewErrors dismissErrors errors =
-    if List.isEmpty errors then
-        Html.text ""
-
-    else
-        Html.div
-            [ Attrib.class "error-messages"
-            , Attrib.style "position" "fixed"
-            , Attrib.style "top" "0"
-            , Attrib.style "background" "rgb(250, 250, 250)"
-            , Attrib.style "padding" "20px"
-            , Attrib.style "border" "1px solid"
-            ]
-        <|
-            List.map (\error -> Html.p [] [ Html.text error ]) errors
-                ++ [ Html.button [ onClick dismissErrors ] [ Html.text "Ok" ] ]
+viewErrors : List String -> Html msg
+viewErrors errors =
+    let
+        notification =
+            Elements.notification Modifiers.Danger
+                []
+            <|
+                List.map (\x -> Html.p [] [ Html.text x ]) errors
+    in
+    Layout.tileAncestor Modifiers.Auto
+        [ Typo.textSize Typo.Medium, Typo.textCentered ]
+        [ Layout.verticalTile Modifiers.Auto [] []
+        , Layout.verticalTile Modifiers.Width4 [] [ notification ]
+        , Layout.verticalTile Modifiers.Auto [] []
+        ]

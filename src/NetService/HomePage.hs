@@ -31,9 +31,7 @@ module NetService.HomePage
     ( HomePage(..)
     )
 where
-import           Data.Monoid                              ( (<>)
-                                                          , mempty
-                                                          )
+import           Data.Monoid                              ( (<>) )
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy.Builder        as TLB
 import           Lucid
@@ -41,41 +39,47 @@ import qualified Servant.Docs
 
 -- |
 -- アプリケーションのホームページ
-newtype HomePage = HomePage { clientId :: T.Text }
+data HomePage = HomePage
 
 instance Lucid.ToHtml HomePage where
     --
     --
-    toHtml a = do
+    toHtml _ = do
         doctype_
-        html_ [lang_ "ja"] $ do
+        html_ [lang_ "ja", class_ "has-navbar-fixed-top"] $ do
             head_ $ do
                 meta_ [charset_ "utf-8"]
                 meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
                 title_ $ Lucid.toHtmlRaw ("Dashboard &#8212; TRACTOR" :: T.Text)
-                link_ [rel_ "stylesheet", type_ "text/css", href_ "https://fonts.googleapis.com/css?family=Roboto:400,300,500|Roboto+Mono|Roboto+Condensed:400,700&subset=latin,latin-ext"]
-                link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/icon?family=Material+Icons"]
-                link_ [rel_ "stylesheet", href_ "https://code.getmdl.io/1.3.0/material.blue_grey-lime.min.css"]
+                link_ [rel_ "stylesheet", href_ "https://use.fontawesome.com/releases/v5.3.1/css/all.css", integrity_ "sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU", crossorigin_ "anonymous"]
                 link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/css?family=Gugi"]
-                --
-                script_ [src_ "https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.js"] T.empty
-                link_ [rel_ "stylesheet", type_ "text/css", href_ "https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/0.4.4/dialog-polyfill.min.css"]
-                --
-                script_ [src_ "https://cdn.polyfill.io/v2/polyfill.js?features=Event.focusin"] T.empty
-                --
+                link_ [rel_ "stylesheet", href_ "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" ]
+
+
             body_ $ do
                 script_ [src_ "public/main.js"] T.empty
-                script_ [] launchElm
+                script_ [] (TLB.toLazyText launchScript)
         where
-        launchElm = TLB.toLazyText $ mempty
-            <> "var flags = {client_id: '"
-            <> TLB.fromText (clientId a)
-            <> "'};"
-            <> "var app = Elm.Main.fullscreen(flags);"
-    --
-    --
+        launchScript = "var storageKey = 'store';"
+                    <> "var flags = localStorage.getItem(storageKey);"
+                    <> "var app = Elm.Main.init({flags: flags});"
+                    ----------
+                    <> "app.ports.storeCache.subscribe(function(val) {"
+                    <> " if (val === null) {"
+                    <> "  localStorage.removeItem(storageKey);"
+                    <> " } else {"
+                    <> "  localStorage.setItem(storageKey, JSON.stringify(val));"
+                    <> " }"
+                    <> " setTimeout(function() { app.ports.onStoreChange.send(val); }, 0);"
+                    <> "});"
+                    ----------
+                    <> "window.addEventListener('storage', function(event) {"
+                    <> " if (event.storageArea === localStorage && event.key === storageKey) {"
+                    <> "  app.ports.onStoreChange.send(event.newValue);"
+                    <> " }"
+                    <> "}, false);"
     toHtmlRaw = Lucid.toHtml
 
-instance Servant.Docs.ToSample HomePage where
-    toSamples _ = Servant.Docs.singleSample $ HomePage "example"
+instance Servant.Docs.ToSample HomePage
+    where toSamples _ = Servant.Docs.singleSample HomePage
 

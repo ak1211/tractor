@@ -46,17 +46,17 @@ import qualified Control.Monad                 as M
 import qualified Control.Monad.IO.Class        as M
 import qualified Control.Monad.Logger          as Logger
 import qualified Control.Monad.Trans           as MonadTrans
-import           Data.Default                             ( Default(..) )
-import qualified Crypto.JOSE.JWA.JWS           as Jose
 import           Control.Monad.Trans.Either               ( EitherT
                                                           , newEitherT
                                                           , runEitherT
                                                           )
 import           Control.Monad.Trans.Maybe                ( MaybeT(..) )
 import           Control.Monad.Trans.Resource             ( runResourceT )
+import qualified Crypto.JOSE.JWA.JWS           as Jose
 import qualified Data.Aeson                    as Aeson
 import qualified Data.ByteString.Lazy.Char8    as BL8
 import qualified Data.CaseInsensitive          as CI
+import           Data.Default                             ( Default(..) )
 import qualified Data.Either                   as Either
 import qualified Data.Maybe                    as Maybe
 import           Data.Monoid                              ( (<>) )
@@ -94,16 +94,19 @@ import qualified BrokerBackend                 as BB
 import qualified Conf
 import           Model                                    ( TimeFrame(..) )
 import qualified Model
-import           NetService.ApiTypes                      ( ApiAccessToken(..)
-                                                          , QueryLimit(..)
-                                                          , AuthTempCode(..)
+import           NetService.ApiTypes                      ( RespAuth(..)
                                                           , ApiOhlcv
                                                           , ApiPortfolio
+                                                          , AuthTempCode(..)
+                                                          , AuthClientId(..)
                                                           , AuthenticatedUser(..)
                                                           , OAuthAccessResponse(..)
-                                                          , UsersInfoResponse(..)
+                                                          , QueryLimit(..)
                                                           , SVG
                                                           , SvgBinary(..)
+                                                          , SystemSignal(..)
+                                                          , SystemHealth(..)
+                                                          , UsersInfoResponse(..)
                                                           )
 import qualified NetService.ApiTypes           as ApiTypes
 import           NetService.HomePage                      ( HomePage(..) )
@@ -235,9 +238,13 @@ type ApiForFrontend
  :<|> Summary "Delete prices"
         :> "api" :> "v1" :> "stocks" :> "history" :> CMarketCode :> QTimeFrame :> HAuthorization :> ReqBody '[JSON] [ApiOhlcv] :> Delete '[JSON] [ApiOhlcv]
  :<|> Summary "get access token (JWT)"
-        :> "api" :> "v1" :> "auth" :> ReqBody '[JSON] AuthTempCode :> Post '[JSON] ApiAccessToken
- :<|> Summary "get server version"
+        :> "api" :> "v1" :> "auth" :> ReqBody '[JSON] AuthTempCode :> Post '[JSON] RespAuth
+ :<|> Summary "get OAuth client id"
+        :> "api" :> "v1" :> "auth" :> "clientid" :> Get '[JSON] AuthClientId
+ :<|> Summary "get system version"
         :> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
+ :<|> Summary "get system health"
+        :> "api" :> "v1" :> "health" :> Get '[JSON] SystemHealth
  :<|> Summary "get portfolios"
         :> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
 
@@ -261,8 +268,10 @@ type Protected
 type Unprotected
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
- :<|> "api" :> "v1" :> "auth" :> ReqBody '[JSON] AuthTempCode :> Post '[JSON] ApiAccessToken
+ :<|> "api" :> "v1" :> "auth" :> ReqBody '[JSON] AuthTempCode :> Post '[JSON] RespAuth
+ :<|> "api" :> "v1" :> "auth" :> "clientid" :> Get '[JSON] AuthClientId
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
+ :<|> "api" :> "v1" :> "health" :> Get '[JSON] SystemHealth
  :<|> "api" :> "v1" :> "portfolios" :> Get '[JSON] [ApiPortfolio]
  :<|> "api" :> "v1" :> "stocks" :> "chart" :> CMarketCode :> QTimeFrame :> QWidth :> QHeight :> Get '[SVG] ChartWithCacheControl
 
@@ -299,13 +308,15 @@ protected cnf result = case result of
 --
 unprotected :: Config -> Servant.Server Unprotected
 unprotected cnf =
-    return (HomePage clientID)
-        :<|> Servant.serveDirectoryFileServer "elm-src/public"
+    return HomePage
+        :<|> Servant.serveDirectoryFileServer "frontend/public"
         :<|> postAuthTempCodeHandler cnf
+        :<|> return (AuthClientId clientId)
         :<|> return (cVerRev cnf)
+        :<|> return (SystemHealth Green)
         :<|> getPortfolioHandler cnf
         :<|> getChartHandler cnf
-    where clientID = Conf.clientID . Conf.slack . cConf $ cnf
+    where clientId = Conf.clientID . Conf.slack . cConf $ cnf
 
 -- |
 --
@@ -374,8 +385,7 @@ err500InternalServerError = Servant.throwError Servant.err500
 
 -- |
 -- 仮コードをアクセストークンに交換する
-postAuthTempCodeHandler
-    :: Config -> AuthTempCode -> Servant.Handler ApiAccessToken
+postAuthTempCodeHandler :: Config -> AuthTempCode -> Servant.Handler RespAuth
 postAuthTempCodeHandler cnf tempCode = do
     oauthResp <- sendRequestToOAuthAccess cnf tempCode
     let uid  = respUserId (oauthResp :: OAuthAccessResponse)
@@ -391,7 +401,11 @@ postAuthTempCodeHandler cnf tempCode = do
                 -- 自分のSlackトークンと一致
                 jwt <- makeJWT aUser
                 M.liftIO $ print jwt
-                pure $ ApiAccessToken (T.pack $ BL8.unpack jwt)
+                pure $ RespAuth
+                    { accessToken = T.pack $ BL8.unpack jwt
+                    , expiresIn   = expiresIn
+                    , tokenType   = "Bearer"
+                    }
             | otherwise -> err403Forbidden
         Nothing -> err401Unauthorized
   where
@@ -412,7 +426,8 @@ postAuthTempCodeHandler cnf tempCode = do
     --
     makeJWT :: ApiTypes.AuthenticatedUser -> Servant.Handler BL8.ByteString
     makeJWT oauthrep = do
-        expiration <- tomorrow
+        expiration <- Time.addUTCTime (fromIntegral expiresIn)
+            <$> M.liftIO Time.getCurrentTime
         jwt <- M.liftIO (Auth.makeJWT oauthrep settings $ Just expiration)
         either err ok jwt
       where
@@ -421,7 +436,8 @@ postAuthTempCodeHandler cnf tempCode = do
         ok = pure
     --
     --
-    tomorrow = Time.addUTCTime Time.nominalDay <$> M.liftIO Time.getCurrentTime
+    expiresIn :: Int
+    expiresIn = 2 * 60 * 60
 
 -- |
 -- send request to https://slack.com/api/oauth.access

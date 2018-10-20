@@ -1,3 +1,14 @@
+{-
+   https://github.com/rtfeldman/elm-spa-example
+
+   Copyright (c) 2017-2018 Richard Feldman and contributors
+   see https://github.com/rtfeldman/elm-spa-example/blob/master/LICENSE
+
+   Changes since Oct. 2018 copyright &copy; by Akihiro Yamamoto
+   see https://github.com/ak1211/tractor/blob/master/LICENSE
+-}
+
+
 module Page.Login exposing (Model, Msg(..), init, subscriptions, toSession, update, view)
 
 import Api
@@ -81,14 +92,14 @@ view model =
             case model.stage of
                 First stage ->
                     Maybe.map viewContents stage.authClientId
-                        |> Maybe.withDefault [ Page.viewErrors NoOp [ "OAuth Flow ERROR" ] ]
+                        |> Maybe.withDefault [ Page.viewErrors [ "OAuth Flow ERROR" ] ]
 
                 Redirected stage ->
                     -- Auth Success
                     [ Html.text "Success to Login" ]
 
                 Error stage ->
-                    [ Page.viewErrors NoOp [ "Auth error", stage.cause ] ]
+                    [ Page.viewErrors [ "Auth error", stage.cause ] ]
     in
     { title = "Log in"
     , content =
@@ -189,8 +200,22 @@ update msg model =
                     )
 
                 Err err ->
-                    Debug.log "OAuth flow error"
-                        ( model, Cmd.none )
+                    let
+                        cause =
+                            case err of
+                                Http.Timeout ->
+                                    "auth timeout"
+
+                                Http.BadStatus resp ->
+                                    "AuthError (bad status) " ++ resp.status.message
+
+                                _ ->
+                                    "Auth Error"
+
+                        newStage =
+                            Error { cause = cause }
+                    in
+                    ( { model | stage = newStage }, Cmd.none )
 
         GotAuthClientId result ->
             case model.stage of

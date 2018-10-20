@@ -5,7 +5,7 @@ TARGET=public/main.js
 ELM=elm make
 
 $(TARGET): $(SRCS)
-		$(ELM) src/Main.elm --output=$@
+		$(ELM) src/Main.elm --output=$@ --optimize
 
 .PHONY: clean
 clean:
