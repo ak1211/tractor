@@ -9836,12 +9836,7 @@ var author$project$Page$Login$view = function (model) {
 				var stage = _n0.a;
 				return A2(
 					elm$core$Maybe$withDefault,
-					_List_fromArray(
-						[
-							author$project$Page$viewErrors(
-							_List_fromArray(
-								['OAuth Flow ERROR']))
-						]),
+					_List_Nil,
 					A2(elm$core$Maybe$map, author$project$Page$Login$viewContents, stage.ai));
 			case 1:
 				var stage = _n0.a;

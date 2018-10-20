@@ -92,7 +92,7 @@ view model =
             case model.stage of
                 First stage ->
                     Maybe.map viewContents stage.authClientId
-                        |> Maybe.withDefault [ Page.viewErrors [ "OAuth Flow ERROR" ] ]
+                        |> Maybe.withDefault []
 
                 Redirected stage ->
                     -- Auth Success
