@@ -37,11 +37,20 @@ Portability :  POSIX
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NetService.ApiTypes
     ( SVG
-    , AuthTempCode(..)
     , SvgBinary(..)
+    , Chart(..)
+    , ChartWithCacheControl
+    , QueryWidth
+    , QueryHeight
+    , defQueryWidth
+    , defQueryHeight
+    , MarketCode
+    , CaptureMarketCode
+    , QueryTimeFrame
+    , AuthTempCode(..)
     , ServerTChan
-    , QueryLimit(unQueryLimit)
-    , makeQueryLimit
+    , RecordsLimit(unRecordsLimit)
+    , makeRecordsLimit
     , SystemSignal(..)
     , SystemHealth(..)
     , AuthClientId(..)
@@ -54,6 +63,7 @@ module NetService.ApiTypes
     , OAuthAccessResponse(..)
     , AuthenticatedUser(..)
     , RespAuth(..)
+    , QueryLimit
     , VerRev(..)
     )
 where
@@ -74,13 +84,22 @@ import           Data.Int                                 ( Int64 )
 import qualified Data.Text                     as T
 import qualified Data.Time                     as Time
 import           GHC.Generics                             ( Generic )
+import           Model                                    ( TimeFrame(..) )
 import           Network.HTTP.Media                       ( (//) )
-import qualified Servant
-import           Servant.API                              ( Accept
+import qualified Network.URI.Encode            as URI
+import           Servant                                  ( Accept
+                                                          , Capture
+                                                          , Header
+                                                          , Headers
                                                           , MimeRender
+                                                          , QueryParam
+                                                          , QueryParam'
+                                                          , Required
+                                                          , Strict
                                                           , contentType
                                                           , mimeRender
                                                           )
+import qualified Servant
 import qualified Servant.Auth.Server           as Auth
 import qualified Servant.Docs
 import           Servant.Elm                              ( ElmType )
@@ -103,6 +122,137 @@ instance Accept SVG where
 
 instance MimeRender SVG SvgBinary where
     mimeRender _ = unSvgBinary
+
+-- |
+--
+newtype Chart = Chart SvgBinary
+
+instance Servant.Docs.ToSample Chart where
+    toSamples _ =
+        Servant.Docs.noSamples
+
+instance Servant.MimeRender SVG Chart where
+    mimeRender ctype (Chart val) =
+        render val
+        where
+        render :: SvgBinary -> BL8.ByteString
+        render = Servant.mimeRender ctype
+
+-- |
+--
+type ChartWithCacheControl = Headers '[Header "Cache-Conrol" T.Text] Chart
+
+instance Servant.Docs.ToSample T.Text where
+    toSamples _ =
+        Servant.Docs.singleSample "no-store"
+
+-- |
+--
+type QueryWidth = QueryParam "w" Int
+type QueryHeight = QueryParam "h" Int
+
+defQueryWidth :: Int
+defQueryWidth = 500
+
+defQueryHeight :: Int
+defQueryHeight = 500
+
+instance Servant.Docs.ToParam QueryWidth where
+    toParam _ =
+        Servant.Docs.DocQueryParam "w" ["int"] ("compose chart width. default is " ++ show defQueryWidth) Servant.Docs.Normal
+
+instance Servant.Docs.ToParam QueryHeight where
+    toParam _ =
+        Servant.Docs.DocQueryParam "h" ["int"] ("compose chart height. default is " ++ show defQueryHeight) Servant.Docs.Normal
+
+-- |
+--
+type MarketCode = String
+
+-- |
+--
+type CaptureMarketCode= Capture "marketCode" MarketCode
+instance Servant.Docs.ToCapture CaptureMarketCode where
+    toCapture _ =
+        Servant.Docs.DocCapture
+        "market code"
+        "NI225, TOPIX, TYO8306 etc..."
+
+-- |
+--
+newtype RecordsLimit = MkRecordsLimit
+    { unRecordsLimit :: Int
+    } deriving Generic
+
+instance ElmType RecordsLimit
+
+instance Default RecordsLimit where
+    def = MkRecordsLimit 1000
+
+instance Servant.FromHttpApiData RecordsLimit where
+    parseQueryParam x =
+        case makeRecordsLimit =<< parse x of
+            Nothing -> Left "QueryLimit"
+            Just a  -> Right a
+        where
+        parse :: T.Text -> Maybe Int
+        parse =
+            either (const Nothing) Just . Servant.parseQueryParam
+
+-- |
+-- スマートコンストラクタ
+makeRecordsLimit :: Int -> Maybe RecordsLimit
+makeRecordsLimit x | x > 0     = Just (MkRecordsLimit x)
+                   | otherwise = Nothing
+
+-- |
+--
+type QueryLimit = QueryParam "limit" RecordsLimit
+
+instance Servant.Docs.ToParam QueryLimit where
+    toParam _ =
+        Servant.Docs.DocQueryParam
+            "limit"
+            ["100", "1000", "..."]
+            ("limit of records, default is " ++ show (unRecordsLimit (def :: RecordsLimit)))
+            Servant.Docs.Normal
+
+-- |
+--
+type QueryTimeFrame = QueryParam' '[Required, Strict] "tf" TimeFrame
+
+instance Servant.Docs.ToParam QueryTimeFrame where
+    toParam _ =
+        Servant.Docs.DocQueryParam
+            "tf"
+            Model.validTimeFrames
+            "prices of a time frame."
+            Servant.Docs.Normal
+
+-- |
+-- TimeFrame Orphan instances
+--
+instance ElmType TimeFrame
+
+instance Servant.FromHttpApiData TimeFrame where
+    parseQueryParam x =
+        let y = T.filter ('"' /=) $ URI.decodeText x
+        in
+        case Model.toTimeFrame =<< parse y of
+            Nothing ->
+                Left "TimeFrame"
+            Just a ->
+                Right a
+        where
+        --
+        --
+        parse :: T.Text -> Maybe String
+        parse =
+            either (const Nothing) Just . Servant.parseQueryParam
+
+instance Servant.ToHttpApiData TimeFrame where
+    toQueryParam =
+        T.pack . Model.fromTimeFrame
 
 -- |
 --
@@ -134,33 +284,6 @@ instance Servant.Docs.ToSample AuthClientId where
 
 -- |
 --
-newtype QueryLimit = MkQueryLimit
-    { unQueryLimit :: Int
-    } deriving Generic
-
-instance ElmType QueryLimit
-
-instance Default QueryLimit where
-    def = MkQueryLimit 1000
-
-instance Servant.FromHttpApiData QueryLimit where
-    parseQueryParam x =
-        case makeQueryLimit =<< parse x of
-            Nothing -> Left "QueryLimit"
-            Just a  -> Right a
-        where
-        parse :: T.Text -> Maybe Int
-        parse =
-            either (const Nothing) Just . Servant.parseQueryParam
-
--- |
--- スマートコンストラクタ
-makeQueryLimit :: Int -> Maybe QueryLimit
-makeQueryLimit x | x > 0     = Just (MkQueryLimit x)
-                 | otherwise = Nothing
-
--- |
---
 data SystemSignal
     = Green
     | Yellow
@@ -175,7 +298,7 @@ instance Servant.Docs.ToSample SystemSignal where
     toSamples _ =
         Servant.Docs.noSamples
 
-data SystemHealth = SystemHealth
+newtype SystemHealth = SystemHealth
     { system :: SystemSignal
     } deriving Generic
 
