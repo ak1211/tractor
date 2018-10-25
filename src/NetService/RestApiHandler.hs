@@ -185,6 +185,7 @@ getChartHandler pool codeStr timeFrame qWidth qHeight =
     selectList ticker = flip DB.runSqlPersistMPool pool $ DB.selectList
         [Model.OhlcvTf ==. timeFrame, Model.OhlcvTicker ==. ticker]
         [DB.Desc Model.OhlcvAt, DB.LimitTo 100]
+
 -- |
 -- 取得(SELECT)
 getHistoriesHandler

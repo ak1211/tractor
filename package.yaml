@@ -69,6 +69,7 @@ library:
   - safe
   - servant
   - servant-auth-server
+  - servant-auth-docs
   - servant-cassava
   - servant-docs
   - servant-lucid
@@ -125,6 +126,7 @@ tests:
     - -Wall
     dependencies:
     - servant-auth-server
+    - servant-auth-docs
     - servant-docs
     - shelly
     - tractor

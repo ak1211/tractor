@@ -1,4 +1,4 @@
-module Api.Endpoint exposing (ApiOhlcv, ApiPortfolio, AuthClientId, AuthTempCode, AuthenticatedUser, AuthzValue, JWT, MarketCode, NoContent, QueryLimit, RespAuth, SystemHealth, SystemSignal, TimeFrame, VerRev, decodeApiOhlcv, decodeApiPortfolio, decodeAuthClientId, decodeAuthTempCode, decodeAuthenticatedUser, decodeRespAuth, decodeSystemHealth, decodeSystemSignal, decodeVerRev, deleteApiV1StocksHistoryByMarketCode, encodeApiOhlcv, encodeApiPortfolio, encodeAuthClientId, encodeAuthTempCode, encodeAuthenticatedUser, encodeRespAuth, encodeVerRev, getApiV1AuthClientid, getApiV1Health, getApiV1Portfolios, getApiV1StocksHistoryByMarketCode, getApiV1Version, makeAuthorizationHeader, patchApiV1StocksHistoryByMarketCode, postApiV1Auth, postApiV1StocksHistoryAll, putApiV1PublishZmqByMarketCode, putApiV1StocksHistoryByMarketCode)
+module Api.Endpoint exposing (ApiOhlcv, ApiPortfolio, AuthClientId, AuthTempCode, AuthenticatedUser, AuthzValue, JWT, MarketCode, NoContent, RecordsLimit, RespAuth, SystemHealth, SystemSignal, TimeFrame, VerRev, decodeApiOhlcv, decodeApiPortfolio, decodeAuthClientId, decodeAuthTempCode, decodeAuthenticatedUser, decodeRespAuth, decodeSystemHealth, decodeSystemSignal, decodeVerRev, deleteApiV1StocksHistoryByMarketCode, encodeApiOhlcv, encodeApiPortfolio, encodeAuthClientId, encodeAuthTempCode, encodeAuthenticatedUser, encodeRespAuth, encodeVerRev, getApiV1AuthClientid, getApiV1Health, getApiV1Portfolios, getApiV1StocksHistoryByMarketCode, getApiV1Token, getApiV1Version, makeAuthorizationHeader, patchApiV1StocksHistoryByMarketCode, postApiV1StocksHistoryAll, putApiV1PublishZmqByMarketCode, putApiV1StocksHistoryByMarketCode)
 
 import Http
 import Json.Decode exposing (..)
@@ -25,7 +25,7 @@ type alias TimeFrame =
     String
 
 
-type alias QueryLimit =
+type alias RecordsLimit =
     Int
 
 
@@ -316,7 +316,7 @@ postApiV1StocksHistoryAll =
         }
 
 
-getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Maybe QueryLimit -> Http.Request (List ApiOhlcv)
+getApiV1StocksHistoryByMarketCode : String -> String -> TimeFrame -> Maybe RecordsLimit -> Http.Request (List ApiOhlcv)
 getApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode query_tf query_limit =
     let
         params =
@@ -491,22 +491,24 @@ deleteApiV1StocksHistoryByMarketCode header_Authorization capture_marketCode que
         }
 
 
-postApiV1Auth : AuthTempCode -> Http.Request RespAuth
-postApiV1Auth body =
+getApiV1Token : String -> Http.Request RespAuth
+getApiV1Token header_Authorization =
     Http.request
         { method =
-            "POST"
+            "GET"
         , headers =
-            []
+            List.filterMap identity
+                [ Maybe.map (Http.header "Authorization") (Just header_Authorization)
+                ]
         , url =
             String.join "/"
                 [ "https://tractor.ak1211.com"
                 , "api"
                 , "v1"
-                , "auth"
+                , "token"
                 ]
         , body =
-            Http.jsonBody (encodeAuthTempCode body)
+            Http.emptyBody
         , expect =
             Http.expectJson decodeRespAuth
         , timeout =

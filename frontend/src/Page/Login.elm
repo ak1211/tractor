@@ -13,6 +13,7 @@ module Page.Login exposing (Model, Msg(..), init, subscriptions, toSession, upda
 
 import Api
 import Api.Endpoint as Endpoint exposing (AuthClientId)
+import Base64
 import Browser
 import Browser.Navigation as Navigation
 import Bulma.Components as Components
@@ -27,6 +28,7 @@ import Json.Decode
 import Page
 import Route exposing (AuthRedirectParam, AuthRedirectResult)
 import Session exposing (Session)
+import Task
 import Url
 import Url.Builder as Builder
 
@@ -252,8 +254,22 @@ getAuthClientId =
 
 
 getAccessToken : Endpoint.AuthTempCode -> Cmd Msg
-getAccessToken code =
-    Http.send GotAccessToken <| Endpoint.postApiV1Auth code
+getAccessToken authTempCode =
+    let
+        clientidTask =
+            Http.toTask Endpoint.getApiV1AuthClientid
+
+        getTokenTask x =
+            basicAuth x.clientid authTempCode.code
+                |> Endpoint.getApiV1Token
+                |> Http.toTask
+
+        basicAuth user pass =
+            "Basic " ++ Base64.encode (user ++ ":" ++ pass)
+    in
+    clientidTask
+        |> Task.andThen (\cid -> getTokenTask cid)
+        |> Task.attempt GotAccessToken
 
 
 

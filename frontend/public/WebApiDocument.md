@@ -1,37 +1,3 @@
-## POST /api/v1/auth
-
-### get access token (JWT)
-
-
-### Request:
-
-- Supported content types are:
-
-    - `application/json;charset=utf-8`
-    - `application/json`
-
-- Example (`application/json;charset=utf-8`, `application/json`):
-
-    ```javascript
-{"code":"code in OAuth flow"}
-    ```
-
-### Response:
-
-- Status code 200
-- Headers: []
-
-- Supported content types are:
-
-    - `application/json;charset=utf-8`
-    - `application/json`
-
-- Example (`application/json;charset=utf-8`, `application/json`):
-
-    ```javascript
-{"accessToken":"API Access Token","expiresIn":3920,"tokenType":"Bearer"}
-    ```
-
 ## GET /api/v1/auth/clientid
 
 ### get OAuth client id
@@ -477,6 +443,31 @@ at,open,high,low,close,volume,source
 
     ```javascript
 
+    ```
+
+## GET /api/v1/token
+
+### get access token (JWT)
+
+
+### Headers:
+
+- This endpoint is sensitive to the value of the **Authorization** HTTP header.
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+{"accessToken":"API Access Token","expiresIn":3920,"tokenType":"Bearer"}
     ```
 
 ## GET /api/v1/version

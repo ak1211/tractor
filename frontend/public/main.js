@@ -4473,23 +4473,6 @@ function _Http_multipart(parts)
 }
 
 
-function _Url_percentEncode(string)
-{
-	return encodeURIComponent(string);
-}
-
-function _Url_percentDecode(string)
-{
-	try
-	{
-		return elm$core$Maybe$Just(decodeURIComponent(string));
-	}
-	catch (e)
-	{
-		return elm$core$Maybe$Nothing;
-	}
-}
-
 
 var _Bitwise_and = F2(function(a, b)
 {
@@ -4526,6 +4509,23 @@ var _Bitwise_shiftRightZfBy = F2(function(offset, a)
 	return a >>> offset;
 });
 
+
+function _Url_percentEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function _Url_percentDecode(string)
+{
+	try
+	{
+		return elm$core$Maybe$Just(decodeURIComponent(string));
+	}
+	catch (e)
+	{
+		return elm$core$Maybe$Nothing;
+	}
+}
 
 // CREATE
 
@@ -6399,83 +6399,6 @@ var author$project$Page$Login$First = function (a) {
 var author$project$Page$Login$Redirected = function (a) {
 	return {$: 1, a: a};
 };
-var author$project$Api$Endpoint$RespAuth = F3(
-	function (accessToken, expiresIn, tokenType) {
-		return {aN: accessToken, a2: expiresIn, bH: tokenType};
-	});
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var author$project$Api$Endpoint$decodeRespAuth = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'tokenType',
-	elm$json$Json$Decode$string,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'expiresIn',
-		elm$json$Json$Decode$int,
-		A3(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'accessToken',
-			elm$json$Json$Decode$string,
-			elm$json$Json$Decode$succeed(author$project$Api$Endpoint$RespAuth))));
-var elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			elm$core$List$foldl,
-			F2(
-				function (_n0, obj) {
-					var k = _n0.a;
-					var v = _n0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(0),
-			pairs));
-};
-var elm$json$Json$Encode$string = _Json_wrap;
-var author$project$Api$Endpoint$encodeAuthTempCode = function (x) {
-	return elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'code',
-				elm$json$Json$Encode$string(x.Y))
-			]));
-};
-var elm$http$Http$Internal$StringBody = F2(
-	function (a, b) {
-		return {$: 1, a: a, b: b};
-	});
-var elm$http$Http$jsonBody = function (value) {
-	return A2(
-		elm$http$Http$Internal$StringBody,
-		'application/json',
-		A2(elm$json$Json$Encode$encode, 0, value));
-};
-var author$project$Api$Endpoint$postApiV1Auth = function (body) {
-	return elm$http$Http$request(
-		{
-			f: elm$http$Http$jsonBody(
-				author$project$Api$Endpoint$encodeAuthTempCode(body)),
-			j: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeRespAuth),
-			k: _List_Nil,
-			l: 'POST',
-			m: elm$core$Maybe$Nothing,
-			n: A2(
-				elm$core$String$join,
-				'/',
-				_List_fromArray(
-					['https://tractor.ak1211.com', 'api', 'v1', 'auth'])),
-			o: false
-		});
-};
-var author$project$Page$Login$GotAccessToken = function (a) {
-	return {$: 3, a: a};
-};
-var author$project$Page$Login$getAccessToken = function (code) {
-	return A2(
-		elm$http$Http$send,
-		author$project$Page$Login$GotAccessToken,
-		author$project$Api$Endpoint$postApiV1Auth(code));
-};
 var author$project$Api$Endpoint$AuthClientId = function (clientid) {
 	return {aW: clientid};
 };
@@ -6498,6 +6421,312 @@ var author$project$Api$Endpoint$getApiV1AuthClientid = elm$http$Http$request(
 				['https://tractor.ak1211.com', 'api', 'v1', 'auth', 'clientid'])),
 		o: false
 	});
+var author$project$Api$Endpoint$RespAuth = F3(
+	function (accessToken, expiresIn, tokenType) {
+		return {aN: accessToken, a2: expiresIn, bH: tokenType};
+	});
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var author$project$Api$Endpoint$decodeRespAuth = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'tokenType',
+	elm$json$Json$Decode$string,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'expiresIn',
+		elm$json$Json$Decode$int,
+		A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'accessToken',
+			elm$json$Json$Decode$string,
+			elm$json$Json$Decode$succeed(author$project$Api$Endpoint$RespAuth))));
+var elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _n0 = f(mx);
+		if (!_n0.$) {
+			var x = _n0.a;
+			return A2(elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (!maybe.$) {
+			var value = maybe.a;
+			return elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var elm$http$Http$Internal$Header = F2(
+	function (a, b) {
+		return {$: 0, a: a, b: b};
+	});
+var elm$http$Http$header = elm$http$Http$Internal$Header;
+var author$project$Api$Endpoint$getApiV1Token = function (header_Authorization) {
+	return elm$http$Http$request(
+		{
+			f: elm$http$Http$emptyBody,
+			j: elm$http$Http$expectJson(author$project$Api$Endpoint$decodeRespAuth),
+			k: A2(
+				elm$core$List$filterMap,
+				elm$core$Basics$identity,
+				_List_fromArray(
+					[
+						A2(
+						elm$core$Maybe$map,
+						elm$http$Http$header('Authorization'),
+						elm$core$Maybe$Just(header_Authorization))
+					])),
+			l: 'GET',
+			m: elm$core$Maybe$Nothing,
+			n: A2(
+				elm$core$String$join,
+				'/',
+				_List_fromArray(
+					['https://tractor.ak1211.com', 'api', 'v1', 'token'])),
+			o: false
+		});
+};
+var author$project$Page$Login$GotAccessToken = function (a) {
+	return {$: 3, a: a};
+};
+var elm$core$String$foldl = _String_foldl;
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Bitwise$and = _Bitwise_and;
+var elm$core$Bitwise$or = _Bitwise_or;
+var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var truqu$elm_base64$Base64$Encode$intToBase64 = function (i) {
+	switch (i) {
+		case 0:
+			return 'A';
+		case 1:
+			return 'B';
+		case 2:
+			return 'C';
+		case 3:
+			return 'D';
+		case 4:
+			return 'E';
+		case 5:
+			return 'F';
+		case 6:
+			return 'G';
+		case 7:
+			return 'H';
+		case 8:
+			return 'I';
+		case 9:
+			return 'J';
+		case 10:
+			return 'K';
+		case 11:
+			return 'L';
+		case 12:
+			return 'M';
+		case 13:
+			return 'N';
+		case 14:
+			return 'O';
+		case 15:
+			return 'P';
+		case 16:
+			return 'Q';
+		case 17:
+			return 'R';
+		case 18:
+			return 'S';
+		case 19:
+			return 'T';
+		case 20:
+			return 'U';
+		case 21:
+			return 'V';
+		case 22:
+			return 'W';
+		case 23:
+			return 'X';
+		case 24:
+			return 'Y';
+		case 25:
+			return 'Z';
+		case 26:
+			return 'a';
+		case 27:
+			return 'b';
+		case 28:
+			return 'c';
+		case 29:
+			return 'd';
+		case 30:
+			return 'e';
+		case 31:
+			return 'f';
+		case 32:
+			return 'g';
+		case 33:
+			return 'h';
+		case 34:
+			return 'i';
+		case 35:
+			return 'j';
+		case 36:
+			return 'k';
+		case 37:
+			return 'l';
+		case 38:
+			return 'm';
+		case 39:
+			return 'n';
+		case 40:
+			return 'o';
+		case 41:
+			return 'p';
+		case 42:
+			return 'q';
+		case 43:
+			return 'r';
+		case 44:
+			return 's';
+		case 45:
+			return 't';
+		case 46:
+			return 'u';
+		case 47:
+			return 'v';
+		case 48:
+			return 'w';
+		case 49:
+			return 'x';
+		case 50:
+			return 'y';
+		case 51:
+			return 'z';
+		case 52:
+			return '0';
+		case 53:
+			return '1';
+		case 54:
+			return '2';
+		case 55:
+			return '3';
+		case 56:
+			return '4';
+		case 57:
+			return '5';
+		case 58:
+			return '6';
+		case 59:
+			return '7';
+		case 60:
+			return '8';
+		case 61:
+			return '9';
+		case 62:
+			return '+';
+		default:
+			return '/';
+	}
+};
+var truqu$elm_base64$Base64$Encode$toBase64 = function (_int) {
+	return _Utils_ap(
+		truqu$elm_base64$Base64$Encode$intToBase64(63 & (_int >>> 18)),
+		_Utils_ap(
+			truqu$elm_base64$Base64$Encode$intToBase64(63 & (_int >>> 12)),
+			_Utils_ap(
+				truqu$elm_base64$Base64$Encode$intToBase64(63 & (_int >>> 6)),
+				truqu$elm_base64$Base64$Encode$intToBase64(63 & (_int >>> 0)))));
+};
+var truqu$elm_base64$Base64$Encode$add = F2(
+	function (_char, _n0) {
+		var res = _n0.a;
+		var count = _n0.b;
+		var acc = _n0.c;
+		var current = (acc << 8) | _char;
+		if (count === 2) {
+			return _Utils_Tuple3(
+				_Utils_ap(
+					res,
+					truqu$elm_base64$Base64$Encode$toBase64(current)),
+				0,
+				0);
+		} else {
+			return _Utils_Tuple3(res, count + 1, current);
+		}
+	});
+var truqu$elm_base64$Base64$Encode$chomp = F2(
+	function (char_, acc) {
+		var _char = elm$core$Char$toCode(char_);
+		return (_char < 128) ? A2(truqu$elm_base64$Base64$Encode$add, _char, acc) : ((_char < 2048) ? A2(
+			truqu$elm_base64$Base64$Encode$add,
+			128 | (63 & _char),
+			A2(truqu$elm_base64$Base64$Encode$add, 192 | (_char >>> 6), acc)) : (((_char < 55296) || ((_char >= 57344) && (_char <= 65535))) ? A2(
+			truqu$elm_base64$Base64$Encode$add,
+			128 | (63 & _char),
+			A2(
+				truqu$elm_base64$Base64$Encode$add,
+				128 | (63 & (_char >>> 6)),
+				A2(truqu$elm_base64$Base64$Encode$add, 224 | (_char >>> 12), acc))) : A2(
+			truqu$elm_base64$Base64$Encode$add,
+			128 | (63 & _char),
+			A2(
+				truqu$elm_base64$Base64$Encode$add,
+				128 | (63 & (_char >>> 6)),
+				A2(
+					truqu$elm_base64$Base64$Encode$add,
+					128 | (63 & (_char >>> 12)),
+					A2(truqu$elm_base64$Base64$Encode$add, 240 | (_char >>> 18), acc))))));
+	});
+var truqu$elm_base64$Base64$Encode$initial = _Utils_Tuple3('', 0, 0);
+var truqu$elm_base64$Base64$Encode$wrapUp = function (_n0) {
+	var res = _n0.a;
+	var cnt = _n0.b;
+	var acc = _n0.c;
+	switch (cnt) {
+		case 1:
+			return res + (truqu$elm_base64$Base64$Encode$intToBase64(63 & (acc >>> 2)) + (truqu$elm_base64$Base64$Encode$intToBase64(63 & (acc << 4)) + '=='));
+		case 2:
+			return res + (truqu$elm_base64$Base64$Encode$intToBase64(63 & (acc >>> 10)) + (truqu$elm_base64$Base64$Encode$intToBase64(63 & (acc >>> 4)) + (truqu$elm_base64$Base64$Encode$intToBase64(63 & (acc << 2)) + '=')));
+		default:
+			return res;
+	}
+};
+var truqu$elm_base64$Base64$Encode$encode = function (input) {
+	return truqu$elm_base64$Base64$Encode$wrapUp(
+		A3(elm$core$String$foldl, truqu$elm_base64$Base64$Encode$chomp, truqu$elm_base64$Base64$Encode$initial, input));
+};
+var truqu$elm_base64$Base64$encode = truqu$elm_base64$Base64$Encode$encode;
+var author$project$Page$Login$getAccessToken = function (authTempCode) {
+	var clientidTask = elm$http$Http$toTask(author$project$Api$Endpoint$getApiV1AuthClientid);
+	var basicAuth = F2(
+		function (user, pass) {
+			return 'Basic ' + truqu$elm_base64$Base64$encode(user + (':' + pass));
+		});
+	var getTokenTask = function (x) {
+		return elm$http$Http$toTask(
+			author$project$Api$Endpoint$getApiV1Token(
+				A2(basicAuth, x.aW, authTempCode.Y)));
+	};
+	return A2(
+		elm$core$Task$attempt,
+		author$project$Page$Login$GotAccessToken,
+		A2(
+			elm$core$Task$andThen,
+			function (cid) {
+				return getTokenTask(cid);
+			},
+			clientidTask));
+};
 var author$project$Page$Login$GotAuthClientId = function (a) {
 	return {$: 2, a: a};
 };
@@ -7390,9 +7619,6 @@ var truqu$elm_base64$Base64$Decode$pad = function (input) {
 			return input;
 	}
 };
-var elm$core$String$foldl = _String_foldl;
-var elm$core$Bitwise$or = _Bitwise_or;
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
 var truqu$elm_base64$Base64$Decode$charToInt = function (_char) {
 	switch (_char) {
 		case 'A':
@@ -7527,8 +7753,6 @@ var truqu$elm_base64$Base64$Decode$charToInt = function (_char) {
 			return 0;
 	}
 };
-var elm$core$Bitwise$and = _Bitwise_and;
-var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
 var elm$core$Char$fromCode = _Char_fromCode;
 var elm$core$String$cons = _String_cons;
 var elm$core$String$fromChar = function (_char) {
@@ -7673,9 +7897,23 @@ var author$project$Api$credFromJWT = function (jwt) {
 		},
 		author$project$Api$authenticatedUser(jwt));
 };
+var elm$json$Json$Encode$string = _Json_wrap;
 var author$project$Username$encode = function (_n0) {
 	var username = _n0;
 	return elm$json$Json$Encode$string(username);
+};
+var elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n0, obj) {
+					var k = _n0.a;
+					var v = _n0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(0),
+			pairs));
 };
 var author$project$Api$storeCredWith = function (_n0) {
 	var uname = _n0.a;
@@ -9117,16 +9355,6 @@ var author$project$Viewer$username = function (_n0) {
 	var val = _n0;
 	return author$project$Api$username(val);
 };
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (!maybe.$) {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
 var surprisetalk$elm_bulma$Bulma$Classes$notification = elm$html$Html$Attributes$class('notification');
 var surprisetalk$elm_bulma$Bulma$Elements$notification = function (color) {
 	return A2(

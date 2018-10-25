@@ -66,7 +66,7 @@ spec = Servant.Elm.Spec
     : "decodeSystemSignal = string"
     : "type alias JWT = String"
     : "type alias TimeFrame = String"
-    : "type alias QueryLimit = Int"
+    : "type alias RecordsLimit = Int"
     : "type alias MarketCode = String"
     : "type alias AuthzValue = String"
     : "makeAuthorizationHeader : JWT -> AuthzValue"
