@@ -141,7 +141,7 @@
 ### Response:
 
 - Status code 200
-- Headers: [("Cache-Conrol","no-store")]
+- Headers: [("Cache-Control","no-store")]
 
 - Supported content types are:
 

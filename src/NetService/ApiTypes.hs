@@ -140,7 +140,7 @@ instance Servant.MimeRender SVG Chart where
 
 -- |
 --
-type ChartWithCacheControl = Headers '[Header "Cache-Conrol" T.Text] Chart
+type ChartWithCacheControl = Headers '[Header "Cache-Control" T.Text] Chart
 
 instance Servant.Docs.ToSample T.Text where
     toSamples _ =
