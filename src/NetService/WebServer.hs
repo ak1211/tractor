@@ -94,7 +94,7 @@ import qualified NetService.ApiTypes           as ApiTypes
 import           NetService.HomePage                      ( HomePage(..) )
 import           NetService.HttpError
 import           NetService.RestApiHandler
-import           NetService.UserAuth                      ( authCheck )
+import qualified NetService.UserAuth
 import           NetService.WebServerConfig
 
 -- |
@@ -265,7 +265,7 @@ runWebServer versionRevision conf chan = do
             { Servant.Auth.Server.jwtAlg = Just Jose.HS512
             }
         config  = Config versionRevision jwtCfg conf pool chan
-        authCfg = authCheck config
+        authCfg = NetService.UserAuth.authCheck config
         context =
             jwtCfg
                 :. Servant.Auth.Server.defaultCookieSettings
