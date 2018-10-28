@@ -40,7 +40,6 @@ type Route
     | Logout
     | Upload
     | Portfolio
-    | Analytics {- Endpoint.MarketCode -}
     | Reports
     | AccountBalance
     | ApiDocument
@@ -82,7 +81,6 @@ parser =
         , Parser.map Logout (Parser.s "logout")
         , Parser.map Upload (Parser.s "upload")
         , Parser.map Portfolio (Parser.s "portfolio")
-        , Parser.map Analytics (Parser.s "analytics")
         , Parser.map Reports (Parser.s "reports")
         , Parser.map AccountBalance (Parser.s "account-balance")
         , Parser.map ApiDocument (Parser.s "api-document")
@@ -138,9 +136,6 @@ routeToString page =
 
                 Portfolio ->
                     [ "portfolio" ]
-
-                Analytics ->
-                    [ "analytics" ]
 
                 Reports ->
                     [ "reports" ]

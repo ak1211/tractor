@@ -153,7 +153,8 @@ viewFooter : Html msg
 viewFooter =
     let
         copy =
-            Html.p []
+            Elements.content Modifiers.Standard
+                [ Typo.textSize Typo.Standard, margin ]
                 [ Html.text "The Assets observation application "
                 , Html.span
                     [ Typo.textSize Typo.Medium
@@ -164,10 +165,10 @@ viewFooter =
                 , Html.text "."
                 ]
 
-        forkme =
-            Html.div [ Attrib.style "display" "inline-block" ]
-                [ Html.strong [ Attrib.style "vertical-align" "middle" ]
-                    [ Html.text "Fork me on " ]
+        viewOnGitHub =
+            Elements.content Modifiers.Standard
+                [ margin ]
+                [ Html.text "view on "
                 , Html.a
                     [ Attrib.href "https://github.com/ak1211/tractor" ]
                     [ Html.img
@@ -183,7 +184,8 @@ viewFooter =
                 ]
 
         bulma =
-            Html.div [ Attrib.style "display" "inline-block" ]
+            Elements.content Modifiers.Standard
+                [ margin ]
                 [ Html.a
                     [ Attrib.href "https://bulma.io" ]
                     [ Html.img
@@ -195,12 +197,28 @@ viewFooter =
                         []
                     ]
                 ]
+
+        margin =
+            Attrib.style "margin" "1rem"
     in
     Layout.footer []
         [ Layout.container []
-            [ Elements.content Modifiers.Standard
-                [ Typo.textCentered ]
-                [ copy, forkme ]
+            [ Layout.tileAncestor Modifiers.Auto
+                []
+                [ Layout.verticalTile Modifiers.Width5
+                    []
+                    [ Layout.tileChild Modifiers.Auto [] [ copy ]
+                    ]
+                , Layout.verticalTile Modifiers.Width2
+                    []
+                    [ Layout.tileChild Modifiers.Auto [] [ viewOnGitHub ]
+                    ]
+                , Layout.verticalTile Modifiers.Width2
+                    []
+                    [ Layout.tileChild Modifiers.Auto [] [ bulma ]
+                    ]
+                , Layout.verticalTile Modifiers.Auto [] []
+                ]
             ]
         ]
 

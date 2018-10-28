@@ -21,11 +21,14 @@ import Http
 import Json.Decode
 import Jwt exposing (JwtError)
 import Page
+import Page.AccountBalance as AccBalance
 import Page.ApiDocument as ApiDocument
 import Page.Blank as Blank
 import Page.Dashboard as Dashboard
 import Page.Login as Login
 import Page.NotFound as NotFound
+import Page.Portfolio as Portfolio
+import Page.Reports as Reports
 import Page.Upload as Upload
 import Route exposing (Route)
 import Session exposing (Session)
@@ -42,6 +45,9 @@ type Model
     | NotFound Session
     | Dashboard Dashboard.Model
     | Upload Upload.Model
+    | Portfolio Portfolio.Model
+    | Reports Reports.Model
+    | AccountBalance AccBalance.Model
     | Login Login.Model
     | ApiDocument ApiDocument.Model
 
@@ -83,6 +89,18 @@ view model =
             Upload.view upload
                 |> viewPage upload.isMenuOpen Upload.ToggleMenuOpen GotUploadMsg
 
+        Portfolio portfolio ->
+            Portfolio.view portfolio
+                |> viewPage portfolio.isMenuOpen Portfolio.ToggleMenuOpen GotPortfolioMsg
+
+        Reports reports ->
+            Reports.view reports
+                |> viewPage reports.isMenuOpen Reports.ToggleMenuOpen GotReportsMsg
+
+        AccountBalance accbalance ->
+            AccBalance.view accbalance
+                |> viewPage accbalance.isMenuOpen AccBalance.ToggleMenuOpen GotAccountBalanceMsg
+
         Login login ->
             Login.view login
                 |> viewPage login.isMenuOpen Login.ToggleMenuOpen GotLoginMsg
@@ -103,6 +121,9 @@ type Msg
     | ClickedLink Browser.UrlRequest
     | GotDashboardMsg Dashboard.Msg
     | GotUploadMsg Upload.Msg
+    | GotPortfolioMsg Portfolio.Msg
+    | GotReportsMsg Reports.Msg
+    | GotAccountBalanceMsg AccBalance.Msg
     | GotLoginMsg Login.Msg
     | GotApiDocumentMsg ApiDocument.Msg
     | GotSession Session
@@ -122,6 +143,15 @@ toSession page =
 
         Upload upload ->
             Upload.toSession upload
+
+        Portfolio portfolio ->
+            Portfolio.toSession portfolio
+
+        Reports reports ->
+            Reports.toSession reports
+
+        AccountBalance accbalance ->
+            AccBalance.toSession accbalance
 
         Login login ->
             Login.toSession login
@@ -167,16 +197,16 @@ changeRouteTo maybeRoute model =
                 |> updateWith Upload GotUploadMsg model
 
         Just Route.Portfolio ->
-            ( NotFound session, Cmd.none )
-
-        Just Route.Analytics ->
-            ( NotFound session, Cmd.none )
+            Portfolio.init session
+                |> updateWith Portfolio GotPortfolioMsg model
 
         Just Route.Reports ->
-            ( NotFound session, Cmd.none )
+            Reports.init session
+                |> updateWith Reports GotReportsMsg model
 
         Just Route.AccountBalance ->
-            ( NotFound session, Cmd.none )
+            AccBalance.init session
+                |> updateWith AccountBalance GotAccountBalanceMsg model
 
         Just Route.ApiDocument ->
             ApiDocument.init session
@@ -232,6 +262,18 @@ update msg model =
             Upload.update subMsg upload
                 |> updateWith Upload GotUploadMsg model
 
+        ( GotPortfolioMsg subMsg, Portfolio portfolio ) ->
+            Portfolio.update subMsg portfolio
+                |> updateWith Portfolio GotPortfolioMsg model
+
+        ( GotReportsMsg subMsg, Reports reports ) ->
+            Reports.update subMsg reports
+                |> updateWith Reports GotReportsMsg model
+
+        ( GotAccountBalanceMsg subMsg, AccountBalance accbalance ) ->
+            AccBalance.update subMsg accbalance
+                |> updateWith AccountBalance GotAccountBalanceMsg model
+
         ( GotApiDocumentMsg subMsg, ApiDocument apidoc ) ->
             ApiDocument.update subMsg apidoc
                 |> updateWith ApiDocument GotApiDocumentMsg model
@@ -274,6 +316,15 @@ subscriptions model =
 
         Upload upload ->
             Sub.map GotUploadMsg (Upload.subscriptions upload)
+
+        Portfolio portfolio ->
+            Sub.map GotPortfolioMsg (Portfolio.subscriptions portfolio)
+
+        Reports reports ->
+            Sub.map GotReportsMsg (Reports.subscriptions reports)
+
+        AccountBalance accbalance ->
+            Sub.map GotAccountBalanceMsg (AccBalance.subscriptions accbalance)
 
         ApiDocument apidocument ->
             Sub.map GotApiDocumentMsg (ApiDocument.subscriptions apidocument)

@@ -240,7 +240,7 @@ tokenEndpoint cnf result = case result of
     --
     --
     expIn :: Int
-    expIn = 2 * 60 * 60
+    expIn = 24 * 60 * 60
 
 -- |
 --

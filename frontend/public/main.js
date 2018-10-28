@@ -770,11 +770,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.aH.N === region.a0.N)
+	if (region.aH.O === region.a0.O)
 	{
-		return 'on line ' + region.aH.N;
+		return 'on line ' + region.aH.O;
 	}
-	return 'on lines ' + region.aH.N + ' through ' + region.a0.N;
+	return 'on lines ' + region.aH.O + ' through ' + region.a0.O;
 }
 
 
@@ -3907,7 +3907,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 		impl.bI,
 		impl.bE,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.O && impl.O(sendToApp)
+			var divertHrefToApp = impl.P && impl.P(sendToApp)
 			var view = impl.bP;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
@@ -3977,7 +3977,7 @@ function _Browser_application(impl)
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		O: function(sendToApp)
+		P: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4075,17 +4075,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { cb: 'hidden', M: 'visibilitychange' }
+		? { cb: 'hidden', N: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { cb: 'mozHidden', M: 'mozvisibilitychange' }
+		? { cb: 'mozHidden', N: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { cb: 'msHidden', M: 'msvisibilitychange' }
+		? { cb: 'msHidden', N: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { cb: 'webkitHidden', M: 'webkitvisibilitychange' }
-		: { cb: 'hidden', M: 'visibilitychange' };
+		? { cb: 'webkitHidden', N: 'webkitvisibilitychange' }
+		: { cb: 'hidden', N: 'visibilitychange' };
 }
 
 
@@ -4170,8 +4170,8 @@ function _Browser_getViewport()
 		bQ: {
 			d: _Browser_window.pageXOffset,
 			e: _Browser_window.pageYOffset,
-			K: _Browser_doc.documentElement.clientWidth,
-			A: _Browser_doc.documentElement.clientHeight
+			L: _Browser_doc.documentElement.clientWidth,
+			B: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4181,8 +4181,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		K: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		A: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		L: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		B: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4206,14 +4206,14 @@ function _Browser_getViewportOf(id)
 	{
 		return {
 			by: {
-				K: node.scrollWidth,
-				A: node.scrollHeight
+				L: node.scrollWidth,
+				B: node.scrollHeight
 			},
 			bQ: {
 				d: node.scrollLeft,
 				e: node.scrollTop,
-				K: node.clientWidth,
-				A: node.clientHeight
+				L: node.clientWidth,
+				B: node.clientHeight
 			}
 		};
 	});
@@ -4247,14 +4247,14 @@ function _Browser_getElement(id)
 			bQ: {
 				d: x,
 				e: y,
-				K: _Browser_doc.documentElement.clientWidth,
-				A: _Browser_doc.documentElement.clientHeight
+				L: _Browser_doc.documentElement.clientWidth,
+				B: _Browser_doc.documentElement.clientHeight
 			},
 			b1: {
 				d: x + rect.left,
 				e: y + rect.top,
-				K: rect.width,
-				A: rect.height
+				L: rect.width,
+				B: rect.height
 			}
 		};
 	});
@@ -4395,7 +4395,7 @@ function _Http_toResponse(xhr)
 {
 	return {
 		n: xhr.responseURL,
-		cm: { Y: xhr.status, cg: xhr.statusText },
+		cm: { Z: xhr.status, cg: xhr.statusText },
 		k: _Http_parseHeaders(xhr.getAllResponseHeaders()),
 		f: xhr.response
 	};
@@ -5602,32 +5602,53 @@ var author$project$Api$storeCache = _Platform_outgoingPort(
 		return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$core$Basics$identity, $);
 	});
 var author$project$Api$logout = author$project$Api$storeCache(elm$core$Maybe$Nothing);
+var author$project$Main$AccountBalance = function (a) {
+	return {$: 6, a: a};
+};
 var author$project$Main$ApiDocument = function (a) {
-	return {$: 5, a: a};
+	return {$: 8, a: a};
 };
 var author$project$Main$Dashboard = function (a) {
 	return {$: 2, a: a};
 };
+var author$project$Main$GotAccountBalanceMsg = function (a) {
+	return {$: 8, a: a};
+};
 var author$project$Main$GotApiDocumentMsg = function (a) {
-	return {$: 7, a: a};
+	return {$: 10, a: a};
 };
 var author$project$Main$GotDashboardMsg = function (a) {
 	return {$: 4, a: a};
 };
 var author$project$Main$GotLoginMsg = function (a) {
+	return {$: 9, a: a};
+};
+var author$project$Main$GotPortfolioMsg = function (a) {
 	return {$: 6, a: a};
+};
+var author$project$Main$GotReportsMsg = function (a) {
+	return {$: 7, a: a};
 };
 var author$project$Main$GotUploadMsg = function (a) {
 	return {$: 5, a: a};
 };
 var author$project$Main$Login = function (a) {
-	return {$: 4, a: a};
+	return {$: 7, a: a};
 };
 var author$project$Main$NotFound = function (a) {
 	return {$: 1, a: a};
 };
+var author$project$Main$Portfolio = function (a) {
+	return {$: 4, a: a};
+};
+var author$project$Main$Reports = function (a) {
+	return {$: 5, a: a};
+};
 var author$project$Main$Upload = function (a) {
 	return {$: 3, a: a};
+};
+var author$project$Page$AccountBalance$toSession = function (model) {
+	return model.ac;
 };
 var author$project$Page$ApiDocument$toSession = function (model) {
 	return model.ac;
@@ -5636,6 +5657,12 @@ var author$project$Page$Dashboard$toSession = function (model) {
 	return model.ac;
 };
 var author$project$Page$Login$toSession = function (model) {
+	return model.ac;
+};
+var author$project$Page$Portfolio$toSession = function (model) {
+	return model.ac;
+};
+var author$project$Page$Reports$toSession = function (model) {
 	return model.ac;
 };
 var author$project$Page$Upload$toSession = function (model) {
@@ -5656,6 +5683,15 @@ var author$project$Main$toSession = function (page) {
 			var upload = page.a;
 			return author$project$Page$Upload$toSession(upload);
 		case 4:
+			var portfolio = page.a;
+			return author$project$Page$Portfolio$toSession(portfolio);
+		case 5:
+			var reports = page.a;
+			return author$project$Page$Reports$toSession(reports);
+		case 6:
+			var accbalance = page.a;
+			return author$project$Page$AccountBalance$toSession(accbalance);
+		case 7:
 			var login = page.a;
 			return author$project$Page$Login$toSession(login);
 		default:
@@ -5672,6 +5708,12 @@ var author$project$Main$updateWith = F4(
 			toModel(subModel),
 			A2(elm$core$Platform$Cmd$map, toMsg, subCmd));
 	});
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Page$AccountBalance$init = function (session) {
+	var model = {v: false, ac: session};
+	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+};
 var author$project$Page$ApiDocument$UpdateWebApiDocument = function (a) {
 	return {$: 3, a: a};
 };
@@ -6282,7 +6324,7 @@ var author$project$Page$ApiDocument$getWebApiDocument = A2(
 	author$project$Page$ApiDocument$UpdateWebApiDocument,
 	elm$http$Http$getString('public/WebApiDocument.md'));
 var author$project$Page$ApiDocument$init = function (session) {
-	var model = {aa: false, ac: session, ag: elm$core$Maybe$Nothing};
+	var model = {v: false, ac: session, ag: elm$core$Maybe$Nothing};
 	return _Utils_Tuple2(model, author$project$Page$ApiDocument$getWebApiDocument);
 };
 var author$project$Api$Endpoint$SystemHealth = function (system) {
@@ -6381,9 +6423,8 @@ var author$project$Page$Dashboard$GotSystemVersion = function (a) {
 	return {$: 4, a: a};
 };
 var author$project$Page$Dashboard$getSystemVersion = A2(elm$http$Http$send, author$project$Page$Dashboard$GotSystemVersion, author$project$Api$Endpoint$getApiV1Version);
-var elm$core$Platform$Cmd$batch = _Platform_batch;
 var author$project$Page$Dashboard$init = function (session) {
-	var model = {aa: false, ac: session, ad: elm$core$Maybe$Nothing, ae: elm$core$Maybe$Nothing};
+	var model = {v: false, ac: session, ad: elm$core$Maybe$Nothing, ae: elm$core$Maybe$Nothing};
 	return _Utils_Tuple2(
 		model,
 		elm$core$Platform$Cmd$batch(
@@ -6715,7 +6756,7 @@ var author$project$Page$Login$getAccessToken = function (authTempCode) {
 	var getTokenTask = function (x) {
 		return elm$http$Http$toTask(
 			author$project$Api$Endpoint$getApiV1Token(
-				A2(basicAuth, x.aW, authTempCode.Y)));
+				A2(basicAuth, x.aW, authTempCode.Z)));
 	};
 	return A2(
 		elm$core$Task$attempt,
@@ -6731,7 +6772,6 @@ var author$project$Page$Login$GotAuthClientId = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Page$Login$getAuthClientId = A2(elm$http$Http$send, author$project$Page$Login$GotAuthClientId, author$project$Api$Endpoint$getApiV1AuthClientid);
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Page$Login$init = F2(
 	function (result, session) {
 		var initRedirectedStage = function (param) {
@@ -6739,7 +6779,7 @@ var author$project$Page$Login$init = F2(
 				{bV: param});
 		};
 		var initModel = function (x) {
-			return {aa: false, ac: session, I: x};
+			return {v: false, ac: session, J: x};
 		};
 		var initFirstStage = author$project$Page$Login$First(
 			{ai: elm$core$Maybe$Nothing});
@@ -6757,7 +6797,7 @@ var author$project$Page$Login$init = F2(
 				return _Utils_Tuple2(
 					initModel(
 						initRedirectedStage(param)),
-					author$project$Page$Login$getAccessToken(param.Y));
+					author$project$Page$Login$getAccessToken(param.Z));
 			} else {
 				var e = result.a.a;
 				return _Utils_Tuple2(
@@ -6767,8 +6807,16 @@ var author$project$Page$Login$init = F2(
 			}
 		}
 	});
+var author$project$Page$Portfolio$init = function (session) {
+	var model = {v: false, ac: session};
+	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+};
+var author$project$Page$Reports$init = function (session) {
+	var model = {v: false, ac: session};
+	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+};
 var author$project$Page$Upload$init = function (session) {
-	var model = {aa: false, ac: session};
+	var model = {v: false, ac: session};
 	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 };
 var author$project$Route$Dashboard = {$: 1};
@@ -6794,11 +6842,8 @@ var author$project$Route$routeToString = function (page) {
 					['portfolio']);
 			case 6:
 				return _List_fromArray(
-					['analytics']);
-			case 7:
-				return _List_fromArray(
 					['reports']);
-			case 8:
+			case 7:
 				return _List_fromArray(
 					['account-balance']);
 			default:
@@ -6885,26 +6930,30 @@ var author$project$Main$changeRouteTo = F2(
 						author$project$Page$Upload$init(session));
 				case 5:
 					var _n5 = maybeRoute.a;
-					return _Utils_Tuple2(
-						author$project$Main$NotFound(session),
-						elm$core$Platform$Cmd$none);
+					return A4(
+						author$project$Main$updateWith,
+						author$project$Main$Portfolio,
+						author$project$Main$GotPortfolioMsg,
+						model,
+						author$project$Page$Portfolio$init(session));
 				case 6:
 					var _n6 = maybeRoute.a;
-					return _Utils_Tuple2(
-						author$project$Main$NotFound(session),
-						elm$core$Platform$Cmd$none);
+					return A4(
+						author$project$Main$updateWith,
+						author$project$Main$Reports,
+						author$project$Main$GotReportsMsg,
+						model,
+						author$project$Page$Reports$init(session));
 				case 7:
 					var _n7 = maybeRoute.a;
-					return _Utils_Tuple2(
-						author$project$Main$NotFound(session),
-						elm$core$Platform$Cmd$none);
-				case 8:
-					var _n8 = maybeRoute.a;
-					return _Utils_Tuple2(
-						author$project$Main$NotFound(session),
-						elm$core$Platform$Cmd$none);
+					return A4(
+						author$project$Main$updateWith,
+						author$project$Main$AccountBalance,
+						author$project$Main$GotAccountBalanceMsg,
+						model,
+						author$project$Page$AccountBalance$init(session));
 				default:
-					var _n9 = maybeRoute.a;
+					var _n8 = maybeRoute.a;
 					return A4(
 						author$project$Main$updateWith,
 						author$project$Main$ApiDocument,
@@ -6915,29 +6964,28 @@ var author$project$Main$changeRouteTo = F2(
 		}
 	});
 var author$project$Api$Endpoint$AuthTempCode = function (code) {
-	return {Y: code};
+	return {Z: code};
 };
-var author$project$Route$AccountBalance = {$: 8};
-var author$project$Route$Analytics = {$: 6};
-var author$project$Route$ApiDocument = {$: 9};
+var author$project$Route$AccountBalance = {$: 7};
+var author$project$Route$ApiDocument = {$: 8};
 var author$project$Route$Login = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Route$Logout = {$: 3};
 var author$project$Route$Portfolio = {$: 5};
-var author$project$Route$Reports = {$: 7};
+var author$project$Route$Reports = {$: 6};
 var author$project$Route$Root = {$: 0};
 var author$project$Route$Upload = {$: 4};
 var elm$url$Url$Parser$Parser = elm$core$Basics$identity;
 var elm$url$Url$Parser$State = F5(
 	function (visited, unvisited, params, frag, value) {
-		return {u: frag, w: params, t: unvisited, r: value, x: visited};
+		return {u: frag, x: params, t: unvisited, r: value, y: visited};
 	});
 var elm$url$Url$Parser$mapState = F2(
 	function (func, _n0) {
-		var visited = _n0.x;
+		var visited = _n0.y;
 		var unvisited = _n0.t;
-		var params = _n0.w;
+		var params = _n0.x;
 		var frag = _n0.u;
 		var value = _n0.r;
 		return A5(
@@ -6952,9 +7000,9 @@ var elm$url$Url$Parser$map = F2(
 	function (subValue, _n0) {
 		var parseArg = _n0;
 		return function (_n1) {
-			var visited = _n1.x;
+			var visited = _n1.y;
 			var unvisited = _n1.t;
-			var params = _n1.w;
+			var params = _n1.x;
 			var frag = _n1.u;
 			var value = _n1.r;
 			return A2(
@@ -6994,9 +7042,9 @@ var elm$url$Url$Parser$oneOf = function (parsers) {
 var elm$url$Url$Parser$query = function (_n0) {
 	var queryParser = _n0;
 	return function (_n1) {
-		var visited = _n1.x;
+		var visited = _n1.y;
 		var unvisited = _n1.t;
-		var params = _n1.w;
+		var params = _n1.x;
 		var frag = _n1.u;
 		var value = _n1.r;
 		return _List_fromArray(
@@ -7032,9 +7080,9 @@ var elm$url$Url$Parser$questionMark = F2(
 	});
 var elm$url$Url$Parser$s = function (str) {
 	return function (_n0) {
-		var visited = _n0.x;
+		var visited = _n0.y;
 		var unvisited = _n0.t;
-		var params = _n0.w;
+		var params = _n0.x;
 		var frag = _n0.u;
 		var value = _n0.r;
 		if (!unvisited.b) {
@@ -7108,7 +7156,7 @@ var author$project$Route$parser = function () {
 					var s = _n0.c.a;
 					var result = elm$core$Result$Ok(
 						{
-							Y: author$project$Api$Endpoint$AuthTempCode(c),
+							Z: author$project$Api$Endpoint$AuthTempCode(c),
 							bC: s
 						});
 					return author$project$Route$Login(
@@ -7154,10 +7202,6 @@ var author$project$Route$parser = function () {
 				elm$url$Url$Parser$map,
 				author$project$Route$Portfolio,
 				elm$url$Url$Parser$s('portfolio')),
-				A2(
-				elm$url$Url$Parser$map,
-				author$project$Route$Analytics,
-				elm$url$Url$Parser$s('analytics')),
 				A2(
 				elm$url$Url$Parser$map,
 				author$project$Route$Reports,
@@ -7323,10 +7367,13 @@ var author$project$Main$init = F3(
 				A2(author$project$Session$fromViewer, navKey, maybeViewer)));
 	});
 var author$project$Main$GotSession = function (a) {
-	return {$: 8, a: a};
+	return {$: 11, a: a};
 };
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
+var author$project$Page$AccountBalance$subscriptions = function (model) {
+	return elm$core$Platform$Sub$none;
+};
 var author$project$Page$ApiDocument$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
@@ -7334,6 +7381,12 @@ var author$project$Page$Dashboard$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$Login$subscriptions = function (model) {
+	return elm$core$Platform$Sub$none;
+};
+var author$project$Page$Portfolio$subscriptions = function (model) {
+	return elm$core$Platform$Sub$none;
+};
+var author$project$Page$Reports$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$Upload$subscriptions = function (model) {
@@ -7386,7 +7439,7 @@ var author$project$Main$subscriptions = function (model) {
 				elm$core$Platform$Sub$map,
 				author$project$Main$GotDashboardMsg,
 				author$project$Page$Dashboard$subscriptions(dashboard));
-		case 4:
+		case 7:
 			var login = model.a;
 			return A2(
 				elm$core$Platform$Sub$map,
@@ -7398,6 +7451,24 @@ var author$project$Main$subscriptions = function (model) {
 				elm$core$Platform$Sub$map,
 				author$project$Main$GotUploadMsg,
 				author$project$Page$Upload$subscriptions(upload));
+		case 4:
+			var portfolio = model.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotPortfolioMsg,
+				author$project$Page$Portfolio$subscriptions(portfolio));
+		case 5:
+			var reports = model.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotReportsMsg,
+				author$project$Page$Reports$subscriptions(reports));
+		case 6:
+			var accbalance = model.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotAccountBalanceMsg,
+				author$project$Page$AccountBalance$subscriptions(accbalance));
 		default:
 			var apidocument = model.a;
 			return A2(
@@ -7407,6 +7478,26 @@ var author$project$Main$subscriptions = function (model) {
 	}
 };
 var elm$core$Basics$not = _Basics_not;
+var author$project$Page$AccountBalance$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 0:
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			case 1:
+				var session = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{ac: session}),
+					elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{v: !model.v}),
+					elm$core$Platform$Cmd$none);
+		}
+	});
 var author$project$Page$ApiDocument$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7423,7 +7514,7 @@ var author$project$Page$ApiDocument$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{aa: !model.aa}),
+						{v: !model.v}),
 					elm$core$Platform$Cmd$none);
 			default:
 				var result = msg.a;
@@ -7452,7 +7543,7 @@ var author$project$Page$Dashboard$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{aa: !model.aa}),
+						{v: !model.v}),
 					elm$core$Platform$Cmd$none);
 			case 3:
 				var result = msg.a;
@@ -7947,7 +8038,7 @@ var author$project$Page$Login$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{aa: !model.aa}),
+						{v: !model.v}),
 					elm$core$Platform$Cmd$none);
 			case 3:
 				var result = msg.a;
@@ -7988,12 +8079,12 @@ var author$project$Page$Login$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{I: newStage}),
+							{J: newStage}),
 						elm$core$Platform$Cmd$none);
 				}
 			case 2:
 				var result = msg.a;
-				var _n4 = model.I;
+				var _n4 = model.J;
 				if (!_n4.$) {
 					var stage = _n4.a;
 					var newStage = author$project$Page$Login$First(
@@ -8005,7 +8096,7 @@ var author$project$Page$Login$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{I: newStage}),
+							{J: newStage}),
 						elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
@@ -8016,6 +8107,46 @@ var author$project$Page$Login$update = F2(
 					_Utils_update(
 						model,
 						{ac: session}),
+					elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Page$Portfolio$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 0:
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			case 1:
+				var session = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{ac: session}),
+					elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{v: !model.v}),
+					elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Page$Reports$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 0:
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			case 1:
+				var session = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{ac: session}),
+					elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{v: !model.v}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
@@ -8035,7 +8166,7 @@ var author$project$Page$Upload$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{aa: !model.aa}),
+						{v: !model.v}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
@@ -8087,7 +8218,7 @@ var elm$url$Url$toString = function (url) {
 var author$project$Main$update = F2(
 	function (msg, model) {
 		var _n0 = _Utils_Tuple2(msg, model);
-		_n0$9:
+		_n0$12:
 		while (true) {
 			switch (_n0.a.$) {
 				case 0:
@@ -8135,10 +8266,10 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$Dashboard$update, subMsg, dashboard));
 					} else {
-						break _n0$9;
+						break _n0$12;
 					}
-				case 6:
-					if (_n0.b.$ === 4) {
+				case 9:
+					if (_n0.b.$ === 7) {
 						var subMsg = _n0.a.a;
 						var login = _n0.b.a;
 						return A4(
@@ -8148,7 +8279,7 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$Login$update, subMsg, login));
 					} else {
-						break _n0$9;
+						break _n0$12;
 					}
 				case 5:
 					if (_n0.b.$ === 3) {
@@ -8161,10 +8292,49 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$Upload$update, subMsg, upload));
 					} else {
-						break _n0$9;
+						break _n0$12;
+					}
+				case 6:
+					if (_n0.b.$ === 4) {
+						var subMsg = _n0.a.a;
+						var portfolio = _n0.b.a;
+						return A4(
+							author$project$Main$updateWith,
+							author$project$Main$Portfolio,
+							author$project$Main$GotPortfolioMsg,
+							model,
+							A2(author$project$Page$Portfolio$update, subMsg, portfolio));
+					} else {
+						break _n0$12;
 					}
 				case 7:
 					if (_n0.b.$ === 5) {
+						var subMsg = _n0.a.a;
+						var reports = _n0.b.a;
+						return A4(
+							author$project$Main$updateWith,
+							author$project$Main$Reports,
+							author$project$Main$GotReportsMsg,
+							model,
+							A2(author$project$Page$Reports$update, subMsg, reports));
+					} else {
+						break _n0$12;
+					}
+				case 8:
+					if (_n0.b.$ === 6) {
+						var subMsg = _n0.a.a;
+						var accbalance = _n0.b.a;
+						return A4(
+							author$project$Main$updateWith,
+							author$project$Main$AccountBalance,
+							author$project$Main$GotAccountBalanceMsg,
+							model,
+							A2(author$project$Page$AccountBalance$update, subMsg, accbalance));
+					} else {
+						break _n0$12;
+					}
+				case 10:
+					if (_n0.b.$ === 8) {
 						var subMsg = _n0.a.a;
 						var apidoc = _n0.b.a;
 						return A4(
@@ -8174,7 +8344,7 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$ApiDocument$update, subMsg, apidoc));
 					} else {
-						break _n0$9;
+						break _n0$12;
 					}
 				default:
 					if (!_n0.b.$) {
@@ -8186,7 +8356,7 @@ var author$project$Main$update = F2(
 								author$project$Session$navKey(session),
 								author$project$Route$Dashboard));
 					} else {
-						break _n0$9;
+						break _n0$12;
 					}
 			}
 		}
@@ -8194,11 +8364,8 @@ var author$project$Main$update = F2(
 	});
 var author$project$Main$Ignored = {$: 0};
 var elm$html$Html$a = _VirtualDom_node('a');
-var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$img = _VirtualDom_node('img');
-var elm$html$Html$p = _VirtualDom_node('p');
 var elm$html$Html$span = _VirtualDom_node('span');
-var elm$html$Html$strong = _VirtualDom_node('strong');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
 var elm$html$Html$Attributes$stringProperty = F2(
@@ -8286,11 +8453,142 @@ var surprisetalk$elm_bulma$Bulma$Layout$footer = A2(
 	'footer',
 	_List_fromArray(
 		[surprisetalk$elm_bulma$Bulma$Classes$footer]));
+var surprisetalk$elm_bulma$Bulma$Classes$is1 = elm$html$Html$Attributes$class('is-1');
+var surprisetalk$elm_bulma$Bulma$Classes$is10 = elm$html$Html$Attributes$class('is-10');
+var surprisetalk$elm_bulma$Bulma$Classes$is11 = elm$html$Html$Attributes$class('is-11');
+var surprisetalk$elm_bulma$Bulma$Classes$is2 = elm$html$Html$Attributes$class('is-2');
+var surprisetalk$elm_bulma$Bulma$Classes$is3 = elm$html$Html$Attributes$class('is-3');
+var surprisetalk$elm_bulma$Bulma$Classes$is4 = elm$html$Html$Attributes$class('is-4');
+var surprisetalk$elm_bulma$Bulma$Classes$is5 = elm$html$Html$Attributes$class('is-5');
+var surprisetalk$elm_bulma$Bulma$Classes$is6 = elm$html$Html$Attributes$class('is-6');
+var surprisetalk$elm_bulma$Bulma$Classes$is7 = elm$html$Html$Attributes$class('is-7');
+var surprisetalk$elm_bulma$Bulma$Classes$is8 = elm$html$Html$Attributes$class('is-8');
+var surprisetalk$elm_bulma$Bulma$Classes$is9 = elm$html$Html$Attributes$class('is-9');
+var surprisetalk$elm_bulma$Bulma$Classes$isAncestor = elm$html$Html$Attributes$class('is-ancestor');
+var surprisetalk$elm_bulma$Bulma$Classes$tile = elm$html$Html$Attributes$class('tile');
+var surprisetalk$elm_bulma$Bulma$Layout$tileAncestor = function (width) {
+	return A2(
+		surprisetalk$elm_bulma$Helpers$node,
+		'div',
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Classes$tile,
+				surprisetalk$elm_bulma$Bulma$Classes$isAncestor,
+				function () {
+				switch (width) {
+					case 0:
+						return surprisetalk$elm_bulma$Bulma$Classes$none;
+					case 1:
+						return surprisetalk$elm_bulma$Bulma$Classes$is1;
+					case 2:
+						return surprisetalk$elm_bulma$Bulma$Classes$is2;
+					case 3:
+						return surprisetalk$elm_bulma$Bulma$Classes$is3;
+					case 4:
+						return surprisetalk$elm_bulma$Bulma$Classes$is4;
+					case 5:
+						return surprisetalk$elm_bulma$Bulma$Classes$is5;
+					case 6:
+						return surprisetalk$elm_bulma$Bulma$Classes$is6;
+					case 7:
+						return surprisetalk$elm_bulma$Bulma$Classes$is7;
+					case 8:
+						return surprisetalk$elm_bulma$Bulma$Classes$is8;
+					case 9:
+						return surprisetalk$elm_bulma$Bulma$Classes$is9;
+					case 10:
+						return surprisetalk$elm_bulma$Bulma$Classes$is10;
+					default:
+						return surprisetalk$elm_bulma$Bulma$Classes$is11;
+				}
+			}()
+			]));
+};
+var surprisetalk$elm_bulma$Bulma$Classes$isChild = elm$html$Html$Attributes$class('is-child');
+var surprisetalk$elm_bulma$Bulma$Layout$tileChild = function (width) {
+	return A2(
+		surprisetalk$elm_bulma$Helpers$node,
+		'div',
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Classes$tile,
+				surprisetalk$elm_bulma$Bulma$Classes$isChild,
+				function () {
+				switch (width) {
+					case 0:
+						return surprisetalk$elm_bulma$Bulma$Classes$none;
+					case 1:
+						return surprisetalk$elm_bulma$Bulma$Classes$is1;
+					case 2:
+						return surprisetalk$elm_bulma$Bulma$Classes$is2;
+					case 3:
+						return surprisetalk$elm_bulma$Bulma$Classes$is3;
+					case 4:
+						return surprisetalk$elm_bulma$Bulma$Classes$is4;
+					case 5:
+						return surprisetalk$elm_bulma$Bulma$Classes$is5;
+					case 6:
+						return surprisetalk$elm_bulma$Bulma$Classes$is6;
+					case 7:
+						return surprisetalk$elm_bulma$Bulma$Classes$is7;
+					case 8:
+						return surprisetalk$elm_bulma$Bulma$Classes$is8;
+					case 9:
+						return surprisetalk$elm_bulma$Bulma$Classes$is9;
+					case 10:
+						return surprisetalk$elm_bulma$Bulma$Classes$is10;
+					default:
+						return surprisetalk$elm_bulma$Bulma$Classes$is11;
+				}
+			}()
+			]));
+};
+var surprisetalk$elm_bulma$Bulma$Classes$isVertical = elm$html$Html$Attributes$class('is-vertical');
+var surprisetalk$elm_bulma$Bulma$Layout$verticalTile = function (width) {
+	return A2(
+		surprisetalk$elm_bulma$Helpers$node,
+		'div',
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Classes$tile,
+				surprisetalk$elm_bulma$Bulma$Classes$isVertical,
+				function () {
+				switch (width) {
+					case 0:
+						return surprisetalk$elm_bulma$Bulma$Classes$none;
+					case 1:
+						return surprisetalk$elm_bulma$Bulma$Classes$is1;
+					case 2:
+						return surprisetalk$elm_bulma$Bulma$Classes$is2;
+					case 3:
+						return surprisetalk$elm_bulma$Bulma$Classes$is3;
+					case 4:
+						return surprisetalk$elm_bulma$Bulma$Classes$is4;
+					case 5:
+						return surprisetalk$elm_bulma$Bulma$Classes$is5;
+					case 6:
+						return surprisetalk$elm_bulma$Bulma$Classes$is6;
+					case 7:
+						return surprisetalk$elm_bulma$Bulma$Classes$is7;
+					case 8:
+						return surprisetalk$elm_bulma$Bulma$Classes$is8;
+					case 9:
+						return surprisetalk$elm_bulma$Bulma$Classes$is9;
+					case 10:
+						return surprisetalk$elm_bulma$Bulma$Classes$is10;
+					default:
+						return surprisetalk$elm_bulma$Bulma$Classes$is11;
+				}
+			}()
+			]));
+};
+var surprisetalk$elm_bulma$Bulma$Modifiers$Auto = 0;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Standard = 1;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Width2 = 2;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Width5 = 5;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$BlackLight = 1;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Medium = 4;
-var surprisetalk$elm_bulma$Bulma$Classes$hasTextCentered = elm$html$Html$Attributes$class('has-text-centered');
-var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered = surprisetalk$elm_bulma$Bulma$Classes$hasTextCentered;
+var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$Standard = 5;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textColor = function (color) {
 	return elm$html$Html$Attributes$class(
 		function () {
@@ -8356,24 +8654,15 @@ var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize = function (ts) {
 	}
 };
 var author$project$Page$viewFooter = function () {
-	var forkme = A2(
-		elm$html$Html$div,
+	var margin = A2(elm$html$Html$Attributes$style, 'margin', '1rem');
+	var viewOnGitHub = A3(
+		surprisetalk$elm_bulma$Bulma$Elements$content,
+		1,
+		_List_fromArray(
+			[margin]),
 		_List_fromArray(
 			[
-				A2(elm$html$Html$Attributes$style, 'display', 'inline-block')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				elm$html$Html$strong,
-				_List_fromArray(
-					[
-						A2(elm$html$Html$Attributes$style, 'vertical-align', 'middle')
-					]),
-				_List_fromArray(
-					[
-						elm$html$Html$text('Fork me on ')
-					])),
+				elm$html$Html$text('view on '),
 				A2(
 				elm$html$Html$a,
 				_List_fromArray(
@@ -8396,9 +8685,14 @@ var author$project$Page$viewFooter = function () {
 						_List_Nil)
 					]))
 			]));
-	var copy = A2(
-		elm$html$Html$p,
-		_List_Nil,
+	var copy = A3(
+		surprisetalk$elm_bulma$Bulma$Elements$content,
+		1,
+		_List_fromArray(
+			[
+				surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textSize(5),
+				margin
+			]),
 		_List_fromArray(
 			[
 				elm$html$Html$text('The Assets observation application '),
@@ -8416,12 +8710,11 @@ var author$project$Page$viewFooter = function () {
 					])),
 				elm$html$Html$text('.')
 			]));
-	var bulma = A2(
-		elm$html$Html$div,
+	var bulma = A3(
+		surprisetalk$elm_bulma$Bulma$Elements$content,
+		1,
 		_List_fromArray(
-			[
-				A2(elm$html$Html$Attributes$style, 'display', 'inline-block')
-			]),
+			[margin]),
 		_List_fromArray(
 			[
 				A2(
@@ -8455,22 +8748,56 @@ var author$project$Page$viewFooter = function () {
 				_List_fromArray(
 					[
 						A3(
-						surprisetalk$elm_bulma$Bulma$Elements$content,
-						1,
+						surprisetalk$elm_bulma$Bulma$Layout$tileAncestor,
+						0,
+						_List_Nil,
 						_List_fromArray(
-							[surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered]),
-						_List_fromArray(
-							[copy, forkme]))
+							[
+								A3(
+								surprisetalk$elm_bulma$Bulma$Layout$verticalTile,
+								5,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A3(
+										surprisetalk$elm_bulma$Bulma$Layout$tileChild,
+										0,
+										_List_Nil,
+										_List_fromArray(
+											[copy]))
+									])),
+								A3(
+								surprisetalk$elm_bulma$Bulma$Layout$verticalTile,
+								2,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A3(
+										surprisetalk$elm_bulma$Bulma$Layout$tileChild,
+										0,
+										_List_Nil,
+										_List_fromArray(
+											[viewOnGitHub]))
+									])),
+								A3(
+								surprisetalk$elm_bulma$Bulma$Layout$verticalTile,
+								2,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A3(
+										surprisetalk$elm_bulma$Bulma$Layout$tileChild,
+										0,
+										_List_Nil,
+										_List_fromArray(
+											[bulma]))
+									])),
+								A3(surprisetalk$elm_bulma$Bulma$Layout$verticalTile, 0, _List_Nil, _List_Nil)
+							]))
 					]))
 			]));
 }();
 var surprisetalk$elm_bulma$Bulma$Elements$H1 = 0;
-var surprisetalk$elm_bulma$Bulma$Classes$is1 = elm$html$Html$Attributes$class('is-1');
-var surprisetalk$elm_bulma$Bulma$Classes$is2 = elm$html$Html$Attributes$class('is-2');
-var surprisetalk$elm_bulma$Bulma$Classes$is3 = elm$html$Html$Attributes$class('is-3');
-var surprisetalk$elm_bulma$Bulma$Classes$is4 = elm$html$Html$Attributes$class('is-4');
-var surprisetalk$elm_bulma$Bulma$Classes$is5 = elm$html$Html$Attributes$class('is-5');
-var surprisetalk$elm_bulma$Bulma$Classes$is6 = elm$html$Html$Attributes$class('is-6');
 var surprisetalk$elm_bulma$Bulma$Classes$title = elm$html$Html$Attributes$class('title');
 var surprisetalk$elm_bulma$Bulma$Elements$title = function (size) {
 	return A2(
@@ -8651,6 +8978,7 @@ var author$project$Route$href = function (targetRoute) {
 	return elm$html$Html$Attributes$href(
 		author$project$Route$routeToString(targetRoute));
 };
+var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$i = _VirtualDom_node('i');
 var surprisetalk$elm_bulma$Bulma$Classes$isTransparent = elm$html$Html$Attributes$class('is-transparent');
 var surprisetalk$elm_bulma$Bulma$Classes$navbar = elm$html$Html$Attributes$class('navbar');
@@ -9266,16 +9594,10 @@ var author$project$Page$view = F4(
 			bG: title + ' - TRACTOR'
 		};
 	});
-var author$project$Page$ApiDocument$ToggleMenuOpen = {$: 2};
-var elm_explorations$markdown$Markdown$defaultOptions = {
-	a$: elm$core$Maybe$Nothing,
-	a9: elm$core$Maybe$Just(
-		{bW: false, cq: false}),
-	bx: true,
-	bA: false
+var author$project$Page$AccountBalance$ToggleMenuOpen = {$: 2};
+var author$project$Page$AccountBalance$viewReports = function (model) {
+	return _List_Nil;
 };
-var elm_explorations$markdown$Markdown$toHtmlWith = _Markdown_toHtml;
-var elm_explorations$markdown$Markdown$toHtml = elm_explorations$markdown$Markdown$toHtmlWith(elm_explorations$markdown$Markdown$defaultOptions);
 var surprisetalk$elm_bulma$Bulma$Layout$NotSpaced = 0;
 var surprisetalk$elm_bulma$Bulma$Classes$section = elm$html$Html$Attributes$class('section');
 var surprisetalk$elm_bulma$Bulma$Layout$section = function (spacing) {
@@ -9297,6 +9619,33 @@ var surprisetalk$elm_bulma$Bulma$Layout$section = function (spacing) {
 			}()
 			]));
 };
+var author$project$Page$AccountBalance$view = function (model) {
+	return {
+		b$: A3(
+			surprisetalk$elm_bulma$Bulma$Layout$section,
+			0,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					surprisetalk$elm_bulma$Bulma$Layout$container,
+					_List_Nil,
+					author$project$Page$AccountBalance$viewReports(model))
+				])),
+		bG: 'Account Balance'
+	};
+};
+var author$project$Page$ApiDocument$ToggleMenuOpen = {$: 2};
+var elm$html$Html$p = _VirtualDom_node('p');
+var elm_explorations$markdown$Markdown$defaultOptions = {
+	a$: elm$core$Maybe$Nothing,
+	a9: elm$core$Maybe$Just(
+		{bW: false, cq: false}),
+	bx: true,
+	bA: false
+};
+var elm_explorations$markdown$Markdown$toHtmlWith = _Markdown_toHtml;
+var elm_explorations$markdown$Markdown$toHtml = elm_explorations$markdown$Markdown$toHtmlWith(elm_explorations$markdown$Markdown$defaultOptions);
 var author$project$Page$ApiDocument$view = function (model) {
 	return {
 		b$: function () {
@@ -9391,6 +9740,8 @@ var surprisetalk$elm_bulma$Bulma$Elements$notification = function (color) {
 			}()
 			]));
 };
+var surprisetalk$elm_bulma$Bulma$Classes$hasTextCentered = elm$html$Html$Attributes$class('has-text-centered');
+var surprisetalk$elm_bulma$Bulma$Modifiers$Typography$textCentered = surprisetalk$elm_bulma$Bulma$Classes$hasTextCentered;
 var author$project$Page$Dashboard$viewGreetings = function (model) {
 	var username = A2(
 		elm$core$Maybe$withDefault,
@@ -9533,7 +9884,7 @@ var surprisetalk$elm_bulma$Bulma$Classes$hasIconsRight = elm$html$Html$Attribute
 var surprisetalk$elm_bulma$Bulma$Classes$isExpanded = elm$html$Html$Attributes$class('is-expanded');
 var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 	function (_n0, attrs, htmls) {
-		var loading = _n0.B;
+		var loading = _n0.C;
 		var expanded = _n0.h;
 		var iconLeft = _n0.au;
 		var iconRight = _n0.av;
@@ -9648,7 +9999,7 @@ var surprisetalk$elm_bulma$Bulma$Form$control = F3(
 								iconRight)),
 						_List_Nil))));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlModifiers = {h: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, B: elm$core$Maybe$Nothing};
+var surprisetalk$elm_bulma$Bulma$Form$controlModifiers = {h: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, C: elm$core$Maybe$Nothing};
 var surprisetalk$elm_bulma$Bulma$Classes$isGroupedMultiline = elm$html$Html$Attributes$class('is-grouped-multiline');
 var surprisetalk$elm_bulma$Bulma$Form$multilineFields = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -9810,91 +10161,6 @@ var author$project$Page$Dashboard$view = function (model) {
 	};
 };
 var author$project$Page$Login$ToggleMenuOpen = {$: 1};
-var surprisetalk$elm_bulma$Bulma$Classes$is10 = elm$html$Html$Attributes$class('is-10');
-var surprisetalk$elm_bulma$Bulma$Classes$is11 = elm$html$Html$Attributes$class('is-11');
-var surprisetalk$elm_bulma$Bulma$Classes$is7 = elm$html$Html$Attributes$class('is-7');
-var surprisetalk$elm_bulma$Bulma$Classes$is8 = elm$html$Html$Attributes$class('is-8');
-var surprisetalk$elm_bulma$Bulma$Classes$is9 = elm$html$Html$Attributes$class('is-9');
-var surprisetalk$elm_bulma$Bulma$Classes$isAncestor = elm$html$Html$Attributes$class('is-ancestor');
-var surprisetalk$elm_bulma$Bulma$Classes$tile = elm$html$Html$Attributes$class('tile');
-var surprisetalk$elm_bulma$Bulma$Layout$tileAncestor = function (width) {
-	return A2(
-		surprisetalk$elm_bulma$Helpers$node,
-		'div',
-		_List_fromArray(
-			[
-				surprisetalk$elm_bulma$Bulma$Classes$tile,
-				surprisetalk$elm_bulma$Bulma$Classes$isAncestor,
-				function () {
-				switch (width) {
-					case 0:
-						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 1:
-						return surprisetalk$elm_bulma$Bulma$Classes$is1;
-					case 2:
-						return surprisetalk$elm_bulma$Bulma$Classes$is2;
-					case 3:
-						return surprisetalk$elm_bulma$Bulma$Classes$is3;
-					case 4:
-						return surprisetalk$elm_bulma$Bulma$Classes$is4;
-					case 5:
-						return surprisetalk$elm_bulma$Bulma$Classes$is5;
-					case 6:
-						return surprisetalk$elm_bulma$Bulma$Classes$is6;
-					case 7:
-						return surprisetalk$elm_bulma$Bulma$Classes$is7;
-					case 8:
-						return surprisetalk$elm_bulma$Bulma$Classes$is8;
-					case 9:
-						return surprisetalk$elm_bulma$Bulma$Classes$is9;
-					case 10:
-						return surprisetalk$elm_bulma$Bulma$Classes$is10;
-					default:
-						return surprisetalk$elm_bulma$Bulma$Classes$is11;
-				}
-			}()
-			]));
-};
-var surprisetalk$elm_bulma$Bulma$Classes$isVertical = elm$html$Html$Attributes$class('is-vertical');
-var surprisetalk$elm_bulma$Bulma$Layout$verticalTile = function (width) {
-	return A2(
-		surprisetalk$elm_bulma$Helpers$node,
-		'div',
-		_List_fromArray(
-			[
-				surprisetalk$elm_bulma$Bulma$Classes$tile,
-				surprisetalk$elm_bulma$Bulma$Classes$isVertical,
-				function () {
-				switch (width) {
-					case 0:
-						return surprisetalk$elm_bulma$Bulma$Classes$none;
-					case 1:
-						return surprisetalk$elm_bulma$Bulma$Classes$is1;
-					case 2:
-						return surprisetalk$elm_bulma$Bulma$Classes$is2;
-					case 3:
-						return surprisetalk$elm_bulma$Bulma$Classes$is3;
-					case 4:
-						return surprisetalk$elm_bulma$Bulma$Classes$is4;
-					case 5:
-						return surprisetalk$elm_bulma$Bulma$Classes$is5;
-					case 6:
-						return surprisetalk$elm_bulma$Bulma$Classes$is6;
-					case 7:
-						return surprisetalk$elm_bulma$Bulma$Classes$is7;
-					case 8:
-						return surprisetalk$elm_bulma$Bulma$Classes$is8;
-					case 9:
-						return surprisetalk$elm_bulma$Bulma$Classes$is9;
-					case 10:
-						return surprisetalk$elm_bulma$Bulma$Classes$is10;
-					default:
-						return surprisetalk$elm_bulma$Bulma$Classes$is11;
-				}
-			}()
-			]));
-};
-var surprisetalk$elm_bulma$Bulma$Modifiers$Auto = 0;
 var surprisetalk$elm_bulma$Bulma$Modifiers$Width4 = 4;
 var author$project$Page$viewErrors = function (errors) {
 	var notification = A3(
@@ -10058,7 +10324,7 @@ var author$project$Page$Login$viewContents = function (authClientId) {
 };
 var author$project$Page$Login$view = function (model) {
 	var concreteView = function () {
-		var _n0 = model.I;
+		var _n0 = model.J;
 		switch (_n0.$) {
 			case 0:
 				var stage = _n0.a;
@@ -10124,6 +10390,46 @@ var author$project$Page$NotFound$view = {
 			])),
 	bG: 'Page Not Found'
 };
+var author$project$Page$Portfolio$ToggleMenuOpen = {$: 2};
+var author$project$Page$Portfolio$viewReports = function (model) {
+	return _List_Nil;
+};
+var author$project$Page$Portfolio$view = function (model) {
+	return {
+		b$: A3(
+			surprisetalk$elm_bulma$Bulma$Layout$section,
+			0,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					surprisetalk$elm_bulma$Bulma$Layout$container,
+					_List_Nil,
+					author$project$Page$Portfolio$viewReports(model))
+				])),
+		bG: 'Portfolio'
+	};
+};
+var author$project$Page$Reports$ToggleMenuOpen = {$: 2};
+var author$project$Page$Reports$viewReports = function (model) {
+	return _List_Nil;
+};
+var author$project$Page$Reports$view = function (model) {
+	return {
+		b$: A3(
+			surprisetalk$elm_bulma$Bulma$Layout$section,
+			0,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					surprisetalk$elm_bulma$Bulma$Layout$container,
+					_List_Nil,
+					author$project$Page$Reports$viewReports(model))
+				])),
+		bG: 'Reports'
+	};
+};
 var author$project$Page$Upload$ToggleMenuOpen = {$: 2};
 var author$project$Page$Upload$NoOp = {$: 0};
 var surprisetalk$elm_bulma$Bulma$Columns$columnModifiers = {
@@ -10148,6 +10454,7 @@ var author$project$Page$Upload$myColumnModifiers = F2(
 					{b0: width, b9: width, cr: width, cu: width})
 			});
 	});
+var elm$html$Html$strong = _VirtualDom_node('strong');
 var surprisetalk$elm_bulma$Bulma$Classes$column = elm$html$Html$Attributes$class('column');
 var surprisetalk$elm_bulma$Bulma$Classes$is01Desktop = elm$html$Html$Attributes$class('is-1-desktop');
 var surprisetalk$elm_bulma$Bulma$Classes$is01FullHD = elm$html$Html$Attributes$class('is-1-fullhd');
@@ -10561,7 +10868,6 @@ var surprisetalk$elm_bulma$Bulma$Columns$Gap3 = 3;
 var surprisetalk$elm_bulma$Bulma$Columns$TabletAndBeyond = 1;
 var surprisetalk$elm_bulma$Bulma$Columns$columnsModifiers = {am: false, ap: 1, as: 3, bj: false};
 var surprisetalk$elm_bulma$Bulma$Elements$H4 = 3;
-var surprisetalk$elm_bulma$Bulma$Modifiers$Width2 = 2;
 var author$project$Page$Upload$demoArticle = F2(
 	function (aTitle, someHtmls) {
 		return A3(
@@ -10976,7 +11282,7 @@ var surprisetalk$elm_bulma$Bulma$Classes$isRight = elm$html$Html$Attributes$clas
 var surprisetalk$elm_bulma$Bulma$Classes$isUp = elm$html$Html$Attributes$class('is-up');
 var surprisetalk$elm_bulma$Bulma$Components$dropdown = F2(
 	function (isActive, _n0) {
-		var horizontalAlignment = _n0._;
+		var horizontalAlignment = _n0.aa;
 		var verticalDirection = _n0.af;
 		return A2(
 			surprisetalk$elm_bulma$Helpers$node,
@@ -11057,7 +11363,7 @@ var surprisetalk$elm_bulma$Bulma$Components$dropdownMenu = F3(
 				]));
 	});
 var surprisetalk$elm_bulma$Bulma$Modifiers$Down = 1;
-var surprisetalk$elm_bulma$Bulma$Components$dropdownModifiers = {_: 0, af: 1};
+var surprisetalk$elm_bulma$Bulma$Components$dropdownModifiers = {aa: 0, af: 1};
 var surprisetalk$elm_bulma$Bulma$Classes$dropdownTrigger = elm$html$Html$Attributes$class('dropdown-trigger');
 var surprisetalk$elm_bulma$Bulma$Components$dropdownTrigger = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -11409,7 +11715,7 @@ var surprisetalk$elm_bulma$Bulma$Classes$tabs = elm$html$Html$Attributes$class('
 var surprisetalk$elm_bulma$Bulma$Components$tabs = F3(
 	function (_n0, attrs, attrs_) {
 		var style = _n0.cn;
-		var alignment = _n0.y;
+		var alignment = _n0.z;
 		var size = _n0.q;
 		return A2(
 			elm$core$Basics$composeL,
@@ -11473,7 +11779,7 @@ var surprisetalk$elm_bulma$Bulma$Components$tabs = F3(
 			elm$html$Html$ul(attrs_));
 	});
 var surprisetalk$elm_bulma$Bulma$Components$Minimal = 0;
-var surprisetalk$elm_bulma$Bulma$Components$tabsModifiers = {y: 0, q: 1, cn: 0};
+var surprisetalk$elm_bulma$Bulma$Components$tabsModifiers = {z: 0, q: 1, cn: 0};
 var surprisetalk$elm_bulma$Bulma$Elements$FourByThree = {$: 2};
 var surprisetalk$elm_bulma$Bulma$Elements$H3 = 2;
 var surprisetalk$elm_bulma$Bulma$Elements$X48 = 3;
@@ -11736,7 +12042,7 @@ var surprisetalk$elm_bulma$Bulma$Form$controlInput = F3(
 		var color = mods.b_;
 		var expanded = mods.h;
 		var rounded = mods.aF;
-		var readonly = mods.E;
+		var readonly = mods.F;
 		var disabled = mods.ao;
 		var iconLeft = mods.au;
 		var iconRight = mods.av;
@@ -11744,7 +12050,7 @@ var surprisetalk$elm_bulma$Bulma$Form$controlInput = F3(
 			h: expanded,
 			au: iconLeft,
 			av: iconRight,
-			B: function () {
+			C: function () {
 				if (state === 4) {
 					return elm$core$Maybe$Just(size);
 				} else {
@@ -11834,7 +12140,7 @@ var surprisetalk$elm_bulma$Bulma$Form$controlInput = F3(
 					]),
 				attrs_));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlInputModifiers = {b_: 0, ao: false, h: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, E: false, aF: false, q: 1, bC: 0};
+var surprisetalk$elm_bulma$Bulma$Form$controlInputModifiers = {b_: 0, ao: false, h: false, au: elm$core$Maybe$Nothing, av: elm$core$Maybe$Nothing, F: false, aF: false, q: 1, bC: 0};
 var surprisetalk$elm_bulma$Bulma$Classes$label = elm$html$Html$Attributes$class('label');
 var surprisetalk$elm_bulma$Bulma$Form$label = A2(
 	surprisetalk$elm_bulma$Helpers$node,
@@ -11886,7 +12192,7 @@ var surprisetalk$elm_bulma$Bulma$Form$controlSelect = F3(
 			h: expanded,
 			au: iconLeft,
 			av: elm$core$Maybe$Nothing,
-			B: function () {
+			C: function () {
 				if (state === 4) {
 					return elm$core$Maybe$Just(size);
 				} else {
@@ -11985,13 +12291,13 @@ var surprisetalk$elm_bulma$Bulma$Form$controlTextArea = F3(
 		var size = mods.q;
 		var state = mods.bC;
 		var color = mods.b_;
-		var readonly = mods.E;
+		var readonly = mods.F;
 		var disabled = mods.ao;
 		var controlMods = {
 			h: false,
 			au: elm$core$Maybe$Nothing,
 			av: elm$core$Maybe$Nothing,
-			B: function () {
+			C: function () {
 				if (state === 4) {
 					return elm$core$Maybe$Just(size);
 				} else {
@@ -12074,7 +12380,7 @@ var surprisetalk$elm_bulma$Bulma$Form$controlTextArea = F3(
 					]),
 				attrs_));
 	});
-var surprisetalk$elm_bulma$Bulma$Form$controlTextAreaModifiers = {b_: 0, ao: false, E: false, q: 1, bC: 0};
+var surprisetalk$elm_bulma$Bulma$Form$controlTextAreaModifiers = {b_: 0, ao: false, F: false, q: 1, bC: 0};
 var surprisetalk$elm_bulma$Bulma$Form$field = A2(
 	surprisetalk$elm_bulma$Helpers$node,
 	'div',
@@ -13449,7 +13755,7 @@ var author$project$Main$view = function (model) {
 			var dashboard = model.a;
 			return A4(
 				viewPage,
-				dashboard.aa,
+				dashboard.v,
 				author$project$Page$Dashboard$ToggleMenuOpen,
 				author$project$Main$GotDashboardMsg,
 				author$project$Page$Dashboard$view(dashboard));
@@ -13457,15 +13763,39 @@ var author$project$Main$view = function (model) {
 			var upload = model.a;
 			return A4(
 				viewPage,
-				upload.aa,
+				upload.v,
 				author$project$Page$Upload$ToggleMenuOpen,
 				author$project$Main$GotUploadMsg,
 				author$project$Page$Upload$view(upload));
 		case 4:
+			var portfolio = model.a;
+			return A4(
+				viewPage,
+				portfolio.v,
+				author$project$Page$Portfolio$ToggleMenuOpen,
+				author$project$Main$GotPortfolioMsg,
+				author$project$Page$Portfolio$view(portfolio));
+		case 5:
+			var reports = model.a;
+			return A4(
+				viewPage,
+				reports.v,
+				author$project$Page$Reports$ToggleMenuOpen,
+				author$project$Main$GotReportsMsg,
+				author$project$Page$Reports$view(reports));
+		case 6:
+			var accbalance = model.a;
+			return A4(
+				viewPage,
+				accbalance.v,
+				author$project$Page$AccountBalance$ToggleMenuOpen,
+				author$project$Main$GotAccountBalanceMsg,
+				author$project$Page$AccountBalance$view(accbalance));
+		case 7:
 			var login = model.a;
 			return A4(
 				viewPage,
-				login.aa,
+				login.v,
 				author$project$Page$Login$ToggleMenuOpen,
 				author$project$Main$GotLoginMsg,
 				author$project$Page$Login$view(login));
@@ -13473,7 +13803,7 @@ var author$project$Main$view = function (model) {
 			var apidoc = model.a;
 			return A4(
 				viewPage,
-				apidoc.aa,
+				apidoc.v,
 				author$project$Page$ApiDocument$ToggleMenuOpen,
 				author$project$Main$GotApiDocumentMsg,
 				author$project$Page$ApiDocument$view(apidoc));
