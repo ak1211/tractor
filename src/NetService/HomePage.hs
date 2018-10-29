@@ -54,7 +54,6 @@ instance Lucid.ToHtml HomePage where
                 link_ [rel_ "stylesheet", href_ "https://use.fontawesome.com/releases/v5.3.1/css/all.css", integrity_ "sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU", crossorigin_ "anonymous"]
                 link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/css?family=Gugi"]
                 link_ [rel_ "stylesheet", href_ "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" ]
-                link_ [rel_ "stylesheet", href_ "https://cdnjs.cloudflare.com/ajax/libs/echarts/4.1.0/echarts.min.js" ]
             body_ $ do
                 script_ [src_ "public/main.js"] T.empty
                 script_ [] (TLB.toLazyText launchScript)
