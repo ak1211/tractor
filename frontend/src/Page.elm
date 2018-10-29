@@ -85,7 +85,7 @@ viewNavbar isMenuOpen toggle maybeViewer =
                 [ Components.navbarItemLink False [ Route.href Route.Dashboard ] [ Html.text "Dashboard" ]
                 , Components.navbarItemLink False [ Route.href Route.Upload ] [ Html.text "Upload" ]
                 , Components.navbarItemLink False [ Route.href Route.Portfolio ] [ Html.text "Portfolio" ]
-                , Components.navbarItemLink False [ Route.href Route.Reports ] [ Html.text "Reports" ]
+                , Components.navbarItemLink False [ Route.href Route.Charts ] [ Html.text "Charts" ]
                 , Components.navbarItemLink False [ Route.href Route.AccountBalance ] [ Html.text "Account balance" ]
                 , Components.navbarItemLink False [ Route.href Route.ApiDocument ] [ Html.text "API document" ]
                 ]

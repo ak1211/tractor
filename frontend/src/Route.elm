@@ -40,7 +40,7 @@ type Route
     | Logout
     | Upload
     | Portfolio
-    | Reports
+    | Charts
     | AccountBalance
     | ApiDocument
 
@@ -81,7 +81,7 @@ parser =
         , Parser.map Logout (Parser.s "logout")
         , Parser.map Upload (Parser.s "upload")
         , Parser.map Portfolio (Parser.s "portfolio")
-        , Parser.map Reports (Parser.s "reports")
+        , Parser.map Charts (Parser.s "charts")
         , Parser.map AccountBalance (Parser.s "account-balance")
         , Parser.map ApiDocument (Parser.s "api-document")
         ]
@@ -137,8 +137,8 @@ routeToString page =
                 Portfolio ->
                     [ "portfolio" ]
 
-                Reports ->
-                    [ "reports" ]
+                Charts ->
+                    [ "charts" ]
 
                 AccountBalance ->
                     [ "account-balance" ]

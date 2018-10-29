@@ -24,11 +24,11 @@ import Page
 import Page.AccountBalance as AccBalance
 import Page.ApiDocument as ApiDocument
 import Page.Blank as Blank
+import Page.Charts as Charts
 import Page.Dashboard as Dashboard
 import Page.Login as Login
 import Page.NotFound as NotFound
 import Page.Portfolio as Portfolio
-import Page.Reports as Reports
 import Page.Upload as Upload
 import Route exposing (Route)
 import Session exposing (Session)
@@ -46,7 +46,7 @@ type Model
     | Dashboard Dashboard.Model
     | Upload Upload.Model
     | Portfolio Portfolio.Model
-    | Reports Reports.Model
+    | Charts Charts.Model
     | AccountBalance AccBalance.Model
     | Login Login.Model
     | ApiDocument ApiDocument.Model
@@ -93,9 +93,9 @@ view model =
             Portfolio.view portfolio
                 |> viewPage portfolio.isMenuOpen Portfolio.ToggleMenuOpen GotPortfolioMsg
 
-        Reports reports ->
-            Reports.view reports
-                |> viewPage reports.isMenuOpen Reports.ToggleMenuOpen GotReportsMsg
+        Charts charts ->
+            Charts.view charts
+                |> viewPage charts.isMenuOpen Charts.ToggleMenuOpen GotChartsMsg
 
         AccountBalance accbalance ->
             AccBalance.view accbalance
@@ -122,7 +122,7 @@ type Msg
     | GotDashboardMsg Dashboard.Msg
     | GotUploadMsg Upload.Msg
     | GotPortfolioMsg Portfolio.Msg
-    | GotReportsMsg Reports.Msg
+    | GotChartsMsg Charts.Msg
     | GotAccountBalanceMsg AccBalance.Msg
     | GotLoginMsg Login.Msg
     | GotApiDocumentMsg ApiDocument.Msg
@@ -147,8 +147,8 @@ toSession page =
         Portfolio portfolio ->
             Portfolio.toSession portfolio
 
-        Reports reports ->
-            Reports.toSession reports
+        Charts charts ->
+            Charts.toSession charts
 
         AccountBalance accbalance ->
             AccBalance.toSession accbalance
@@ -200,9 +200,9 @@ changeRouteTo maybeRoute model =
             Portfolio.init session
                 |> updateWith Portfolio GotPortfolioMsg model
 
-        Just Route.Reports ->
-            Reports.init session
-                |> updateWith Reports GotReportsMsg model
+        Just Route.Charts ->
+            Charts.init session
+                |> updateWith Charts GotChartsMsg model
 
         Just Route.AccountBalance ->
             AccBalance.init session
@@ -266,9 +266,9 @@ update msg model =
             Portfolio.update subMsg portfolio
                 |> updateWith Portfolio GotPortfolioMsg model
 
-        ( GotReportsMsg subMsg, Reports reports ) ->
-            Reports.update subMsg reports
-                |> updateWith Reports GotReportsMsg model
+        ( GotChartsMsg subMsg, Charts charts ) ->
+            Charts.update subMsg charts
+                |> updateWith Charts GotChartsMsg model
 
         ( GotAccountBalanceMsg subMsg, AccountBalance accbalance ) ->
             AccBalance.update subMsg accbalance
@@ -320,8 +320,8 @@ subscriptions model =
         Portfolio portfolio ->
             Sub.map GotPortfolioMsg (Portfolio.subscriptions portfolio)
 
-        Reports reports ->
-            Sub.map GotReportsMsg (Reports.subscriptions reports)
+        Charts charts ->
+            Sub.map GotChartsMsg (Charts.subscriptions charts)
 
         AccountBalance accbalance ->
             Sub.map GotAccountBalanceMsg (AccBalance.subscriptions accbalance)

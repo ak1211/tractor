@@ -5608,6 +5608,9 @@ var author$project$Main$AccountBalance = function (a) {
 var author$project$Main$ApiDocument = function (a) {
 	return {$: 8, a: a};
 };
+var author$project$Main$Charts = function (a) {
+	return {$: 5, a: a};
+};
 var author$project$Main$Dashboard = function (a) {
 	return {$: 2, a: a};
 };
@@ -5617,6 +5620,9 @@ var author$project$Main$GotAccountBalanceMsg = function (a) {
 var author$project$Main$GotApiDocumentMsg = function (a) {
 	return {$: 10, a: a};
 };
+var author$project$Main$GotChartsMsg = function (a) {
+	return {$: 7, a: a};
+};
 var author$project$Main$GotDashboardMsg = function (a) {
 	return {$: 4, a: a};
 };
@@ -5625,9 +5631,6 @@ var author$project$Main$GotLoginMsg = function (a) {
 };
 var author$project$Main$GotPortfolioMsg = function (a) {
 	return {$: 6, a: a};
-};
-var author$project$Main$GotReportsMsg = function (a) {
-	return {$: 7, a: a};
 };
 var author$project$Main$GotUploadMsg = function (a) {
 	return {$: 5, a: a};
@@ -5641,9 +5644,6 @@ var author$project$Main$NotFound = function (a) {
 var author$project$Main$Portfolio = function (a) {
 	return {$: 4, a: a};
 };
-var author$project$Main$Reports = function (a) {
-	return {$: 5, a: a};
-};
 var author$project$Main$Upload = function (a) {
 	return {$: 3, a: a};
 };
@@ -5653,6 +5653,9 @@ var author$project$Page$AccountBalance$toSession = function (model) {
 var author$project$Page$ApiDocument$toSession = function (model) {
 	return model.ac;
 };
+var author$project$Page$Charts$toSession = function (model) {
+	return model.ac;
+};
 var author$project$Page$Dashboard$toSession = function (model) {
 	return model.ac;
 };
@@ -5660,9 +5663,6 @@ var author$project$Page$Login$toSession = function (model) {
 	return model.ac;
 };
 var author$project$Page$Portfolio$toSession = function (model) {
-	return model.ac;
-};
-var author$project$Page$Reports$toSession = function (model) {
 	return model.ac;
 };
 var author$project$Page$Upload$toSession = function (model) {
@@ -5686,8 +5686,8 @@ var author$project$Main$toSession = function (page) {
 			var portfolio = page.a;
 			return author$project$Page$Portfolio$toSession(portfolio);
 		case 5:
-			var reports = page.a;
-			return author$project$Page$Reports$toSession(reports);
+			var charts = page.a;
+			return author$project$Page$Charts$toSession(charts);
 		case 6:
 			var accbalance = page.a;
 			return author$project$Page$AccountBalance$toSession(accbalance);
@@ -6327,6 +6327,10 @@ var author$project$Page$ApiDocument$init = function (session) {
 	var model = {v: false, ac: session, ag: elm$core$Maybe$Nothing};
 	return _Utils_Tuple2(model, author$project$Page$ApiDocument$getWebApiDocument);
 };
+var author$project$Page$Charts$init = function (session) {
+	var model = {v: false, ac: session};
+	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+};
 var author$project$Api$Endpoint$SystemHealth = function (system) {
 	return {cp: system};
 };
@@ -6811,10 +6815,6 @@ var author$project$Page$Portfolio$init = function (session) {
 	var model = {v: false, ac: session};
 	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 };
-var author$project$Page$Reports$init = function (session) {
-	var model = {v: false, ac: session};
-	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-};
 var author$project$Page$Upload$init = function (session) {
 	var model = {v: false, ac: session};
 	return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
@@ -6842,7 +6842,7 @@ var author$project$Route$routeToString = function (page) {
 					['portfolio']);
 			case 6:
 				return _List_fromArray(
-					['reports']);
+					['charts']);
 			case 7:
 				return _List_fromArray(
 					['account-balance']);
@@ -6940,10 +6940,10 @@ var author$project$Main$changeRouteTo = F2(
 					var _n6 = maybeRoute.a;
 					return A4(
 						author$project$Main$updateWith,
-						author$project$Main$Reports,
-						author$project$Main$GotReportsMsg,
+						author$project$Main$Charts,
+						author$project$Main$GotChartsMsg,
 						model,
-						author$project$Page$Reports$init(session));
+						author$project$Page$Charts$init(session));
 				case 7:
 					var _n7 = maybeRoute.a;
 					return A4(
@@ -6968,12 +6968,12 @@ var author$project$Api$Endpoint$AuthTempCode = function (code) {
 };
 var author$project$Route$AccountBalance = {$: 7};
 var author$project$Route$ApiDocument = {$: 8};
+var author$project$Route$Charts = {$: 6};
 var author$project$Route$Login = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Route$Logout = {$: 3};
 var author$project$Route$Portfolio = {$: 5};
-var author$project$Route$Reports = {$: 6};
 var author$project$Route$Root = {$: 0};
 var author$project$Route$Upload = {$: 4};
 var elm$url$Url$Parser$Parser = elm$core$Basics$identity;
@@ -7204,8 +7204,8 @@ var author$project$Route$parser = function () {
 				elm$url$Url$Parser$s('portfolio')),
 				A2(
 				elm$url$Url$Parser$map,
-				author$project$Route$Reports,
-				elm$url$Url$Parser$s('reports')),
+				author$project$Route$Charts,
+				elm$url$Url$Parser$s('charts')),
 				A2(
 				elm$url$Url$Parser$map,
 				author$project$Route$AccountBalance,
@@ -7377,6 +7377,9 @@ var author$project$Page$AccountBalance$subscriptions = function (model) {
 var author$project$Page$ApiDocument$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
+var author$project$Page$Charts$subscriptions = function (model) {
+	return elm$core$Platform$Sub$none;
+};
 var author$project$Page$Dashboard$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
@@ -7384,9 +7387,6 @@ var author$project$Page$Login$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$Portfolio$subscriptions = function (model) {
-	return elm$core$Platform$Sub$none;
-};
-var author$project$Page$Reports$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$Upload$subscriptions = function (model) {
@@ -7458,11 +7458,11 @@ var author$project$Main$subscriptions = function (model) {
 				author$project$Main$GotPortfolioMsg,
 				author$project$Page$Portfolio$subscriptions(portfolio));
 		case 5:
-			var reports = model.a;
+			var charts = model.a;
 			return A2(
 				elm$core$Platform$Sub$map,
-				author$project$Main$GotReportsMsg,
-				author$project$Page$Reports$subscriptions(reports));
+				author$project$Main$GotChartsMsg,
+				author$project$Page$Charts$subscriptions(charts));
 		case 6:
 			var accbalance = model.a;
 			return A2(
@@ -7524,6 +7524,26 @@ var author$project$Page$ApiDocument$update = F2(
 						{
 							ag: elm$core$Result$toMaybe(result)
 						}),
+					elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Page$Charts$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 0:
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			case 1:
+				var session = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{ac: session}),
+					elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{v: !model.v}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
@@ -8130,26 +8150,6 @@ var author$project$Page$Portfolio$update = F2(
 					elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Page$Reports$update = F2(
-	function (msg, model) {
-		switch (msg.$) {
-			case 0:
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 1:
-				var session = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{ac: session}),
-					elm$core$Platform$Cmd$none);
-			default:
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{v: !model.v}),
-					elm$core$Platform$Cmd$none);
-		}
-	});
 var author$project$Page$Upload$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -8310,13 +8310,13 @@ var author$project$Main$update = F2(
 				case 7:
 					if (_n0.b.$ === 5) {
 						var subMsg = _n0.a.a;
-						var reports = _n0.b.a;
+						var charts = _n0.b.a;
 						return A4(
 							author$project$Main$updateWith,
-							author$project$Main$Reports,
-							author$project$Main$GotReportsMsg,
+							author$project$Main$Charts,
+							author$project$Main$GotChartsMsg,
 							model,
-							A2(author$project$Page$Reports$update, subMsg, reports));
+							A2(author$project$Page$Charts$update, subMsg, charts));
 					} else {
 						break _n0$12;
 					}
@@ -9406,11 +9406,11 @@ var author$project$Page$viewNavbar = F3(
 					false,
 					_List_fromArray(
 						[
-							author$project$Route$href(author$project$Route$Reports)
+							author$project$Route$href(author$project$Route$Charts)
 						]),
 					_List_fromArray(
 						[
-							elm$html$Html$text('Reports')
+							elm$html$Html$text('Charts')
 						])),
 					A3(
 					surprisetalk$elm_bulma$Bulma$Components$navbarItemLink,
@@ -9682,6 +9682,26 @@ var author$project$Page$ApiDocument$view = function (model) {
 var author$project$Page$Blank$view = {
 	b$: elm$html$Html$text(''),
 	bG: ''
+};
+var author$project$Page$Charts$ToggleMenuOpen = {$: 2};
+var author$project$Page$Charts$viewCharts = function (model) {
+	return _List_Nil;
+};
+var author$project$Page$Charts$view = function (model) {
+	return {
+		b$: A3(
+			surprisetalk$elm_bulma$Bulma$Layout$section,
+			0,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					surprisetalk$elm_bulma$Bulma$Layout$container,
+					_List_Nil,
+					author$project$Page$Charts$viewCharts(model))
+				])),
+		bG: 'Charts'
+	};
 };
 var author$project$Page$Dashboard$ToggleMenuOpen = {$: 2};
 var author$project$Session$viewer = function (session) {
@@ -10408,26 +10428,6 @@ var author$project$Page$Portfolio$view = function (model) {
 					author$project$Page$Portfolio$viewReports(model))
 				])),
 		bG: 'Portfolio'
-	};
-};
-var author$project$Page$Reports$ToggleMenuOpen = {$: 2};
-var author$project$Page$Reports$viewReports = function (model) {
-	return _List_Nil;
-};
-var author$project$Page$Reports$view = function (model) {
-	return {
-		b$: A3(
-			surprisetalk$elm_bulma$Bulma$Layout$section,
-			0,
-			_List_Nil,
-			_List_fromArray(
-				[
-					A2(
-					surprisetalk$elm_bulma$Bulma$Layout$container,
-					_List_Nil,
-					author$project$Page$Reports$viewReports(model))
-				])),
-		bG: 'Reports'
 	};
 };
 var author$project$Page$Upload$ToggleMenuOpen = {$: 2};
@@ -13776,13 +13776,13 @@ var author$project$Main$view = function (model) {
 				author$project$Main$GotPortfolioMsg,
 				author$project$Page$Portfolio$view(portfolio));
 		case 5:
-			var reports = model.a;
+			var charts = model.a;
 			return A4(
 				viewPage,
-				reports.v,
-				author$project$Page$Reports$ToggleMenuOpen,
-				author$project$Main$GotReportsMsg,
-				author$project$Page$Reports$view(reports));
+				charts.v,
+				author$project$Page$Charts$ToggleMenuOpen,
+				author$project$Main$GotChartsMsg,
+				author$project$Page$Charts$view(charts));
 		case 6:
 			var accbalance = model.a;
 			return A4(
