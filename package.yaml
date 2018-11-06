@@ -68,8 +68,8 @@ library:
   - persistent-template
   - safe
   - servant
-  - servant-auth-server
   - servant-auth-docs
+  - servant-auth-server
   - servant-cassava
   - servant-docs
   - servant-lucid
@@ -125,9 +125,10 @@ tests:
     - -threaded
     - -Wall
     dependencies:
-    - servant-auth-server
     - servant-auth-docs
+    - servant-auth-server
     - servant-docs
+    - servant-js
     - shelly
     - tractor
 

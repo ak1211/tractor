@@ -36,16 +36,17 @@ import           Data.Proxy                               ( Proxy(..) )
 import qualified Elm
 import qualified Servant.Docs
 import qualified Servant.Elm
+import qualified Servant.JS
 import qualified Shelly
 
-import           NetService.ApiTypes                      ( AuthTempCode
-                                                          , AuthClientId
-                                                          , RespAuth
-                                                          , ApiOhlcv
+import           NetService.ApiTypes                      ( ApiOhlcv
                                                           , ApiPortfolio
+                                                          , AuthClientId
+                                                          , AuthTempCode
                                                           , AuthenticatedUser
-                                                          , VerRev
+                                                          , RespAuth
                                                           , SystemHealth
+                                                          , VerRev
                                                           )
 import           NetService.WebServer                     ( ApiForDocument
                                                           , ApiForFrontend
@@ -118,5 +119,9 @@ main :: IO ()
 main = do
     Shelly.shelly $ Shelly.mkdir_p "frontend/src/Api"
     Servant.Elm.specsToDir [spec] "frontend/src"
+    Servant.JS.writeJSForAPI (Proxy :: Proxy ApiForFrontend)
+                             axios
+                             "frontend/src/Api/Endpoint.js"
     writeFile "frontend/public/WebApiDocument.md" webApiDocMarkdown
+    where axios = Servant.JS.axios Servant.JS.defAxiosOptions
 
