@@ -145,6 +145,10 @@ type Protected
 type Unprotected
     = Get '[HTML] HomePage
  :<|> "public" :> Raw
+ :<|> "elm" :> Get '[HTML] HomePage
+ :<|> "elm" :> "public" :> Raw
+ :<|> "purs" :> Get '[HTML] HomePage
+ :<|> "purs" :> "public" :> Raw
  :<|> "api" :> "v1" :> "auth" :> "clientid" :> Get '[JSON] AuthClientId
  :<|> "api" :> "v1" :> "version" :> Get '[JSON] ApiTypes.VerRev
  :<|> "api" :> "v1" :> "health" :> Get '[JSON] SystemHealth
@@ -193,14 +197,24 @@ protected cnf result = case result of
 --
 unprotected :: Config -> Servant.Server Unprotected
 unprotected cnf =
-    return HomePage
+    -- root
+    homepage
         :<|> Servant.serveDirectoryFileServer "frontend-purs/public"
+    -- elm/
+        :<|> homepage
+        :<|> Servant.serveDirectoryFileServer "frontend-elm/public"
+    -- purs/
+        :<|> homepage
+        :<|> Servant.serveDirectoryFileServer "frontend-purs/public"
+    -- api
         :<|> return (AuthClientId clientId)
         :<|> return (cVerRev cnf)
         :<|> return (SystemHealth Green)
         :<|> getPortfolioHandler (cPool cnf)
         :<|> getChartHandler (cPool cnf)
-    where clientId = Conf.clientID . Conf.slack . cConf $ cnf
+  where
+    homepage = return HomePage
+    clientId = Conf.clientID . Conf.slack . cConf $ cnf
 
 -- |
 --
