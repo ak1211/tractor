@@ -34,6 +34,7 @@ Portability :  POSIX
 module Main where
 import           Data.Proxy                               ( Proxy(..) )
 import qualified Elm
+import qualified Language.PureScript.Bridge    as Purs
 import qualified Servant.Docs
 import qualified Servant.Elm
 import qualified Servant.JS
@@ -117,11 +118,30 @@ webApiDocMarkdown = Servant.Docs.markdown webApiDocs
 
 main :: IO ()
 main = do
-    Shelly.shelly $ Shelly.mkdir_p "frontend/src/Api"
-    Servant.Elm.specsToDir [spec] "frontend/src"
+    -- generate elm
+    Shelly.shelly $ Shelly.mkdir_p "frontend-elm/src/Api"
+    Servant.Elm.specsToDir [spec] "frontend-elm/src"
+    -- generate javascrpt
     Servant.JS.writeJSForAPI (Proxy :: Proxy ApiForFrontend)
                              axios
-                             "frontend/src/Api/Endpoint.js"
-    writeFile "frontend/public/WebApiDocument.md" webApiDocMarkdown
-    where axios = Servant.JS.axios Servant.JS.defAxiosOptions
+                             "frontend-elm/src/Api/Endpoint.js"
+    -- generate purescript
+    Shelly.shelly $ Shelly.mkdir_p "frontend-purs/src/Api"
+    Purs.writePSTypes "frontend-purs/src/Api"
+                      (Purs.buildBridge Purs.defaultBridge)
+                      pursTypes
+    -- generate document
+    writeFile "frontend-elm/public/WebApiDocument.md" webApiDocMarkdown
+  where
+    axios = Servant.JS.axios Servant.JS.defAxiosOptions
+    pursTypes =
+        [ Purs.mkSumType (Proxy :: Proxy SystemHealth)
+        , Purs.mkSumType (Proxy :: Proxy VerRev)
+        , Purs.mkSumType (Proxy :: Proxy AuthenticatedUser)
+        , Purs.mkSumType (Proxy :: Proxy RespAuth)
+        , Purs.mkSumType (Proxy :: Proxy ApiPortfolio)
+        , Purs.mkSumType (Proxy :: Proxy ApiOhlcv)
+        , Purs.mkSumType (Proxy :: Proxy AuthTempCode)
+        , Purs.mkSumType (Proxy :: Proxy AuthClientId)
+        ]
 

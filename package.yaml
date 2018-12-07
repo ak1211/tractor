@@ -1,5 +1,5 @@
 name:               tractor
-version:            0.4.55
+version:            0.4.56
 github:             ak1211/tractor
 license:            AGPL-3
 author:             Akihiro Yamamoto
@@ -30,9 +30,11 @@ dependencies:
 - http-types
 - monad-logger
 - mtl
+- purescript-bridge
 - resourcet
 - safe-exceptions
 - servant-elm
+- servant-js
 - stm
 - text
 - time
@@ -128,7 +130,6 @@ tests:
     - servant-auth-docs
     - servant-auth-server
     - servant-docs
-    - servant-js
     - shelly
     - tractor
 
