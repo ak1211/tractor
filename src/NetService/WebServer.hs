@@ -194,7 +194,7 @@ protected cnf result = case result of
 unprotected :: Config -> Servant.Server Unprotected
 unprotected cnf =
     return HomePage
-        :<|> Servant.serveDirectoryFileServer "frontend-elm/public"
+        :<|> Servant.serveDirectoryFileServer "frontend-purs/public"
         :<|> return (AuthClientId clientId)
         :<|> return (cVerRev cnf)
         :<|> return (SystemHealth Green)

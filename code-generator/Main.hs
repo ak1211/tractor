@@ -132,6 +132,7 @@ main = do
                       pursTypes
     -- generate document
     writeFile "frontend-elm/public/WebApiDocument.md" webApiDocMarkdown
+    writeFile "frontend-purs/public/WebApiDocument.md" webApiDocMarkdown
   where
     axios = Servant.JS.axios Servant.JS.defAxiosOptions
     pursTypes =
