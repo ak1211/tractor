@@ -7,18 +7,19 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe, Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Symbol (SProxy(SProxy))
-import GHC.Int (Int64)
 import Prim (Int, Number, String)
 
 import Prelude
-import Data.Generic (class Generic)
+import Data.Generic.Rep (class Generic)
+
+type SystemSignal = String
 
 newtype SystemHealth =
     SystemHealth {
       system :: SystemSignal
     }
 
-derive instance genericSystemHealth :: Generic SystemHealth
+derive instance genericSystemHealth :: Generic SystemHealth _
 derive instance newtypeSystemHealth :: Newtype SystemHealth _
 
 --------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ newtype VerRev =
     , gitStatus :: String
     }
 
-derive instance genericVerRev :: Generic VerRev
+derive instance genericVerRev :: Generic VerRev _
 derive instance newtypeVerRev :: Newtype VerRev _
 
 --------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ newtype AuthenticatedUser =
     , userTzOffset :: Int
     }
 
-derive instance genericAuthenticatedUser :: Generic AuthenticatedUser
+derive instance genericAuthenticatedUser :: Generic AuthenticatedUser _
 derive instance newtypeAuthenticatedUser :: Newtype AuthenticatedUser _
 
 --------------------------------------------------------------------------------
@@ -70,7 +71,7 @@ newtype RespAuth =
     , tokenType :: String
     }
 
-derive instance genericRespAuth :: Generic RespAuth
+derive instance genericRespAuth :: Generic RespAuth _
 derive instance newtypeRespAuth :: Newtype RespAuth _
 
 --------------------------------------------------------------------------------
@@ -85,7 +86,7 @@ newtype ApiPortfolio =
     , updateAt :: Maybe String
     }
 
-derive instance genericApiPortfolio :: Generic ApiPortfolio
+derive instance genericApiPortfolio :: Generic ApiPortfolio _
 derive instance newtypeApiPortfolio :: Newtype ApiPortfolio _
 
 --------------------------------------------------------------------------------
@@ -100,15 +101,15 @@ newtype ApiOhlcv =
     , high :: Maybe Number
     , low :: Maybe Number
     , close :: Maybe Number
-    , volume :: Int64
+    , volume :: Int
     , source :: Maybe String
     }
 
-derive instance genericApiOhlcv :: Generic ApiOhlcv
+derive instance genericApiOhlcv :: Generic ApiOhlcv _
 derive instance newtypeApiOhlcv :: Newtype ApiOhlcv _
 
 --------------------------------------------------------------------------------
-_ApiOhlcv :: Iso' ApiOhlcv { at :: String, open :: Maybe Number, high :: Maybe Number, low :: Maybe Number, close :: Maybe Number, volume :: Int64, source :: Maybe String}
+_ApiOhlcv :: Iso' ApiOhlcv { at :: String, open :: Maybe Number, high :: Maybe Number, low :: Maybe Number, close :: Maybe Number, volume :: Int, source :: Maybe String}
 _ApiOhlcv = _Newtype
 
 --------------------------------------------------------------------------------
@@ -117,7 +118,7 @@ newtype AuthTempCode =
       code :: String
     }
 
-derive instance genericAuthTempCode :: Generic AuthTempCode
+derive instance genericAuthTempCode :: Generic AuthTempCode _
 derive instance newtypeAuthTempCode :: Newtype AuthTempCode _
 
 --------------------------------------------------------------------------------
@@ -130,7 +131,7 @@ newtype AuthClientId =
       clientid :: String
     }
 
-derive instance genericAuthClientId :: Generic AuthClientId
+derive instance genericAuthClientId :: Generic AuthClientId _
 derive instance newtypeAuthClientId :: Newtype AuthClientId _
 
 --------------------------------------------------------------------------------

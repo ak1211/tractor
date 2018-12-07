@@ -1,0 +1,29 @@
+{
+  "name": "frontend",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "^4.1.0",
+    "purescript-console": "^4.1.0",
+    "purescript-effect": "^2.0.0",
+    "purescript-halogen": "^4.0.0",
+    "purescript-aff-coroutines": "^7.0.0",
+    "purescript-bulma": "^2.0.0",
+    "purescript-routing": "^8.0.0",
+    "purescript-halogen-css": "^8.0.0",
+    "purescript-aff": "^5.0.2",
+    "purescript-profunctor-lenses": "^4.0.0",
+    "purescript-affjax": "^7.0.0",
+    "purescript-markdown-smolder": "purescript-slamdown-smolder#^2.0.1",
+    "purescript-stringutils": "^0.0.8",
+    "purescript-foreign-generic": "^7.0.0",
+    "purescript-transformers": "^4.1.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^4.0.0"
+  }
+}
