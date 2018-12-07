@@ -1,6 +1,6 @@
 src/* linguist-vendored=false
 app/* linguist-vendored=false
 test/* linguist-detectable=false
-frontend/elm-stuff/* linguist-vendored=false
-frontend/public/* linguist-detectable=false
+frontend-elm/public/* linguist-detectable=false
+frontend-purs/public/* linguist-vendored=false
 stock-charts.ipynb linguist-vendored
