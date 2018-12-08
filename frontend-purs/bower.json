@@ -21,7 +21,8 @@
     "purescript-markdown-smolder": "purescript-slamdown-smolder#^2.0.1",
     "purescript-stringutils": "^0.0.8",
     "purescript-foreign-generic": "^7.0.0",
-    "purescript-transformers": "^4.1.0"
+    "purescript-transformers": "^4.1.0",
+    "purescript-jwt": "^0.0.4"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

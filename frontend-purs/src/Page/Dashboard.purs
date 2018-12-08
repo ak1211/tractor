@@ -13,16 +13,18 @@ import Bulma.Elements.Elements as Elements
 import Bulma.Elements.Tag as Tag
 import Bulma.Form.General as Form
 import Bulma.Modifiers.Typography as Typo
+import CSS (marginLeft, marginRight, rem)
 import Data.Either (either)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Core as HC
 import Halogen.HTML.Properties as HP
 import Page as Page
-import Session (Session(..), showUsername)
+import Session (Session(..))
 
 
 data Result3 a = Indefinite | Err String | Ok a
@@ -77,13 +79,13 @@ component =
       pure next
 
     Initialize next -> do
+      session <- getSession
+      H.modify_ _ { session = session }
       health <- H.liftAff $ Api.getApiV1Health
       version <- H.liftAff $ Api.getApiV1Version
-      session <- getSession
       H.modify_
         _ { systemHealth = either Err Ok health.body
           , systemVersion = either Err Ok version.body
-          , session = session
           }
       pure next
 
@@ -167,11 +169,23 @@ greetings state =
     [ HH.p
       [ HP.class_ <<< HC.ClassName $ BC.runClassName (Typo.isSize Typo.Size5)
       ]
-      [ HH.text "Maido "
-      , HH.text <<< fromMaybe "Guest" $ showUsername state.session
-      , HH.text " san"
+      [ HH.text "Maido!"
+      , HH.span
+        [ CSS.style do
+            marginLeft $ rem 1.8
+            marginRight $ rem 1.8
+        ]
+        [ HH.text username
+        ]
+      , HH.text "san."
       ]
     ]
+  where
+  username = case state.session of
+    LoggedIn a ->
+      Api.username a
+    Guest ->
+      "Guest"
 
 
 -- FORM CONTROL

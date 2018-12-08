@@ -77,12 +77,10 @@ component =
 
     Initialize next -> do
       session <- getSession
+      H.modify_ _ { session = session }
       res <- H.liftAff $ Api.getWebApiDocument
       let doc = either (handleErr res) identity res.body
-      H.modify_
-        _ { session = session
-          , webApiDocument = toSlamDown doc
-        }
+      H.modify_ _ { webApiDocument = toSlamDown doc }
       pure next
 
     Finalize next -> do
