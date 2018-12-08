@@ -49,6 +49,7 @@ instance Lucid.ToHtml HomePage where
                 meta_ [charset_ "utf-8"]
                 meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
                 title_ $ Lucid.toHtmlRaw ("Dashboard &#8212; TRACTOR" :: T.Text)
+                link_ [rel_ "icon", href_"public/favicon.ico"]
                 link_ [rel_ "stylesheet", href_ "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" ]
                 link_ [rel_ "stylesheet", href_ "https://use.fontawesome.com/releases/v5.5.0/css/all.css", integrity_ "sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU", crossorigin_ "anonymous"]
                 link_ [rel_ "stylesheet", href_ "https://fonts.googleapis.com/css?family=Gugi"]
