@@ -4,11 +4,12 @@ module Main
 
 import Prelude
 
+import Api (loadCred)
 import AppM (class SessionDSL, runAppM)
 import Data.Either (either)
 import Data.Either.Nested (Either9)
 import Data.Functor.Coproduct.Nested (Coproduct9)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff, forkAff)
 import Effect.Aff.Class (class MonadAff)
@@ -108,12 +109,6 @@ type State =
   }
 
 
-init :: State
-init =
-  { route: Root
-  }
-
-
 -- QUERY
 
 
@@ -136,6 +131,9 @@ ui = H.lifecycleParentComponent
   , receiver: const Nothing
   }
   where
+  init =
+    { route: Root
+    }
 
   render :: State -> H.ParentHTML Query ChildQuery ChildSlot m
   render st = case st.route of
@@ -215,9 +213,9 @@ routeSignal driver =
 
 main :: Effect Unit
 main = HA.runHalogenAff do
-  body <- HA.awaitBody
-  let session = Guest
+  session <- maybe Guest LoggedIn <$> liftEffect loadCred
   let uiWithSession = H.hoist (flip runAppM session) ui
+  body <- HA.awaitBody
   driver <- runUI uiWithSession unit body
   forkAff (routeSignal driver)
 
