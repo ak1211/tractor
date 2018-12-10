@@ -95,7 +95,8 @@ var PS = {};
 
   function id(x) {
     return x;
-  }                      
+  }                       
+  exports.fromString = id;
   exports.fromObject = id;
 
   exports.stringify = function (j) {
@@ -1130,17 +1131,11 @@ var PS = {};
   var discardUnit = new Discard(function (dictBind) {
       return bind(dictBind);
   });
-  var join = function (dictBind) {
-      return function (m) {
-          return bind(dictBind)(m)(Control_Category.identity(Control_Category.categoryFn));
-      };
-  };
   exports["Bind"] = Bind;
   exports["bind"] = bind;
   exports["bindFlipped"] = bindFlipped;
   exports["Discard"] = Discard;
   exports["discard"] = discard;
-  exports["join"] = join;
   exports["composeKleisliFlipped"] = composeKleisliFlipped;
   exports["bindArray"] = bindArray;
   exports["discardUnit"] = discardUnit;
@@ -1394,17 +1389,6 @@ var PS = {};
       };
       return Just;
   })();
-  var showMaybe = function (dictShow) {
-      return new Data_Show.Show(function (v) {
-          if (v instanceof Just) {
-              return "(Just " + (Data_Show.show(dictShow)(v.value0) + ")");
-          };
-          if (v instanceof Nothing) {
-              return "Nothing";
-          };
-          throw new Error("Failed pattern match at Data.Maybe line 205, column 1 - line 205, column 47: " + [ v.constructor.name ]);
-      });
-  };
   var maybe = function (v) {
       return function (v1) {
           return function (v2) {
@@ -1519,7 +1503,6 @@ var PS = {};
   exports["bindMaybe"] = bindMaybe;
   exports["monadMaybe"] = monadMaybe;
   exports["monadZeroMaybe"] = monadZeroMaybe;
-  exports["showMaybe"] = showMaybe;
 })(PS["Data.Maybe"] = PS["Data.Maybe"] || {});
 (function(exports) {
     "use strict";
@@ -3218,6 +3201,11 @@ var PS = {};
   var Prelude = PS["Prelude"];
   var Type_Row_Homogeneous = PS["Type.Row.Homogeneous"];
   var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var singleton = function (k) {
+      return function (v) {
+          return $foreign.runST(Control_Bind.bindFlipped(Control_Monad_ST_Internal.bindST)(Foreign_Object_ST.poke(k)(v))(Foreign_Object_ST["new"]));
+      };
+  };
   var lookup = Data_Function_Uncurried.runFn4($foreign._lookup)(Data_Maybe.Nothing.value)(Data_Maybe.Just.create);
   var fromFoldable = function (dictFoldable) {
       return function (l) {
@@ -3242,6 +3230,7 @@ var PS = {};
           })(Data_Monoid.mempty(dictMonoid));
       };
   };
+  exports["singleton"] = singleton;
   exports["lookup"] = lookup;
   exports["fromFoldable"] = fromFoldable;
   exports["fold"] = fold;
@@ -3259,8 +3248,29 @@ var PS = {};
   var Data_Ord = PS["Data.Ord"];
   var Data_Ordering = PS["Data.Ordering"];
   var Foreign_Object = PS["Foreign.Object"];
-  var Prelude = PS["Prelude"];                  
+  var Prelude = PS["Prelude"];                 
+  var verbJsonType = function (def) {
+      return function (f) {
+          return function (g) {
+              return g(def)(f);
+          };
+      };
+  };
+  var toJsonType = verbJsonType(Data_Maybe.Nothing.value)(Data_Maybe.Just.create);
+  var jsonSingletonObject = function (key) {
+      return function (val) {
+          return $foreign.fromObject(Foreign_Object.singleton(key)(val));
+      };
+  };                                            
   var jsonEmptyObject = $foreign.fromObject(Foreign_Object.empty);
+  var caseJsonString = function (d) {
+      return function (f) {
+          return function (j) {
+              return $foreign._caseJson(Data_Function["const"](d), Data_Function["const"](d), Data_Function["const"](d), f, Data_Function["const"](d), Data_Function["const"](d), j);
+          };
+      };
+  };                                        
+  var toString = toJsonType(caseJsonString);
   var caseJsonObject = function (d) {
       return function (f) {
           return function (j) {
@@ -3268,8 +3278,13 @@ var PS = {};
           };
       };
   };
+  exports["caseJsonString"] = caseJsonString;
   exports["caseJsonObject"] = caseJsonObject;
+  exports["toString"] = toString;
   exports["jsonEmptyObject"] = jsonEmptyObject;
+  exports["jsonSingletonObject"] = jsonSingletonObject;
+  exports["fromString"] = $foreign.fromString;
+  exports["fromObject"] = $foreign.fromObject;
   exports["stringify"] = $foreign.stringify;
 })(PS["Data.Argonaut.Core"] = PS["Data.Argonaut.Core"] || {});
 (function(exports) {
@@ -3420,6 +3435,191 @@ var PS = {};
   exports["applicationFormURLEncoded"] = applicationFormURLEncoded;
   exports["applicationJSON"] = applicationJSON;
 })(PS["Data.MediaType.Common"] = PS["Data.MediaType.Common"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.createTextNode = function (data) {
+    return function (doc) {
+      return function () {
+        return doc.createTextNode(data);
+      };
+    };
+  };
+})(PS["Web.DOM.Document"] = PS["Web.DOM.Document"] || {});
+(function(exports) {
+    "use strict";
+
+  exports["null"] = null;
+
+  exports.nullable = function (a, r, f) {
+    return a == null ? r : f(a);
+  };
+
+  exports.notNull = function (x) {
+    return x;
+  };
+})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Data.Nullable"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Show = PS["Data.Show"];
+  var Prelude = PS["Prelude"];                 
+  var toNullable = Data_Maybe.maybe($foreign["null"])($foreign.notNull);
+  var toMaybe = function (n) {
+      return $foreign.nullable(n, Data_Maybe.Nothing.value, Data_Maybe.Just.create);
+  };
+  exports["toMaybe"] = toMaybe;
+  exports["toNullable"] = toNullable;
+})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
+(function(exports) {
+    "use strict";                                             
+
+  exports._querySelector = function (selector) {
+    return function (node) {
+      return function () {
+        return node.querySelector(selector);
+      };
+    };
+  };
+})(PS["Web.DOM.ParentNode"] = PS["Web.DOM.ParentNode"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.DOM.ParentNode"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Newtype = PS["Data.Newtype"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Data_Ord = PS["Data.Ord"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Web_DOM_HTMLCollection = PS["Web.DOM.HTMLCollection"];
+  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
+  var Web_DOM_NodeList = PS["Web.DOM.NodeList"];
+  var querySelector = function (qs) {
+      return function ($3) {
+          return Data_Functor.map(Effect.functorEffect)(Data_Nullable.toMaybe)($foreign._querySelector(qs)($3));
+      };
+  };
+  exports["querySelector"] = querySelector;
+})(PS["Web.DOM.ParentNode"] = PS["Web.DOM.ParentNode"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.eventListener = function (fn) {
+    return function () {
+      return function (event) {
+        return fn(event)();
+      };
+    };
+  };
+
+  exports.addEventListener = function (type) {
+    return function (listener) {
+      return function (useCapture) {
+        return function (target) {
+          return function () {
+            return target.addEventListener(type, listener, useCapture);
+          };
+        };
+      };
+    };
+  };
+
+  exports.removeEventListener = function (type) {
+    return function (listener) {
+      return function (useCapture) {
+        return function (target) {
+          return function () {
+            return target.removeEventListener(type, listener, useCapture);
+          };
+        };
+      };
+    };
+  };
+})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.Event.EventTarget"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Web_Event_Event = PS["Web.Event.Event"];
+  var Web_Event_Internal_Types = PS["Web.Event.Internal.Types"];
+  exports["eventListener"] = $foreign.eventListener;
+  exports["addEventListener"] = $foreign.addEventListener;
+  exports["removeEventListener"] = $foreign.removeEventListener;
+})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.DOM.Element"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var Web_DOM_ChildNode = PS["Web.DOM.ChildNode"];
+  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
+  var Web_DOM_NonDocumentTypeChildNode = PS["Web.DOM.NonDocumentTypeChildNode"];
+  var Web_DOM_ParentNode = PS["Web.DOM.ParentNode"];
+  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
+  var Web_Internal_FFI = PS["Web.Internal.FFI"];              
+  var toNode = Unsafe_Coerce.unsafeCoerce;
+  exports["toNode"] = toNode;
+})(PS["Web.DOM.Element"] = PS["Web.DOM.Element"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.DOM.Text"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Effect = PS["Effect"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var Web_DOM_CharacterData = PS["Web.DOM.CharacterData"];
+  var Web_DOM_ChildNode = PS["Web.DOM.ChildNode"];
+  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
+  var Web_DOM_NonDocumentTypeChildNode = PS["Web.DOM.NonDocumentTypeChildNode"];
+  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
+  var Web_Internal_FFI = PS["Web.Internal.FFI"];              
+  var toNode = Unsafe_Coerce.unsafeCoerce;
+  exports["toNode"] = toNode;
+})(PS["Web.DOM.Text"] = PS["Web.DOM.Text"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.DOM.Document"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var Web_DOM_Comment = PS["Web.DOM.Comment"];
+  var Web_DOM_DocumentFragment = PS["Web.DOM.DocumentFragment"];
+  var Web_DOM_DocumentType = PS["Web.DOM.DocumentType"];
+  var Web_DOM_Element = PS["Web.DOM.Element"];
+  var Web_DOM_HTMLCollection = PS["Web.DOM.HTMLCollection"];
+  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
+  var Web_DOM_NonElementParentNode = PS["Web.DOM.NonElementParentNode"];
+  var Web_DOM_ParentNode = PS["Web.DOM.ParentNode"];
+  var Web_DOM_ProcessingInstruction = PS["Web.DOM.ProcessingInstruction"];
+  var Web_DOM_Text = PS["Web.DOM.Text"];
+  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
+  var Web_Internal_FFI = PS["Web.Internal.FFI"];
+  exports["createTextNode"] = $foreign.createTextNode;
+})(PS["Web.DOM.Document"] = PS["Web.DOM.Document"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
@@ -3743,16 +3943,12 @@ var PS = {};
   var MonadEffect = function (Monad0, liftEffect) {
       this.Monad0 = Monad0;
       this.liftEffect = liftEffect;
-  };
-  var monadEffectEffect = new MonadEffect(function () {
-      return Effect.monadEffect;
-  }, Control_Category.identity(Control_Category.categoryFn));
+  };                                                         
   var liftEffect = function (dict) {
       return dict.liftEffect;
   };
   exports["liftEffect"] = liftEffect;
   exports["MonadEffect"] = MonadEffect;
-  exports["monadEffectEffect"] = monadEffectEffect;
 })(PS["Effect.Class"] = PS["Effect.Class"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
@@ -4798,22 +4994,12 @@ var PS = {};
       });
   };                                                                                          
   var indexOf = $foreign._indexOf(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
-  var stripPrefix = function (v) {
-      return function (str) {
-          var v1 = indexOf(v)(str);
-          if (v1 instanceof Data_Maybe.Just && v1.value0 === 0) {
-              return Data_Maybe.Just.create($foreign.drop($foreign.length(v))(str));
-          };
-          return Data_Maybe.Nothing.value;
-      };
-  };
   var dropWhile = function (p) {
       return function (s) {
           return $foreign.drop($foreign.countPrefix(p)(s))(s);
       };
   };
   var charAt = $foreign._charAt(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
-  exports["stripPrefix"] = stripPrefix;
   exports["charAt"] = charAt;
   exports["uncons"] = uncons;
   exports["indexOf"] = indexOf;
@@ -5685,38 +5871,6 @@ var PS = {};
   exports["print"] = print;
   exports["showMethod"] = showMethod;
 })(PS["Data.HTTP.Method"] = PS["Data.HTTP.Method"] || {});
-(function(exports) {
-    "use strict";
-
-  exports["null"] = null;
-
-  exports.nullable = function (a, r, f) {
-    return a == null ? r : f(a);
-  };
-
-  exports.notNull = function (x) {
-    return x;
-  };
-})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
-  var $foreign = PS["Data.Nullable"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Show = PS["Data.Show"];
-  var Prelude = PS["Prelude"];                 
-  var toNullable = Data_Maybe.maybe($foreign["null"])($foreign.notNull);
-  var toMaybe = function (n) {
-      return $foreign.nullable(n, Data_Maybe.Nothing.value, Data_Maybe.Just.create);
-  };
-  exports["toMaybe"] = toMaybe;
-  exports["toNullable"] = toNullable;
-})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
 (function(exports) {
   /* globals setImmediate, clearImmediate, setTimeout, clearTimeout */
   /* jshint -W083, -W098, -W003 */
@@ -7271,56 +7425,27 @@ var PS = {};
   exports["request"] = request;
 })(PS["Affjax"] = PS["Affjax"] || {});
 (function(exports) {
-    "use strict";
-
-  exports.log = function (s) {
-    return function () {
-      console.log(s);
-      return {};
-    };
-  };
-
-  exports.warn = function (s) {
-    return function () {
-      console.warn(s);
-      return {};
-    };
-  };
-})(PS["Effect.Console"] = PS["Effect.Console"] || {});
-(function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
-  var $foreign = PS["Effect.Console"];
-  var Data_Show = PS["Data.Show"];
-  var Data_Unit = PS["Data.Unit"];
-  var Effect = PS["Effect"];
-  var logShow = function (dictShow) {
-      return function (a) {
-          return $foreign.log(Data_Show.show(dictShow)(a));
-      };
+  var Data_Maybe = PS["Data.Maybe"];
+  var Constructor = function (x) {
+      return x;
   };
-  exports["logShow"] = logShow;
-  exports["log"] = $foreign.log;
-  exports["warn"] = $foreign.warn;
-})(PS["Effect.Console"] = PS["Effect.Console"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Show = PS["Data.Show"];
-  var Data_Unit = PS["Data.Unit"];
-  var Effect_Class = PS["Effect.Class"];
-  var Effect_Console = PS["Effect.Console"];
-  var logShow = function (dictMonadEffect) {
-      return function (dictShow) {
-          return function ($18) {
-              return Effect_Class.liftEffect(dictMonadEffect)(Effect_Console.logShow(dictShow)($18));
-          };
-      };
+  var Generic = function (from, to) {
+      this.from = from;
+      this.to = to;
   };
-  exports["logShow"] = logShow;
-})(PS["Effect.Class.Console"] = PS["Effect.Class.Console"] || {});
+  var to = function (dict) {
+      return dict.to;
+  }; 
+  var from = function (dict) {
+      return dict.from;
+  };
+  exports["Generic"] = Generic;
+  exports["to"] = to;
+  exports["from"] = from;
+  exports["Constructor"] = Constructor;
+})(PS["Data.Generic.Rep"] = PS["Data.Generic.Rep"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
@@ -7358,28 +7483,6 @@ var PS = {};
   exports["stringDecode"] = stringDecode;
   exports["intDecode"] = intDecode;
 })(PS["Foreign.Class"] = PS["Foreign.Class"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
-  var Data_Maybe = PS["Data.Maybe"];
-  var Constructor = function (x) {
-      return x;
-  };
-  var Generic = function (from, to) {
-      this.from = from;
-      this.to = to;
-  };
-  var to = function (dict) {
-      return dict.to;
-  }; 
-  var from = function (dict) {
-      return dict.from;
-  };
-  exports["Generic"] = Generic;
-  exports["to"] = to;
-  exports["from"] = from;
-  exports["Constructor"] = Constructor;
-})(PS["Data.Generic.Rep"] = PS["Data.Generic.Rep"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
@@ -8118,14 +8221,18 @@ var PS = {};
     }
 
     return result;
-  };                               
+  };
+
+  exports.encodeNode  = encodeNode;
   exports._decodeNode = _decodeNode;
   exports._atob       = _atob;
+  exports._btoa       = _btoa;
 })(PS["Data.String.Base64"] = PS["Data.String.Base64"] || {});
 (function(exports) {
     "use strict";
 
   var atobIsDefined = typeof atob === "function";
+  var btoaIsDefined = typeof btoa === "function";
 
   // This function converts a `Uint8Array` to a btoa-safe string.
   // It does so by treating each byte as a Unicode code point value and by
@@ -8150,7 +8257,9 @@ var PS = {};
     return new Uint8Array(array);
   }
 
-  exports.atobIsDefined              = atobIsDefined;             
+  exports.atobIsDefined              = atobIsDefined;
+  exports.btoaIsDefined              = btoaIsDefined;
+  exports.uint8ArrayToBtoaSafeString = uint8ArrayToBtoaSafeString;
   exports.asUint8Array               = asUint8Array;
 })(PS["Data.String.Base64.Internal"] = PS["Data.String.Base64.Internal"] || {});
 (function(exports) {
@@ -8538,6 +8647,8 @@ var PS = {};
   exports["unsafeStringToUint8ArrayOfCharCodes"] = unsafeStringToUint8ArrayOfCharCodes;
   exports["toRfc4648"] = toRfc4648;
   exports["atobIsDefined"] = $foreign.atobIsDefined;
+  exports["btoaIsDefined"] = $foreign.btoaIsDefined;
+  exports["uint8ArrayToBtoaSafeString"] = $foreign.uint8ArrayToBtoaSafeString;
 })(PS["Data.String.Base64.Internal"] = PS["Data.String.Base64.Internal"] || {});
 (function(exports) {
     "use strict";
@@ -9025,6 +9136,74 @@ var PS = {};
   exports["showEncoding"] = showEncoding;
 })(PS["Data.TextDecoder"] = PS["Data.TextDecoder"] || {});
 (function(exports) {
+    "use strict";
+
+  // `TextEncoder` is not available in `node`, use polyfill in that case
+  var TextEncoder =
+    (typeof window === "object" && window.TextEncoder)
+    || (typeof require === "function" && require("text-encoding").TextEncoder);
+
+  exports._encode = function (utfLabel, str) {
+    var encoder = new TextEncoder(utfLabel);
+
+    return encoder.encode(str);
+  };
+})(PS["Data.TextEncoder"] = PS["Data.TextEncoder"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Data.TextEncoder"];
+  var Data_ArrayBuffer_Types = PS["Data.ArrayBuffer.Types"];
+  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
+  var Data_Show = PS["Data.Show"];
+  var Prelude = PS["Prelude"];                 
+  var Utf8 = (function () {
+      function Utf8() {
+
+      };
+      Utf8.value = new Utf8();
+      return Utf8;
+  })();
+  var Utf_16Be = (function () {
+      function Utf_16Be() {
+
+      };
+      Utf_16Be.value = new Utf_16Be();
+      return Utf_16Be;
+  })();
+  var Utf_16Le = (function () {
+      function Utf_16Le() {
+
+      };
+      Utf_16Le.value = new Utf_16Le();
+      return Utf_16Le;
+  })();
+  var showEncoding = new Data_Show.Show(function (v) {
+      if (v instanceof Utf8) {
+          return "utf-8";
+      };
+      if (v instanceof Utf_16Be) {
+          return "utf-16be";
+      };
+      if (v instanceof Utf_16Le) {
+          return "utf-16le";
+      };
+      throw new Error("Failed pattern match at Data.TextEncoder line 36, column 1 - line 36, column 39: " + [ v.constructor.name ]);
+  });
+  var encode = function (encoding) {
+      return function (str) {
+          return $foreign._encode(Data_Show.show(showEncoding)(encoding), str);
+      };
+  };
+  var encodeUtf8 = encode(Utf8.value);
+  exports["Utf8"] = Utf8;
+  exports["Utf_16Be"] = Utf_16Be;
+  exports["Utf_16Le"] = Utf_16Le;
+  exports["encode"] = encode;
+  exports["encodeUtf8"] = encodeUtf8;
+  exports["showEncoding"] = showEncoding;
+})(PS["Data.TextEncoder"] = PS["Data.TextEncoder"] || {});
+(function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
   var $foreign = PS["Data.String.Base64"];
@@ -9039,7 +9218,16 @@ var PS = {};
   var Data_TextEncoder = PS["Data.TextEncoder"];
   var Effect_Exception = PS["Effect.Exception"];
   var Partial_Unsafe = PS["Partial.Unsafe"];
-  var Prelude = PS["Prelude"];
+  var Prelude = PS["Prelude"];                 
+  var btoa = function (str) {
+      return $foreign._btoa(Data_Either.Left.create, Data_Either.Right.create, str);
+  };
+  var encode = function (str) {
+      if (Data_String_Base64_Internal.btoaIsDefined) {
+          return Data_Either.fromRight()(btoa(Data_String_Base64_Internal.uint8ArrayToBtoaSafeString(Data_TextEncoder.encodeUtf8(str))));
+      };
+      return $foreign.encodeNode(str);
+  };
   var atob = function (str) {
       return $foreign._atob(Data_Either.Left.create, Data_Either.Right.create, str);
   };
@@ -9050,7 +9238,9 @@ var PS = {};
       return $foreign._decodeNode(Data_Either.Left.create, Data_Either.Right.create, Data_String_Base64_Internal.toRfc4648(str));
   };
   exports["atob"] = atob;
+  exports["btoa"] = btoa;
   exports["decode"] = decode;
+  exports["encode"] = encode;
 })(PS["Data.String.Base64"] = PS["Data.String.Base64"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
@@ -9150,6 +9340,11 @@ var PS = {};
   }, function (x) {
       return x;
   });
+  var genericRespAuth = new Data_Generic_Rep.Generic(function (x) {
+      return x;
+  }, function (x) {
+      return x;
+  });
   var genericAuthenticatedUser = new Data_Generic_Rep.Generic(function (x) {
       return x;
   }, function (x) {
@@ -9163,6 +9358,7 @@ var PS = {};
   exports["genericSystemHealth"] = genericSystemHealth;
   exports["genericVerRev"] = genericVerRev;
   exports["genericAuthenticatedUser"] = genericAuthenticatedUser;
+  exports["genericRespAuth"] = genericRespAuth;
   exports["genericAuthClientId"] = genericAuthClientId;
 })(PS["NetService.ApiTypes"] = PS["NetService.ApiTypes"] || {});
 (function(exports) {
@@ -9182,87 +9378,6 @@ var PS = {};
     };
   };
 })(PS["Web.HTML.HTMLDocument"] = PS["Web.HTML.HTMLDocument"] || {});
-(function(exports) {
-    "use strict";                                             
-
-  exports._querySelector = function (selector) {
-    return function (node) {
-      return function () {
-        return node.querySelector(selector);
-      };
-    };
-  };
-})(PS["Web.DOM.ParentNode"] = PS["Web.DOM.ParentNode"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
-  var $foreign = PS["Web.DOM.ParentNode"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Newtype = PS["Data.Newtype"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Data_Ord = PS["Data.Ord"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Web_DOM_HTMLCollection = PS["Web.DOM.HTMLCollection"];
-  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
-  var Web_DOM_NodeList = PS["Web.DOM.NodeList"];
-  var querySelector = function (qs) {
-      return function ($3) {
-          return Data_Functor.map(Effect.functorEffect)(Data_Nullable.toMaybe)($foreign._querySelector(qs)($3));
-      };
-  };
-  exports["querySelector"] = querySelector;
-})(PS["Web.DOM.ParentNode"] = PS["Web.DOM.ParentNode"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.eventListener = function (fn) {
-    return function () {
-      return function (event) {
-        return fn(event)();
-      };
-    };
-  };
-
-  exports.addEventListener = function (type) {
-    return function (listener) {
-      return function (useCapture) {
-        return function (target) {
-          return function () {
-            return target.addEventListener(type, listener, useCapture);
-          };
-        };
-      };
-    };
-  };
-
-  exports.removeEventListener = function (type) {
-    return function (listener) {
-      return function (useCapture) {
-        return function (target) {
-          return function () {
-            return target.removeEventListener(type, listener, useCapture);
-          };
-        };
-      };
-    };
-  };
-})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
-  var $foreign = PS["Web.Event.EventTarget"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Web_Event_Event = PS["Web.Event.Event"];
-  var Web_Event_Internal_Types = PS["Web.Event.Internal.Types"];
-  exports["eventListener"] = $foreign.eventListener;
-  exports["addEventListener"] = $foreign.addEventListener;
-  exports["removeEventListener"] = $foreign.removeEventListener;
-})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
@@ -9325,26 +9440,6 @@ var PS = {};
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
-  var $foreign = PS["Web.DOM.Element"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Unsafe_Coerce = PS["Unsafe.Coerce"];
-  var Web_DOM_ChildNode = PS["Web.DOM.ChildNode"];
-  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
-  var Web_DOM_NonDocumentTypeChildNode = PS["Web.DOM.NonDocumentTypeChildNode"];
-  var Web_DOM_ParentNode = PS["Web.DOM.ParentNode"];
-  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
-  var Web_Internal_FFI = PS["Web.Internal.FFI"];              
-  var toNode = Unsafe_Coerce.unsafeCoerce;
-  exports["toNode"] = toNode;
-})(PS["Web.DOM.Element"] = PS["Web.DOM.Element"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
   var $foreign = PS["Web.HTML.HTMLElement"];
   var Control_Semigroupoid = PS["Control.Semigroupoid"];
   var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
@@ -9401,10 +9496,70 @@ var PS = {};
 })(PS["Web.HTML.HTMLDocument"] = PS["Web.HTML.HTMLDocument"] || {});
 (function(exports) {
     "use strict";
+  exports.pushState = function(a) {
+    return function(docTitle) {
+      return function(url) {
+        return function(history) {
+          return function() {
+            return history.pushState(a, docTitle, url);
+          };
+        };
+      };
+    };
+  };
+  exports.replaceState = function(a) {
+    return function(docTitle) {
+      return function(url) {
+        return function(history) {
+          return function() {
+            return history.replaceState(a, docTitle, url);
+          };
+        };
+      };
+    };
+  };
+  exports.state = function(history) {
+    return function() {
+      return history.state;
+    };
+  };
+})(PS["Web.HTML.History"] = PS["Web.HTML.History"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.HTML.History"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Newtype = PS["Data.Newtype"];
+  var Data_Ord = PS["Data.Ord"];
+  var Effect = PS["Effect"];
+  var Foreign = PS["Foreign"];
+  var Prelude = PS["Prelude"];
+  exports["pushState"] = $foreign.pushState;
+  exports["replaceState"] = $foreign.replaceState;
+  exports["state"] = $foreign.state;
+})(PS["Web.HTML.History"] = PS["Web.HTML.History"] || {});
+(function(exports) {
+    "use strict";
 
   exports.hash = function (location) {
     return function () {
       return location.hash;
+    };
+  };
+
+  // ----------------------------------------------------------------------------
+
+  exports.pathname = function (location) {
+    return function () {
+      return location.pathname;
+    };
+  };
+
+  // ----------------------------------------------------------------------------
+
+  exports.search = function (location) {
+    return function () {
+      return location.search;
     };
   };
 
@@ -9425,6 +9580,8 @@ var PS = {};
   var Effect = PS["Effect"];
   var Prelude = PS["Prelude"];
   exports["hash"] = $foreign.hash;
+  exports["pathname"] = $foreign.pathname;
+  exports["search"] = $foreign.search;
   exports["replace"] = $foreign.replace;
 })(PS["Web.HTML.Location"] = PS["Web.HTML.Location"] || {});
 (function(exports) {
@@ -9442,6 +9599,12 @@ var PS = {};
     };
   };
 
+  exports.history = function(window) {
+    return function() {
+      return window.history;
+    };
+  };
+
   exports.localStorage = function (window) {
     return function () {
       return window.localStorage;
@@ -9455,6 +9618,24 @@ var PS = {};
     return function (storage) {
       return function () {
         return storage.getItem(key);
+      };
+    };
+  };
+
+  exports.setItem = function (key) {
+    return function (value) {
+      return function (storage) {
+        return function () {
+          storage.setItem(key, value);
+        };
+      };
+    };
+  };
+
+  exports.removeItem = function (key) {
+    return function (storage) {
+      return function () {
+        storage.removeItem(key);
       };
     };
   };
@@ -9475,6 +9656,8 @@ var PS = {};
       };
   };
   exports["getItem"] = getItem;
+  exports["setItem"] = $foreign.setItem;
+  exports["removeItem"] = $foreign.removeItem;
 })(PS["Web.Storage.Storage"] = PS["Web.Storage.Storage"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
@@ -9500,6 +9683,7 @@ var PS = {};
   exports["toEventTarget"] = toEventTarget;
   exports["document"] = $foreign.document;
   exports["location"] = $foreign.location;
+  exports["history"] = $foreign.history;
   exports["localStorage"] = $foreign.localStorage;
 })(PS["Web.HTML.Window"] = PS["Web.HTML.Window"] || {});
 (function(exports) {
@@ -9579,29 +9763,31 @@ var PS = {};
 (function(exports) {
     "use strict";
   var Affjax = PS["Affjax"];
+  var Affjax_RequestHeader = PS["Affjax.RequestHeader"];
   var Affjax_ResponseFormat = PS["Affjax.ResponseFormat"];
   var Control_Applicative = PS["Control.Applicative"];
+  var Control_Apply = PS["Control.Apply"];
   var Control_Bind = PS["Control.Bind"];
   var Control_Monad_Except = PS["Control.Monad.Except"];
   var Control_Semigroupoid = PS["Control.Semigroupoid"];
   var Data_Argonaut_Core = PS["Data.Argonaut.Core"];
+  var Data_Argonaut_Parser = PS["Data.Argonaut.Parser"];
   var Data_Array = PS["Data.Array"];
   var Data_Bifunctor = PS["Data.Bifunctor"];
   var Data_Either = PS["Data.Either"];
+  var Data_Foldable = PS["Data.Foldable"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
+  var Data_Generic_Rep = PS["Data.Generic.Rep"];
   var Data_HTTP_Method = PS["Data.HTTP.Method"];
   var Data_List_Types = PS["Data.List.Types"];
   var Data_Maybe = PS["Data.Maybe"];
-  var Data_Show = PS["Data.Show"];
   var Data_String = PS["Data.String"];
   var Data_String_Common = PS["Data.String.Common"];
   var Data_Symbol = PS["Data.Symbol"];
+  var Data_Tuple = PS["Data.Tuple"];
   var Effect = PS["Effect"];
   var Effect_Aff = PS["Effect.Aff"];
-  var Effect_Class = PS["Effect.Class"];
-  var Effect_Class_Console = PS["Effect.Class.Console"];
-  var Effect_Console = PS["Effect.Console"];
   var Foreign = PS["Foreign"];
   var Foreign_Class = PS["Foreign.Class"];
   var Foreign_Generic = PS["Foreign.Generic"];
@@ -9617,10 +9803,24 @@ var PS = {};
   var username = function (v) {
       return v.username;
   };
+  var storeCred = function (cred) {
+      var setItem = function (item) {
+          return Control_Bind.bind(Effect.bindEffect)(Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.localStorage))(Web_Storage_Storage.setItem("store")(item));
+      };
+      var fromJson = function (json) {
+          return Data_Argonaut_Core.jsonSingletonObject("user")(json);
+      };
+      var fromCred = function (v) {
+          return Data_Argonaut_Core.fromObject(Foreign_Object.fromFoldable(Data_Foldable.foldableArray)([ new Data_Tuple.Tuple("username", Data_Argonaut_Core.fromString(v.username)), new Data_Tuple.Tuple("token", Data_Argonaut_Core.fromString(v.token)) ]));
+      };
+      return (function ($50) {
+          return setItem(Data_Argonaut_Core.stringify(fromJson($50)));
+      })(fromCred(cred));
+  };
 
   // API ACCESSOR
-  var renderError = function ($45) {
-      return Data_String_Common.joinWith("")(Data_Array.fromFoldable(Data_List_Types.foldableNonEmptyList)(Data_Functor.map(Data_List_Types.functorNonEmptyList)(Foreign.renderForeignError)($45)));
+  var renderError = function ($51) {
+      return Data_String_Common.joinWith("")(Data_Array.fromFoldable(Data_List_Types.foldableNonEmptyList)(Data_Functor.map(Data_List_Types.functorNonEmptyList)(Foreign.renderForeignError)($51)));
   };
   var options = {
       sumEncoding: Foreign_Generic.defaultOptions.sumEncoding,
@@ -9628,6 +9828,39 @@ var PS = {};
       unwrapSingleArguments: Foreign_Generic.defaultOptions.unwrapSingleArguments,
       fieldTransform: Foreign_Generic.defaultOptions.fieldTransform
   };
+  var logout = Control_Bind.bind(Effect.bindEffect)(Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.localStorage))(Web_Storage_Storage.removeItem("store"));
+
+  // PERSISTENCE
+  var loadCred = (function () {
+      var mkCred = function (a) {
+          return function (b) {
+              return {
+                  username: a,
+                  token: b
+              };
+          };
+      };
+      var getItem = Control_Bind.bind(Effect.bindEffect)(Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.localStorage))(Web_Storage_Storage.getItem("store"));
+      var fromJson = function (maybeJson) {
+          return Control_Bind.bind(Data_Maybe.bindMaybe)(maybeJson)(function (v) {
+              return Control_Bind.bind(Data_Maybe.bindMaybe)(Data_Argonaut_Core.caseJsonObject(Data_Maybe.Nothing.value)(Foreign_Object.lookup("username"))(v))(function (v1) {
+                  return Control_Bind.bind(Data_Maybe.bindMaybe)(Data_Argonaut_Core.caseJsonObject(Data_Maybe.Nothing.value)(Foreign_Object.lookup("token"))(v))(function (v2) {
+                      return Control_Bind.bind(Data_Maybe.bindMaybe)(Control_Apply.apply(Data_Maybe.applyMaybe)(Data_Functor.map(Data_Maybe.functorMaybe)(mkCred)(Data_Argonaut_Core.toString(v1)))(Data_Argonaut_Core.toString(v2)))(function (v3) {
+                          return new Data_Maybe.Just(v3);
+                      });
+                  });
+              });
+          });
+      };
+      var fromItem = function (maybeItem) {
+          return Control_Bind.bind(Data_Maybe.bindMaybe)(Control_Bind.bind(Data_Maybe.bindMaybe)(maybeItem)(function (v) {
+              return Data_Either.either(Data_Function["const"](Data_Maybe.Nothing.value))(Data_Maybe.Just.create)(Data_Argonaut_Parser.jsonParser(v));
+          }))(Data_Argonaut_Core.caseJsonObject(Data_Maybe.Nothing.value)(Foreign_Object.lookup("user")));
+      };
+      return Data_Functor.mapFlipped(Effect.functorEffect)(getItem)(function ($52) {
+          return fromJson(fromItem($52));
+      });
+  })();
   var getWebApiDocument = Affjax.request({
       method: new Data_Either.Left(Data_HTTP_Method.GET.value),
       url: "https://tractor.ak1211.com/public/WebApiDocument.md",
@@ -9638,36 +9871,90 @@ var PS = {};
       withCredentials: false,
       responseFormat: Affjax_ResponseFormat.string
   });
-  var getApiV1Version = (function () {
-      var decoder = function (original) {
-          return Data_Bifunctor.lmap(Data_Either.bifunctorEither)(renderError)(Control_Monad_Except.runExcept(Foreign_Generic.genericDecodeJSON(NetService_ApiTypes.genericVerRev)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
-              return "VerRev";
-          }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
-              return "version";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "gitStatus";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "gitHash";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "gitCommitDate";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "gitCommitCount";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "gitBranch";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "buildOS";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
-              return "buildArch";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(options)(original)));
+  var genericDecoder = function (dictGeneric) {
+      return function (dictGenericDecode) {
+          return function (original) {
+              return Data_Bifunctor.lmap(Data_Either.bifunctorEither)(renderError)(Control_Monad_Except.runExcept(Foreign_Generic.genericDecodeJSON(dictGeneric)(dictGenericDecode)(options)(original)));
+          };
       };
+  };
+  var getApiV1AuthClientid = Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
+      method: new Data_Either.Left(Data_HTTP_Method.GET.value),
+      url: "https://tractor.ak1211.com/api/v1/auth/clientid",
+      headers: [  ],
+      content: Data_Maybe.Nothing.value,
+      username: Data_Maybe.Nothing.value,
+      password: Data_Maybe.Nothing.value,
+      withCredentials: false,
+      responseFormat: Affjax_ResponseFormat.string
+  }))(function (res) {
+      return Control_Applicative.pure(Effect_Aff.applicativeAff)((function () {
+          if (res.body instanceof Data_Either.Left) {
+              return {
+                  body: new Data_Either.Left(Foreign.renderForeignError(res.body.value0.value0)),
+                  headers: res.headers,
+                  status: res.status,
+                  statusText: res.statusText
+              };
+          };
+          if (res.body instanceof Data_Either.Right) {
+              return {
+                  body: genericDecoder(NetService_ApiTypes.genericAuthClientId)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
+                      return "AuthClientId";
+                  }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
+                      return "clientid";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(res.body.value0),
+                  headers: res.headers,
+                  status: res.status,
+                  statusText: res.statusText
+              };
+          };
+          throw new Error("Failed pattern match at Api line 233, column 22 - line 237, column 38: " + [ res.body.constructor.name ]);
+      })());
+  });
+  var getApiV1Health = Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
+      method: new Data_Either.Left(Data_HTTP_Method.GET.value),
+      url: "https://tractor.ak1211.com/api/v1/health",
+      headers: [  ],
+      content: Data_Maybe.Nothing.value,
+      username: Data_Maybe.Nothing.value,
+      password: Data_Maybe.Nothing.value,
+      withCredentials: false,
+      responseFormat: Affjax_ResponseFormat.string
+  }))(function (res) {
+      return Control_Applicative.pure(Effect_Aff.applicativeAff)((function () {
+          if (res.body instanceof Data_Either.Left) {
+              return {
+                  body: new Data_Either.Left(Foreign.renderForeignError(res.body.value0.value0)),
+                  headers: res.headers,
+                  status: res.status,
+                  statusText: res.statusText
+              };
+          };
+          if (res.body instanceof Data_Either.Right) {
+              return {
+                  body: genericDecoder(NetService_ApiTypes.genericSystemHealth)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
+                      return "SystemHealth";
+                  }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
+                      return "system";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(res.body.value0),
+                  headers: res.headers,
+                  status: res.status,
+                  statusText: res.statusText
+              };
+          };
+          throw new Error("Failed pattern match at Api line 273, column 12 - line 277, column 39: " + [ res.body.constructor.name ]);
+      })());
+  });
+  var getApiV1Token = function (headerAuthorization) {
       return Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
           method: new Data_Either.Left(Data_HTTP_Method.GET.value),
-          url: "https://tractor.ak1211.com/api/v1/version",
-          headers: [  ],
+          url: "https://tractor.ak1211.com/api/v1/token",
+          headers: [ new Affjax_RequestHeader.RequestHeader("Authorization", headerAuthorization) ],
           content: Data_Maybe.Nothing.value,
           username: Data_Maybe.Nothing.value,
           password: Data_Maybe.Nothing.value,
-          withCredentials: false,
+          withCredentials: true,
           responseFormat: Affjax_ResponseFormat.string
       }))(function (res) {
           return Control_Applicative.pure(Effect_Aff.applicativeAff)((function () {
@@ -9681,99 +9968,77 @@ var PS = {};
               };
               if (res.body instanceof Data_Either.Right) {
                   return {
-                      body: decoder(res.body.value0),
+                      body: genericDecoder(NetService_ApiTypes.genericRespAuth)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
+                          return "RespAuth";
+                      }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
+                          return "tokenType";
+                      }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                          return "expiresIn";
+                      }))(Foreign_Generic_Class.decode_Other(Foreign_Class.intDecode))())(new Data_Symbol.IsSymbol(function () {
+                          return "accessToken";
+                      }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(res.body.value0),
                       headers: res.headers,
                       status: res.status,
                       statusText: res.statusText
                   };
               };
-              throw new Error("Failed pattern match at Api line 165, column 12 - line 169, column 33: " + [ res.body.constructor.name ]);
+              throw new Error("Failed pattern match at Api line 214, column 22 - line 218, column 38: " + [ res.body.constructor.name ]);
           })());
       });
-  })();
-  var getApiV1Health = (function () {
-      var decoder = function (original) {
-          return Data_Bifunctor.lmap(Data_Either.bifunctorEither)(renderError)(Control_Monad_Except.runExcept(Foreign_Generic.genericDecodeJSON(NetService_ApiTypes.genericSystemHealth)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
-              return "SystemHealth";
-          }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
-              return "system";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(options)(original)));
-      };
-      return Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
-          method: new Data_Either.Left(Data_HTTP_Method.GET.value),
-          url: "https://tractor.ak1211.com/api/v1/health",
-          headers: [  ],
-          content: Data_Maybe.Nothing.value,
-          username: Data_Maybe.Nothing.value,
-          password: Data_Maybe.Nothing.value,
-          withCredentials: false,
-          responseFormat: Affjax_ResponseFormat.string
-      }))(function (res) {
-          return Control_Applicative.pure(Effect_Aff.applicativeAff)((function () {
-              if (res.body instanceof Data_Either.Left) {
-                  return {
-                      body: new Data_Either.Left(Foreign.renderForeignError(res.body.value0.value0)),
-                      headers: res.headers,
-                      status: res.status,
-                      statusText: res.statusText
-                  };
+  };
+  var getApiV1Version = Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
+      method: new Data_Either.Left(Data_HTTP_Method.GET.value),
+      url: "https://tractor.ak1211.com/api/v1/version",
+      headers: [  ],
+      content: Data_Maybe.Nothing.value,
+      username: Data_Maybe.Nothing.value,
+      password: Data_Maybe.Nothing.value,
+      withCredentials: false,
+      responseFormat: Affjax_ResponseFormat.string
+  }))(function (res) {
+      return Control_Applicative.pure(Effect_Aff.applicativeAff)((function () {
+          if (res.body instanceof Data_Either.Left) {
+              return {
+                  body: new Data_Either.Left(Foreign.renderForeignError(res.body.value0.value0)),
+                  headers: res.headers,
+                  status: res.status,
+                  statusText: res.statusText
               };
-              if (res.body instanceof Data_Either.Right) {
-                  return {
-                      body: decoder(res.body.value0),
-                      headers: res.headers,
-                      status: res.status,
-                      statusText: res.statusText
-                  };
+          };
+          if (res.body instanceof Data_Either.Right) {
+              return {
+                  body: genericDecoder(NetService_ApiTypes.genericVerRev)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
+                      return "VerRev";
+                  }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
+                      return "version";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "gitStatus";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "gitHash";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "gitCommitDate";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "gitCommitCount";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "gitBranch";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "buildOS";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())(new Data_Symbol.IsSymbol(function () {
+                      return "buildArch";
+                  }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(res.body.value0),
+                  headers: res.headers,
+                  status: res.status,
+                  statusText: res.statusText
               };
-              throw new Error("Failed pattern match at Api line 191, column 12 - line 195, column 33: " + [ res.body.constructor.name ]);
-          })());
-      });
-  })();
-  var getApiV1AuthClientid = (function () {
-      var decoder = function (original) {
-          return Data_Bifunctor.lmap(Data_Either.bifunctorEither)(renderError)(Control_Monad_Except.runExcept(Foreign_Generic.genericDecodeJSON(NetService_ApiTypes.genericAuthClientId)(Foreign_Generic_Class.genericDecodeConstructor(new Data_Symbol.IsSymbol(function () {
-              return "AuthClientId";
-          }))(Foreign_Generic_Class.genericDecodeArgsArgument(Foreign_Generic_Class.decode_Record()(Foreign_Generic_Class.decodeRecordCons()(Foreign_Generic_Class.decodeRecordNil)(new Data_Symbol.IsSymbol(function () {
-              return "clientid";
-          }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(options)(original)));
-      };
-      return Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
-          method: new Data_Either.Left(Data_HTTP_Method.GET.value),
-          url: "https://tractor.ak1211.com/api/v1/auth/clientid",
-          headers: [  ],
-          content: Data_Maybe.Nothing.value,
-          username: Data_Maybe.Nothing.value,
-          password: Data_Maybe.Nothing.value,
-          withCredentials: false,
-          responseFormat: Affjax_ResponseFormat.string
-      }))(function (res) {
-          return Control_Applicative.pure(Effect_Aff.applicativeAff)((function () {
-              if (res.body instanceof Data_Either.Left) {
-                  return {
-                      body: new Data_Either.Left(Foreign.renderForeignError(res.body.value0.value0)),
-                      headers: res.headers,
-                      status: res.status,
-                      statusText: res.statusText
-                  };
-              };
-              if (res.body instanceof Data_Either.Right) {
-                  return {
-                      body: decoder(res.body.value0),
-                      headers: res.headers,
-                      status: res.status,
-                      statusText: res.statusText
-                  };
-              };
-              throw new Error("Failed pattern match at Api line 139, column 22 - line 143, column 31: " + [ res.body.constructor.name ]);
-          })());
-      });
-  })();
+          };
+          throw new Error("Failed pattern match at Api line 253, column 12 - line 257, column 40: " + [ res.body.constructor.name ]);
+      })());
+  });
   var credFromJwt = function (jwt) {
       var pack = function (v) {
           return {
               username: v.userRealName,
-              jwt: jwt
+              token: jwt
           };
       };
       var decoder = function (json) {
@@ -9796,38 +10061,18 @@ var PS = {};
                       return "userId";
                   }))(Foreign_Generic_Class.decode_Other(Foreign_Class.stringDecode))())))(Foreign_Generic_Class.genericCountArgsArgument))(options)(Data_Argonaut_Core.stringify(v.value0))));
               };
-              throw new Error("Failed pattern match at Api line 70, column 7 - line 77, column 37: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Api line 88, column 7 - line 95, column 37: " + [ v.constructor.name ]);
           })(Data_Argonaut_Core.caseJsonObject(Data_Maybe.Nothing.value)(Foreign_Object.lookup("dat"))(json));
       };
       return Data_Bifunctor.rmap(Data_Either.bifunctorEither)(pack)(Jwt.decodeWith(decoder)(jwt));
   };
-  var loadCred = function __do() {
-      var v = Web_HTML.window();
-      var v1 = Web_HTML_Window.localStorage(v)();
-      var v2 = Web_Storage_Storage.getItem("store")(v1)();
-      Effect_Class_Console.logShow(Effect_Class.monadEffectEffect)(Data_Maybe.showMaybe(Data_Show.showString))(v2)();
-      var v3 = Data_Functor.map(Data_Maybe.functorMaybe)(credFromJwt)(v2);
-      if (v3 instanceof Data_Maybe.Nothing) {
-          return Data_Maybe.Nothing.value;
-      };
-      if (v3 instanceof Data_Maybe.Just && (v3.value0 instanceof Data_Either.Left && v3.value0.value0 instanceof Jwt.JsonDecodeError)) {
-          Effect_Console.log("JWT ERROR")();
-          Effect_Console.log(v3.value0.value0.value0)();
-          return Data_Maybe.Nothing.value;
-      };
-      if (v3 instanceof Data_Maybe.Just && v3.value0 instanceof Data_Either.Left) {
-          Effect_Console.log("JWT ERROR")();
-          return Data_Maybe.Nothing.value;
-      };
-      if (v3 instanceof Data_Maybe.Just && v3.value0 instanceof Data_Either.Right) {
-          return new Data_Maybe.Just(v3.value0.value0);
-      };
-      throw new Error("Failed pattern match at Api line 87, column 3 - line 97, column 20: " + [ v3.constructor.name ]);
-  };
   exports["username"] = username;
   exports["credFromJwt"] = credFromJwt;
   exports["loadCred"] = loadCred;
+  exports["storeCred"] = storeCred;
+  exports["logout"] = logout;
   exports["getWebApiDocument"] = getWebApiDocument;
+  exports["getApiV1Token"] = getApiV1Token;
   exports["getApiV1AuthClientid"] = getApiV1AuthClientid;
   exports["getApiV1Version"] = getApiV1Version;
   exports["getApiV1Health"] = getApiV1Health;
@@ -11947,10 +12192,9 @@ var PS = {};
   exports["monadStateHalogenM"] = monadStateHalogenM;
 })(PS["Halogen.Query.HalogenM"] = PS["Halogen.Query.HalogenM"] || {});
 (function(exports) {
-    "use strict";
+  // Generated by purs version 0.12.1
+  "use strict";
   var Api = PS["Api"];                 
-
-  // Session
   var LoggedIn = (function () {
       function LoggedIn(value0) {
           this.value0 = value0;
@@ -11960,8 +12204,6 @@ var PS = {};
       };
       return LoggedIn;
   })();
-
-  // Session
   var Guest = (function () {
       function Guest() {
 
@@ -13899,6 +14141,33 @@ var PS = {};
   exports["marginLeft"] = marginLeft;
   exports["marginRight"] = marginRight;
 })(PS["CSS.Geometry"] = PS["CSS.Geometry"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.log = function (s) {
+    return function () {
+      console.log(s);
+      return {};
+    };
+  };
+
+  exports.warn = function (s) {
+    return function () {
+      console.warn(s);
+      return {};
+    };
+  };
+})(PS["Effect.Console"] = PS["Effect.Console"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Effect.Console"];
+  var Data_Show = PS["Data.Show"];
+  var Data_Unit = PS["Data.Unit"];
+  var Effect = PS["Effect"];
+  exports["log"] = $foreign.log;
+  exports["warn"] = $foreign.warn;
+})(PS["Effect.Console"] = PS["Effect.Console"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
@@ -27985,10 +28254,7 @@ var PS = {};
   // Generated by purs version 0.12.1
   "use strict";
   var Data_Either = PS["Data.Either"];
-  var Data_Void = PS["Data.Void"];                 
-  var in9 = function (v) {
-      return new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Left(v)))))))));
-  };
+  var Data_Void = PS["Data.Void"];
   var in8 = function (v) {
       return new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Right(new Data_Either.Left(v))))))));
   };
@@ -28011,16 +28277,6 @@ var PS = {};
       return new Data_Either.Right(new Data_Either.Left(v));
   };
   var in1 = Data_Either.Left.create;
-  var at9 = function (b) {
-      return function (f) {
-          return function (y) {
-              if (y instanceof Data_Either.Right && (y.value0 instanceof Data_Either.Right && (y.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Either.Right && y.value0.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Either.Left)))))))) {
-                  return f(y.value0.value0.value0.value0.value0.value0.value0.value0.value0);
-              };
-              return b;
-          };
-      };
-  };
   var at8 = function (b) {
       return function (f) {
           return function (y) {
@@ -28109,7 +28365,6 @@ var PS = {};
   exports["in6"] = in6;
   exports["in7"] = in7;
   exports["in8"] = in8;
-  exports["in9"] = in9;
   exports["at1"] = at1;
   exports["at2"] = at2;
   exports["at3"] = at3;
@@ -28118,7 +28373,6 @@ var PS = {};
   exports["at6"] = at6;
   exports["at7"] = at7;
   exports["at8"] = at8;
-  exports["at9"] = at9;
 })(PS["Data.Either.Nested"] = PS["Data.Either.Nested"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
@@ -28158,10 +28412,7 @@ var PS = {};
   var Data_Functor_Coproduct = PS["Data.Functor.Coproduct"];
   var Data_Newtype = PS["Data.Newtype"];
   var Data_Void = PS["Data.Void"];
-  var Prelude = PS["Prelude"];                 
-  var in9 = function (v) {
-      return Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.left(v)))))))));
-  };
+  var Prelude = PS["Prelude"];
   var in8 = function (v) {
       return Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.right(Data_Functor_Coproduct.left(v))))))));
   };
@@ -28184,16 +28435,6 @@ var PS = {};
       return Data_Functor_Coproduct.right(Data_Functor_Coproduct.left(v));
   };
   var in1 = Data_Functor_Coproduct.left;
-  var at9 = function (b) {
-      return function (f) {
-          return function (y) {
-              if (y instanceof Data_Either.Right && (y.value0 instanceof Data_Either.Right && (y.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0.value0.value0 instanceof Data_Either.Right && (y.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Either.Right && y.value0.value0.value0.value0.value0.value0.value0.value0 instanceof Data_Either.Left)))))))) {
-                  return f(y.value0.value0.value0.value0.value0.value0.value0.value0.value0);
-              };
-              return b;
-          };
-      };
-  };
   var at8 = function (b) {
       return function (f) {
           return function (y) {
@@ -28282,7 +28523,6 @@ var PS = {};
   exports["in6"] = in6;
   exports["in7"] = in7;
   exports["in8"] = in8;
-  exports["in9"] = in9;
   exports["at1"] = at1;
   exports["at2"] = at2;
   exports["at3"] = at3;
@@ -28291,7 +28531,6 @@ var PS = {};
   exports["at6"] = at6;
   exports["at7"] = at7;
   exports["at8"] = at8;
-  exports["at9"] = at9;
 })(PS["Data.Functor.Coproduct.Nested"] = PS["Data.Functor.Coproduct.Nested"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
@@ -29838,6 +30077,17 @@ var PS = {};
 
   exports._nextSibling = getEffProp("nextSibling");
 
+  exports.nodeValue = getEffProp("nodeValue");
+
+  exports.setNodeValue = function (value) {
+    return function (node) {
+      return function () {
+        node.nodeValue = value;
+        return {};
+      };
+    };
+  };
+
   exports.insertBefore = function (node1) {
     return function (node2) {
       return function (parent) {
@@ -29890,6 +30140,7 @@ var PS = {};
   };
   exports["parentNode"] = parentNode;
   exports["nextSibling"] = nextSibling;
+  exports["setNodeValue"] = $foreign.setNodeValue;
   exports["insertBefore"] = $foreign.insertBefore;
   exports["appendChild"] = $foreign.appendChild;
   exports["removeChild"] = $foreign.removeChild;
@@ -30366,15 +30617,15 @@ var PS = {};
   var unComponent = Unsafe_Coerce.unsafeCoerce;
   var mkComponentSlot = ComponentSlot.create;
   var mkComponent = Unsafe_Coerce.unsafeCoerce;
-  var lifecycleParentComponent = function (dictOrd) {
+  var parentComponent = function (dictOrd) {
       return function (spec) {
           return mkComponent({
               initialState: spec.initialState,
               render: spec.render,
               "eval": spec["eval"],
               receiver: spec.receiver,
-              initializer: spec.initializer,
-              finalizer: spec.finalizer,
+              initializer: Data_Maybe.Nothing.value,
+              finalizer: Data_Maybe.Nothing.value,
               mkOrdBox: Halogen_Data_OrdBox.mkOrdBox(dictOrd)
           });
       };
@@ -30435,7 +30686,7 @@ var PS = {};
   exports["mkComponent"] = mkComponent;
   exports["unComponent"] = unComponent;
   exports["lifecycleComponent"] = lifecycleComponent;
-  exports["lifecycleParentComponent"] = lifecycleParentComponent;
+  exports["parentComponent"] = parentComponent;
   exports["hoist"] = hoist;
   exports["mkComponentSlot"] = mkComponentSlot;
   exports["unComponentSlot"] = unComponentSlot;
@@ -31205,10 +31456,7 @@ var PS = {};
   var Data_Functor_Coproduct_Nested = PS["Data.Functor.Coproduct.Nested"];
   var Data_Lens = PS["Data.Lens"];
   var Data_Lens_Prism = PS["Data.Lens.Prism"];
-  var Data_Maybe = PS["Data.Maybe"];                 
-  var _Either9 = function (dictChoice) {
-      return Data_Lens_Prism["prism'"](Data_Either_Nested.in9)(Data_Either_Nested.at9(Data_Maybe.Nothing.value)(Data_Maybe.Just.create))(dictChoice);
-  };
+  var Data_Maybe = PS["Data.Maybe"];
   var _Either8 = function (dictChoice) {
       return Data_Lens_Prism["prism'"](Data_Either_Nested.in8)(Data_Either_Nested.at8(Data_Maybe.Nothing.value)(Data_Maybe.Just.create))(dictChoice);
   };
@@ -31232,9 +31480,6 @@ var PS = {};
   };
   var _Either1 = function (dictChoice) {
       return Data_Lens_Prism["prism'"](Data_Either_Nested.in1)(Data_Either_Nested.at1(Data_Maybe.Nothing.value)(Data_Maybe.Just.create))(dictChoice);
-  };
-  var _Coproduct9 = function (dictChoice) {
-      return Data_Lens_Prism["prism'"](Data_Functor_Coproduct_Nested.in9)(Data_Functor_Coproduct_Nested.at9(Data_Maybe.Nothing.value)(Data_Maybe.Just.create))(dictChoice);
   };
   var _Coproduct8 = function (dictChoice) {
       return Data_Lens_Prism["prism'"](Data_Functor_Coproduct_Nested.in8)(Data_Functor_Coproduct_Nested.at8(Data_Maybe.Nothing.value)(Data_Maybe.Just.create))(dictChoice);
@@ -31276,8 +31521,6 @@ var PS = {};
   exports["_Coproduct7"] = _Coproduct7;
   exports["_Either8"] = _Either8;
   exports["_Coproduct8"] = _Coproduct8;
-  exports["_Either9"] = _Either9;
-  exports["_Coproduct9"] = _Coproduct9;
 })(PS["Halogen.Data.Prism"] = PS["Halogen.Data.Prism"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
@@ -31316,11 +31559,6 @@ var PS = {};
   var injQuery = function (v) {
       return Data_Lens_Prism.review(v.value0(Data_Lens_Internal_Tagged.taggedChoice));
   }; 
-  var cp9 = new ChildPath(function (dictChoice) {
-      return Halogen_Data_Prism._Coproduct9(dictChoice);
-  }, function (dictChoice) {
-      return Halogen_Data_Prism._Either9(dictChoice);
-  });
   var cp8 = new ChildPath(function (dictChoice) {
       return Halogen_Data_Prism._Coproduct8(dictChoice);
   }, function (dictChoice) {
@@ -31370,7 +31608,6 @@ var PS = {};
   exports["cp6"] = cp6;
   exports["cp7"] = cp7;
   exports["cp8"] = cp8;
-  exports["cp9"] = cp9;
   exports["injQuery"] = injQuery;
   exports["injSlot"] = injSlot;
   exports["prjQuery"] = prjQuery;
@@ -32318,6 +32555,21 @@ var PS = {};
               return Data_Either.Right.create(Data_Tuple.snd($90));
           })(v(route));
       };
+  };
+  var param = function (key) {
+      return function (route) {
+          if (route instanceof Data_List_Types.Cons && route.value0 instanceof Routing_Types.Query) {
+              var v = Data_Map_Internal.lookup(Data_Ord.ordString)(key)(route.value0.value0);
+              if (v instanceof Data_Maybe.Nothing) {
+                  return Data_Validation_Semiring.invalid(Data_Semiring_Free.free(new Routing_Match_Error.KeyNotFound(key)));
+              };
+              if (v instanceof Data_Maybe.Just) {
+                  return Control_Applicative.pure(Data_Validation_Semiring.applicativeV(Data_Semiring_Free.semiringFree))(new Data_Tuple.Tuple(new Data_List_Types.Cons(Routing_Types.Query.create(Data_Map_Internal["delete"](Data_Ord.ordString)(key)(route.value0.value0)), route.value1), v.value0));
+              };
+              throw new Error("Failed pattern match at Routing.Match line 121, column 7 - line 125, column 67: " + [ v.constructor.name ]);
+          };
+          return Data_Validation_Semiring.invalid(Data_Semiring_Free.free(Routing_Match_Error.ExpectedQuery.value));
+      };
   };        
   var matchFunctor = new Data_Functor.Functor(function (fn) {
       return function (v) {
@@ -32371,16 +32623,10 @@ var PS = {};
       };
   };
   var root = lit("");
-  var end = function (route) {
-      if (route instanceof Data_List_Types.Nil) {
-          return Control_Applicative.pure(Data_Validation_Semiring.applicativeV(Data_Semiring_Free.semiringFree))(new Data_Tuple.Tuple(Data_List_Types.Nil.value, Data_Unit.unit));
-      };
-      return Data_Validation_Semiring.invalid(Data_Semiring_Free.free(Routing_Match_Error.ExpectedEnd.value));
-  };
   exports["Match"] = Match;
   exports["root"] = root;
   exports["lit"] = lit;
-  exports["end"] = end;
+  exports["param"] = param;
   exports["runMatch"] = runMatch;
   exports["matchFunctor"] = matchFunctor;
   exports["matchAlt"] = matchAlt;
@@ -32390,12 +32636,20 @@ var PS = {};
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
+  var Api = PS["Api"];
   var Control_Apply = PS["Control.Apply"];
   var Control_Bind = PS["Control.Bind"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Either = PS["Data.Either"];
+  var Data_Eq = PS["Data.Eq"];
   var Data_Foldable = PS["Data.Foldable"];
   var Data_Functor = PS["Data.Functor"];
+  var Data_Generic_Rep = PS["Data.Generic.Rep"];
+  var Data_Generic_Rep_Show = PS["Data.Generic.Rep.Show"];
   var Data_Monoid = PS["Data.Monoid"];
   var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Show = PS["Data.Show"];
+  var Data_Symbol = PS["Data.Symbol"];
   var Effect = PS["Effect"];
   var Halogen_HTML_Properties = PS["Halogen.HTML.Properties"];
   var Prelude = PS["Prelude"];
@@ -32403,12 +32657,14 @@ var PS = {};
   var Web_HTML = PS["Web.HTML"];
   var Web_HTML_Location = PS["Web.HTML.Location"];
   var Web_HTML_Window = PS["Web.HTML.Window"];                 
-  var Root = (function () {
-      function Root() {
-
+  var AuthRedirect = (function () {
+      function AuthRedirect(value0) {
+          this.value0 = value0;
       };
-      Root.value = new Root();
-      return Root;
+      AuthRedirect.create = function (value0) {
+          return new AuthRedirect(value0);
+      };
+      return AuthRedirect;
   })();
   var Dashboard = (function () {
       function Dashboard() {
@@ -32466,10 +32722,21 @@ var PS = {};
       ApiDocument.value = new ApiDocument();
       return ApiDocument;
   })();
-  var routing = Data_Foldable.oneOf(Data_Foldable.foldableArray)(Routing_Match.matchPlus)([ Data_Functor.voidRight(Routing_Match.matchFunctor)(Root.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.end)), Data_Functor.voidRight(Routing_Match.matchFunctor)(Dashboard.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("dashboard"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Login.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("login"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Logout.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("logout"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Upload.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("upload"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Portfolio.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("portfolio"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Charts.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("charts"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(AccountBalance.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("account-balance"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(ApiDocument.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("api-document"))) ]);
+  var routing = Data_Foldable.oneOf(Data_Foldable.foldableArray)(Routing_Match.matchPlus)([ Control_Apply.apply(Routing_Match.matchApply)(Data_Functor.voidRight(Routing_Match.matchFunctor)(function ($61) {
+      return AuthRedirect.create(Data_Either.Left.create($61));
+  })(Routing_Match.root))(Routing_Match.param("err")), Control_Apply.apply(Routing_Match.matchApply)(Data_Functor.voidRight(Routing_Match.matchFunctor)(function ($62) {
+      return AuthRedirect.create(Data_Either.Right.create($62));
+  })(Routing_Match.root))(Control_Apply.apply(Routing_Match.matchApply)(Data_Functor.map(Routing_Match.matchFunctor)(function (v) {
+      return function (v1) {
+          return {
+              code: v,
+              state: v1
+          };
+      };
+  })(Routing_Match.param("code")))(Routing_Match.param("state"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Dashboard.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("dashboard"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Login.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("login"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Logout.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("logout"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Upload.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("upload"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Portfolio.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("portfolio"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(Charts.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("charts"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(AccountBalance.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("account-balance"))), Data_Functor.voidRight(Routing_Match.matchFunctor)(ApiDocument.value)(Control_Apply.applySecond(Routing_Match.matchApply)(Control_Apply.applySecond(Routing_Match.matchApply)(Routing_Match.root)(Routing_Match.lit("#")))(Routing_Match.lit("api-document"))) ]);
   var routeToString = function (page) {
       var pieces = (function () {
-          if (page instanceof Root) {
+          if (page instanceof AuthRedirect) {
               return [  ];
           };
           if (page instanceof Dashboard) {
@@ -32496,7 +32763,7 @@ var PS = {};
           if (page instanceof ApiDocument) {
               return [ "api-document" ];
           };
-          throw new Error("Failed pattern match at Route line 55, column 12 - line 73, column 25: " + [ page.constructor.name ]);
+          throw new Error("Failed pattern match at Route line 66, column 12 - line 84, column 25: " + [ page.constructor.name ]);
       })();
       return "#/" + Data_Foldable.intercalate(Data_Foldable.foldableArray)(Data_Monoid.monoidString)("/")(pieces);
   };
@@ -32506,7 +32773,7 @@ var PS = {};
   var href = function (targetRoute) {
       return Halogen_HTML_Properties.href(routeToString(targetRoute));
   };
-  exports["Root"] = Root;
+  exports["AuthRedirect"] = AuthRedirect;
   exports["Dashboard"] = Dashboard;
   exports["Login"] = Login;
   exports["Logout"] = Logout;
@@ -32713,15 +32980,6 @@ var PS = {};
       };
       return Initialize;
   })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
   var render = function (state) {
       var contents = [ Halogen_HTML_Core.text("Account Balance Page contents") ];
       return Halogen_HTML_Elements.div_([ Page.fixedTopNavBar(ToggleNavBar.create)(state.navBarActived)(state.session), Page.hero("Account Balance"), Halogen_HTML_Elements.section([ Halogen_HTML_Properties.class_("section") ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("container") ])(contents) ]), Page.footer ]);
@@ -32775,24 +33033,20 @@ var PS = {};
                       });
                   });
               };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.AccountBalance line 58, column 10 - line 72, column 16: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Page.AccountBalance line 56, column 10 - line 66, column 16: " + [ v.constructor.name ]);
           };
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
               initialState: Data_Function["const"](initialState),
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
@@ -35198,15 +35452,6 @@ var PS = {};
       };
       return Initialize;
   })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
   var toSlamDown = function (original) {
       return Data_Either.either(Data_Function["const"](Data_Maybe.Nothing.value))(Data_Maybe.Just.create)(Text_Markdown_SlamDown_Parser.parseMd(Text_Markdown_SlamDown_Syntax_Value.valueString)(original));
   };
@@ -35245,7 +35490,7 @@ var PS = {};
           if (v1 instanceof Text_Markdown_SlamDown_Syntax_Inline.FormField) {
               return Halogen_HTML_Elements.strong_([ Halogen_HTML_Core.text("FormField is NOT implemented") ]);
           };
-          throw new Error("Failed pattern match at Page.ApiDocument line 154, column 12 - line 169, column 80: " + [ v1.constructor.name ]);
+          throw new Error("Failed pattern match at Page.ApiDocument line 151, column 12 - line 166, column 80: " + [ v1.constructor.name ]);
       };
       var block = (function () {
           var title = [ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassNames([ Bulma_Elements_Title.title, Bulma_Elements_Title.isSize(Bulma_Common.Is1.value) ]))) ];
@@ -35296,7 +35541,7 @@ var PS = {};
               if (v1 instanceof Text_Markdown_SlamDown_Syntax_Block.Rule) {
                   return Halogen_HTML_Elements.strong_([ Halogen_HTML_Core.text("Rule is NOT implemented") ]);
               };
-              throw new Error("Failed pattern match at Page.ApiDocument line 115, column 5 - line 129, column 66: " + [ v1.constructor.name ]);
+              throw new Error("Failed pattern match at Page.ApiDocument line 112, column 5 - line 126, column 66: " + [ v1.constructor.name ]);
           };
       })();
       return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassName(Bulma_Elements_Elements.content))) ])(Data_Array.fromFoldable(Data_List_Types.foldableList)(Data_Functor.map(Data_List_Types.functorList)(block)(v)));
@@ -35309,7 +35554,7 @@ var PS = {};
           if (state.webApiDocument instanceof Data_Maybe.Just) {
               return [ renderSlamDown(state.webApiDocument.value0) ];
           };
-          throw new Error("Failed pattern match at Page.ApiDocument line 192, column 14 - line 196, column 28: " + [ state.webApiDocument.constructor.name ]);
+          throw new Error("Failed pattern match at Page.ApiDocument line 189, column 14 - line 193, column 28: " + [ state.webApiDocument.constructor.name ]);
       })();
       return Halogen_HTML_Elements.div_([ Page.fixedTopNavBar(ToggleNavBar.create)(state.navBarActived)(state.session), Page.hero("API document"), Halogen_HTML_Elements.section([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassName(Bulma_Layout_Layout.section))) ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassName(Bulma_Layout_Layout.container))) ])(contents) ]), Page.footer ]);
   };
@@ -35366,7 +35611,6 @@ var PS = {};
                               return $74;
                           }))(function () {
                               return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Api.getWebApiDocument))(function (v2) {
-                                  var doc = Data_Either.either(handleErr(v2))(Control_Category.identity(Control_Category.categoryFn))(v2.body);
                                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v3) {
                                       var $78 = {};
                                       for (var $79 in v3) {
@@ -35374,7 +35618,7 @@ var PS = {};
                                               $78[$79] = v3[$79];
                                           };
                                       };
-                                      $78.webApiDocument = toSlamDown(doc);
+                                      $78.webApiDocument = toSlamDown(Data_Either.either(handleErr(v2))(Control_Category.identity(Control_Category.categoryFn))(v2.body));
                                       return $78;
                                   }))(function () {
                                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
@@ -35383,10 +35627,7 @@ var PS = {};
                           });
                       });
                   };
-                  if (v instanceof Finalize) {
-                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                  };
-                  throw new Error("Failed pattern match at Page.ApiDocument line 72, column 10 - line 87, column 16: " + [ v.constructor.name ]);
+                  throw new Error("Failed pattern match at Page.ApiDocument line 70, column 10 - line 84, column 16: " + [ v.constructor.name ]);
               };
           })();
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
@@ -35394,14 +35635,13 @@ var PS = {};
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
@@ -35457,15 +35697,6 @@ var PS = {};
       };
       return Initialize;
   })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
   var render = function (state) {
       var contents = [ Halogen_HTML_Core.text("Charts Page contents") ];
       return Halogen_HTML_Elements.div_([ Page.fixedTopNavBar(ToggleNavBar.create)(state.navBarActived)(state.session), Page.hero("Charts"), Halogen_HTML_Elements.section([ Halogen_HTML_Properties.class_("section") ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("container") ])(contents) ]), Page.footer ]);
@@ -35519,31 +35750,28 @@ var PS = {};
                       });
                   });
               };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.Charts line 59, column 10 - line 72, column 16: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Page.Charts line 57, column 10 - line 67, column 16: " + [ v.constructor.name ]);
           };
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
               initialState: Data_Function["const"](initialState),
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
   exports["ordSlot"] = ordSlot;
 })(PS["Page.Charts"] = PS["Page.Charts"] || {});
 (function(exports) {
-    "use strict";
+  // Generated by purs version 0.12.1
+  "use strict";
   var Api = PS["Api"];
   var AppM = PS["AppM"];
   var Bulma_Common = PS["Bulma.Common"];
@@ -35567,8 +35795,6 @@ var PS = {};
   var Data_Ord = PS["Data.Ord"];
   var Data_Ordering = PS["Data.Ordering"];
   var Effect_Aff_Class = PS["Effect.Aff.Class"];
-  var Effect_Class = PS["Effect.Class"];
-  var Effect_Console = PS["Effect.Console"];
   var Halogen = PS["Halogen"];
   var Halogen_Component = PS["Halogen.Component"];
   var Halogen_HTML = PS["Halogen.HTML"];
@@ -35632,15 +35858,6 @@ var PS = {};
       };
       return Initialize;
   })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
   var packLR = function (v) {
       return function (v1) {
           return {
@@ -35649,8 +35866,6 @@ var PS = {};
           };
       };
   };
-
-  // GREETINGS
   var greetings = function (state) {
       var username = (function () {
           if (state.session instanceof Session.LoggedIn) {
@@ -35659,7 +35874,7 @@ var PS = {};
           if (state.session instanceof Session.Guest) {
               return "Guest";
           };
-          throw new Error("Failed pattern match at Page.Dashboard line 184, column 14 - line 191, column 1: " + [ state.session.constructor.name ]);
+          throw new Error("Failed pattern match at Page.Dashboard line 177, column 14 - line 184, column 1: " + [ state.session.constructor.name ]);
       })();
       return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassNames([ Bulma_Elements_Elements.notification, Bulma_Modifiers_Typography.hasAlignment(Bulma_Modifiers_Typography.Centered.value), Bulma_Elements_Tag.isColor(Bulma_Elements_Tag.Dark.value) ]))) ])([ Halogen_HTML_Elements.p([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassName(Bulma_Modifiers_Typography.isSize(Bulma_Modifiers_Typography.Size5.value)))) ])([ Halogen_HTML_Core.text("Maido!"), Halogen_HTML_Elements.span([ Halogen_HTML_CSS.style(Control_Bind.discard(Control_Bind.discardUnit)(CSS_Stylesheet.bindStyleM)(CSS_Geometry.marginLeft(CSS_Size.rem(1.8)))(function () {
           return CSS_Geometry.marginRight(CSS_Size.rem(1.8));
@@ -35677,11 +35892,7 @@ var PS = {};
           return Data_Ordering.EQ.value;
       };
   });
-
-  // FORM CONTROL
   var control = Halogen_HTML_Elements.p([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassName(Bulma_Form_General.control))) ]);
-
-  // BADGE
   var badge = function (col) {
       return function (txt) {
           return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassNames([ Bulma_Elements_Tag.tags, Bulma_Common.hasAddons ]))) ])([ Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassNames([ Bulma_Elements_Tag.tag, Bulma_Elements_Tag.isColor(col.left) ]))) ])([ Halogen_HTML_Core.text(txt.left) ]), Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_(Halogen_HTML_Core.ClassName(Bulma_Common.runClassNames([ Bulma_Elements_Tag.tag, Bulma_Elements_Tag.isColor(col.right) ]))) ])([ Halogen_HTML_Core.text(txt.right) ]) ]);
@@ -35740,13 +35951,11 @@ var PS = {};
       if (v instanceof Err) {
           return haltedBadge;
       };
-      throw new Error("Failed pattern match at Page.Dashboard line 262, column 15 - line 272, column 16: " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at Page.Dashboard line 255, column 15 - line 265, column 16: " + [ v.constructor.name ]);
   };
   var archBadge = function (v) {
       return infoBadge("Arch")(v.buildArch);
   };
-
-  // RENDER
   var render = function (state) {
       var statusLine = Halogen_HTML_Elements.div([ Halogen_HTML_Properties.classes([ "field", Halogen_HTML_Core.ClassName(Bulma_Common.runClassNames([ Bulma_Common.isGrouped, Bulma_Elements_Tag.isGroupedMultiline ])) ]) ])((function () {
           if (state.systemVersion instanceof Ok) {
@@ -35767,14 +35976,14 @@ var PS = {};
           var $$eval = function (v) {
               if (v instanceof ToggleNavBar) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (st) {
-                      var $42 = {};
-                      for (var $43 in st) {
-                          if ({}.hasOwnProperty.call(st, $43)) {
-                              $42[$43] = st[$43];
+                      var $43 = {};
+                      for (var $44 in st) {
+                          if ({}.hasOwnProperty.call(st, $44)) {
+                              $43[$44] = st[$44];
                           };
                       };
-                      $42.navBarActived = !st.navBarActived;
-                      return $42;
+                      $43.navBarActived = !st.navBarActived;
+                      return $43;
                   }))(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
                   });
@@ -35782,55 +35991,59 @@ var PS = {};
               if (v instanceof Initialize) {
                   return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(AppM.getSession(AppM.sessionDSLHalogenM(dictSessionDSL)))(function (v1) {
                       return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
-                          var $47 = {};
-                          for (var $48 in v2) {
-                              if ({}.hasOwnProperty.call(v2, $48)) {
-                                  $47[$48] = v2[$48];
+                          var $48 = {};
+                          for (var $49 in v2) {
+                              if ({}.hasOwnProperty.call(v2, $49)) {
+                                  $48[$49] = v2[$49];
                               };
                           };
-                          $47.session = v1;
-                          return $47;
+                          $48.session = v1;
+                          return $48;
                       }))(function () {
                           return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Api.getApiV1Health))(function (v2) {
-                              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Api.getApiV1Version))(function (v3) {
-                                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v4) {
-                                      var $52 = {};
-                                      for (var $53 in v4) {
-                                          if ({}.hasOwnProperty.call(v4, $53)) {
-                                              $52[$53] = v4[$53];
-                                          };
+                              return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v3) {
+                                  var $52 = {};
+                                  for (var $53 in v3) {
+                                      if ({}.hasOwnProperty.call(v3, $53)) {
+                                          $52[$53] = v3[$53];
                                       };
-                                      $52.systemHealth = Data_Either.either(Err.create)(Ok.create)(v2.body);
-                                      $52.systemVersion = Data_Either.either(Err.create)(Ok.create)(v3.body);
-                                      return $52;
-                                  }))(function () {
-                                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
+                                  };
+                                  $52.systemHealth = Data_Either.either(Err.create)(Ok.create)(v2.body);
+                                  return $52;
+                              }))(function () {
+                                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Api.getApiV1Version))(function (v3) {
+                                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v4) {
+                                          var $56 = {};
+                                          for (var $57 in v4) {
+                                              if ({}.hasOwnProperty.call(v4, $57)) {
+                                                  $56[$57] = v4[$57];
+                                              };
+                                          };
+                                          $56.systemVersion = Data_Either.either(Err.create)(Ok.create)(v3.body);
+                                          return $56;
+                                      }))(function () {
+                                          return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
+                                      });
                                   });
                               });
                           });
                       });
                   });
               };
-              if (v instanceof Finalize) {
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log("bye")))(function () {
-                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                  });
-              };
-              throw new Error("Failed pattern match at Page.Dashboard line 75, column 10 - line 94, column 16: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Page.Dashboard line 72, column 10 - line 88, column 16: " + [ v.constructor.name ]);
           };
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
               initialState: Data_Function["const"](initialState),
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
@@ -35900,15 +36113,6 @@ var PS = {};
       };
       return Initialize;
   })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
   var signInWithSlackButton = function (v) {
       var slackMark = Halogen_HTML_Elements.img([ Halogen_HTML_CSS.style(CSS_VerticalAlign.verticalAlign(CSS_VerticalAlign.Middle.value)), Halogen_HTML_Properties.src("https://tractor.ak1211.com/public/assets/Slack_Monochrome_White.svg"), Halogen_HTML_Properties.alt("Slack"), Halogen_HTML_Properties.width(80) ]);
       var hrefSignInWithSlack = function (scope) {
@@ -35945,55 +36149,61 @@ var PS = {};
           var $$eval = function (v) {
               if (v instanceof ToggleNavBar) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (st) {
-                      var $18 = {};
-                      for (var $19 in st) {
-                          if ({}.hasOwnProperty.call(st, $19)) {
-                              $18[$19] = st[$19];
+                      var $19 = {};
+                      for (var $20 in st) {
+                          if ({}.hasOwnProperty.call(st, $20)) {
+                              $19[$20] = st[$20];
                           };
                       };
-                      $18.navBarActived = !st.navBarActived;
-                      return $18;
+                      $19.navBarActived = !st.navBarActived;
+                      return $19;
                   }))(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
                   });
               };
               if (v instanceof Initialize) {
-                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Api.getApiV1AuthClientid))(function (v1) {
-                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(AppM.getSession(AppM.sessionDSLHalogenM(dictSessionDSL)))(function (v2) {
-                          return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v3) {
-                              var $24 = {};
-                              for (var $25 in v3) {
-                                  if ({}.hasOwnProperty.call(v3, $25)) {
-                                      $24[$25] = v3[$25];
-                                  };
+                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(AppM.getSession(AppM.sessionDSLHalogenM(dictSessionDSL)))(function (v1) {
+                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
+                          var $24 = {};
+                          for (var $25 in v2) {
+                              if ({}.hasOwnProperty.call(v2, $25)) {
+                                  $24[$25] = v2[$25];
                               };
-                              $24.session = v2;
-                              $24.authClientId = Data_Either.either(Data_Function["const"](Data_Maybe.Nothing.value))(Data_Maybe.Just.create)(v1.body);
-                              return $24;
-                          }))(function () {
-                              return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
+                          };
+                          $24.session = v1;
+                          return $24;
+                      }))(function () {
+                          return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Api.getApiV1AuthClientid))(function (v2) {
+                              return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v3) {
+                                  var $28 = {};
+                                  for (var $29 in v3) {
+                                      if ({}.hasOwnProperty.call(v3, $29)) {
+                                          $28[$29] = v3[$29];
+                                      };
+                                  };
+                                  $28.authClientId = Data_Either.either(Data_Function["const"](Data_Maybe.Nothing.value))(Data_Maybe.Just.create)(v2.body);
+                                  return $28;
+                              }))(function () {
+                                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
+                              });
                           });
                       });
                   });
               };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.Login line 70, column 10 - line 86, column 16: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Page.Login line 68, column 10 - line 81, column 16: " + [ v.constructor.name ]);
           };
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
               initialState: Data_Function["const"](initialState),
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
@@ -36023,45 +36233,7 @@ var PS = {};
   var Halogen_Query_HalogenM = PS["Halogen.Query.HalogenM"];
   var Page = PS["Page"];
   var Prelude = PS["Prelude"];
-  var Session = PS["Session"];                 
-  var Slot = (function () {
-      function Slot() {
-
-      };
-      Slot.value = new Slot();
-      return Slot;
-  })();
-  var ToggleNavBar = (function () {
-      function ToggleNavBar(value0) {
-          this.value0 = value0;
-      };
-      ToggleNavBar.create = function (value0) {
-          return new ToggleNavBar(value0);
-      };
-      return ToggleNavBar;
-  })();
-  var Initialize = (function () {
-      function Initialize(value0) {
-          this.value0 = value0;
-      };
-      Initialize.create = function (value0) {
-          return new Initialize(value0);
-      };
-      return Initialize;
-  })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
-  var render = function (state) {
-      var contents = [ Halogen_HTML_Core.text("Logout Page contents") ];
-      return Halogen_HTML_Elements.div_([ Page.fixedTopNavBar(ToggleNavBar.create)(state.navBarActived)(state.session), Page.hero("Logout"), Halogen_HTML_Elements.section([ Halogen_HTML_Properties.class_("section") ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("container") ])(contents) ]), Page.footer ]);
-  };
+  var Session = PS["Session"];
   var eqSlot = new Data_Eq.Eq(function (x) {
       return function (y) {
           return true;
@@ -36074,198 +36246,6 @@ var PS = {};
           return Data_Ordering.EQ.value;
       };
   });
-  var component = function (dictMonadAff) {
-      return function (dictSessionDSL) {
-          var initialState = {
-              navBarActived: false,
-              session: Session.Guest.value
-          };
-          var $$eval = function (v) {
-              if (v instanceof ToggleNavBar) {
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (st) {
-                      var $15 = {};
-                      for (var $16 in st) {
-                          if ({}.hasOwnProperty.call(st, $16)) {
-                              $15[$16] = st[$16];
-                          };
-                      };
-                      $15.navBarActived = !st.navBarActived;
-                      return $15;
-                  }))(function () {
-                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                  });
-              };
-              if (v instanceof Initialize) {
-                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(AppM.getSession(AppM.sessionDSLHalogenM(dictSessionDSL)))(function (v1) {
-                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
-                          var $20 = {};
-                          for (var $21 in v2) {
-                              if ({}.hasOwnProperty.call(v2, $21)) {
-                                  $20[$21] = v2[$21];
-                              };
-                          };
-                          $20.session = v1;
-                          return $20;
-                      }))(function () {
-                          return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                      });
-                  });
-              };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.Logout line 58, column 10 - line 71, column 16: " + [ v.constructor.name ]);
-          };
-          return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
-              initialState: Data_Function["const"](initialState),
-              render: render,
-              "eval": $$eval,
-              initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
-              receiver: Data_Function["const"](Data_Maybe.Nothing.value)
-          });
-      };
-  };
-  exports["ToggleNavBar"] = ToggleNavBar;
-  exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
-  exports["Slot"] = Slot;
-  exports["component"] = component;
-  exports["eqSlot"] = eqSlot;
-  exports["ordSlot"] = ordSlot;
-})(PS["Page.Logout"] = PS["Page.Logout"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.1
-  "use strict";
-  var AppM = PS["AppM"];
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Bind = PS["Control.Bind"];
-  var Control_Monad_State_Class = PS["Control.Monad.State.Class"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Function = PS["Data.Function"];
-  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ordering = PS["Data.Ordering"];
-  var Effect_Aff_Class = PS["Effect.Aff.Class"];
-  var Halogen = PS["Halogen"];
-  var Halogen_Component = PS["Halogen.Component"];
-  var Halogen_HTML = PS["Halogen.HTML"];
-  var Halogen_HTML_Core = PS["Halogen.HTML.Core"];
-  var Halogen_HTML_Elements = PS["Halogen.HTML.Elements"];
-  var Halogen_HTML_Properties = PS["Halogen.HTML.Properties"];
-  var Halogen_Query = PS["Halogen.Query"];
-  var Halogen_Query_HalogenM = PS["Halogen.Query.HalogenM"];
-  var Page = PS["Page"];
-  var Prelude = PS["Prelude"];
-  var Session = PS["Session"];                 
-  var Slot = (function () {
-      function Slot() {
-
-      };
-      Slot.value = new Slot();
-      return Slot;
-  })();
-  var ToggleNavBar = (function () {
-      function ToggleNavBar(value0) {
-          this.value0 = value0;
-      };
-      ToggleNavBar.create = function (value0) {
-          return new ToggleNavBar(value0);
-      };
-      return ToggleNavBar;
-  })();
-  var Initialize = (function () {
-      function Initialize(value0) {
-          this.value0 = value0;
-      };
-      Initialize.create = function (value0) {
-          return new Initialize(value0);
-      };
-      return Initialize;
-  })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
-  var render = function (state) {
-      var contents = [ Halogen_HTML_Core.text("NOT FOUND") ];
-      return Halogen_HTML_Elements.div_([ Page.fixedTopNavBar(ToggleNavBar.create)(state.navBarActived)(state.session), Page.hero("Not Found"), Halogen_HTML_Elements.section([ Halogen_HTML_Properties.class_("section") ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("container") ])(contents) ]), Page.footer ]);
-  };
-  var eqSlot = new Data_Eq.Eq(function (x) {
-      return function (y) {
-          return true;
-      };
-  });
-  var ordSlot = new Data_Ord.Ord(function () {
-      return eqSlot;
-  }, function (x) {
-      return function (y) {
-          return Data_Ordering.EQ.value;
-      };
-  });
-  var component = function (dictMonadAff) {
-      return function (dictSessionDSL) {
-          var initialState = {
-              navBarActived: false,
-              session: Session.Guest.value
-          };
-          var $$eval = function (v) {
-              if (v instanceof ToggleNavBar) {
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (st) {
-                      var $15 = {};
-                      for (var $16 in st) {
-                          if ({}.hasOwnProperty.call(st, $16)) {
-                              $15[$16] = st[$16];
-                          };
-                      };
-                      $15.navBarActived = !st.navBarActived;
-                      return $15;
-                  }))(function () {
-                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                  });
-              };
-              if (v instanceof Initialize) {
-                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(AppM.getSession(AppM.sessionDSLHalogenM(dictSessionDSL)))(function (v1) {
-                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
-                          var $20 = {};
-                          for (var $21 in v2) {
-                              if ({}.hasOwnProperty.call(v2, $21)) {
-                                  $20[$21] = v2[$21];
-                              };
-                          };
-                          $20.session = v1;
-                          return $20;
-                      }))(function () {
-                          return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                      });
-                  });
-              };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.NotFound line 58, column 10 - line 71, column 16: " + [ v.constructor.name ]);
-          };
-          return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
-              initialState: Data_Function["const"](initialState),
-              render: render,
-              "eval": $$eval,
-              initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
-              receiver: Data_Function["const"](Data_Maybe.Nothing.value)
-          });
-      };
-  };
-  exports["ToggleNavBar"] = ToggleNavBar;
-  exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
-  exports["Slot"] = Slot;
-  exports["component"] = component;
   exports["eqSlot"] = eqSlot;
   exports["ordSlot"] = ordSlot;
 })(PS["Page.NotFound"] = PS["Page.NotFound"] || {});
@@ -36318,15 +36298,6 @@ var PS = {};
           return new Initialize(value0);
       };
       return Initialize;
-  })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
   })();
   var render = function (state) {
       var contents = [ Halogen_HTML_Core.text("Portfolio Page contents") ];
@@ -36381,24 +36352,20 @@ var PS = {};
                       });
                   });
               };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.Portfolio line 58, column 10 - line 71, column 16: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Page.Portfolio line 56, column 10 - line 66, column 16: " + [ v.constructor.name ]);
           };
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
               initialState: Data_Function["const"](initialState),
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
@@ -36454,15 +36421,6 @@ var PS = {};
       };
       return Initialize;
   })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
   var render = function (state) {
       var contents = [ Halogen_HTML_Core.text("Upload Page contents") ];
       return Halogen_HTML_Elements.div_([ Page.fixedTopNavBar(ToggleNavBar.create)(state.navBarActived)(state.session), Page.hero("Upload"), Halogen_HTML_Elements.section([ Halogen_HTML_Properties.class_("section") ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("container") ])(contents) ]), Page.footer ]);
@@ -36516,24 +36474,20 @@ var PS = {};
                       });
                   });
               };
-              if (v instanceof Finalize) {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-              };
-              throw new Error("Failed pattern match at Page.Upload line 58, column 10 - line 71, column 16: " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Page.Upload line 56, column 10 - line 66, column 16: " + [ v.constructor.name ]);
           };
           return Halogen_Component.lifecycleComponent(Halogen_HTML_Core.bifunctorHTML)({
               initialState: Data_Function["const"](initialState),
               render: render,
               "eval": $$eval,
               initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
+              finalizer: Data_Maybe.Nothing.value,
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
   exports["ToggleNavBar"] = ToggleNavBar;
   exports["Initialize"] = Initialize;
-  exports["Finalize"] = Finalize;
   exports["Slot"] = Slot;
   exports["component"] = component;
   exports["eqSlot"] = eqSlot;
@@ -36622,81 +36576,220 @@ var PS = {};
   exports["matchWith"] = matchWith;
 })(PS["Routing"] = PS["Routing"] || {});
 (function(exports) {
+    "use strict";
+
+  exports.mutationObserver = function (cb) {
+    return function () {
+      return new MutationObserver(function (mr, mo) {
+        return cb(mr)(mo)();
+      });
+    };
+  };
+
+  exports._observe = function (node) {
+    return function (config) {
+      return function (mo) {
+        return function () {
+          return mo.observe(node, config);
+        };
+      };
+    };
+  };
+})(PS["Web.DOM.MutationObserver"] = PS["Web.DOM.MutationObserver"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.1
+  "use strict";
+  var $foreign = PS["Web.DOM.MutationObserver"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Web_DOM_MutationRecord = PS["Web.DOM.MutationRecord"];
+  var Web_DOM_Node = PS["Web.DOM.Node"];                 
+  var observe = function (dictUnion) {
+      return $foreign._observe;
+  };
+  exports["observe"] = observe;
+  exports["mutationObserver"] = $foreign.mutationObserver;
+})(PS["Web.DOM.MutationObserver"] = PS["Web.DOM.MutationObserver"] || {});
+(function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
   var Web_Event_Event = PS["Web.Event.Event"];                 
-  var hashchange = "hashchange";
-  exports["hashchange"] = hashchange;
-})(PS["Web.HTML.Event.HashChangeEvent.EventTypes"] = PS["Web.HTML.Event.HashChangeEvent.EventTypes"] || {});
+  var popstate = "popstate";
+  exports["popstate"] = popstate;
+})(PS["Web.HTML.Event.PopStateEvent.EventTypes"] = PS["Web.HTML.Event.PopStateEvent.EventTypes"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
   var Control_Applicative = PS["Control.Applicative"];
-  var Control_Apply = PS["Control.Apply"];
   var Control_Bind = PS["Control.Bind"];
   var Control_Semigroupoid = PS["Control.Semigroupoid"];
   var Data_Either = PS["Data.Either"];
   var Data_Foldable = PS["Data.Foldable"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
+  var Data_Map = PS["Data.Map"];
+  var Data_Map_Internal = PS["Data.Map.Internal"];
   var Data_Maybe = PS["Data.Maybe"];
-  var Data_String = PS["Data.String"];
-  var Data_String_CodeUnits = PS["Data.String.CodeUnits"];
-  var Data_String_Pattern = PS["Data.String.Pattern"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Show = PS["Data.Show"];
   var Effect = PS["Effect"];
   var Effect_Ref = PS["Effect.Ref"];
+  var Foreign = PS["Foreign"];
   var Prelude = PS["Prelude"];
   var Routing = PS["Routing"];
   var Routing_Match = PS["Routing.Match"];
+  var Web_DOM_Document = PS["Web.DOM.Document"];
+  var Web_DOM_MutationObserver = PS["Web.DOM.MutationObserver"];
+  var Web_DOM_Node = PS["Web.DOM.Node"];
+  var Web_DOM_Text = PS["Web.DOM.Text"];
   var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
   var Web_HTML = PS["Web.HTML"];
-  var Web_HTML_Event_HashChangeEvent_EventTypes = PS["Web.HTML.Event.HashChangeEvent.EventTypes"];
+  var Web_HTML_Event_PopStateEvent_EventTypes = PS["Web.HTML.Event.PopStateEvent.EventTypes"];
+  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
+  var Web_HTML_History = PS["Web.HTML.History"];
   var Web_HTML_Location = PS["Web.HTML.Location"];
-  var Web_HTML_Window = PS["Web.HTML.Window"];
-  var getHash = function __do() {
-      var $8 = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.location)();
-      return Data_Functor.map(Effect.functorEffect)(function ($9) {
-          return Data_Maybe.fromMaybe("")(Data_String_CodeUnits.stripPrefix("#")($9));
-      })(Web_HTML_Location.hash($8))();
+  var Web_HTML_Window = PS["Web.HTML.Window"];                 
+  var makeImmediate = function (run) {
+      return function __do() {
+          var v = (function __do() {
+              var $37 = Web_HTML.window();
+              return Data_Functor.map(Effect.functorEffect)(Web_HTML_HTMLDocument.toDocument)(Web_HTML_Window.document($37))();
+          })();
+          var v1 = Effect_Ref["new"](new Data_Either.Right(0))();
+          var v2 = Data_Functor.map(Effect.functorEffect)(Web_DOM_Text.toNode)(Web_DOM_Document.createTextNode("")(v))();
+          var v3 = Web_DOM_MutationObserver.mutationObserver(function (v3) {
+              return function (v4) {
+                  return function __do() {
+                      Effect_Ref.modify_(Data_Either.either(function ($38) {
+                          return Data_Either.Right.create(1 + $38 | 0);
+                      })(Data_Either.Right.create))(v1)();
+                      return run();
+                  };
+              };
+          })();
+          Web_DOM_MutationObserver.observe()(v2)({
+              characterData: true
+          })(v3)();
+          return Control_Bind.bind(Effect.bindEffect)(Effect_Ref.read(v1))(Data_Foldable.traverse_(Effect.applicativeEffect)(Data_Either.foldableEither)(function (tick) {
+              return function __do() {
+                  Effect_Ref.write(new Data_Either.Left(tick + 1 | 0))(v1)();
+                  return Web_DOM_Node.setNodeValue(Data_Show.show(Data_Show.showInt)(tick))(v2)();
+              };
+          }));
+      };
   };
-  var foldHashes = function (cb) {
-      return function (init) {
-          return function __do() {
-              var v = Control_Bind.bindFlipped(Effect.bindEffect)(Effect_Ref["new"])(Control_Bind.bindFlipped(Effect.bindEffect)(init)(getHash))();
-              var v1 = Data_Functor.map(Effect.functorEffect)(Web_HTML_Window.toEventTarget)(Web_HTML.window)();
-              var v2 = Web_Event_EventTarget.eventListener(function (v2) {
-                  return Control_Bind.bindFlipped(Effect.bindEffect)(Data_Function.flip(Effect_Ref.write)(v))(Control_Bind.join(Effect.bindEffect)(Control_Apply.apply(Effect.applyEffect)(Data_Functor.map(Effect.functorEffect)(cb)(Effect_Ref.read(v)))(getHash)));
-              })();
-              Web_Event_EventTarget.addEventListener(Web_HTML_Event_HashChangeEvent_EventTypes.hashchange)(v2)(false)(v1)();
-              return Web_Event_EventTarget.removeEventListener(Web_HTML_Event_HashChangeEvent_EventTypes.hashchange)(v2)(false)(v1);
+  var makeInterface = function __do() {
+      var v = Effect_Ref["new"](0)();
+      var v1 = Effect_Ref["new"](Data_Map_Internal.empty)();
+      var notify = function (ev) {
+          return Control_Bind.bindFlipped(Effect.bindEffect)(Data_Foldable.traverse_(Effect.applicativeEffect)(Data_Map_Internal.foldableMap)(function (v2) {
+              return v2(ev);
+          }))(Effect_Ref.read(v1));
+      };
+      var locationState = function __do() {
+          var v2 = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.location)();
+          var v3 = Control_Bind.bind(Effect.bindEffect)(Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.history))(Web_HTML_History.state)();
+          var v4 = Web_HTML_Location.pathname(v2)();
+          var v5 = Web_HTML_Location.search(v2)();
+          var v6 = Web_HTML_Location.hash(v2)();
+          var path = v4 + (v5 + v6);
+          return {
+              state: v3,
+              pathname: v4,
+              search: v5,
+              hash: v6,
+              path: path
           };
+      };
+      var listen = function (k) {
+          return function __do() {
+              var v2 = Effect_Ref.read(v)();
+              Effect_Ref.write(v2 + 1 | 0)(v)();
+              Effect_Ref.modify_(Data_Map_Internal.insert(Data_Ord.ordInt)(v2)(k))(v1)();
+              return Effect_Ref.modify_(Data_Map_Internal["delete"](Data_Ord.ordInt)(v2))(v1);
+          };
+      };
+      var v2 = makeImmediate(Control_Bind.bindFlipped(Effect.bindEffect)(notify)(locationState))();
+      var stateFn = function (op) {
+          return function (state) {
+              return function (path) {
+                  return function __do() {
+                      Control_Bind.bind(Effect.bindEffect)(Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.history))(op(state)("")(path))();
+                      return v2();
+                  };
+              };
+          };
+      };
+      var v3 = Web_Event_EventTarget.eventListener(function (v3) {
+          return Control_Bind.bindFlipped(Effect.bindEffect)(notify)(locationState);
+      })();
+      (function __do() {
+          var $39 = Web_HTML.window();
+          return Web_Event_EventTarget.addEventListener(Web_HTML_Event_PopStateEvent_EventTypes.popstate)(v3)(false)(Web_HTML_Window.toEventTarget($39))();
+      })();
+      return {
+          pushState: stateFn(Web_HTML_History.pushState),
+          replaceState: stateFn(Web_HTML_History.replaceState),
+          locationState: locationState,
+          listen: listen
+      };
+  };
+  var foldLocations = function (cb) {
+      return function (init) {
+          return function (psi) {
+              return function __do() {
+                  var v = Control_Bind.bindFlipped(Effect.bindEffect)(Effect_Ref["new"])(Control_Bind.bindFlipped(Effect.bindEffect)(init)(psi.locationState))();
+                  return psi.listen(function (loc) {
+                      return Control_Bind.bindFlipped(Effect.bindEffect)(Data_Function.flip(Effect_Ref.write)(v))(Control_Bind.bindFlipped(Effect.bindEffect)(Data_Function.flip(cb)(loc))(Effect_Ref.read(v)));
+                  })();
+              };
+          };
+      };
+  };
+  var foldPaths = function (cb) {
+      return function (init) {
+          return foldLocations(function (a) {
+              return function ($40) {
+                  return cb(a)((function (v) {
+                      return v.path;
+                  })($40));
+              };
+          })(function ($41) {
+              return init((function (v) {
+                  return v.path;
+              })($41));
+          });
       };
   };
   var matchesWith = function (dictFoldable) {
       return function (parser) {
           return function (cb) {
               var go = function (a) {
-                  return function ($10) {
+                  return function ($42) {
                       return Data_Maybe.maybe(Control_Applicative.pure(Effect.applicativeEffect)(a))(function (b) {
                           return Data_Functor.voidRight(Effect.functorEffect)(new Data_Maybe.Just(b))(cb(a)(b));
-                      })(Data_Foldable.indexl(dictFoldable)(0)(parser($10)));
+                      })(Data_Foldable.indexl(dictFoldable)(0)(parser($42)));
                   };
               };
-              return foldHashes(go)(go(Data_Maybe.Nothing.value));
+              return foldPaths(go)(go(Data_Maybe.Nothing.value));
           };
       };
-  };                                                                            
-  var matches = function ($11) {
-      return matchesWith(Data_Either.foldableEither)(Routing.match($11));
   };
-  exports["getHash"] = getHash;
-  exports["foldHashes"] = foldHashes;
+  var matches = function ($43) {
+      return matchesWith(Data_Either.foldableEither)(Routing.match($43));
+  };
+  exports["makeInterface"] = makeInterface;
+  exports["foldLocations"] = foldLocations;
+  exports["foldPaths"] = foldPaths;
   exports["matches"] = matches;
   exports["matchesWith"] = matchesWith;
-})(PS["Routing.Hash"] = PS["Routing.Hash"] || {});
+})(PS["Routing.PushState"] = PS["Routing.PushState"] || {});
 (function(exports) {
   // Generated by purs version 0.12.1
   "use strict";
+  var Affjax = PS["Affjax"];
   var Api = PS["Api"];
   var AppM = PS["AppM"];
   var Control_Applicative = PS["Control.Applicative"];
@@ -36710,6 +36803,8 @@ var PS = {};
   var Data_Functor_Coproduct_Nested = PS["Data.Functor.Coproduct.Nested"];
   var Data_Maybe = PS["Data.Maybe"];
   var Data_Ord = PS["Data.Ord"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_String_Base64 = PS["Data.String.Base64"];
   var Data_Unit = PS["Data.Unit"];
   var Data_Void = PS["Data.Void"];
   var Effect = PS["Effect"];
@@ -36724,22 +36819,22 @@ var PS = {};
   var Halogen_Component_ChildPath = PS["Halogen.Component.ChildPath"];
   var Halogen_HTML = PS["Halogen.HTML"];
   var Halogen_HTML_Core = PS["Halogen.HTML.Core"];
+  var Halogen_HTML_Elements = PS["Halogen.HTML.Elements"];
   var Halogen_Query = PS["Halogen.Query"];
   var Halogen_Query_HalogenM = PS["Halogen.Query.HalogenM"];
   var Halogen_VDom_Driver = PS["Halogen.VDom.Driver"];
+  var NetService_ApiTypes = PS["NetService.ApiTypes"];
   var Page_AccountBalance = PS["Page.AccountBalance"];
   var Page_ApiDocument = PS["Page.ApiDocument"];
   var Page_Charts = PS["Page.Charts"];
   var Page_Dashboard = PS["Page.Dashboard"];
   var Page_Login = PS["Page.Login"];
-  var Page_Logout = PS["Page.Logout"];
   var Page_NotFound = PS["Page.NotFound"];
   var Page_Portfolio = PS["Page.Portfolio"];
   var Page_Upload = PS["Page.Upload"];
   var Prelude = PS["Prelude"];
   var Route = PS["Route"];
-  var Routing = PS["Routing"];
-  var Routing_Hash = PS["Routing.Hash"];
+  var Routing_PushState = PS["Routing.PushState"];
   var Session = PS["Session"];                 
   var Goto = (function () {
       function Goto(value0, value1) {
@@ -36753,49 +36848,42 @@ var PS = {};
       };
       return Goto;
   })();
-  var Initialize = (function () {
-      function Initialize(value0) {
-          this.value0 = value0;
-      };
-      Initialize.create = function (value0) {
-          return new Initialize(value0);
-      };
-      return Initialize;
-  })();
-  var Finalize = (function () {
-      function Finalize(value0) {
-          this.value0 = value0;
-      };
-      Finalize.create = function (value0) {
-          return new Finalize(value0);
-      };
-      return Finalize;
-  })();
-  var routeSignal = function (driver) {
-      var hashChanged = function (v) {
-          return function (newRoute) {
-              return function __do() {
-                  Data_Functor["void"](Effect.functorEffect)(Effect_Aff.launchAff(driver.query(Halogen_Query.action(Goto.create(newRoute)))))();
-                  return Data_Unit.unit;
-              };
-          };
-      };
-      return Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Routing_Hash.matches(Route.routing)(hashChanged));
-  };
-  var pathToUpload = Halogen_Component_ChildPath.cp5;
-  var pathToPortfolio = Halogen_Component_ChildPath.cp6;
+  var pathToUpload = Halogen_Component_ChildPath.cp4;
+  var pathToPortfolio = Halogen_Component_ChildPath.cp5;
   var pathToNotFound = Halogen_Component_ChildPath.cp1;
-  var pathToLogout = Halogen_Component_ChildPath.cp4;
   var pathToLogin = Halogen_Component_ChildPath.cp3;
   var pathToDashboard = Halogen_Component_ChildPath.cp2;
-  var pathToCharts = Halogen_Component_ChildPath.cp7;
-  var pathToApiDocument = Halogen_Component_ChildPath.cp9;
-  var pathToAccountBalance = Halogen_Component_ChildPath.cp8;
+  var pathToCharts = Halogen_Component_ChildPath.cp6;
+  var pathToApiDocument = Halogen_Component_ChildPath.cp8;
+  var pathToAccountBalance = Halogen_Component_ChildPath.cp7;
+  var getAccessToken = function (param) {
+      var handleFail = function (resp) {
+          return function (msg) {
+              return Control_Applicative.pure(Effect_Aff.applicativeAff)({
+                  body: new Data_Either.Left(msg),
+                  headers: resp.headers,
+                  status: resp.status,
+                  statusText: resp.statusText
+              });
+          };
+      };
+      var go = function (v) {
+          var b64e = Data_String_Base64.encode(v.clientid + (":" + param.code));
+          var auth = "Basic " + b64e;
+          return Api.getApiV1Token(auth);
+      };
+      return Control_Bind.bind(Effect_Aff.bindAff)(Api.getApiV1AuthClientid)(function (v) {
+          return Data_Either.either(handleFail(v))(go)(v.body);
+      });
+  };
   var ui = function (dictMonadAff) {
       return function (dictSessionDSL) {
           var render = function (st) {
-              if (st.route instanceof Route.Root) {
-                  return Halogen_HTML["slot'"](pathToNotFound)(Page_NotFound.Slot.value)(Page_NotFound.component(dictMonadAff)(dictSessionDSL))(Data_Unit.unit)(Data_Void.absurd);
+              if (st.route instanceof Route.AuthRedirect && st.route.value0 instanceof Data_Either.Left) {
+                  return Halogen_HTML_Elements.div_([ Halogen_HTML_Core.text(st.route.value0.value0) ]);
+              };
+              if (st.route instanceof Route.AuthRedirect && st.route.value0 instanceof Data_Either.Right) {
+                  return Halogen_HTML_Elements.div_([  ]);
               };
               if (st.route instanceof Route.Dashboard) {
                   return Halogen_HTML["slot'"](pathToDashboard)(Page_Dashboard.Slot.value)(Page_Dashboard.component(dictMonadAff)(dictSessionDSL))(Data_Unit.unit)(Data_Void.absurd);
@@ -36804,7 +36892,7 @@ var PS = {};
                   return Halogen_HTML["slot'"](pathToLogin)(Page_Login.Slot.value)(Page_Login.component(dictMonadAff)(dictSessionDSL))(Data_Unit.unit)(Data_Void.absurd);
               };
               if (st.route instanceof Route.Logout) {
-                  return Halogen_HTML["slot'"](pathToLogout)(Page_Logout.Slot.value)(Page_Logout.component(dictMonadAff)(dictSessionDSL))(Data_Unit.unit)(Data_Void.absurd);
+                  return Halogen_HTML_Elements.div_([  ]);
               };
               if (st.route instanceof Route.Upload) {
                   return Halogen_HTML["slot'"](pathToUpload)(Page_Upload.Slot.value)(Page_Upload.component(dictMonadAff)(dictSessionDSL))(Data_Unit.unit)(Data_Void.absurd);
@@ -36821,106 +36909,107 @@ var PS = {};
               if (st.route instanceof Route.ApiDocument) {
                   return Halogen_HTML["slot'"](pathToApiDocument)(Page_ApiDocument.Slot.value)(Page_ApiDocument.component(dictMonadAff)(dictSessionDSL))(Data_Unit.unit)(Data_Void.absurd);
               };
-              throw new Error("Failed pattern match at Main line 139, column 15 - line 165, column 84: " + [ st.route.constructor.name ]);
+              throw new Error("Failed pattern match at Main line 130, column 15 - line 159, column 84: " + [ st.route.constructor.name ]);
           };
           var init = {
-              route: Route.Root.value
+              route: Route.Dashboard.value
           };
           var $$eval = function (v) {
-              if (v instanceof Goto) {
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (st) {
-                      var $11 = {};
-                      for (var $12 in st) {
-                          if ({}.hasOwnProperty.call(st, $12)) {
-                              $11[$12] = st[$12];
+              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)((function () {
+                  if (v.value0 instanceof Route.AuthRedirect && v.value0.value0 instanceof Data_Either.Right) {
+                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(getAccessToken(v.value0.value0.value0)))(function (v1) {
+                          if (v1.body instanceof Data_Either.Left) {
+                              return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Route.AuthRedirect(new Data_Either.Left(v1.body.value0)));
+                          };
+                          if (v1.body instanceof Data_Either.Right) {
+                              return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log(v1.body.value0.accessToken)))(function () {
+                                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)((function () {
+                                      var v2 = Api.credFromJwt(v1.body.value0.accessToken);
+                                      if (v2 instanceof Data_Either.Left) {
+                                          return Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log("access token JWT parse error"));
+                                      };
+                                      if (v2 instanceof Data_Either.Right) {
+                                          return Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Api.storeCred(v2.value0));
+                                      };
+                                      throw new Error("Failed pattern match at Main line 173, column 27 - line 177, column 60: " + [ v2.constructor.name ]);
+                                  })())(function () {
+                                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Route.locationReplace(Route.Dashboard.value)))(function () {
+                                          return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Route.Dashboard.value);
+                                      });
+                                  });
+                              });
+                          };
+                          throw new Error("Failed pattern match at Main line 167, column 23 - line 180, column 41: " + [ v1.body.constructor.name ]);
+                      });
+                  };
+                  if (v.value0 instanceof Route.Logout) {
+                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Api.logout))(function () {
+                          return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Route.locationReplace(Route.Dashboard.value)))(function () {
+                              return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Route.Dashboard.value);
+                          });
+                      });
+                  };
+                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
+              })())(function (v1) {
+                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
+                      var $35 = {};
+                      for (var $36 in v2) {
+                          if ({}.hasOwnProperty.call(v2, $36)) {
+                              $35[$36] = v2[$36];
                           };
                       };
-                      $11.route = v.value0;
-                      return $11;
+                      $35.route = v1;
+                      return $35;
                   }))(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value1);
                   });
-              };
-              if (v instanceof Initialize) {
-                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Routing_Hash.getHash))(function (v1) {
-                      var route = Data_Either.either(Data_Function["const"](Data_Maybe.Nothing.value))(Data_Maybe.Just.create)(Routing.match(Route.routing)(v1));
-                      var s = (function () {
-                          if (route instanceof Data_Maybe.Nothing) {
-                              return "fail";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Root) {
-                              return "root";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Dashboard) {
-                              return "dashboard";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Login) {
-                              return "login";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Logout) {
-                              return "logout";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Charts) {
-                              return "charts";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Upload) {
-                              return "upload";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.ApiDocument) {
-                              return "Apidoc";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.AccountBalance) {
-                              return "acc balance";
-                          };
-                          if (route instanceof Data_Maybe.Just && route.value0 instanceof Route.Portfolio) {
-                              return "portfolio";
-                          };
-                          throw new Error("Failed pattern match at Main line 176, column 15 - line 187, column 7: " + [ route.constructor.name ]);
-                      })();
-                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log(v1)))(function () {
-                          return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log(s)))(function () {
-                              return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)((function () {
-                                  if (route instanceof Data_Maybe.Nothing) {
-                                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log("redirect")))(function () {
-                                          return Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Route.locationReplace(Route.Dashboard.value));
-                                      });
-                                  };
-                                  if (route instanceof Data_Maybe.Just) {
-                                      return Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log(""));
-                                  };
-                                  throw new Error("Failed pattern match at Main line 189, column 7 - line 195, column 7: " + [ route.constructor.name ]);
-                              })())(function () {
-                                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                              });
-                          });
-                      });
-                  });
-              };
-              if (v instanceof Finalize) {
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log("bye")))(function () {
-                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0);
-                  });
-              };
-              throw new Error("Failed pattern match at Main line 168, column 10 - line 199, column 16: " + [ v.constructor.name ]);
+              });
           };
-          return Halogen_Component.lifecycleParentComponent(Data_Either.ordEither(Page_NotFound.ordSlot)(Data_Either.ordEither(Page_Dashboard.ordSlot)(Data_Either.ordEither(Page_Login.ordSlot)(Data_Either.ordEither(Page_Logout.ordSlot)(Data_Either.ordEither(Page_Upload.ordSlot)(Data_Either.ordEither(Page_Portfolio.ordSlot)(Data_Either.ordEither(Page_Charts.ordSlot)(Data_Either.ordEither(Page_AccountBalance.ordSlot)(Data_Either.ordEither(Page_ApiDocument.ordSlot)(Data_Ord.ordVoid))))))))))({
+          return Halogen_Component.parentComponent(Data_Either.ordEither(Page_NotFound.ordSlot)(Data_Either.ordEither(Page_Dashboard.ordSlot)(Data_Either.ordEither(Page_Login.ordSlot)(Data_Either.ordEither(Page_Upload.ordSlot)(Data_Either.ordEither(Page_Portfolio.ordSlot)(Data_Either.ordEither(Page_Charts.ordSlot)(Data_Either.ordEither(Page_AccountBalance.ordSlot)(Data_Either.ordEither(Page_ApiDocument.ordSlot)(Data_Ord.ordVoid)))))))))({
               initialState: Data_Function["const"](init),
               render: render,
               "eval": $$eval,
-              initializer: new Data_Maybe.Just(Halogen_Query.action(Initialize.create)),
-              finalizer: new Data_Maybe.Just(Halogen_Query.action(Finalize.create)),
               receiver: Data_Function["const"](Data_Maybe.Nothing.value)
           });
       };
   };
-  var main = Halogen_Aff_Util.runHalogenAff(Control_Bind.bind(Effect_Aff.bindAff)(Data_Functor.map(Effect_Aff.functorAff)(Data_Maybe.maybe(Session.Guest.value)(Session.LoggedIn.create))(Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Api.loadCred)))(function (v) {
-      var uiWithSession = Halogen_Component.hoist(Halogen_HTML_Core.bifunctorHTML)(Effect_Aff.functorAff)(Data_Function.flip(AppM.runAppM)(v))(ui(AppM.monadAffAppM)(AppM.sessionDSLAppM));
-      return Control_Bind.bind(Effect_Aff.bindAff)(Halogen_Aff_Util.awaitBody)(function (v1) {
-          return Control_Bind.bind(Effect_Aff.bindAff)(Halogen_VDom_Driver.runUI(uiWithSession)(Data_Unit.unit)(v1))(function (v2) {
-              return Effect_Aff.forkAff(routeSignal(v2));
+  var main = (function () {
+      var routeSignal = function (driver) {
+          var pathChanged = function (v) {
+              return function (newRoute) {
+                  return function __do() {
+                      Data_Functor["void"](Effect.functorEffect)(Effect_Aff.launchAff(driver.query(Halogen_Query.action(Goto.create(newRoute)))))();
+                      return Data_Unit.unit;
+                  };
+              };
+          };
+          return Control_Bind.bind(Effect_Aff.bindAff)(Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Routing_PushState.makeInterface))(function (v) {
+              return Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Routing_PushState.matches(Route.routing)(pathChanged)(v));
           });
-      });
-  }));
+      };
+      return Halogen_Aff_Util.runHalogenAff(Control_Bind.bind(Effect_Aff.bindAff)(Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Api.loadCred))(function (v) {
+          return Control_Bind.bind(Effect_Aff.bindAff)((function () {
+              if (v instanceof Data_Maybe.Nothing) {
+                  return Control_Applicative.pure(Effect_Aff.applicativeAff)(Session.Guest.value);
+              };
+              if (v instanceof Data_Maybe.Just) {
+                  return Control_Bind.discard(Control_Bind.discardUnit)(Effect_Aff.bindAff)(Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Effect_Console.log("username: ")))(function () {
+                      return Control_Bind.discard(Control_Bind.discardUnit)(Effect_Aff.bindAff)(Effect_Class.liftEffect(Effect_Aff.monadEffectAff)(Effect_Console.log(Api.username(v.value0))))(function () {
+                          return Control_Applicative.pure(Effect_Aff.applicativeAff)(new Session.LoggedIn(v.value0));
+                      });
+                  });
+              };
+              throw new Error("Failed pattern match at Main line 216, column 14 - line 222, column 34: " + [ v.constructor.name ]);
+          })())(function (v1) {
+              var uiWithSession = Halogen_Component.hoist(Halogen_HTML_Core.bifunctorHTML)(Effect_Aff.functorAff)(Data_Function.flip(AppM.runAppM)(v1))(ui(AppM.monadAffAppM)(AppM.sessionDSLAppM));
+              return Control_Bind.bind(Effect_Aff.bindAff)(Halogen_Aff_Util.awaitBody)(function (v2) {
+                  return Control_Bind.bind(Effect_Aff.bindAff)(Halogen_VDom_Driver.runUI(uiWithSession)(Data_Unit.unit)(v2))(function (v3) {
+                      return Effect_Aff.forkAff(routeSignal(v3));
+                  });
+              });
+          });
+      }));
+  })();
   exports["main"] = main;
 })(PS["Main"] = PS["Main"] || {});
 PS["Main"].main();

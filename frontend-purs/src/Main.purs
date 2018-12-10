@@ -4,12 +4,14 @@ module Main
 
 import Prelude
 
-import Api (loadCred)
+import Affjax as AX
+import Api (AuthClientId(..), AuthRedirectParam, RespAuth(..), credFromJwt, getApiV1AuthClientid, getApiV1Token, loadCred, logout, storeCred, username)
 import AppM (class SessionDSL, runAppM)
-import Data.Either (either)
-import Data.Either.Nested (Either9)
-import Data.Functor.Coproduct.Nested (Coproduct9)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Either (Either(..), either)
+import Data.Either.Nested (Either8)
+import Data.Functor.Coproduct.Nested (Coproduct8)
+import Data.Maybe (Maybe(..))
+import Data.String.Base64 as Base64
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff, forkAff)
 import Effect.Aff.Class (class MonadAff)
@@ -26,13 +28,12 @@ import Page.ApiDocument as ApiDocument
 import Page.Charts as Charts
 import Page.Dashboard as Dashboard
 import Page.Login as Login
-import Page.Logout as Logout
 import Page.NotFound as NotFound
 import Page.Portfolio as Portfolio
 import Page.Upload as Upload
 import Route (Route(..))
 import Route as Route
-import Routing.Hash as RH
+import Routing.PushState as PushState
 import Session (Session(..))
 
 
@@ -40,11 +41,10 @@ import Session (Session(..))
 
 
 type ChildQuery
-  = Coproduct9
+  = Coproduct8
     NotFound.Query
     Dashboard.Query
     Login.Query
-    Logout.Query
     Upload.Query
     Portfolio.Query
     Charts.Query
@@ -53,11 +53,10 @@ type ChildQuery
 
 
 type ChildSlot
-  = Either9
+  = Either8
     NotFound.Slot
     Dashboard.Slot
     Login.Slot
-    Logout.Slot
     Upload.Slot
     Portfolio.Slot
     Charts.Slot
@@ -77,28 +76,24 @@ pathToLogin :: ChildPath Login.Query ChildQuery Login.Slot ChildSlot
 pathToLogin = ChildPath.cp3
 
 
-pathToLogout :: ChildPath Logout.Query ChildQuery Logout.Slot ChildSlot
-pathToLogout = ChildPath.cp4
-
-
 pathToUpload :: ChildPath Upload.Query ChildQuery Upload.Slot ChildSlot
-pathToUpload = ChildPath.cp5
+pathToUpload = ChildPath.cp4
 
 
 pathToPortfolio :: ChildPath Portfolio.Query ChildQuery Portfolio.Slot ChildSlot
-pathToPortfolio = ChildPath.cp6
+pathToPortfolio = ChildPath.cp5
 
 
 pathToCharts :: ChildPath Charts.Query ChildQuery Charts.Slot ChildSlot
-pathToCharts = ChildPath.cp7
+pathToCharts = ChildPath.cp6
 
 
 pathToAccountBalance :: ChildPath AccountBalance.Query ChildQuery AccountBalance.Slot ChildSlot
-pathToAccountBalance = ChildPath.cp8
+pathToAccountBalance = ChildPath.cp7
 
 
 pathToApiDocument :: ChildPath ApiDocument.Query ChildQuery ApiDocument.Slot ChildSlot
-pathToApiDocument = ChildPath.cp9
+pathToApiDocument = ChildPath.cp8
 
 
 -- STATE
@@ -114,31 +109,30 @@ type State =
 
 data Query a
   = Goto Route a
-  | Initialize a
-  | Finalize a
 
 
 -- PARENT COMPONENT
 
 
 ui :: forall m. MonadAff m => SessionDSL m => H.Component HH.HTML Query Unit Void m
-ui = H.lifecycleParentComponent
+ui = H.parentComponent
   { initialState: const init
   , render
   , eval
-  , initializer: Just (H.action Initialize)
-  , finalizer: Just (H.action Finalize)
   , receiver: const Nothing
   }
   where
   init =
-    { route: Root
+    { route: Dashboard
     }
 
   render :: State -> H.ParentHTML Query ChildQuery ChildSlot m
   render st = case st.route of
-    Root ->
-      HH.slot' pathToNotFound NotFound.Slot NotFound.component unit absurd
+    AuthRedirect (Left err) ->
+      HH.div_ [ HH.text err ]
+
+    AuthRedirect (Right _) ->
+      HH.div_ []
       
     Dashboard ->
       HH.slot' pathToDashboard Dashboard.Slot Dashboard.component unit absurd
@@ -147,7 +141,7 @@ ui = H.lifecycleParentComponent
       HH.slot' pathToLogin Login.Slot Login.component unit absurd
       
     Logout->
-      HH.slot' pathToLogout Logout.Slot Logout.component unit absurd
+      HH.div_ []
       
     Upload ->
       HH.slot' pathToUpload Upload.Slot Upload.component unit absurd
@@ -166,46 +160,51 @@ ui = H.lifecycleParentComponent
 
   eval :: Query ~> H.ParentDSL State Query ChildQuery ChildSlot Void m
   eval = case _ of
-    (Goto newRoute next) -> do
-      H.modify_ \st -> st { route = newRoute }
-      pure next
-
-    Initialize next -> do
-      hash <- H.liftEffect RH.getHash
-      let route = either (const Nothing) Just $ RH.match Route.routing hash
-      let s = case route of
-                Nothing -> "fail"
-                Just Root -> "root"
-                Just Dashboard -> "dashboard"
-                Just Login -> "login"
-                Just Logout -> "logout"
-                Just Charts -> "charts"
-                Just Upload -> "upload"
-                Just ApiDocument -> "Apidoc"
-                Just AccountBalance -> "acc balance"
-                Just Portfolio -> "portfolio"
-      H.liftEffect $ log hash
-      H.liftEffect $ log s
-      case route of
-        Nothing -> do
-          H.liftEffect $ log "redirect"
-          H.liftEffect $ Route.locationReplace Dashboard
-        Just _ ->
-          H.liftEffect $ log ""
-      pure next
-
-    Finalize next -> do
-      H.liftEffect $ log "bye"
+    Goto route next -> do
+      newRoute <- case route of
+                    AuthRedirect (Right param) -> do
+                      newAccessToken <- H.liftAff $ getAccessToken param
+                      case newAccessToken.body of
+                        Left a ->
+                          pure $ AuthRedirect (Left a)
+                        Right (RespAuth token) -> do
+                          -- store the access token to localstorage
+                          H.liftEffect $ log token.accessToken
+                          case credFromJwt token.accessToken of
+                            Left a ->
+                              H.liftEffect $ log "access token JWT parse error"
+                            Right cred ->
+                              H.liftEffect $ storeCred cred
+                          -- redirect
+                          H.liftEffect $ Route.locationReplace Dashboard
+                          pure Dashboard
+                    Logout -> do
+                      H.liftEffect logout
+                      -- redirect
+                      H.liftEffect $ Route.locationReplace Dashboard
+                      pure Dashboard
+                    _ -> 
+                      pure route
+      H.modify_ _ { route = newRoute }
       pure next
 
 
-routeSignal :: H.HalogenIO Query Void Aff -> Aff (Effect Unit)
-routeSignal driver =
-  liftEffect $ RH.matches Route.routing hashChanged
+getAccessToken :: AuthRedirectParam -> Aff (AX.Response (Either String RespAuth))
+getAccessToken param = do
+  resp <- getApiV1AuthClientid
+  either (handleFail resp) go resp.body
   where
-  hashChanged _ newRoute = do
-    void <<< launchAff <<< driver.query <<< H.action <<< Goto $ newRoute
-    pure unit
+
+  handleFail resp msg =
+    pure $ resp { body = Left msg }
+
+  go (AuthClientId x) =
+    let user = x.clientid
+        pass = param.code
+        b64e = Base64.encode (user <> ":" <> pass)
+        auth = "Basic " <> b64e
+    in do
+    getApiV1Token auth
 
 
 -- MAIN
@@ -213,9 +212,25 @@ routeSignal driver =
 
 main :: Effect Unit
 main = HA.runHalogenAff do
-  session <- maybe Guest LoggedIn <$> liftEffect loadCred
+  maybeEitherCred <- liftEffect loadCred
+  session <- case maybeEitherCred of
+              Nothing -> 
+                pure Guest
+              Just a -> do
+                liftEffect $ log $ "username: "
+                liftEffect $ log $ (username a)
+                pure $ LoggedIn a
   let uiWithSession = H.hoist (flip runAppM session) ui
   body <- HA.awaitBody
   driver <- runUI uiWithSession unit body
   forkAff (routeSignal driver)
+  where
 
+  routeSignal :: H.HalogenIO Query Void Aff -> Aff (Effect Unit)
+  routeSignal driver = do
+    interface <- H.liftEffect PushState.makeInterface
+    H.liftEffect $ PushState.matches Route.routing pathChanged interface
+    where
+    pathChanged _ newRoute = do
+      void <<< launchAff <<< driver.query <<< H.action <<< Goto $ newRoute
+      pure unit

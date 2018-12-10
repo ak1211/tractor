@@ -17,7 +17,6 @@ import CSS (marginLeft, marginRight, rem)
 import Data.Either (either)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
-import Effect.Console (log)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.CSS as CSS
@@ -41,7 +40,6 @@ type State =
 data Query a
   = ToggleNavBar a
   | Initialize a
-  | Finalize a
 
 
 data Slot = Slot
@@ -58,12 +56,11 @@ component =
     , render
     , eval
     , initializer: Just (H.action Initialize)
-    , finalizer: Just (H.action Finalize)
+    , finalizer: Nothing
     , receiver: const Nothing
     }
   where
 
-  initialState :: State
   initialState =
     { navBarActived: false
     , systemHealth: Indefinite
@@ -79,20 +76,16 @@ component =
       pure next
 
     Initialize next -> do
-      session <- getSession
-      H.modify_ _ { session = session }
-      health <- H.liftAff $ Api.getApiV1Health
-      version <- H.liftAff $ Api.getApiV1Version
-      H.modify_
-        _ { systemHealth = either Err Ok health.body
-          , systemVersion = either Err Ok version.body
-          }
+      newSession <- getSession
+      H.modify_ _ { session = newSession }
+      --
+      newHealth <- H.liftAff $ Api.getApiV1Health
+      H.modify_ _ { systemHealth = either Err Ok newHealth.body }
+      --
+      newVersion <- H.liftAff $ Api.getApiV1Version
+      H.modify_ _ { systemVersion = either Err Ok newVersion.body }
+      --
       pure next
-
-    Finalize next -> do
-      H.liftEffect $ log "bye"
-      pure next
-
 
 
 -- RENDER
@@ -172,8 +165,8 @@ greetings state =
       [ HH.text "Maido!"
       , HH.span
         [ CSS.style do
-            marginLeft $ rem 1.8
-            marginRight $ rem 1.8
+          marginLeft $ rem 1.8
+          marginRight $ rem 1.8
         ]
         [ HH.text username
         ]

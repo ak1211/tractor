@@ -27,7 +27,6 @@ type State =
 data Query a
   = ToggleNavBar a
   | Initialize a
-  | Finalize a
 
 
 data Slot = Slot
@@ -44,12 +43,11 @@ component =
     , render
     , eval
     , initializer: Just (H.action Initialize)
-    , finalizer: Just (H.action Finalize)
+    , finalizer: Nothing
     , receiver: const Nothing
     }
   where
 
-  initialState :: State
   initialState =
     { navBarActived: false
     , session: Guest
@@ -63,12 +61,9 @@ component =
       pure next
 
     Initialize next -> do
-      session <- getSession
-      H.modify_
-        _ { session = session }
-      pure next
-
-    Finalize next -> do
+      newSession <- getSession
+      H.modify_ _ { session = newSession }
+      --
       pure next
 
 

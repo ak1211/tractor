@@ -1,5 +1,5 @@
 module Route
-  (Route(..)
+  ( Route(..)
   , routing
   , href
   , locationReplace
@@ -7,20 +7,24 @@ module Route
 
 import Prelude
 
+import Data.Either (Either(..))
 import Data.Foldable (intercalate, oneOf)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
+import Effect (Effect)
 import Halogen.HTML.Properties as HP
-import Routing.Match (Match, root, lit, end)
+import Routing.Match (Match, lit, param, root)
 import Web.HTML as DOM
 import Web.HTML.Location as WHL
 import Web.HTML.Window as Window
-import Effect (Effect)
+import Api (AuthRedirectParam)
 
 
 -- ROUTING
 
 
 data Route
-  = Root
+  = AuthRedirect (Either String AuthRedirectParam)
   | Dashboard
   | Login
   | Logout
@@ -31,17 +35,24 @@ data Route
   | ApiDocument
 
 
+derive instance eqRoute :: Eq Route
+derive instance genericRoute :: Generic Route _
+instance showRoute :: Show Route where
+  show = genericShow
+
+
 routing :: Match Route
 routing = oneOf
-  [ Root <$ (root *> end)
-  , Dashboard <$ (root *> lit "dashboard")
-  , Login <$ (root *> lit "login")
-  , Logout <$ (root *> lit "logout")
-  , Upload <$ (root *> lit "upload")
-  , Portfolio <$ (root *> lit "portfolio")
-  , Charts <$ (root *> lit "charts")
-  , AccountBalance <$ (root *> lit "account-balance")
-  , ApiDocument <$ (root *> lit "api-document")
+  [ AuthRedirect <<< Left <$ root <*> (param "err")
+  , AuthRedirect <<< Right <$ root <*> ({ code: _, state: _ } <$> (param "code") <*> (param "state"))
+  , Dashboard <$ (root *> lit "#" *> lit "dashboard")
+  , Login <$ (root *> lit "#" *> lit "login")
+  , Logout <$ (root *> lit "#" *> lit "logout")
+  , Upload <$ (root *> lit "#" *> lit "upload")
+  , Portfolio <$ (root *> lit "#" *> lit "portfolio")
+  , Charts <$ (root *> lit "#" *> lit "charts")
+  , AccountBalance <$ (root *> lit "#" *> lit "account-balance")
+  , ApiDocument <$ (root *> lit "#" *> lit "api-document")
   ]
 
 
@@ -53,11 +64,11 @@ routeToString page =
   "#/" <> intercalate "/" pieces
   where
   pieces = case page of
-    Root ->
+    AuthRedirect _ ->
       []
     Dashboard ->
       [ "dashboard" ]
-    Login  ->
+    Login ->
       [ "login" ]
     Logout ->
       [ "logout" ]
