@@ -176,12 +176,12 @@ ui = H.parentComponent
                             Right cred ->
                               H.liftEffect $ storeCred cred
                           -- redirect
-                          H.liftEffect $ Route.locationReplace Dashboard
+                          H.liftEffect $ Route.redirectTo Dashboard
                           pure Dashboard
                     Logout -> do
                       H.liftEffect logout
                       -- redirect
-                      H.liftEffect $ Route.locationReplace Dashboard
+                      H.liftEffect $ Route.redirectTo Dashboard
                       pure Dashboard
                     _ -> 
                       pure route
@@ -217,8 +217,7 @@ main = HA.runHalogenAff do
               Nothing -> 
                 pure Guest
               Just a -> do
-                liftEffect $ log $ "username: "
-                liftEffect $ log $ (username a)
+                liftEffect $ log ("username: " <> username a)
                 pure $ LoggedIn a
   let uiWithSession = H.hoist (flip runAppM session) ui
   body <- HA.awaitBody

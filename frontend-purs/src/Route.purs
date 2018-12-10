@@ -3,21 +3,23 @@ module Route
   , routing
   , href
   , locationReplace
+  , redirectTo
   ) where
 
 import Prelude
 
+import Api (AuthRedirectParam)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, oneOf)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Effect (Effect)
+import Effect.Class.Console (log, logShow)
 import Halogen.HTML.Properties as HP
-import Routing.Match (Match, lit, param, root)
+import Routing.Match (Match, end, lit, param, root)
 import Web.HTML as DOM
 import Web.HTML.Location as WHL
 import Web.HTML.Window as Window
-import Api (AuthRedirectParam)
 
 
 -- ROUTING
@@ -63,23 +65,32 @@ routeToString :: Route -> String
 routeToString page =
   "#/" <> intercalate "/" pieces
   where
+
   pieces = case page of
     AuthRedirect _ ->
       []
+      
     Dashboard ->
       [ "dashboard" ]
+      
     Login ->
       [ "login" ]
+      
     Logout ->
       [ "logout" ]
+      
     Upload -> 
       [ "upload" ]
+      
     Portfolio -> 
       [ "portfolio" ]
+      
     Charts -> 
       [ "charts" ]
+      
     AccountBalance -> 
       [ "account-balance" ]
+
     ApiDocument -> 
       [ "api-document" ]
 
@@ -94,4 +105,16 @@ href targetRoute =
 
 locationReplace :: Route -> Effect Unit
 locationReplace route =
-  DOM.window >>= Window.location >>= WHL.replace (routeToString route)
+  DOM.window
+  >>= Window.location
+  >>= WHL.replace (routeToString route)
+
+
+redirectTo :: Route -> Effect Unit
+redirectTo route =
+  DOM.window
+  >>= Window.location
+  >>= \loc -> do
+      WHL.setHash "" loc
+      WHL.setSearch "" loc
+      WHL.replace (routeToString route) loc

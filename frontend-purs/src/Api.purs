@@ -87,7 +87,7 @@ credFromJwt jwt =
     AC.caseJsonObject Nothing (StrMap.lookup "dat") json
     # case _ of
       Nothing ->
-        Left "'dat' claims required"
+        Left "Json Web Token has 'dat' claims required"
       Just dat ->
         AC.stringify dat
         # FG.genericDecodeJSON options
@@ -125,7 +125,6 @@ loadCred =
 
   mkCred :: String -> Jwt -> Cred
   mkCred a b = MkCred { username: a, token: b }
-
 
 
 storeCred :: Cred -> Effect Unit
@@ -208,7 +207,7 @@ getApiV1Token headerAuthorization =
     , content: Nothing
     , username: Nothing
     , password: Nothing
-    , withCredentials: true
+    , withCredentials: false
     , responseFormat: AXRF.string
     }
   >>= \res -> pure $ case res.body of
